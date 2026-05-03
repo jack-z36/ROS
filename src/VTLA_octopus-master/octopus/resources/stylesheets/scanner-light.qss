@@ -1,0 +1,107 @@
+MainWindow * {
+    color: #333333;
+}
+
+MainWindow {
+    background-color: #f4f5f5;
+}
+
+MainWindow TitleBar {
+    border-bottom: 1px solid #EBECF0;
+}
+
+TitleBar QCheckBox#settings-btn::indicator {
+    image: url(:/icons/setting-dark);
+}
+
+TitleBar QCheckBox#layout-btn::indicator {
+    image: url(:/icons/layout-dark);
+}
+
+QMainWindow::separator {
+    background-color: #EBECF0;
+}
+
+/* toolbar */
+MainWindow QToolBar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #EBECF0;
+}
+
+MainWindow QToolBar::separator {
+    background-color: #EBECF0;
+}
+
+/* dock & tabbar */
+MainWindow QDockWidget,
+MainWindow QDockWidget QWidget {
+    background-color: #ffffff;
+}
+
+MainWindow QDockWidget DockTitleBar,
+MainWindow QDockWidget DockTitleBar QWidget {
+    background-color: #f4f5f5;
+}
+
+MainWindow QDockWidget DockTitleBar {
+    border-bottom: 1px solid #EBECF0;
+}
+
+QTabBar {
+    background: #f4f5f5;
+    border-top: 1px solid #EBECF0;
+}
+
+QTabBar::tab {
+    background: #f4f5f5;
+    border-top: 1px solid #EBECF0;
+    border-right: 1px solid #EBECF0;
+}
+
+QTabBar::tab:selected {
+    background: #ffffff;
+    border-top-color: #ffffff;
+}
+
+/* statusbar */
+MainWindow QStatusBar {
+    border-top: 1px solid #EBECF0;
+}
+
+/* QTableView */
+QTableView {
+    gridline-color: black;
+    color: #e6e6e6;
+}
+
+/* Dialog */
+QDialog {
+    background: #ffffff;
+}
+
+/*//////////////////////////////////////////////*/
+
+SettingsDialog TitleBar {
+    background: #F9F9F9;
+}
+
+SettingsDialog TitleBar QLabel#title {
+    color: #F2F2F2;
+    background: #F2F2F2;
+}
+
+SettingsDialog,
+SettingsDialog QListWidget {
+    background: #F2F2F2;
+}
+
+SettingsDialog QStackedWidget {
+    background: #F9F9F9;
+}
+
+/*//////////////////////////////////////////////*/
+QPlainTextEdit#payload-sending-box {
+    border-top: 1px solid #EBECF0;
+    border-bottom: 1px solid #EBECF0;
+    background: #FEFDFD;
+}

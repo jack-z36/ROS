@@ -1,0 +1,18 @@
+[submodule "octopus/3rdparty/mcap"]
+	path = octopus/3rdparty/mcap
+	url = https://github.com/foxglove/mcap.git
+[submodule "octopus/3rdparty/cmake-modules"]
+	path = octopus/3rdparty/cmake-modules
+	url = https://github.com/ffiirree/cmake-modules.git
+[submodule "octopus/3rdparty/glm"]
+	path = octopus/3rdparty/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "octopus/3rdparty/spdlog"]
+	path = octopus/3rdparty/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "octopus/3rdparty/json"]
+	path = octopus/3rdparty/json
+	url = https://github.com/nlohmann/json.git
+[submodule "octopus/3rdparty/zstd"]
+	path = octopus/3rdparty/zstd
+	url = https://github.com/facebook/zstd.git

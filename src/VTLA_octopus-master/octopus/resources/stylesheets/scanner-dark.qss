@@ -1,0 +1,139 @@
+MainWindow * {
+    color: #e6e6e6;
+}
+
+MainWindow {
+    background-color: #202021;
+}
+
+MainWindow TitleBar {
+    border-bottom: 1px solid #323232;
+}
+
+TitleBar QCheckBox#add-panel-btn::indicator {
+    image: url(:/icons/dark/png/add-win);
+}
+
+TitleBar QCheckBox#settings-btn::indicator {
+    image: url(:/icons/setting-light);
+}
+
+TitleBar QCheckBox#layout-btn::indicator {
+    image: url(:/icons/layout-light);
+}
+
+QMainWindow::separator {
+    background-color: #323232;
+}
+
+/* //////////////// toolbar //////////////// */
+MainWindow QToolBar {
+    background-color: #181819;
+    border-bottom: 1px solid #323232;
+}
+
+MainWindow QToolBar::separator {
+    background-color: #2B2B2B;
+}
+
+MainWindow QToolBar QToolButton:hover {
+    background-color: #2B2B2B;
+}
+
+/* //////////////// dock widgets //////////////// */
+MainWindow DockWidget,
+MainWindow DockWidget QWidget {
+    background-color: #181819;
+}
+
+MainWindow DockWidget {
+    border-left: 0px;
+    border-right: 0px;
+}
+
+MainWindow DockWidget QPushButton {
+    background-color: #323232;
+}
+
+MainWindow DockWidget Menu {
+    background-color: transparent;
+}
+
+MainWindow DockWidget DockTitleBar,
+MainWindow DockWidget DockTitleBar QWidget {
+    background-color: #202021;
+}
+
+MainWindow DockWidget DockTitleBar {
+    border-bottom: 1px solid #323232;
+}
+
+/* //////////////// tabbar //////////////// */
+MainWindow QTabBar {
+    background: #202021;
+    border-top: 1px solid #323232;
+}
+
+MainWindow QTabBar::tab {
+    background: #202021;
+    border-top: 1px solid #323232;
+    border-right: 1px solid #323232;
+}
+
+MainWindow QTabBar::tab:selected {
+    background: #181819;
+    border-top-color: #181819;
+}
+
+/* //////////////// status bar //////////////// */
+MainWindow QStatusBar {
+    border-top: 1px solid #323232;
+}
+
+/* QTableView */
+QTableView {
+    gridline-color: white;
+}
+
+/* Dialog */
+QDialog {
+    background: #272728;
+}
+
+/*//////////////////////////////////////////////*/
+SettingsDialog TitleBar QLabel#title {
+    color: #181819;
+    background: #181819;
+}
+
+SettingsDialog,
+SettingsDialog QListWidget {
+    background: #181819;
+}
+
+SettingsDialog QStackedWidget {
+    background: #202021;
+}
+
+/*//////////////////////////////////////////////*/
+QPlainTextEdit#payload-sending-box {
+    border-top: 1px solid #323232;
+    border-bottom: 1px solid #323232;
+    background: #171616;
+}
+
+OpDockWidget QListWidget:item,
+OpDockWidget QListWidget QCheckBox {
+    background: transparent;
+}
+
+OpDockWidget QListWidget:item:hover,
+OpDockWidget QListWidget:item:selected,
+OpDockWidget QListWidget QCheckBox:hover {
+    background: transparent;
+}
+
+OpDockWidget QPushButton {
+    height: 36px;
+    border-radius: 18px;
+}

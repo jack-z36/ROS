@@ -1,0 +1,29 @@
+# ROS build artifacts
+build/
+install/
+log/
+
+# Local Python/conda environments and caches
+.conda-envs/
+.conda-home/
+.miniconda3/
+__pycache__/
+*.py[cod]
+
+# Local downloads and generated data
+.downloads/
+mcap_cleaned/
+*.mcap
+
+# Vendored/downloaded dependency caches
+src/VTLA_octopus-master/.deps/
+
+# Runtime/editor noise
+.DS_Store
+*.swp
+*.swo
+
+# Local IDE/project metadata
+src/.obsidian/
+src/gopro_camera_launch/.idea/
+.claude/settings.local.json

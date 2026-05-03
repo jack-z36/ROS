@@ -1,0 +1,50 @@
+batch:
+  input_dir: /home/hit/ROS/mcap
+  output_dir: /home/hit/ROS/mcap_cleaned
+  file_glob: "*.mcap"
+  workers: 1
+  overwrite: true
+  fail_fast: true
+
+transform:
+  base_position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  base_orientation_deg:
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+  tcp_offset:
+    x: 0.0
+    z: 0.0
+
+pose_streams:
+  - input_topic: /baton_mini_left/fast_odom
+    msg_type: nav_msgs/msg/Odometry
+    output_topic: /baton_mini_left/tcp_odom
+  - input_topic: /baton_mini_right/fast_odom
+    msg_type: nav_msgs/msg/Odometry
+    output_topic: /baton_mini_right/tcp_odom
+
+gripper_streams:
+  - image_topic: /gopro_left/image_raw
+    image_msg_type: sensor_msgs/msg/Image
+    output_topic: /gopro_left/gripper_width
+    output_msg_type: std_msgs/msg/Float32
+    aruco_dict: DICT_4X4_50
+    marker_id_0: 0
+    marker_id_1: 1
+    marker_min: 20.0
+    marker_max: 300.0
+    gripper_max: 100.0
+  - image_topic: /gopro_right/image_raw
+    image_msg_type: sensor_msgs/msg/Image
+    output_topic: /gopro_right/gripper_width
+    output_msg_type: std_msgs/msg/Float32
+    aruco_dict: DICT_4X4_50
+    marker_id_0: 0
+    marker_id_1: 1
+    marker_min: 20.0
+    marker_max: 300.0
+    gripper_max: 100.0

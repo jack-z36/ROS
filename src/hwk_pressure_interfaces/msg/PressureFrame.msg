@@ -1,0 +1,11 @@
+std_msgs/Header header
+string hand
+string gripper
+uint8 device_addr
+uint8 package_id
+uint8 total_packets
+uint8 packet_index
+uint8 rows
+uint8 cols
+uint16[] data
+uint8[] raw_payload

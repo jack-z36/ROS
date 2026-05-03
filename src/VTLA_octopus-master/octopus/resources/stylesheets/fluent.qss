@@ -1,0 +1,474 @@
+QWidget {
+    font-size: 10.5pt;
+    font-family: "Microsoft YaHei";
+}
+
+/*///////////////////////////////////////////////////////////////*/
+QScrollArea {
+    border: none;
+}
+
+QGroupBox {
+    border-radius: 8px;
+    font-weight: bold;
+    margin-top: 1.25em;
+
+    padding: 0px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+QListWidget {
+    font-size: 11pt;
+    border: none;
+
+    padding: 0px 10px;
+}
+
+QListWidget::item {
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    margin: 2px;
+    padding: 7px 10px;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+QCheckBox {
+    spacing: 0px;
+}
+
+QCheckBox::indicator {
+    height: 1.5em;
+    width: 1.5em;
+}
+
+QCheckBox::indicator:checked {
+    image: url(:/icons/checkbox-checked);
+}
+
+QCheckBox::indicator:unchecked:hover {
+    image: url(:/icons/checkbox-unchecked-hover);
+}
+
+/*///////////////////////////////////////////////////////////////*/
+QComboBox {
+    margin: 2px;
+    border-radius: 6px;
+    height: 28px;
+    padding-left: 7px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 2em;
+    padding: 4px 0;
+
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+QComboBox::down-arrow {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+QComboBox QAbstractItemView {
+    outline: 0px;
+    padding: 4px 3px 3px 3px;
+}
+
+QComboBox QAbstractItemView::item {
+    background-color: transparent;
+    font-size: 14px;
+    border-radius: 5px;
+
+    height: 28px;
+    margin: 2px;
+    padding-left: 5px;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+QLineEdit {
+    margin: 2px;
+    border-radius: 5px;
+    height: 28px;
+    padding: 0 7px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #409eff;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+QSpinBox, QDoubleSpinBox {
+    margin-right: 2px;
+    margin-left: 2px;
+    border-radius: 5px;
+    height: 28px;
+    padding: 0 7px;
+}
+
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+
+    border: none;
+    border-top-right-radius: 5px;
+
+    width: 2em;
+}
+
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+    width: 2em;
+}
+
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    subcontrol-origin: padding;
+    subcontrol-position: bottom right;
+
+    border: none;
+    border-bottom-right-radius: 5px;
+
+    width: 2em;
+}
+
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+    width: 2em;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+
+QMenu {
+    padding: 3px;
+}
+
+QMenu::item {
+    background-color: transparent;
+
+    border-radius: 5px;
+    margin: 2px;
+
+    font-family: "Microsoft YaHei";
+    font-size: 10pt;
+
+    height: 30px;
+
+    padding-left: 12px;
+    padding-right: 10px;
+}
+
+QMenu::item::selected {
+}
+
+QMenu::icon {
+    position: absolute;
+    left: 8px;
+}
+
+QMenu::indicator {
+    width: 4px;
+    height: 4px;
+    border-radius: 2px;
+    margin-left: 14px;
+}
+
+QMenu::indicator:checked {
+}
+
+QMenu::right-arrow {
+    height: 1em;
+    width: 1em;
+    margin-right: 0.75em;
+
+    background: blue;
+}
+
+QMenu::separator {
+    height: 1px;
+    margin: 3px;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+
+QScrollBar {
+    background: transparent;
+    margin: 0px;
+    padding: 0px;
+}
+
+QScrollBar::sub-page,
+QScrollBar::add-page {
+    background: transparent;
+}
+
+QScrollBar::sub-line,
+QScrollBar::add-line {
+    height: 0px;
+}
+
+/* vertical */
+QScrollBar:vertical {
+    width: 10px;
+}
+
+QScrollBar::handle::vertical {
+    margin-left: 3px;
+    margin-right: 3px;
+    border-radius: 2px;
+    min-height: 25px;
+}
+
+QScrollBar::handle::vertical:hover {
+    margin-left: 1px;
+    margin-right: 1px;
+    border-radius: 4px;
+}
+
+/*horizontal*/
+QScrollBar:horizontal {
+    height: 10px;
+}
+
+QScrollBar::handle::horizontal {
+    margin-top: 3px;
+    margin-bottom: 3px;
+    border-radius: 2px;
+    min-width: 25px;
+}
+
+QScrollBar::handle::horizontal:hover {
+    margin-top: 1px;
+    margin-bottom: 1px;
+    border-radius: 4px;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+/* sliders */
+QSlider {
+    height: 32px;
+}
+
+QSlider::groove:horizontal {
+    border: 0px;
+}
+
+/* 4px */
+QSlider::sub-page:horizontal {
+    background: #409eff;
+    border-radius: 2px;
+    margin-top: 14px;
+    margin-bottom: 14px;
+}
+
+/* 4px */
+QSlider::add-page:horizontal {
+    background: white;
+    border-radius: 2px;
+    margin-top: 14px;
+    margin-bottom: 14px;
+}
+ 
+QSlider::handle:horizontal {
+    background: white;
+
+    width: 12px;
+    height: 12px;
+
+    border: 3px solid #666;
+    border-radius: 9px; 
+
+    margin-top: 7px;
+    margin-bottom: 7px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #409eff;
+
+    width: 14px;
+    height: 14px;
+
+    border: 2px solid #666;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+
+QPushButton {
+    height: 28px;
+    border-radius: 5px;
+    padding: 0px 16px;
+}
+
+QPushButton:checked {
+    border: 1px solid #3574F0;
+    color: #3574F0;
+}
+
+PathEdit QPushButton {
+    padding: 0px 10px;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+
+QTreeView {
+    border: none;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+
+QMenu#tray-menu::item {
+    padding-left: 0.75em;
+    padding-right: 0.5em;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+
+QLabel#size_info {
+    background-color: rgba(0, 0, 0, 200);
+    color: white;
+    font-size: 9pt;
+    font-family: "Microsoft YaHei";
+
+    padding: 0.35em 0.75em 0.35em 0.75em;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+QColorDialog QPushButton {
+    height: 2em;
+    border-radius: 5px;
+    padding: 0px 1em;
+}
+
+QTableView {
+    border: 0px;
+}
+
+QTextEdit, QPlainTextEdit {
+    border: 0px;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+QLabel#magnifier-color-label {
+    color: white;
+    font-size: 9pt;
+    font-family: "Microsoft YaHei";
+}
+
+/*///////////////////////////////////////////////////////////////*/
+NavigationBar {
+    border-radius: 5px;
+    height: 1.5em;
+}
+
+NavigationBar QCheckBox {
+    border-radius: 5px;
+    height: 1.5em;
+
+    padding: 0 0.5em;
+}
+
+NavigationBar QCheckBox:unchecked {
+    background-color: transparent;
+
+    border: 1px solid transparent;
+}
+
+NavigationBar QCheckBox::indicator {
+    width: 0;
+    height: 0;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+TitleBar QPushButton#icon {
+    width: 36px;
+
+    border: none;
+    padding: 0px;
+    border-radius: 0px;
+
+    background-color: transparent;
+
+    qproperty-iconSize: 18px;
+}
+
+TitleBar QLabel#title {
+    font-size: 10pt;
+}
+
+TitleBar QCheckBox::indicator {
+    height: 12px;
+    width: 12px;
+
+    padding: 12px 18px;
+}
+
+TitleBar QCheckBox#pin-btn::indicator {
+    height: 20px;
+    width: 20px;
+
+    padding: 17px 24px;
+}
+
+TitleBar QCheckBox#close-btn::indicator:hover {
+    background-color: #C42B1C;
+    image: url(:/icons/close);
+}
+
+/*///////////////////////////////////////////////////////////////*/
+DockTitleBar QLabel#title {
+    font-size: 10pt;
+    padding-left: 10px;
+}
+
+DockTitleBar QCheckBox::indicator {
+    height: 12px;
+    width: 12px;
+
+    padding: 9px 11px;
+}
+
+DockTitleBar QCheckBox#close-btn::indicator:hover {
+    background-color: #C42B1C;
+    image: url(:/icons/close);
+}
+
+DockTitleBar QToolButton {
+    background-color: transparent;
+    border: 0px;
+    border-radius: 3px;
+    padding: 4px;
+    qproperty-iconSize: 14px;
+    margin: 2px;
+    margin-right: 5px;
+}
+
+DockTitleBar QToolButton:checked:!hover {
+    background: transparent;
+}
+
+/*///////////////////////////////////////////////////////////////*/
+QToolTip {
+    font-family: "Microsoft YaHei";
+    font-size: 12px;
+    padding: 2px;
+}
+
+Message#success QLabel {
+    color: #67C23A;
+}
+
+Message#message QLabel {
+    color: #909399;
+}
+
+Message#warning QLabel {
+    color: #E6A23C;
+}
+
+Message#error QLabel {
+    color: #F56C6C;
+}

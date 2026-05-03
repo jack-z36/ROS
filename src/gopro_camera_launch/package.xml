@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>gopro_camera_launch</name>
+  <version>0.1.0</version>
+  <description>ROS 2 GoPro HDMI camera launch package without pose bridge or MCAP recording.</description>
+  <maintainer email="codex@example.com">Codex</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+
+  <exec_depend>v4l2_camera</exec_depend>
+  <exec_depend>v4l-utils</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

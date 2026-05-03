@@ -1,0 +1,106 @@
+MainWindow TitleBar QLabel#title {
+    font-weight: bold;
+}
+
+MainWindow > TitleBar QPushButton#icon {
+    width: 114px;
+    qproperty-iconSize: 96px;
+}
+
+MainWindow TitleBar QCheckBox#add-panel-btn,
+MainWindow TitleBar QCheckBox#settings-btn,
+MainWindow TitleBar QCheckBox#layout-btn {
+    border-radius: 6px;
+    margin-right: 5px;
+}
+
+MainWindow TitleBar QCheckBox#add-panel-btn::indicator,
+MainWindow TitleBar QCheckBox#settings-btn::indicator,
+MainWindow TitleBar QCheckBox#layout-btn::indicator {
+    height: 18px;
+    width: 18px;
+
+    padding: 5px;
+}
+
+QMainWindow::separator {
+    width: 1px; /* when vertical */
+    height: 1px; /* when horizontal */
+}
+
+/* //////////////// toolbar //////////////// */
+MainWindow QToolBar {
+    spacing: 4px;
+    padding: 4px;
+}
+
+MainWindow QToolBar::separator {
+    width: 1px;
+}
+
+MainWindow QToolBar QToolButton {
+    padding: 2px;
+    border-radius: 6px;
+}
+
+MainWindow QToolBar QToolButton:checked,
+MainWindow QToolBar QToolButton:hover:checked {
+    background-color: #3574F0;
+}
+
+MainWindow QToolBar QToolButton#sample-btn:checked,
+MainWindow QToolBar QToolButton#record-btn:checked {
+    background-color: #C42B1C;
+}
+
+MainWindow QToolBar QToolButton#pause-btn:checked,
+MainWindow QToolBar QToolButton#pause-btn:hover:checked {
+    background-color: transparent;
+}
+
+/* //////////////// status bar //////////////// */
+MainWindow QStatusBar QLabel {
+    font-size: 14px;
+    font-family: "Agave Nerd Font Mono", "Microsoft YaHei";
+}
+
+MainWindow QStatusBar::item {
+    border: 0px;
+}
+
+/* */
+QLabel#sub-title {
+    font-weight: bold;
+}
+
+/* //////////////// dock widgets //////////////// */
+
+OpDockWidget QLabel#time-label {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+/* //////////////// tabbar //////////////// */
+QTabBar {
+    qproperty-drawBase: 0;
+    padding: 1px;
+}
+
+QTabBar::tab {
+    padding: 5px 10px;
+}
+
+/* //////////////// settings //////////////// */
+SettingsDialog TitleBar QPushButton#icon {
+    width: 0px;
+}
+
+SettingsDialog QLabel#about-name {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+SettingsDialog QLabel#about-version {
+    font-size: 14px;
+    font-weight: bold;
+}

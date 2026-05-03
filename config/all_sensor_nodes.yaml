@@ -1,0 +1,113 @@
+baton_mini:
+  right:
+    enabled: true
+    server_ip: "192.168.1.10"
+    local_ip: "auto"
+    node_name: "baton_mini_right"
+    topics:
+      # odometry: VIO算法位姿，类型 nav_msgs/msg/Odometry，默认采集使用。
+      # fast_odom: 高频快速里程计，类型 nav_msgs/msg/Odometry，约200Hz。
+      # imu: IMU惯性数据，类型 sensor_msgs/msg/Imu，约200Hz。
+      # image_left/image_right: 左/右目图像，类型 sensor_msgs/msg/Image，640x480 mono8。
+      # 默认只发布 odometry；只有下游明确需要时再开启其他 topic。
+      odometry:
+        enabled: true
+        name: "/baton_mini_right/odometry"
+      fast_odom:
+        enabled: true
+        name: "/baton_mini_right/fast_odom"
+      imu:
+        enabled: false
+        name: "/baton_mini_right/imu"
+      image_left:
+        enabled: false
+        name: "/baton_mini_right/image_left"
+      image_right:
+        enabled: false
+        name: "/baton_mini_right/image_right"
+  left:
+    enabled: true
+    server_ip: "192.168.2.10"
+    local_ip: "auto"
+    node_name: "baton_mini_left"
+    topics:
+      # odometry: VIO算法位姿，类型 nav_msgs/msg/Odometry，默认采集使用。
+      # fast_odom: 高频快速里程计，类型 nav_msgs/msg/Odometry，约200Hz。
+      # imu: IMU惯性数据，类型 sensor_msgs/msg/Imu，约200Hz。
+      # image_left/image_right: 左/右目图像，类型 sensor_msgs/msg/Image，640x480 mono8。
+      # 默认只发布 odometry；只有下游明确需要时再开启其他 topic。
+      odometry:
+        enabled: true
+        name: "/baton_mini_left/odometry"
+      fast_odom:
+        enabled: true
+        name: "/baton_mini_left/fast_odom"
+      imu:
+        enabled: false
+        name: "/baton_mini_left/imu"
+      image_left:
+        enabled: false
+        name: "/baton_mini_left/image_left"
+      image_right:
+        enabled: false
+        name: "/baton_mini_left/image_right"
+
+hardware_identity:
+  enabled: true
+  map_file: "/home/hit/ROS/config/hardware_identity_map.yaml"
+
+gopro:
+  right:
+    enabled: true
+    video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.4.3:1.0-video-index0"
+    namespace: "gopro_right"
+    node_name: "gopro_right_camera"
+    camera_name: "gopro_right"
+    frame_id: "gopro_right_optical_frame"
+    frame_rate: 30
+    topics:
+      # image_raw: 视频帧，类型 sensor_msgs/msg/Image，包含时间戳、宽高、编码和像素数据。
+      # camera_info: 相机标定信息，类型 sensor_msgs/msg/CameraInfo，包含内参、畸变和投影矩阵。
+      # 默认只发布视频帧；只有下游需要标定参数时再开启 camera_info。
+      image_raw:
+        enabled: true
+        name: "image_raw"
+      camera_info:
+        enabled: false
+        name: "camera_info"
+  left:
+    enabled: true
+    video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.4.4:1.0-video-index0"
+    namespace: "gopro_left"
+    node_name: "gopro_left_camera"
+    camera_name: "gopro_left"
+    frame_id: "gopro_left_optical_frame"
+    frame_rate: 30
+    topics:
+      # image_raw: 视频帧，类型 sensor_msgs/msg/Image，包含时间戳、宽高、编码和像素数据。
+      # camera_info: 相机标定信息，类型 sensor_msgs/msg/CameraInfo，包含内参、畸变和投影矩阵。
+      # 默认只发布视频帧；只有下游需要标定参数时再开启 camera_info。
+      image_raw:
+        enabled: true
+        name: "image_raw"
+      camera_info:
+        enabled: false
+        name: "camera_info"
+
+pressure:
+  enabled: true
+  config_file: "/home/hit/ROS/src/hwk_pressure_driver/config/pressure_sensors.yaml"
+  node_name: "pressure_driver_node"
+  topics:
+    left_gripper_1:
+      enabled: true
+      name: "/pressure/left_hand/gripper_1"
+    left_gripper_2:
+      enabled: true
+      name: "/pressure/left_hand/gripper_2"
+    right_gripper_1:
+      enabled: true
+      name: "/pressure/right_hand/gripper_1"
+    right_gripper_2:
+      enabled: true
+      name: "/pressure/right_hand/gripper_2"

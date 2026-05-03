@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV:-${WORKSPACE_DIR}/.conda-envs/data-clean}"
+PYTHON_BIN="${DATA_CLEAN_PYTHON:-${CONDA_ENV_DIR}/bin/python}"
+DEFAULT_CONFIG="${DATA_CLEAN_CONFIG:-${WORKSPACE_DIR}/config/data_clean_smoke_test.yaml}"
+DATA_CLEAN_SOURCE="${WORKSPACE_DIR}/src/data_clean"
+
+usage() {
+  cat <<EOF
+Usage:
+  ./start_data_clean.sh [options]
+
+Examples:
+  ./start_data_clean.sh
+  ./start_data_clean.sh --latest 5
+  ./start_data_clean.sh --all --workers auto
+  ./start_data_clean.sh --dry-run --latest 5
+  ./start_data_clean.sh --input-dir /home/hit/ROS/mcap --output-dir /home/hit/ROS/mcap_cleaned
+
+Environment overrides:
+  DATA_CLEAN_CONFIG       Default config file path.
+  DATA_CLEAN_CONDA_ENV    Conda environment directory.
+  DATA_CLEAN_PYTHON       Python executable path.
+
+Default config:
+  ${DEFAULT_CONFIG}
+
+Notes:
+  The script prints a human-readable summary. Set DATA_CLEAN_RAW_JSON=1 to print raw JSON lines.
+EOF
+}
+
+has_arg() {
+  local expected="$1"
+  shift
+  local arg
+  for arg in "$@"; do
+    if [[ "${arg}" == "${expected}" || "${arg}" == "${expected}="* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+if [[ ! -x "${PYTHON_BIN}" ]]; then
+  echo "Data clean Python not found or not executable: ${PYTHON_BIN}" >&2
+  echo "Expected conda env: ${CONDA_ENV_DIR}" >&2
+  exit 1
+fi
+
+if [[ ! -d "${DATA_CLEAN_SOURCE}" ]]; then
+  echo "Data clean source directory not found: ${DATA_CLEAN_SOURCE}" >&2
+  exit 1
+fi
+
+export PYTHONPATH="${DATA_CLEAN_SOURCE}"
+
+if has_arg "--help" "$@" || has_arg "-h" "$@"; then
+  usage
+  echo
+  exec "${PYTHON_BIN}" -m core.mcap_clean_launcher --help
+fi
+
+ARGS=("$@")
+if ! has_arg "--config" "${ARGS[@]}"; then
+  if [[ ! -f "${DEFAULT_CONFIG}" ]]; then
+    echo "Default config file not found: ${DEFAULT_CONFIG}" >&2
+    echo "Pass a config explicitly: ./start_data_clean.sh --config /path/to/config.yaml" >&2
+    exit 1
+  fi
+  ARGS=(--config "${DEFAULT_CONFIG}" "${ARGS[@]}")
+fi
+
+if [[ "${DATA_CLEAN_RAW_JSON:-0}" != "1" ]]; then
+  echo "Data clean workspace: ${WORKSPACE_DIR}"
+  echo "Python: ${PYTHON_BIN}"
+  echo "PYTHONPATH: ${PYTHONPATH}"
+  echo "Command: ${PYTHON_BIN} -m core.mcap_clean_launcher ${ARGS[*]}"
+  echo
+fi
+
+exec "${PYTHON_BIN}" -m core.mcap_clean_launcher "${ARGS[@]}"

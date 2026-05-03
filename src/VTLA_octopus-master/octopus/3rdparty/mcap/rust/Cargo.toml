@@ -1,0 +1,8 @@
+[workspace]
+members = ["mcap", "mcap_cli"]
+resolver = "2"
+
+[profile.bench]
+opt-level = 3
+debug = true
+lto = true

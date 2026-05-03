@@ -1,0 +1,22 @@
+/**:
+  ros__parameters:
+    video_device: /dev/video4
+    image_size: [640, 480]
+    time_per_frame:
+      numerator: 1
+      denominator: 30
+    pixel_format: "YUYV"
+    output_encoding: "rgb8"
+    camera_name: "gopro"
+    frame_id: "camera_optical_frame"
+    use_v4l2_buffer_timestamps: true
+    publish_camera_info: true
+
+# Notes:
+# - /gopro/image_raw.header.stamp should prefer the V4L2 buffer timestamp when
+#   supported by the installed v4l2_camera version and capture hardware.
+# - frame_id defaults to camera_optical_frame for downstream TF-based fusion.
+# - The launch file explicitly runs `v4l2-ctl --set-parm 30` before starting
+#   v4l2_camera_node. The installed ros-jazzy-v4l2-camera package does not
+#   expose publish_rate, and this platform did not honor time_per_frame from
+#   this YAML alone.
