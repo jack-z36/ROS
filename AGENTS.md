@@ -79,7 +79,7 @@
 - 执行记录：`/home/hit/ROS/DOCS/场景五/执行记录.md`
 - 当前进度：`/home/hit/ROS/DOCS/场景五/当前进度.md`
 
-## 场景六：MCAP 数据清洗脚本与交互式启动器
+## 场景六：MCAP 数据清洗与配置生成（三程序统一入口）
 
 目录：`/home/hit/ROS/DOCS/场景六`
 
