@@ -114,16 +114,17 @@ def _collect_stream_artifacts(input_path: Path, config: AppConfig) -> _StreamArt
         for schema, channel, message in reader.iter_messages(log_time_order=False):
             topic = channel.topic
             if topic in pose_streams:
+                pose_stream = pose_streams[topic]
                 if schema is None:
                     raise ProcessingError(f'pose topic "{topic}" has no schema record')
                 decoded_pose = codec.decode(schema, message)
                 transformed_pose = transform_pose_to_tcp(
-                    *extract_pose_fields(decoded_pose, pose_streams[topic].msg_type),
-                    config.transform,
+                    *extract_pose_fields(decoded_pose, pose_stream.msg_type),
+                    config.transform_for_pose_stream(pose_stream),
                 )
                 encoded_pose = codec.encode(
                     schema,
-                    inject_pose_fields(decoded_pose, pose_streams[topic].msg_type, transformed_pose),
+                    inject_pose_fields(decoded_pose, pose_stream.msg_type, transformed_pose),
                 )
                 pose_payloads[topic].append(encoded_pose)
             elif topic in gripper_streams:

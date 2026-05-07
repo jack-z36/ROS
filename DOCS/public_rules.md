@@ -129,6 +129,7 @@ Octopus 的架构索引文件为：
 规则：
 
 - 公共规则、总架构、跨场景信息放在 `/home/hit/ROS/DOCS` 根目录。
+- 无法明确归入某个场景的零散执行事项，必须追加记录到 `/home/hit/ROS/DOCS/总执行日志.md`。
 - 场景一产生的新文档必须放入 `/home/hit/ROS/DOCS/场景一`。
 - 场景二产生的新文档必须放入 `/home/hit/ROS/DOCS/场景二`。
 - 场景三产生的新文档必须放入 `/home/hit/ROS/DOCS/场景三`。
@@ -195,6 +196,8 @@ Octopus 的架构索引文件为：
 处理本项目问题时，默认遵守以下纪律：
 
 - 先判断问题属于公共目标、场景一、场景二、场景三、场景四、场景五、场景六，还是 Octopus 架构本身。
+- 如果任务无法明确归入某个场景，或属于跨场景零散维护，先阅读 `/home/hit/ROS/DOCS/总执行日志.md`，并在执行后追加记录。
+- 涉及 Git 状态、提交、推送、拉取、远端、账号、分支或仓库同步时，先阅读 `/home/hit/ROS/DOCS/git操作约束.md`，并按该文件执行检查、提交和推送约束。
 - 涉及 Octopus 采集程序时，先阅读 `/home/hit/ROS/DOCS/Octopus_architecture.md`。
 - 涉及 `/home/hit/ROS/src/gopro_camera_launch` 时，先阅读该包的架构和运行指南。
 - 涉及 `/home/hit/ROS/src/baton_mini_sdk_demo` 时，先阅读该包的架构和运行指南。

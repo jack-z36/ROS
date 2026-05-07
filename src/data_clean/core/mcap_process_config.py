@@ -55,6 +55,7 @@ class PoseStreamConfig:
     input_topic: str
     msg_type: str
     output_topic: str
+    transform: TransformConfig | None = None
 
 
 @dataclass(frozen=True)
@@ -77,12 +78,16 @@ class AppConfig:
     transform: TransformConfig
     pose_streams: tuple[PoseStreamConfig, ...]
     gripper_streams: tuple[GripperStreamConfig, ...]
+    calibration: dict[str, Any]
 
     def pose_by_topic(self) -> dict[str, PoseStreamConfig]:
         return {stream.input_topic: stream for stream in self.pose_streams}
 
     def gripper_by_image_topic(self) -> dict[str, GripperStreamConfig]:
         return {stream.image_topic: stream for stream in self.gripper_streams}
+
+    def transform_for_pose_stream(self, stream: PoseStreamConfig) -> TransformConfig:
+        return stream.transform or self.transform
 
 
 def _require_mapping(data: dict[str, Any], key: str) -> dict[str, Any]:
@@ -114,8 +119,7 @@ def _build_batch_config(data: dict[str, Any]) -> BatchConfig:
     )
 
 
-def _build_transform_config(data: dict[str, Any]) -> TransformConfig:
-    transform = _require_mapping(data, "transform")
+def _build_transform_from_mapping(transform: dict[str, Any]) -> TransformConfig:
     base_position = _require_mapping(transform, "base_position")
     base_orientation = _require_mapping(transform, "base_orientation_deg")
     tcp_offset = _require_mapping(transform, "tcp_offset")
@@ -137,12 +141,21 @@ def _build_transform_config(data: dict[str, Any]) -> TransformConfig:
     )
 
 
+def _build_transform_config(data: dict[str, Any]) -> TransformConfig:
+    return _build_transform_from_mapping(_require_mapping(data, "transform"))
+
+
 def _build_pose_streams(data: dict[str, Any]) -> tuple[PoseStreamConfig, ...]:
     streams = tuple(
         PoseStreamConfig(
             input_topic=str(item["input_topic"]),
             msg_type=str(item["msg_type"]),
             output_topic=str(item["output_topic"]),
+            transform=(
+                _build_transform_from_mapping(item["transform"])
+                if isinstance(item.get("transform"), dict)
+                else None
+            ),
         )
         for item in _require_sequence(data, "pose_streams")
     )
@@ -170,6 +183,59 @@ def _build_gripper_streams(data: dict[str, Any]) -> tuple[GripperStreamConfig, .
     if not streams:
         raise ConfigError('"gripper_streams" must not be empty')
     return streams
+
+
+def _build_calibration(data: dict[str, Any]) -> dict[str, Any]:
+    calibration = data.get("calibration", {})
+    if calibration is None:
+        return {}
+    if not isinstance(calibration, dict):
+        raise ConfigError('"calibration" must be a mapping when present')
+    return calibration
+
+
+def calibration_item_status(config: AppConfig) -> dict[str, bool]:
+    calibration = config.calibration
+    tcp = calibration.get("tcp", {})
+    gripper = calibration.get("gripper", {})
+
+    def nested_status(section: dict[str, Any], hand: str) -> bool:
+        value = section.get(hand, {})
+        return isinstance(value, dict) and bool(value.get("calibrated"))
+
+    if isinstance(tcp, dict) and isinstance(gripper, dict):
+        nested = {
+            "gripper_left": nested_status(gripper, "left"),
+            "gripper_right": nested_status(gripper, "right"),
+            "tcp_left": nested_status(tcp, "left"),
+            "tcp_right": nested_status(tcp, "right"),
+        }
+        if any(nested.values()) or any(hand in tcp or hand in gripper for hand in ("left", "right")):
+            return nested
+
+    legacy_gripper = bool(gripper.get("calibrated")) if isinstance(gripper, dict) else False
+    legacy_tcp = bool(tcp.get("calibrated")) if isinstance(tcp, dict) else False
+    return {
+        "gripper_left": legacy_gripper,
+        "gripper_right": legacy_gripper,
+        "tcp_left": legacy_tcp,
+        "tcp_right": legacy_tcp,
+    }
+
+
+def config_is_calibrated(config: AppConfig) -> bool:
+    return all(calibration_item_status(config).values())
+
+
+def calibration_missing_items(config: AppConfig) -> list[str]:
+    labels = {
+        "gripper_left": "左手夹爪",
+        "gripper_right": "右手夹爪",
+        "tcp_left": "左手 TCP",
+        "tcp_right": "右手 TCP",
+    }
+    status = calibration_item_status(config)
+    return [label for key, label in labels.items() if not status.get(key, False)]
 
 
 def _ensure_unique(values: list[str], label: str) -> None:
@@ -250,7 +316,7 @@ def load_app_config(
         transform=_build_transform_config(raw_data),
         pose_streams=_build_pose_streams(raw_data),
         gripper_streams=_build_gripper_streams(raw_data),
+        calibration=_build_calibration(raw_data),
     )
     _validate_cross_field_rules(app_config)
     return app_config
-
