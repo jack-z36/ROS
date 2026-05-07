@@ -5,8 +5,33 @@ set -euo pipefail
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV:-${WORKSPACE_DIR}/.conda-envs/data-clean}"
 PYTHON_BIN="${DATA_CLEAN_PYTHON:-${CONDA_ENV_DIR}/bin/python}"
-DEFAULT_CONFIG="${DATA_CLEAN_CONFIG:-${WORKSPACE_DIR}/config/data_clean_smoke_test.yaml}"
+SMOKE_CONFIG="${WORKSPACE_DIR}/config/data_clean_smoke_test.yaml"
+CALIBRATED_CONFIG="${WORKSPACE_DIR}/config/data_clean_calibrated.yaml"
+if [[ -n "${DATA_CLEAN_CONFIG:-}" ]]; then
+  DEFAULT_CONFIG="${DATA_CLEAN_CONFIG}"
+  DEFAULT_CONFIG_KIND="environment override"
+elif [[ -f "${CALIBRATED_CONFIG}" ]]; then
+  DEFAULT_CONFIG="${CALIBRATED_CONFIG}"
+  DEFAULT_CONFIG_KIND="calibrated"
+else
+  DEFAULT_CONFIG="${SMOKE_CONFIG}"
+  DEFAULT_CONFIG_KIND="smoke test"
+fi
 DATA_CLEAN_SOURCE="${WORKSPACE_DIR}/src/data_clean"
+
+if [[ -f /opt/ros/jazzy/setup.bash ]]; then
+  # shellcheck source=/opt/ros/jazzy/setup.bash
+  set +u
+  source /opt/ros/jazzy/setup.bash
+  set -u
+fi
+
+if [[ -f "${WORKSPACE_DIR}/install/setup.bash" ]]; then
+  # shellcheck source=/home/hit/ROS/install/setup.bash
+  set +u
+  source "${WORKSPACE_DIR}/install/setup.bash"
+  set -u
+fi
 
 usage() {
   cat <<EOF
@@ -15,6 +40,7 @@ Usage:
 
 Examples:
   ./start_data_clean.sh
+  ./start_data_clean.sh --calibrate
   ./start_data_clean.sh --latest 5
   ./start_data_clean.sh --all --workers auto
   ./start_data_clean.sh --dry-run --latest 5
@@ -26,7 +52,10 @@ Environment overrides:
   DATA_CLEAN_PYTHON       Python executable path.
 
 Default config:
-  ${DEFAULT_CONFIG}
+  ${DEFAULT_CONFIG} (${DEFAULT_CONFIG_KIND})
+
+Config priority:
+  --config / DATA_CLEAN_CONFIG > config/data_clean_calibrated.yaml > config/data_clean_smoke_test.yaml
 
 Notes:
   The script prints a human-readable summary. Set DATA_CLEAN_RAW_JSON=1 to print raw JSON lines.
@@ -56,7 +85,7 @@ if [[ ! -d "${DATA_CLEAN_SOURCE}" ]]; then
   exit 1
 fi
 
-export PYTHONPATH="${DATA_CLEAN_SOURCE}"
+export PYTHONPATH="${DATA_CLEAN_SOURCE}:${PYTHONPATH:-}"
 
 if has_arg "--help" "$@" || has_arg "-h" "$@"; then
   usage
@@ -78,6 +107,7 @@ if [[ "${DATA_CLEAN_RAW_JSON:-0}" != "1" ]]; then
   echo "Data clean workspace: ${WORKSPACE_DIR}"
   echo "Python: ${PYTHON_BIN}"
   echo "PYTHONPATH: ${PYTHONPATH}"
+  echo "Default config: ${DEFAULT_CONFIG} (${DEFAULT_CONFIG_KIND})"
   echo "Command: ${PYTHON_BIN} -m core.mcap_clean_launcher ${ARGS[*]}"
   echo
 fi

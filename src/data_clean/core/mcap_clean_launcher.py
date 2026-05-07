@@ -14,12 +14,14 @@ from typing import Iterable
 from mcap.reader import make_reader
 
 from core.mcap_io import process_mcap_file
-from core.mcap_process_config import AppConfig, load_app_config
+from core.mcap_process_config import AppConfig, calibration_missing_items, config_is_calibrated, load_app_config
 from core.validator import FileProcessingReport, build_topic_inventory, validate_input_inventory
 
 
 DEFAULT_WORKERS = 6
 WORKSPACE_DIR = Path("/home/hit/ROS")
+SMOKE_CONFIG = WORKSPACE_DIR / "config/data_clean_smoke_test.yaml"
+CALIBRATED_CONFIG = WORKSPACE_DIR / "config/data_clean_calibrated.yaml"
 
 
 @dataclass(frozen=True)
@@ -63,6 +65,22 @@ def _iter_input_files(config: AppConfig) -> list[Path]:
         key=lambda path: path.name,
         reverse=True,
     )
+
+
+def _print_no_input_files_message(config: AppConfig) -> None:
+    input_dir = Path(config.batch.input_dir)
+    output_dir = Path(config.batch.output_dir)
+    print("没有找到需要处理的 MCAP 文件。")
+    print(f"  输入目录: {_short_path(input_dir)}")
+    print(f"  匹配规则: {config.batch.file_glob}")
+    if not input_dir.exists():
+        print("  原因判断: 输入目录不存在。")
+    elif not input_dir.is_dir():
+        print("  原因判断: 输入路径存在，但不是目录。")
+    else:
+        print("  原因判断: 输入目录存在，但没有匹配到文件。")
+    print(f"  输出目录: {_short_path(output_dir)}")
+    print("  建议: 请确认原始 MCAP 是否放在 /home/hit/ROS/mcap，或使用 --input-dir 指定真实目录。")
 
 
 def _output_path(input_path: Path, config: AppConfig) -> Path:
@@ -117,11 +135,12 @@ def _resolve_workers(value: str | None, selected_count: int) -> int:
     return min(workers, selected_count)
 
 
-def _prompt_file_selection(files: list[Path]) -> list[Path]:
+def _prompt_file_selection(files: list[Path], config_path: str) -> list[Path]:
     print("请选择要清洗的 MCAP 文件：")
     print("  [回车] 最近 1 个")
     print("  n      最近 N 个")
     print("  a      全部")
+    print("  c      配置/标定向导")
     print("  q      退出")
     choice = input("选择: ").strip().lower()
 
@@ -132,6 +151,10 @@ def _prompt_file_selection(files: list[Path]) -> list[Path]:
     if choice == "q":
         print("已退出，未执行清洗。")
         raise SystemExit(0)
+    if choice == "c":
+        from core.mcap_calibration_wizard import run_calibration_wizard
+
+        raise SystemExit(run_calibration_wizard(config_path))
     if choice == "n":
         raw_count = input("请输入要清洗的最近文件数量 N: ").strip()
         try:
@@ -158,7 +181,7 @@ def _choose_files(args: argparse.Namespace, files: list[Path]) -> list[Path]:
         return files
     if args.latest is not None:
         return _select_latest(files, args.latest)
-    return _prompt_file_selection(files)
+    return _prompt_file_selection(files, args.config)
 
 
 def _preview_selection(selection: list[SelectedFile], config: AppConfig, workers: int) -> None:
@@ -180,16 +203,26 @@ def _preview_selection(selection: list[SelectedFile], config: AppConfig, workers
 
 
 def _print_calibration_warning(config: AppConfig) -> None:
-    transform = config.transform
     print()
     print("配置提醒")
+    if config_is_calibrated(config):
+        print("  当前配置标记为完整已标定：左右夹爪和左右 TCP 均已完成。")
+    else:
+        missing = "、".join(calibration_missing_items(config))
+        print("  警告：当前配置未完整标定，可能仍有测试/占位参数。")
+        if missing:
+            print(f"  未完成分项: {missing}")
+        print("  建议先在菜单中选择 c，或运行 ./start_data_clean.sh --calibrate 生成已标定配置。")
     print("  当前清洗会使用 YAML 中的 TCP transform 和 ArUco 夹爪标定参数。")
-    print(
-        "  TCP base: "
-        f"pos=({transform.base_position.x}, {transform.base_position.y}, {transform.base_position.z}), "
-        f"rpy=({transform.base_orientation_deg.roll}, {transform.base_orientation_deg.pitch}, {transform.base_orientation_deg.yaw}), "
-        f"offset=({transform.tcp_offset.x}, {transform.tcp_offset.z})"
-    )
+    for stream in config.pose_streams:
+        transform = config.transform_for_pose_stream(stream)
+        print(
+            "  TCP: "
+            f"{stream.input_topic} -> {stream.output_topic}, "
+            f"base_pos=({transform.base_position.x}, {transform.base_position.y}, {transform.base_position.z}), "
+            f"rpy=({transform.base_orientation_deg.roll}, {transform.base_orientation_deg.pitch}, {transform.base_orientation_deg.yaw}), "
+            f"offset=({transform.tcp_offset.x}, {transform.tcp_offset.z})"
+        )
     for stream in config.gripper_streams:
         print(
             "  ArUco: "
@@ -377,7 +410,9 @@ def _print_final_summary(reports: list[FileProcessingReport], interrupted: bool 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="交互式 MCAP 数据清洗启动器。")
-    parser.add_argument("--config", default=str(WORKSPACE_DIR / "config/data_clean_smoke_test.yaml"), help="YAML 配置文件。")
+    default_config = CALIBRATED_CONFIG if CALIBRATED_CONFIG.exists() else SMOKE_CONFIG
+    parser.add_argument("--config", default=str(default_config), help="YAML 配置文件。")
+    parser.add_argument("--calibrate", action="store_true", help="进入配置/标定向导，生成已标定配置。")
     parser.add_argument("--input-dir", help="覆盖配置中的 batch.input_dir。")
     parser.add_argument("--output-dir", help="覆盖配置中的 batch.output_dir。")
     parser.add_argument("--latest", type=int, help="清洗最近 N 个 MCAP。")
@@ -397,13 +432,20 @@ def main(argv: list[str] | None = None) -> int:
         input_dir_override=args.input_dir,
         output_dir_override=args.output_dir,
     )
+    if args.calibrate:
+        from core.mcap_calibration_wizard import run_calibration_wizard
+
+        return run_calibration_wizard(args.config)
+
     files = _iter_input_files(config)
     if not files:
-        print("没有找到需要处理的 MCAP 文件。请检查 batch.input_dir 和 batch.file_glob。")
+        _print_no_input_files_message(config)
         return 0
 
     if not raw_json:
         print("数据清洗启动器")
+        print(f"  配置文件: {_short_path(args.config)}")
+        print(f"  配置状态: {'已标定' if config_is_calibrated(config) else '未完整标定/测试配置'}")
         print(f"  输入目录: {_short_path(config.batch.input_dir)}")
         print(f"  输出目录: {_short_path(config.batch.output_dir)}")
         print(f"  可清洗文件: {len(files)}")
