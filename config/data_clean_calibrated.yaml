@@ -68,33 +68,11 @@ pose_streams:
 - input_topic: /baton_mini_left/fast_odom
   msg_type: nav_msgs/msg/Odometry
   output_topic: /baton_mini_left/tcp_odom
-  transform:
-    base_position:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-    base_orientation_deg:
-      roll: 0.0
-      pitch: 0.0
-      yaw: 0.0
-    tcp_offset:
-      x: 0.0
-      z: 0.0
+  transform_file: /home/hit/ROS/config/data_clean_left_transform.yaml
 - input_topic: /baton_mini_right/fast_odom
   msg_type: nav_msgs/msg/Odometry
   output_topic: /baton_mini_right/tcp_odom
-  transform:
-    base_position:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-    base_orientation_deg:
-      roll: 0.0
-      pitch: 0.0
-      yaw: 0.0
-    tcp_offset:
-      x: 0.0
-      z: 0.0
+  transform_file: /home/hit/ROS/config/data_clean_right_transform.yaml
 gripper_streams:
 - image_topic: /gopro_left/image_raw
   image_msg_type: sensor_msgs/msg/Image

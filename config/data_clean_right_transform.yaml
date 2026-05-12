@@ -1,0 +1,11 @@
+base_position:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+base_orientation_deg:
+  roll: 0.0
+  pitch: 0.0
+  yaw: 0.0
+tcp_offset:
+  x: 0.0
+  z: 0.0

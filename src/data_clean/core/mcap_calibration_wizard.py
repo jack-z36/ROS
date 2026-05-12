@@ -175,13 +175,17 @@ def _batch_to_mapping(config: AppConfig) -> dict[str, Any]:
 
 
 def _pose_stream_to_mapping(stream: PoseStreamConfig, fallback_transform: TransformConfig) -> dict[str, Any]:
-    transform = stream.transform or fallback_transform
-    return {
+    mapping = {
         "input_topic": stream.input_topic,
         "msg_type": stream.msg_type,
         "output_topic": stream.output_topic,
-        "transform": _to_mapping(transform),
     }
+    if stream.transform_file:
+        mapping["transform_file"] = stream.transform_file
+    else:
+        transform = stream.transform or fallback_transform
+        mapping["transform"] = _to_mapping(transform)
+    return mapping
 
 
 def _gripper_stream_to_mapping(stream: GripperStreamConfig) -> dict[str, Any]:
@@ -589,7 +593,27 @@ def _apply_gripper_results(data: dict[str, Any], results: list[GripperSideCalibr
     data["calibration"] = calibration
 
 
-def _apply_tcp_results(data: dict[str, Any], results: list[TcpSideCalibration]) -> None:
+def _resolve_transform_file_for_write(path_raw: str, base_dir: Path) -> Path:
+    path = Path(os.path.expandvars(path_raw)).expanduser()
+    if path.is_absolute():
+        return path
+    return base_dir / path
+
+
+def _load_transform_mapping_for_write(path: Path, fallback: dict[str, Any]) -> dict[str, Any]:
+    if not path.exists():
+        return copy.deepcopy(fallback)
+    with path.open("r", encoding="utf-8") as fh:
+        raw_data = yaml.safe_load(fh) or {}
+    if not isinstance(raw_data, dict):
+        return copy.deepcopy(fallback)
+    transform_data = raw_data.get("transform", raw_data)
+    if not isinstance(transform_data, dict):
+        return copy.deepcopy(fallback)
+    return copy.deepcopy(transform_data)
+
+
+def _apply_tcp_results(data: dict[str, Any], results: list[TcpSideCalibration], base_dir: Path) -> None:
     calibration = _ensure_nested_status(data.get("calibration", {}))
     by_hand = {item.hand: item for item in results}
     for stream in data.get("pose_streams", []):
@@ -597,10 +621,17 @@ def _apply_tcp_results(data: dict[str, Any], results: list[TcpSideCalibration]) 
         if hand not in by_hand:
             continue
         item = by_hand[hand]
-        transform = stream.setdefault("transform", copy.deepcopy(data.get("transform", {})))
+        transform_file = str(stream.get("transform_file", "")).strip()
+        if transform_file:
+            transform_path = _resolve_transform_file_for_write(transform_file, base_dir)
+            transform = _load_transform_mapping_for_write(transform_path, data.get("transform", {}))
+        else:
+            transform = stream.setdefault("transform", copy.deepcopy(data.get("transform", {})))
         tcp_offset = transform.setdefault("tcp_offset", {})
         tcp_offset["x"] = round(item.tcp_offset_x, 6)
         tcp_offset["z"] = round(item.tcp_offset_z, 6)
+        if transform_file:
+            _write_yaml_with_backup(transform_path, transform)
         calibration["tcp"][hand] = {
             "calibrated": True,
             "method": "live_gopro_click_points",
@@ -669,7 +700,7 @@ def _save_gripper(config: AppConfig, output_path: Path, results: list[GripperSid
 
 def _save_tcp(config: AppConfig, output_path: Path, results: list[TcpSideCalibration]) -> AppConfig:
     data = _base_config_mapping(config)
-    _apply_tcp_results(data, results)
+    _apply_tcp_results(data, results, output_path.parent)
     _write_yaml_with_backup(output_path, data)
     return load_app_config(output_path)
 

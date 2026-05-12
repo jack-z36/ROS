@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -56,6 +57,7 @@ class PoseStreamConfig:
     msg_type: str
     output_topic: str
     transform: TransformConfig | None = None
+    transform_file: str = ""
 
 
 @dataclass(frozen=True)
@@ -119,6 +121,13 @@ def _build_batch_config(data: dict[str, Any]) -> BatchConfig:
     )
 
 
+def _resolve_config_path(raw_path: str, config_dir: Path) -> Path:
+    path = Path(os.path.expandvars(raw_path)).expanduser()
+    if path.is_absolute():
+        return path
+    return config_dir / path
+
+
 def _build_transform_from_mapping(transform: dict[str, Any]) -> TransformConfig:
     base_position = _require_mapping(transform, "base_position")
     base_orientation = _require_mapping(transform, "base_orientation_deg")
@@ -145,23 +154,52 @@ def _build_transform_config(data: dict[str, Any]) -> TransformConfig:
     return _build_transform_from_mapping(_require_mapping(data, "transform"))
 
 
-def _build_pose_streams(data: dict[str, Any]) -> tuple[PoseStreamConfig, ...]:
+def _load_transform_file(path_raw: str, config_dir: Path) -> tuple[TransformConfig, str]:
+    path = _resolve_config_path(path_raw, config_dir)
+    if not path.is_file():
+        raise ConfigError(f'pose stream transform_file does not exist: "{path}"')
+    with path.open("r", encoding="utf-8") as fh:
+        raw_data = yaml.safe_load(fh) or {}
+    if not isinstance(raw_data, dict):
+        raise ConfigError(f'transform_file "{path}" must contain a mapping')
+    transform_data = raw_data.get("transform", raw_data)
+    if not isinstance(transform_data, dict):
+        raise ConfigError(f'transform_file "{path}" must contain a transform mapping')
+    return _build_transform_from_mapping(transform_data), str(path)
+
+
+def _build_pose_streams(data: dict[str, Any], config_dir: Path) -> tuple[PoseStreamConfig, ...]:
     streams = tuple(
-        PoseStreamConfig(
-            input_topic=str(item["input_topic"]),
-            msg_type=str(item["msg_type"]),
-            output_topic=str(item["output_topic"]),
-            transform=(
-                _build_transform_from_mapping(item["transform"])
-                if isinstance(item.get("transform"), dict)
-                else None
-            ),
-        )
+        _build_pose_stream(item, config_dir)
         for item in _require_sequence(data, "pose_streams")
     )
     if not streams:
         raise ConfigError('"pose_streams" must not be empty')
     return streams
+
+
+def _build_pose_stream(item: dict[str, Any], config_dir: Path) -> PoseStreamConfig:
+    transform_file_raw = str(item.get("transform_file", "")).strip()
+    inline_transform = item.get("transform")
+    if transform_file_raw and isinstance(inline_transform, dict):
+        raise ConfigError(
+            f'pose stream "{item.get("input_topic", "")}" must use either transform_file or inline transform, not both'
+        )
+
+    transform = None
+    transform_file = ""
+    if transform_file_raw:
+        transform, transform_file = _load_transform_file(transform_file_raw, config_dir)
+    elif isinstance(inline_transform, dict):
+        transform = _build_transform_from_mapping(inline_transform)
+
+    return PoseStreamConfig(
+        input_topic=str(item["input_topic"]),
+        msg_type=str(item["msg_type"]),
+        output_topic=str(item["output_topic"]),
+        transform=transform,
+        transform_file=transform_file,
+    )
 
 
 def _build_gripper_streams(data: dict[str, Any]) -> tuple[GripperStreamConfig, ...]:
@@ -314,7 +352,7 @@ def load_app_config(
     app_config = AppConfig(
         batch=batch,
         transform=_build_transform_config(raw_data),
-        pose_streams=_build_pose_streams(raw_data),
+        pose_streams=_build_pose_streams(raw_data, config_path.parent),
         gripper_streams=_build_gripper_streams(raw_data),
         calibration=_build_calibration(raw_data),
     )

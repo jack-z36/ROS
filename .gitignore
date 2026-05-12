@@ -24,6 +24,7 @@ src/VTLA_octopus-master/.deps/
 *.swo
 
 # Local IDE/project metadata
+.vscode/
 src/.obsidian/
 src/gopro_camera_launch/.idea/
 .claude/settings.local.json
