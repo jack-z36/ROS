@@ -5,7 +5,7 @@
 ```
 
 If defined to `1`, the version component is omitted from the inline namespace. See
-[`nlohmann` Namespace](../../features/namespace.md#structure) for details.
+[`nlohmann` Namespace](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/namespace.md#structure) for details.
 
 ## Default definition
 
@@ -36,9 +36,9 @@ When the macro is not defined, the library will define it to its default value.
 
 ## See also
 
-- [`nlohmann` Namespace](../../features/namespace.md)
-- [`NLOHMANN_JSON_NAMESPACE`](nlohmann_json_namespace.md)
-- [`NLOHMANN_JSON_NAMESPACE_BEGIN, NLOHMANN_JSON_NAMESPACE_END`](nlohmann_json_namespace_begin.md)
+- [`nlohmann` Namespace](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/namespace.md)
+- [`NLOHMANN_JSON_NAMESPACE`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_namespace.md)
+- [`NLOHMANN_JSON_NAMESPACE_BEGIN, NLOHMANN_JSON_NAMESPACE_END`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_namespace_begin.md)
 
 ## Version history
 

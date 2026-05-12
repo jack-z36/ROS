@@ -13,7 +13,7 @@ Controls how exceptions are handled by the library.
 
 1. This macro overrides [`#!cpp catch`](https://en.cppreference.com/w/cpp/language/try_catch) calls inside the library.
    The argument is the type of the exception to catch. As of version 3.8.0, the library only catches `std::out_of_range`
-   exceptions internally to rethrow them as [`json::out_of_range`](../../home/exceptions.md#out-of-range) exceptions.
+   exceptions internally to rethrow them as [`json::out_of_range`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#out-of-range) exceptions.
    The macro is always followed by a scope.
 2. This macro overrides `#!cpp throw` calls inside the library. The argument is the exception to be thrown. Note that
    `JSON_THROW_USER` should leave the current scope (e.g., by throwing or aborting), as continuing after it may yield
@@ -67,8 +67,8 @@ replaced by calling [`std::abort`](https://en.cppreference.com/w/cpp/utility/pro
 
 ## See also
 
-- [Switch off exceptions](../../home/exceptions.md#switch-off-exceptions) for more information how to switch off exceptions
-- [JSON_NOEXCEPTION](json_noexception.md) - switch off exceptions
+- [Switch off exceptions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#switch-off-exceptions) for more information how to switch off exceptions
+- [JSON_NOEXCEPTION](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_noexception.md) - switch off exceptions
 
 ## Version history
 

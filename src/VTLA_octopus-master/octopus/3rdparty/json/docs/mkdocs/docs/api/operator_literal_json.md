@@ -6,7 +6,7 @@ json operator ""_json(const char8_t* s, std::size_t n);  // since C++20
 ```
 
 This operator implements a user-defined string literal for JSON objects. It can be used by adding `#!cpp _json` to a
-string literal and returns a [`json`](json.md) object if no parse error occurred.
+string literal and returns a [`json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json.md) object if no parse error occurred.
 
 It is recommended to bring the operator into scope using any of the following lines:
 ```cpp
@@ -18,7 +18,7 @@ using namespace nlohmann;
 ```
 
 This is suggested to ease migration to the next major version release of the library. See
-[`JSON_USE_GLOBAL_UDLS`](macros/json_use_global_udls.md#notes) for details.
+[`JSON_USE_GLOBAL_UDLS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_global_udls.md#notes) for details.
 
 ## Parameters
 
@@ -30,11 +30,11 @@ This is suggested to ease migration to the next major version release of the lib
 
 ## Return value
 
-[`json`](json.md) value parsed from `s`
+[`json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json.md) value parsed from `s`
 
 ## Exceptions
 
-The function can throw anything that [`parse(s, s+n)`](basic_json/parse.md) would throw.
+The function can throw anything that [`parse(s, s+n)`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md) would throw.
 
 ## Complexity
 

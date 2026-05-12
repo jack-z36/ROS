@@ -74,7 +74,7 @@ When the macro is not defined, the library will define it to its default value.
 
 ### See also
 
-- [:simple-cmake: JSON_LegacyDiscardedValueComparison](../../integration/cmake.md#json_legacydiscardedvaluecomparison) - CMake option to control the macro
+- [:simple-cmake: JSON_LegacyDiscardedValueComparison](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/integration/cmake.md#json_legacydiscardedvaluecomparison) - CMake option to control the macro
 
 ## Version history
 

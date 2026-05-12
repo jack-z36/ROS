@@ -11,21 +11,21 @@ Runtime assertions can be switched off by defining the preprocessor macro `NDEBU
 
 ## Change assertion behavior
 
-The behavior of runtime assertions can be changes by defining macro [`JSON_ASSERT(x)`](../api/macros/json_assert.md)
+The behavior of runtime assertions can be changes by defining macro [`JSON_ASSERT(x)`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_assert.md)
 before including the `json.hpp` header.
 
 ## Function with runtime assertions
 
 ### Unchecked object access to a const value
 
-Function [`operator[]`](../api/basic_json/operator%5B%5D.md) implements unchecked access for objects. Whereas a missing
+Function [`operator[]`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator[].md) implements unchecked access for objects. Whereas a missing
 key is added in the case of non-const objects, accessing a const object with a missing key is undefined behavior (think
 of a dereferenced null pointer) and yields a runtime assertion.
 
 If you are not sure whether an element in an object exists, use checked access with the
-[`at` function](../api/basic_json/at.md) or call the [`contains` function](../api/basic_json/contains.md) before.
+[`at` function](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/at.md) or call the [`contains` function](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/contains.md) before.
 
-See also the documentation on [element access](element_access/index.md).
+See also the documentation on [element access](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/element_access/index.md).
 
 ??? example "Example 1: Missing object key"
 
@@ -51,7 +51,7 @@ See also the documentation on [element access](element_access/index.md).
 
 ### Constructing from an uninitialized iterator range
 
-Constructing a JSON value from an iterator range (see [constructor](../api/basic_json/basic_json.md)) with an
+Constructing a JSON value from an iterator range (see [constructor](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/basic_json.md)) with an
 uninitialized iterator is undefined behavior and yields a runtime assertion.
 
 ??? example "Example 2: Uninitialized iterator range"
@@ -110,7 +110,7 @@ behavior and yields a runtime assertion.
 Reading from a null `#!cpp FILE` or `#!cpp char` pointer in C++ is undefined behavior.  Until version 3.12.0, this
 library asserted that the pointer was not `nullptr` using a runtime assertion. If assertions were disabled, this would
 result in undefined behavior. Since version 3.12.0, this library checks for `nullptr` and throws a
-[`parse_error.101`](../home/exceptions.md#jsonexceptionparse_error101) to prevent the undefined behavior.
+[`parse_error.101`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error101) to prevent the undefined behavior.
 
 ??? example "Example 4: Reading from null pointer"
 
@@ -141,4 +141,4 @@ result in undefined behavior. Since version 3.12.0, this library checks for `nul
 
 ## See also
 
-- [JSON_ASSERT](../api/macros/json_assert.md) - control behavior of runtime assertions
+- [JSON_ASSERT](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_assert.md) - control behavior of runtime assertions

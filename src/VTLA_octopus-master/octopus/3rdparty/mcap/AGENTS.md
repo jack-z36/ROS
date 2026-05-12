@@ -8,7 +8,7 @@ This is a **polyglot library monorepo** for the [MCAP](https://mcap.dev) log fil
 
 - **Git LFS** — test data under `tests/conformance/data/` and `rust/mcap/tests/data/` is stored in Git LFS. Tests will fail with `InvalidMagic` errors if LFS pointers haven't been pulled. Run `git lfs pull` before running tests.
 - **Conformance tests** orchestrate cross-language testing via the TypeScript harness: `yarn test:conformance:generate-inputs && yarn test:conformance`. They require Git LFS data and pre-built binaries for each target language.
-- **Releasing** — see [RELEASING.md](./RELEASING.md) for the release process for each language.
+- **Releasing** — see [RELEASING.md](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/mcap/RELEASING.md) for the release process for each language.
 
 ## TypeScript
 

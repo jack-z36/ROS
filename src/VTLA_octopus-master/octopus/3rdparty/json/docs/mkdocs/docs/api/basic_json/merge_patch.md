@@ -56,7 +56,7 @@ Linear in the lengths of `apply_patch`.
 ## See also
 
 - [RFC 7396 (JSON Merge Patch)](https://tools.ietf.org/html/rfc7396)
-- [patch](patch.md) apply a JSON patch
+- [patch](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/patch.md) apply a JSON patch
 
 ## Version history
 

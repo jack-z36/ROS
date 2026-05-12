@@ -5,8 +5,8 @@ basic_json flatten() const;
 ```
 
 The function creates a JSON object whose keys are JSON pointers (see [RFC 6901](https://tools.ietf.org/html/rfc6901))
-and whose values are all primitive (see [`is_primitive()`](is_primitive.md) for more information). The original JSON
-value can be restored using the [`unflatten()`](unflatten.md) function.
+and whose values are all primitive (see [`is_primitive()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_primitive.md) for more information). The original JSON
+value can be restored using the [`unflatten()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/unflatten.md) function.
     
 ## Return value
 
@@ -23,7 +23,7 @@ Linear in the size of the JSON value.
 ## Notes
 
 Empty objects and arrays are flattened to `#!json null` and will not be reconstructed correctly by the
-[`unflatten()`](unflatten.md) function.
+[`unflatten()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/unflatten.md) function.
 
 ## Examples
 
@@ -43,7 +43,7 @@ Empty objects and arrays are flattened to `#!json null` and will not be reconstr
 
 ## See also
 
-- [unflatten](unflatten.md) the reverse function
+- [unflatten](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/unflatten.md) the reverse function
 
 ## Version history
 

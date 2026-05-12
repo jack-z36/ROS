@@ -5,8 +5,8 @@
 ```
 
 When defined to `1`, default serialization and deserialization functions for enums are excluded and have to be provided
-by the user, for example, using [`NLOHMANN_JSON_SERIALIZE_ENUM`](nlohmann_json_serialize_enum.md) (see
-[arbitrary type conversions](../../features/arbitrary_types.md) for more details).
+by the user, for example, using [`NLOHMANN_JSON_SERIALIZE_ENUM`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_serialize_enum.md) (see
+[arbitrary type conversions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/arbitrary_types.md) for more details).
 
 Parsing or serializing an enum will result in a compiler error.
 
@@ -145,9 +145,9 @@ The default value is `0`.
 
 ## See also
 
-- [:simple-cmake: JSON_DisableEnumSerialization](../../integration/cmake.md#json_disableenumserialization) - CMake option to control
+- [:simple-cmake: JSON_DisableEnumSerialization](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/integration/cmake.md#json_disableenumserialization) - CMake option to control
   the macro
-- [`NLOHMANN_JSON_SERIALIZE_ENUM`](nlohmann_json_serialize_enum.md) - serialize/deserialize an enum
+- [`NLOHMANN_JSON_SERIALIZE_ENUM`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_serialize_enum.md) - serialize/deserialize an enum
 
 ## Version history
 

@@ -21,7 +21,7 @@ Deserializes a given input to a JSON value using the CBOR (Concise Binary Object
 1. Reads from a compatible input.
 2. Reads from an iterator range.
 
-The exact mapping and its limitations are described on a [dedicated page](../../features/binary_formats/cbor.md).
+The exact mapping and its limitations are described on a [dedicated page](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/cbor.md).
 
 ## Template parameters
 
@@ -55,13 +55,13 @@ The exact mapping and its limitations are described on a [dedicated page](../../
 :   whether to throw exceptions in case of a parse error (optional, `#!cpp true` by default)
 
 `tag_handler` (in)
-:   how to treat CBOR tags (optional, `error` by default); see [`cbor_tag_handler_t`](cbor_tag_handler_t.md) for more
+:   how to treat CBOR tags (optional, `error` by default); see [`cbor_tag_handler_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/cbor_tag_handler_t.md) for more
     information
 
 ## Return value
 
 deserialized JSON value; in case of a parse error and `allow_exceptions` set to `#!cpp false`, the return value will be
-`value_t::discarded`.  The latter can be checked with [`is_discarded`](is_discarded.md).
+`value_t::discarded`.  The latter can be checked with [`is_discarded`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_discarded.md).
 
 ## Exception safety
 
@@ -69,11 +69,11 @@ Strong guarantee: if an exception is thrown, there are no changes in the JSON va
 
 ## Exceptions
  
-- Throws [parse_error.110](../../home/exceptions.md#jsonexceptionparse_error110) if the given input ends prematurely or
+- Throws [parse_error.110](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error110) if the given input ends prematurely or
   the end of the file was not reached when `strict` was set to true
-- Throws [parse_error.112](../../home/exceptions.md#jsonexceptionparse_error112) if unsupported features from CBOR were
+- Throws [parse_error.112](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error112) if unsupported features from CBOR were
   used in the given input or if the input is not valid CBOR
-- Throws [parse_error.113](../../home/exceptions.md#jsonexceptionparse_error113) if a string was expected as a map key,
+- Throws [parse_error.113](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error113) if a string was expected as a map key,
   but not found
 
 ## Complexity

@@ -27,7 +27,7 @@ Linear in the size of `init`.
 ## Notes
 
 This function is only needed to express two edge cases that cannot be realized with the initializer list constructor
-([`basic_json(initializer_list_t, bool, value_t)`](basic_json.md)). These cases are:
+([`basic_json(initializer_list_t, bool, value_t)`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/basic_json.md)). These cases are:
 
 1. creating an array whose elements are all pairs whose first element is a string -- in this case, the initializer list
    constructor would create an object, taking the first elements as keys
@@ -52,8 +52,8 @@ This function is only needed to express two edge cases that cannot be realized w
 
 ## See also
 
-- [`basic_json(initializer_list_t)`](basic_json.md) - create a JSON value from an initializer list
-- [`object`](object.md) - create a JSON object value from an initializer list
+- [`basic_json(initializer_list_t)`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/basic_json.md) - create a JSON value from an initializer list
+- [`object`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object.md) - create a JSON object value from an initializer list
 
 ## Version history
 

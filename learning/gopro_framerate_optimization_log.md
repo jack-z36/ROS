@@ -146,6 +146,6 @@ use_sensor_data_qos: True     # launch 中保留；实际 QoS 仍需用 topic in
 
 ## 相关文档
 
-- [帧率影响微元分析](gopro_framerate_factors.md)
-- [ROS2 相机节点学习笔记](ros2_camera_topic_notes.md)
-- [GoPro 包架构文档](../src/gopro_camera_launch/ARCHITECTURE.md)
+- [帧率影响微元分析](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/learning/gopro_framerate_factors.md)
+- [ROS2 相机节点学习笔记](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/learning/ros2_camera_topic_notes.md)
+- [GoPro 包架构文档](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/gopro_camera_launch/ARCHITECTURE.md)

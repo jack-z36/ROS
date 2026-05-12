@@ -1,9 +1,9 @@
 # Parsing and Exceptions
 
-When the input is not valid JSON, an exception of type [`parse_error`](../../home/exceptions.md#parse-errors) is thrown.
+When the input is not valid JSON, an exception of type [`parse_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#parse-errors) is thrown.
 This exception contains the position in the input where the error occurred, together with a diagnostic message and the
 last read input token. The exceptions page contains a
-[list of examples for parse error exceptions](../../home/exceptions.md#parse-errors). In case you process untrusted
+[list of examples for parse error exceptions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#parse-errors). In case you process untrusted
 input, always enclose your code with a `#!cpp try`/`#!cpp catch` block, like
 
 ```cpp
@@ -54,7 +54,7 @@ Again, there is no diagnostic information available.
 
 ## User-defined SAX interface
 
-Finally, you can implement the [SAX interface](sax_interface.md) and decide what should happen in case of a parse error.
+Finally, you can implement the [SAX interface](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/parsing/sax_interface.md) and decide what should happen in case of a parse error.
 
 This function has the following interface:
 

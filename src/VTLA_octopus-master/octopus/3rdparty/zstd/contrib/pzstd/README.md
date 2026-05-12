@@ -35,7 +35,7 @@ As a reference, PZstandard and Pigz were compared on an Intel Core i7 @ 3.1 GHz,
 
 Compression Speed vs Ratio with 4 Threads | Decompression Speed with 4 Threads
 ------------------------------------------|-----------------------------------
-![Compression Speed vs Ratio](images/Cspeed.png "Compression Speed vs Ratio") | ![Decompression Speed](images/Dspeed.png "Decompression Speed")
+![Compression Speed vs Ratio](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/contrib/pzstd/images/Cspeed.png "Compression Speed vs Ratio") | ![Decompression Speed](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/contrib/pzstd/images/Dspeed.png "Decompression Speed")
 
 The test procedure was to run each of the following commands 2 times for each compression level, and take the minimum time.
 

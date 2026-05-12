@@ -29,8 +29,8 @@ const_reference at(const json_pointer& ptr) const;
 ## Template parameters
 
 `KeyType`
-:   A type for an object key other than [`json_pointer`](../json_pointer/index.md) that is comparable with
-    [`string_t`](string_t.md) using  [`object_comparator_t`](object_comparator_t.md).
+:   A type for an object key other than [`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) that is comparable with
+    [`string_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/string_t.md) using  [`object_comparator_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_comparator_t.md).
     This can also be a string view (C++17).
 
 ## Parameters
@@ -58,29 +58,29 @@ Strong exception safety: if an exception occurs, the original value stays intact
 ## Exceptions
 
 1. The function can throw the following exceptions:
-    - Throws [`type_error.304`](../../home/exceptions.md#jsonexceptiontype_error304) if the JSON value is not an array;
+    - Throws [`type_error.304`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error304) if the JSON value is not an array;
       in this case, calling `at` with an index makes no sense. See the example below.
-    - Throws [`out_of_range.401`](../../home/exceptions.md#jsonexceptionout_of_range401) if the index `idx` is out of
+    - Throws [`out_of_range.401`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range401) if the index `idx` is out of
       range of the array; that is, `idx >= size()`. See the example below.
 2. The function can throw the following exceptions:
-    - Throws [`type_error.304`](../../home/exceptions.md#jsonexceptiontype_error304) if the JSON value is not an object;
+    - Throws [`type_error.304`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error304) if the JSON value is not an object;
       in this case, calling `at` with a key makes no sense. See the example below.
-    - Throws [`out_of_range.403`](../../home/exceptions.md#jsonexceptionout_of_range403) if the key `key` is not
+    - Throws [`out_of_range.403`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range403) if the key `key` is not
       stored in the object; that is, `find(key) == end()`. See the example below.
 3. See 2.
 4. The function can throw the following exceptions:
-    - Throws [`parse_error.106`](../../home/exceptions.md#jsonexceptionparse_error106) if an array index in the passed
+    - Throws [`parse_error.106`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error106) if an array index in the passed
       JSON pointer `ptr` begins with '0'. See the example below.
-    - Throws [`parse_error.109`](../../home/exceptions.md#jsonexceptionparse_error109) if an array index in the passed
+    - Throws [`parse_error.109`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error109) if an array index in the passed
       JSON pointer `ptr` is not a number. See the example below.
-    - Throws [`out_of_range.401`](../../home/exceptions.md#jsonexceptionout_of_range401) if an array index in the passed
+    - Throws [`out_of_range.401`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range401) if an array index in the passed
       JSON pointer `ptr` is out of range. See the example below.
-    - Throws [`out_of_range.402`](../../home/exceptions.md#jsonexceptionout_of_range402) if the array index '-' is used
+    - Throws [`out_of_range.402`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range402) if the array index '-' is used
       in the passed JSON pointer `ptr`. As `at` provides checked access (and no elements are implicitly inserted), the
       index '-' is always invalid. See the example below.
-    - Throws [`out_of_range.403`](../../home/exceptions.md#jsonexceptionout_of_range403) if the JSON pointer describes a
+    - Throws [`out_of_range.403`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range403) if the JSON pointer describes a
       key of an object which cannot be found. See the example below.
-    - Throws [`out_of_range.404`](../../home/exceptions.md#jsonexceptionout_of_range404) if the JSON pointer `ptr` can
+    - Throws [`out_of_range.404`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range404) if the JSON pointer `ptr` can
       not be resolved. See the example below.
 
 ## Complexity
@@ -214,9 +214,9 @@ Strong exception safety: if an exception occurs, the original value stays intact
 
 ## See also
 
-- documentation on [checked access](../../features/element_access/checked_access.md)
-- [`operator[]`](operator%5B%5D.md) for unchecked access by reference
-- [`value`](value.md) for access with default value
+- documentation on [checked access](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/element_access/checked_access.md)
+- [`operator[]`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator[].md) for unchecked access by reference
+- [`value`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/value.md) for access with default value
 
 ## Version history
 

@@ -42,11 +42,11 @@ classDiagram
 
 Subclasses:
 
-- [`parse_error`](parse_error.md) for exceptions indicating a parse error
-- [`invalid_iterator`](invalid_iterator.md) for exceptions indicating errors with iterators
-- [`type_error`](type_error.md) for exceptions indicating executing a member function with a wrong type
-- [`out_of_range`](out_of_range.md) for exceptions indicating access out of the defined range
-- [`other_error`](other_error.md) for exceptions indicating other library errors
+- [`parse_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse_error.md) for exceptions indicating a parse error
+- [`invalid_iterator`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/invalid_iterator.md) for exceptions indicating errors with iterators
+- [`type_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/type_error.md) for exceptions indicating executing a member function with a wrong type
+- [`out_of_range`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/out_of_range.md) for exceptions indicating access out of the defined range
+- [`other_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/other_error.md) for exceptions indicating other library errors
 
 ## Member functions
 
@@ -80,7 +80,7 @@ constructor.
 
 ## See also
 
-[List of exceptions](../../home/exceptions.md)
+[List of exceptions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md)
 
 ## Version history
 

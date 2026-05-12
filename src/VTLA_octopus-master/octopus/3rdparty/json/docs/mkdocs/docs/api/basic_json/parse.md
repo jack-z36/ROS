@@ -48,7 +48,7 @@ static basic_json parse(IteratorType first, IteratorType last,
 :   Input to parse from.
 
 `cb` (in)
-:   a parser callback function of type [`parser_callback_t`](parser_callback_t.md) which is used to control the
+:   a parser callback function of type [`parser_callback_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parser_callback_t.md) which is used to control the
     deserialization by filtering unwanted values (optional)
 
 `allow_exceptions` (in)
@@ -71,7 +71,7 @@ static basic_json parse(IteratorType first, IteratorType last,
 ## Return value
 
 Deserialized JSON value; in case of a parse error and `allow_exceptions` set to `#!cpp false`, the return value will be
-`value_t::discarded`. The latter can be checked with [`is_discarded`](is_discarded.md).
+`value_t::discarded`. The latter can be checked with [`is_discarded`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_discarded.md).
 
 ## Exception safety
 
@@ -79,11 +79,11 @@ Strong guarantee: if an exception is thrown, there are no changes in the JSON va
 
 ## Exceptions
 
-- Throws [`parse_error.101`](../../home/exceptions.md#jsonexceptionparse_error101) in case of an unexpected token, or
+- Throws [`parse_error.101`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error101) in case of an unexpected token, or
   empty input like a null `FILE*` or `char*` pointer.
-- Throws [`parse_error.102`](../../home/exceptions.md#jsonexceptionparse_error102) if `to_unicode` fails or surrogate
+- Throws [`parse_error.102`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error102) if `to_unicode` fails or surrogate
   error.
-- Throws [`parse_error.103`](../../home/exceptions.md#jsonexceptionparse_error103) if `to_unicode` fails.
+- Throws [`parse_error.103`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error103) if `to_unicode` fails.
 
 ## Complexity
 
@@ -225,15 +225,15 @@ A UTF-8 byte order mark is silently ignored.
 
 ## See also
 
-- [accept](accept.md) - check if the input is valid JSON
-- [operator>>](../operator_gtgt.md) - deserialize from stream
+- [accept](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/accept.md) - check if the input is valid JSON
+- [operator>>](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/operator_gtgt.md) - deserialize from stream
 
 ## Version history
 
 - Added in version 1.0.0.
 - Overload for contiguous containers (1) added in version 2.0.3.
 - Ignoring comments via `ignore_comments` added in version 3.9.0.
-- Changed [runtime assertion](../../features/assertions.md) in case of `FILE*` null pointers to exception in version 3.12.0.
+- Changed [runtime assertion](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/assertions.md) in case of `FILE*` null pointers to exception in version 3.12.0.
 - Added `ignore_trailing_commas` in version 3.12.1.
 
 !!! warning "Deprecation"

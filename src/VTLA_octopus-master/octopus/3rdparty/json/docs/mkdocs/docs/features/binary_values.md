@@ -1,6 +1,6 @@
 # Binary Values
 
-The library implements several [binary formats](binary_formats/index.md) that encode JSON in an efficient way. Most of
+The library implements several [binary formats](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/index.md) that encode JSON in an efficient way. Most of
 these formats support binary values; that is, values that have semantics defined outside the library and only define a
 sequence of bytes to be stored.
 
@@ -130,7 +130,7 @@ is an integer or `null`.
 
 ### BJData
 
-[BJData](binary_formats/bjdata.md) neither supports binary values nor subtypes and proposes to serialize binary values
+[BJData](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/bjdata.md) neither supports binary values nor subtypes and proposes to serialize binary values
 as an array of uint8 values. The library implements this translation.
 
 ??? example
@@ -189,7 +189,7 @@ as an array of uint8 values. The library implements this translation.
 
 ### BSON
 
-[BSON](binary_formats/bson.md) supports binary values and subtypes. If a subtype is given, it is used and added as an
+[BSON](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/bson.md) supports binary values and subtypes. If a subtype is given, it is used and added as an
 unsigned 8-bit integer. If no subtype is given, the generic binary subtype 0x00 is used.
 
 ??? example
@@ -230,7 +230,7 @@ unsigned 8-bit integer. If no subtype is given, the generic binary subtype 0x00 
 
 ### CBOR
 
-[CBOR](binary_formats/cbor.md) supports binary values, but no subtypes. Subtypes will be serialized as tags. Any binary
+[CBOR](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/cbor.md) supports binary values, but no subtypes. Subtypes will be serialized as tags. Any binary
 value will be serialized as byte strings. The library will choose the smallest representation using the length of the
 byte array.
 
@@ -272,7 +272,7 @@ byte array.
 
 ### MessagePack
 
-[MessagePack](binary_formats/messagepack.md) supports binary values and subtypes. If a subtype is given, the ext family
+[MessagePack](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/messagepack.md) supports binary values and subtypes. If a subtype is given, the ext family
 is used. The library will choose the smallest representation among fixext1, fixext2, fixext4, fixext8, ext8, ext16, and
 ext32. The subtype is then added as a signed 8-bit integer.
 
@@ -315,7 +315,7 @@ If no subtype is given, the bin family (bin8, bin16, bin32) is used.
 
 ### UBJSON
 
-[UBJSON](binary_formats/ubjson.md) neither supports binary values nor subtypes and proposes to serialize binary values
+[UBJSON](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/ubjson.md) neither supports binary values nor subtypes and proposes to serialize binary values
 as an array of uint8 values. The library implements this translation.
 
 ??? example

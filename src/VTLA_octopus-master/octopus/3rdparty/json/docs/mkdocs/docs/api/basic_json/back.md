@@ -27,7 +27,7 @@ Strong guarantee: if an exception is thrown, there are no changes in the JSON va
 ## Exceptions
 
 If the JSON value is `#!json null`, exception
-[`invalid_iterator.214`](../../home/exceptions.md#jsonexceptioninvalid_iterator214) is thrown.
+[`invalid_iterator.214`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator214) is thrown.
 
 ## Complexity
 
@@ -57,7 +57,7 @@ Constant.
 
 ## See also
 
-- [front](front.md) to access the first element
+- [front](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/front.md) to access the first element
 
 ## Version history
 

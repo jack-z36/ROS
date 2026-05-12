@@ -16,11 +16,11 @@ enum class value_t : std::uint8_t {
 ```
 
 This enumeration collects the different JSON types. It is internally used to distinguish the stored values, and the
-functions [`is_null`](is_null.md), [`is_object`](is_object.md), [`is_array`](is_array.md), [`is_string`](is_string.md),
-[`is_boolean`](is_boolean.md), [`is_number`](is_number.md) (with [`is_number_integer`](is_number_integer.md),
-[`is_number_unsigned`](is_number_unsigned.md), and [`is_number_float`](is_number_float.md)),
-[`is_discarded`](is_discarded.md), [`is_binary`](is_binary.md), [`is_primitive`](is_primitive.md), and
-[`is_structured`](is_structured.md) rely on it.
+functions [`is_null`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_null.md), [`is_object`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_object.md), [`is_array`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_array.md), [`is_string`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_string.md),
+[`is_boolean`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_boolean.md), [`is_number`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number.md) (with [`is_number_integer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_integer.md),
+[`is_number_unsigned`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_unsigned.md), and [`is_number_float`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_float.md)),
+[`is_discarded`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_discarded.md), [`is_binary`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_binary.md), [`is_primitive`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_primitive.md), and
+[`is_structured`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_structured.md) rely on it.
 
 ## Notes
 

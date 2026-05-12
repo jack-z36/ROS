@@ -53,8 +53,8 @@ ValueType value(const json_pointer& ptr,
 ## Template parameters
 
 `KeyType`
-:   A type for an object key other than [`json_pointer`](../json_pointer/index.md) that is comparable with
-    [`string_t`](string_t.md) using  [`object_comparator_t`](object_comparator_t.md).
+:   A type for an object key other than [`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) that is comparable with
+    [`string_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/string_t.md) using  [`object_comparator_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_comparator_t.md).
     This can also be a string view (C++17).
 `ValueType` 
 :   type compatible to JSON values, for instance `#!cpp int` for JSON integer numbers, `#!cpp bool` for JSON booleans,
@@ -86,15 +86,15 @@ changes to any JSON value.
 ## Exceptions
 
 1. The function can throw the following exceptions:
-    - Throws [`type_error.302`](../../home/exceptions.md#jsonexceptiontype_error302) if `default_value` does not match
+    - Throws [`type_error.302`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error302) if `default_value` does not match
       the type of the value at `key`
-    - Throws [`type_error.306`](../../home/exceptions.md#jsonexceptiontype_error306) if the JSON value is not an object;
+    - Throws [`type_error.306`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error306) if the JSON value is not an object;
       in that case, using `value()` with a key makes no sense.
 2. See 1.
 3. The function can throw the following exceptions:
-    - Throws [`type_error.302`](../../home/exceptions.md#jsonexceptiontype_error302) if `default_value` does not match
+    - Throws [`type_error.302`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error302) if `default_value` does not match
       the type of the value at `ptr`
-    - Throws [`type_error.306`](../../home/exceptions.md#jsonexceptiontype_error306) if the JSON value is not an object;
+    - Throws [`type_error.306`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error306) if the JSON value is not an object;
       in that case, using `value()` with a key makes no sense.
 
 ## Complexity
@@ -173,8 +173,8 @@ changes to any JSON value.
 
 ## See also
 
-- see [`at`](at.md) for access by reference with range checking
-- see [`operator[]`](operator%5B%5D.md) for unchecked access by reference
+- see [`at`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/at.md) for access by reference with range checking
+- see [`operator[]`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator[].md) for unchecked access by reference
 
 ## Version history
 

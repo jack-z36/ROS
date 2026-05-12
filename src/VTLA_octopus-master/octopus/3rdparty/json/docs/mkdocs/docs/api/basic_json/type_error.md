@@ -7,7 +7,7 @@ class type_error : public exception;
 This exception is thrown in case of a type error; that is, a library function is executed on a JSON value whose type
 does not match the expected semantics.
 
-Exceptions have ids 3xx (see [list of type errors](../../home/exceptions.md#type-errors)).
+Exceptions have ids 3xx (see [list of type errors](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#type-errors)).
 
 ```mermaid
 classDiagram
@@ -67,11 +67,11 @@ classDiagram
 
 ## See also
 
-- [List of type errors](../../home/exceptions.md#type-errors)
-- [`parse_error`](parse_error.md) for exceptions indicating a parse error
-- [`invalid_iterator`](invalid_iterator.md) for exceptions indicating errors with iterators
-- [`out_of_range`](out_of_range.md) for exceptions indicating access out of the defined range
-- [`other_error`](other_error.md) for exceptions indicating other library errors
+- [List of type errors](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#type-errors)
+- [`parse_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse_error.md) for exceptions indicating a parse error
+- [`invalid_iterator`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/invalid_iterator.md) for exceptions indicating errors with iterators
+- [`out_of_range`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/out_of_range.md) for exceptions indicating access out of the defined range
+- [`other_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/other_error.md) for exceptions indicating other library errors
 
 ## Version history
 

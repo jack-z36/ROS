@@ -6,19 +6,19 @@
 
 This macro enables position diagnostics for generated JSON objects.
 
-When enabled, two new member functions [`start_pos()`](../basic_json/start_pos.md) and
-[`end_pos()`](../basic_json/end_pos.md) are added to [`basic_json`](../basic_json/index.md) values. If the value was
-created by calling the[`parse`](../basic_json/parse.md) function, then these functions allow querying the byte positions
+When enabled, two new member functions [`start_pos()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/start_pos.md) and
+[`end_pos()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/end_pos.md) are added to [`basic_json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/index.md) values. If the value was
+created by calling the[`parse`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md) function, then these functions allow querying the byte positions
 of the value in the input it was parsed from. In case the value was constructed by other means, `std::string::npos` is
 returned.
 
-[`start_pos()`](../basic_json/start_pos.md) returns the position of the first character of a given value in the original
-JSON string, while [`end_pos()`](../basic_json/end_pos.md) returns the position of the character _following_ the last
+[`start_pos()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/start_pos.md) returns the position of the first character of a given value in the original
+JSON string, while [`end_pos()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/end_pos.md) returns the position of the character _following_ the last
 character. For objects and arrays, the first and last characters correspond to the opening or closing braces/brackets,
 respectively. For primitive values, the first and last character represents the opening and closing quotes (strings) or
 the first and last character of the field's numerical or predefined value (`true`, `false`, `null`), respectively.
 
-| JSON type | return value [`start_pos()`](../basic_json/start_pos.md) | return value [`end_pos()`](../basic_json/end_pos.md) |
+| JSON type | return value [`start_pos()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/start_pos.md) | return value [`end_pos()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/end_pos.md) |
 |-----------|----------------------------------------------------------|------------------------------------------------------|
 | object    | position of the opening `{`                              | position after the closing `}`                       |
 | array     | position of the opening `[`                              | position after the closing `]`                       |
@@ -27,7 +27,7 @@ the first and last character of the field's numerical or predefined value (`true
 | boolean   | position of `t` for `true` and `f` for `false`           | position after `e`                                   |
 | null      | position of `n`                                          | position after `l`                                   |
 
-Given the above, [`end_pos()`](../basic_json/end_pos.md)` - `[`start_pos()`](../basic_json/start_pos.md) for a JSON
+Given the above, [`end_pos()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/end_pos.md)` - `[`start_pos()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/start_pos.md) for a JSON
 value provides the length of the parsed JSON string for that value, including the opening or closing braces, brackets,
 or quotes.
 
@@ -111,8 +111,8 @@ When the macro is not defined, the library will define it to its default value.
 
 ## See also
 
-- [:simple-cmake: JSON_Diagnostic_Positions](../../integration/cmake.md#json_diagnostic_positions) - CMake option to control the macro
-- [JSON_DIAGNOSTICS](json_diagnostics.md) - macro to control extended diagnostics
+- [:simple-cmake: JSON_Diagnostic_Positions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/integration/cmake.md#json_diagnostic_positions) - CMake option to control the macro
+- [JSON_DIAGNOSTICS](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_diagnostics.md) - macro to control extended diagnostics
 
 ## Version history
 

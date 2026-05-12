@@ -6,8 +6,8 @@ using object_comparator_t = typename object_t::key_compare;
 using object_comparator_t = default_object_comparator_t;
 ```
 
-The comparator used by [`object_t`](object_t.md). Defined as `#!cpp typename object_t::key_compare` if available,
-and [`default_object_comparator_t`](default_object_comparator_t.md) otherwise.
+The comparator used by [`object_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_t.md). Defined as `#!cpp typename object_t::key_compare` if available,
+and [`default_object_comparator_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/default_object_comparator_t.md) otherwise.
 
 ## Examples
 

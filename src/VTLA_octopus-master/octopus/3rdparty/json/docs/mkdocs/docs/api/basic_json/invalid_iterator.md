@@ -6,7 +6,7 @@ class invalid_iterator : public exception;
 
 This exception is thrown if iterators passed to a library function do not match the expected semantics.
 
-Exceptions have ids 2xx (see [list of iterator errors](../../home/exceptions.md#iterator-errors)).
+Exceptions have ids 2xx (see [list of iterator errors](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#iterator-errors)).
 
 ```mermaid
 classDiagram
@@ -66,11 +66,11 @@ classDiagram
 
 ## See also
 
-- [List of iterator errors](../../home/exceptions.md#iterator-errors)
-- [`parse_error`](parse_error.md) for exceptions indicating a parse error
-- [`type_error`](type_error.md) for exceptions indicating executing a member function with a wrong type
-- [`out_of_range`](out_of_range.md) for exceptions indicating access out of the defined range
-- [`other_error`](other_error.md) for exceptions indicating other library errors
+- [List of iterator errors](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#iterator-errors)
+- [`parse_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse_error.md) for exceptions indicating a parse error
+- [`type_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/type_error.md) for exceptions indicating executing a member function with a wrong type
+- [`out_of_range`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/out_of_range.md) for exceptions indicating access out of the defined range
+- [`other_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/other_error.md) for exceptions indicating other library errors
 
 ## Version history
 

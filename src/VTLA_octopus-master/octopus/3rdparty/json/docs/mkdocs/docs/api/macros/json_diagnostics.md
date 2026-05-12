@@ -4,10 +4,10 @@
 #define JSON_DIAGNOSTICS /* value */
 ```
 
-This macro enables [extended diagnostics for exception messages](../../home/exceptions.md#extended-diagnostic-messages).
+This macro enables [extended diagnostics for exception messages](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#extended-diagnostic-messages).
 Possible values are `1` to enable or `0` to disable (default).
 
-When enabled, exception messages contain a [JSON Pointer](../json_pointer/json_pointer.md) to the JSON value that
+When enabled, exception messages contain a [JSON Pointer](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/json_pointer.md) to the JSON value that
 triggered the exception. Note that enabling this macro increases the size of every JSON value by one pointer and adds
 some runtime overhead.
 
@@ -85,8 +85,8 @@ When the macro is not defined, the library will define it to its default value.
 
 ## See also
 
-- [:simple-cmake: JSON_Diagnostics](../../integration/cmake.md#json_diagnostics) - CMake option to control the macro
-- [JSON_DIAGNOSTIC_POSITIONS](json_diagnostic_positions.md) - macro to access positions of elements
+- [:simple-cmake: JSON_Diagnostics](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/integration/cmake.md#json_diagnostics) - CMake option to control the macro
+- [JSON_DIAGNOSTIC_POSITIONS](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_diagnostic_positions.md) - macro to access positions of elements
 
 ## Version history
 

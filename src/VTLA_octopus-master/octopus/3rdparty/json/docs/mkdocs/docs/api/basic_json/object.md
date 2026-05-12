@@ -22,7 +22,7 @@ Strong guarantee: if an exception is thrown, there are no changes in the JSON va
 
 ## Exceptions
 
-Throws [`type_error.301`](../../home/exceptions.md#jsonexceptiontype_error301) if `init` is not a list of pairs whose
+Throws [`type_error.301`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error301) if `init` is not a list of pairs whose
 first elements are strings. In this case, no object can be created. When such a value is passed to
 `basic_json(initializer_list_t, bool, value_t)`, an array would have been created from the passed initializer list
 `init`. See the example below.
@@ -55,8 +55,8 @@ the initializer list constructor `basic_json(initializer_list_t, bool, value_t)`
 
 ## See also
 
-- [`basic_json(initializer_list_t)`](basic_json.md) - create a JSON value from an initializer list
-- [`array`](array.md) - create a JSON array value from an initializer list
+- [`basic_json(initializer_list_t)`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/basic_json.md) - create a JSON value from an initializer list
+- [`array`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/array.md) - create a JSON array value from an initializer list
 
 ## Version history
 

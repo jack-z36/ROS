@@ -41,8 +41,8 @@ void erase(const size_type idx);
 ## Template parameters
 
 `KeyType`
-:   A type for an object key other than [`json_pointer`](../json_pointer/index.md) that is comparable with
-    [`string_t`](string_t.md) using  [`object_comparator_t`](object_comparator_t.md).
+:   A type for an object key other than [`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) that is comparable with
+    [`string_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/string_t.md) using  [`object_comparator_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_comparator_t.md).
     This can also be a string view (C++17).
 
 ## Parameters
@@ -80,29 +80,29 @@ Strong exception safety: if an exception occurs, the original value stays intact
 ## Exceptions
 
 1. The function can throw the following exceptions:
-    - Throws [`type_error.307`](../../home/exceptions.md#jsonexceptiontype_error307) if called on a `null` value;
+    - Throws [`type_error.307`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error307) if called on a `null` value;
       example: `"cannot use erase() with null"`
-    - Throws [`invalid_iterator.202`](../../home/exceptions.md#jsonexceptioninvalid_iterator202) if called on an
+    - Throws [`invalid_iterator.202`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator202) if called on an
       iterator which does not belong to the current JSON value; example: `"iterator does not fit current value"`
-    - Throws [`invalid_iterator.205`](../../home/exceptions.md#jsonexceptioninvalid_iterator205) if called on a
+    - Throws [`invalid_iterator.205`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator205) if called on a
       primitive type with invalid iterator (i.e., any iterator which is not `begin()`); example: `"iterator out of
       range"`
 2. The function can throw the following exceptions:
-    - Throws [`type_error.307`](../../home/exceptions.md#jsonexceptiontype_error307) if called on a `null` value;
+    - Throws [`type_error.307`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error307) if called on a `null` value;
       example: `"cannot use erase() with null"`
-    - Throws [`invalid_iterator.203`](../../home/exceptions.md#jsonexceptioninvalid_iterator203) if called on iterators
+    - Throws [`invalid_iterator.203`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator203) if called on iterators
       which does not belong to the current JSON value; example: `"iterators do not fit current value"`
-    - Throws [`invalid_iterator.204`](../../home/exceptions.md#jsonexceptioninvalid_iterator204) if called on a
+    - Throws [`invalid_iterator.204`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator204) if called on a
       primitive type with invalid iterators (i.e., if `first != begin()` and `last != end()`); example: `"iterators out
       of range"`
 3. The function can throw the following exceptions:
-    - Throws [`type_error.307`](../../home/exceptions.md#jsonexceptiontype_error307) when called on a type other than
+    - Throws [`type_error.307`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error307) when called on a type other than
       JSON object; example: `"cannot use erase() with null"`
 4. See 3.
 5. The function can throw the following exceptions:
-    - Throws [`type_error.307`](../../home/exceptions.md#jsonexceptiontype_error307) when called on a type other than
+    - Throws [`type_error.307`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error307) when called on a type other than
       JSON object; example: `"cannot use erase() with null"`
-    - Throws [`out_of_range.401`](../../home/exceptions.md#jsonexceptionout_of_range401) when `idx >= size()`; example:
+    - Throws [`out_of_range.401`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range401) when `idx >= size()`; example:
       `"array index 17 is out of range"`
 
 ## Complexity

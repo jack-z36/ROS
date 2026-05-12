@@ -4,7 +4,7 @@
 #define JSON_ASSERT(x) /* value */
 ```
 
-This macro controls which code is executed for [runtime assertions](../../features/assertions.md) of the library.
+This macro controls which code is executed for [runtime assertions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/assertions.md) of the library.
 
 ## Parameters
 
@@ -24,8 +24,8 @@ Therefore, assertions can be switched off by defining `NDEBUG`.
 ## Notes
 
 - The library uses numerous assertions to guarantee invariants and to abort in case of otherwise undefined behavior
-  (e.g., when calling [operator[]](../basic_json/operator%5B%5D.md) with a missing object key on a `const` object). See
-  page [runtime assertions](../../features/assertions.md) for more information.
+  (e.g., when calling [operator[]](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator[].md) with a missing object key on a `const` object). See
+  page [runtime assertions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/assertions.md) for more information.
 - Defining the macro to code that does not call `std::abort` may leave the library in an undefined state.
 - The macro is undefined outside the library.
 
@@ -81,7 +81,7 @@ Therefore, assertions can be switched off by defining `NDEBUG`.
 
 ## See also
 
-- [Runtime Assertions](../../features/assertions.md) - overview documentation
+- [Runtime Assertions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/assertions.md) - overview documentation
 
 ## Version history
 

@@ -30,10 +30,10 @@ reference operator+=(initializer_list_t init);
 ## Iterator invalidation
 
 For all cases where an element is added to an **array**, a reallocation can happen, in which case all iterators (including
-the [`end()`](end.md) iterator) and all references to the elements are invalidated. Otherwise, only the
-[`end()`](end.md) iterator is invalidated.
+the [`end()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/end.md) iterator) and all references to the elements are invalidated. Otherwise, only the
+[`end()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/end.md) iterator is invalidated.
 
-For [`ordered_json`](../ordered_json.md), also adding an element to an **object** can yield a reallocation which again
+For [`ordered_json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/ordered_json.md), also adding an element to an **object** can yield a reallocation which again
 invalidates all iterators and all references.
 
 ## Parameters
@@ -51,7 +51,7 @@ invalidates all iterators and all references.
 ## Exceptions
 
 All functions can throw the following exception:
-  - Throws [`type_error.308`](../../home/exceptions.md#jsonexceptiontype_error308) when called on a type other than
+  - Throws [`type_error.308`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error308) when called on a type other than
     JSON array or null; example: `"cannot use operator+=() with number"`
 
 ## Complexity
@@ -114,8 +114,8 @@ interpreted as `object_t::value_type` or `std::initializer_list<basic_json>`, se
 
 ## See also
 
-- [emplace_back](emplace_back.md) add a value to an array
-- [push_back](push_back.md) add a value to an array/object
+- [emplace_back](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/emplace_back.md) add a value to an array
+- [push_back](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/push_back.md) add a value to an array/object
 
 ## Version history
 

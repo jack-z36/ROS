@@ -25,7 +25,7 @@ and `ensure_ascii` parameters.
     result consists of ASCII characters only.
 
 `error_handler` (in)
-:   how to react on decoding errors; there are three possible values (see [`error_handler_t`](error_handler_t.md):
+:   how to react on decoding errors; there are three possible values (see [`error_handler_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/error_handler_t.md):
     `strict` (throws and exception in case a decoding error occurs; default), `replace` (replace invalid UTF-8 sequences
     with U+FFFD), and `ignore` (ignore invalid UTF-8 sequences during serialization; all bytes are copied to the output
     unchanged)).
@@ -40,7 +40,7 @@ Strong guarantee: if an exception is thrown, there are no changes to any JSON va
 
 ## Exceptions
 
-Throws [`type_error.316`](../../home/exceptions.md#jsonexceptiontype_error316) if a string stored inside the JSON value
+Throws [`type_error.316`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error316) if a string stored inside the JSON value
 is not UTF-8 encoded and `error_handler` is set to `strict`
 
 ## Complexity

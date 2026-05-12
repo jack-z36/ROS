@@ -12,8 +12,8 @@ The complete default namespace name is derived as follows:
 - The root namespace is always `nlohmann`.
 - The inline namespace starts with `json_abi` and is followed by several optional ABI tags according to the value of
   these ABI-affecting macros, in order:
-    - [`JSON_DIAGNOSTICS`](../api/macros/json_diagnostics.md) defined non-zero appends `_diag`.
-    - [`JSON_USE_LEGACY_DISCARDED_VALUE_COMPARISON`](../api/macros/json_use_legacy_discarded_value_comparison.md)
+    - [`JSON_DIAGNOSTICS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_diagnostics.md) defined non-zero appends `_diag`.
+    - [`JSON_USE_LEGACY_DISCARDED_VALUE_COMPARISON`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_legacy_discarded_value_comparison.md)
       defined non-zero appends `_ldvcmp`.
 - The inline namespace ends with the suffix `_v` followed by the 3 components of the version number separated by
   underscores. To omit the version component, see [Disabling the version component](#disabling-the-version-component)
@@ -28,7 +28,7 @@ nlohmann::json_abi_diag_v3_11_2
 ## Purpose
 
 Several incompatibilities have been observed. Amongst the most common ones is linking code compiled with different
-definitions of [`JSON_DIAGNOSTICS`](../api/macros/json_diagnostics.md). This is illustrated in the diagram below.
+definitions of [`JSON_DIAGNOSTICS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_diagnostics.md). This is illustrated in the diagram below.
 
 ```mermaid
 graph
@@ -62,7 +62,7 @@ recommends that all parts of a codebase exchanging library types be built with t
 own risk**, disable the version component of the linline namespace, allowing different versions – but not
 configurations – to be used in cases where the linker would otherwise output undefined reference errors.
 
-To do so, define [`NLOHMANN_JSON_NAMESPACE_NO_VERSION`](../api/macros/nlohmann_json_namespace_no_version.md) to `1`.
+To do so, define [`NLOHMANN_JSON_NAMESPACE_NO_VERSION`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_namespace_no_version.md) to `1`.
 
 This applies to version 3.11.2 and above only; versions 3.11.0 and 3.11.1 can apply the technique described in the next
 section to emulate the effect of the `NLOHMANN_JSON_NAMESPACE_NO_VERSION` macro.
@@ -75,7 +75,7 @@ section to emulate the effect of the `NLOHMANN_JSON_NAMESPACE_NO_VERSION` macro.
 
 When interoperability with code using a pre-3.11.0 version of the library is required, users can, **at their own risk**
 restore the old namespace layout by redefining
-[`NLOHMANN_JSON_NAMESPACE_BEGIN, NLOHMANN_JSON_NAMESPACE_END`](../api/macros/nlohmann_json_namespace_begin.md) as
+[`NLOHMANN_JSON_NAMESPACE_BEGIN, NLOHMANN_JSON_NAMESPACE_END`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_namespace_begin.md) as
 follows:
 
 ```cpp

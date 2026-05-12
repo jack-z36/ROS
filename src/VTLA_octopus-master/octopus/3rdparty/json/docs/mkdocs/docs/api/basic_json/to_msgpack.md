@@ -15,7 +15,7 @@ serialization format that aims to be more compact than JSON itself, yet more eff
 1. Returns a byte vector containing the MessagePack serialization.
 2. Writes the MessagePack serialization to an output adapter.
 
-The exact mapping and its limitations are described on a [dedicated page](../../features/binary_formats/messagepack.md).
+The exact mapping and its limitations are described on a [dedicated page](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/messagepack.md).
 
 ## Parameters
 

@@ -19,7 +19,7 @@ function.
 
 ## Iterator invalidation
 
-For [`ordered_json`](../ordered_json.md), adding a value to an object can yield a reallocation, in which case all
+For [`ordered_json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/ordered_json.md), adding a value to an object can yield a reallocation, in which case all
 iterators (including the `end()` iterator) and all references to the elements are invalidated.
 
 ## Parameters
@@ -40,14 +40,14 @@ iterators (including the `end()` iterator) and all references to the elements ar
 ## Exceptions
 
 1. The function can throw the following exceptions:
-    - Throws [`type_error.312`](../../home/exceptions.md#jsonexceptiontype_error312) if called on JSON values other than
+    - Throws [`type_error.312`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error312) if called on JSON values other than
       objects; example: `"cannot use update() with string"`
 2. The function can throw the following exceptions:
-    - Throws [`type_error.312`](../../home/exceptions.md#jsonexceptiontype_error312) if called on JSON values other than
+    - Throws [`type_error.312`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error312) if called on JSON values other than
       objects; example: `"cannot use update() with string"`
-    - Throws [`invalid_iterator.202`](../../home/exceptions.md#jsonexceptioninvalid_iterator202) if called on an
+    - Throws [`invalid_iterator.202`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator202) if called on an
       iterator which does not belong to the current JSON value; example: `"iterator does not fit current value"`
-    - Throws [`invalid_iterator.210`](../../home/exceptions.md#jsonexceptioninvalid_iterator210) if `first` and `last`
+    - Throws [`invalid_iterator.210`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator210) if `first` and `last`
       do not belong to the same JSON value; example: `"iterators do not fit"`
 
 ## Complexity

@@ -18,7 +18,7 @@ Strong exception safety: if an exception occurs, the original value stays intact
 
 ## Exceptions
 
-Throws [`type_error.302`](../../home/exceptions.md#jsonexceptiontype_error302) if the value is not binary
+Throws [`type_error.302`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error302) if the value is not binary
 
 ## Complexity
 

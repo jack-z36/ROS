@@ -32,8 +32,8 @@ The macros are defined according to the current library version.
 
 ## See also
 
-- [meta](../basic_json/meta.md) - returns version information on the library
-- [JSON_SKIP_LIBRARY_VERSION_CHECK](json_skip_library_version_check.md) - skip library version check
+- [meta](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/meta.md) - returns version information on the library
+- [JSON_SKIP_LIBRARY_VERSION_CHECK](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_skip_library_version_check.md) - skip library version check
 
 ## Version history
 

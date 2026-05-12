@@ -6,7 +6,7 @@ json_pointer operator ""_json_pointer(const char8_t* s, std::size_t n);  // sinc
 ```
 
 This operator implements a user-defined string literal for JSON Pointers. It can be used by adding `#!cpp _json_pointer`
-to a string literal and returns a [`json_pointer`](json_pointer/index.md) object if no parse error occurred.
+to a string literal and returns a [`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) object if no parse error occurred.
 
 It is recommended to bring the operator into scope using any of the following lines:
 ```cpp
@@ -17,7 +17,7 @@ using namespace nlohmann::literals::json_literals;
 using namespace nlohmann;
 ```
 This is suggested to ease migration to the next major version release of the library. See
-[`JSON_USE_GLOBAL_UDLS`](macros/json_use_global_udls.md#notes) for details.
+[`JSON_USE_GLOBAL_UDLS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_global_udls.md#notes) for details.
 
 ## Parameters
 
@@ -29,11 +29,11 @@ This is suggested to ease migration to the next major version release of the lib
 
 ## Return value
 
-[`json_pointer`](json_pointer/index.md) value parsed from `s`
+[`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) value parsed from `s`
 
 ## Exceptions
 
-The function can throw anything that [`json_pointer::json_pointer`](json_pointer/index.md) would throw.
+The function can throw anything that [`json_pointer::json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) would throw.
 
 ## Complexity
 
@@ -57,7 +57,7 @@ Linear.
 
 ## See also
 
-- [json_pointer](json_pointer/index.md) - type to represent JSON Pointers
+- [json_pointer](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) - type to represent JSON Pointers
 
 ## Version history
 

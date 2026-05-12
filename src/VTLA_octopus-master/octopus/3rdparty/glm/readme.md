@@ -16,8 +16,8 @@ This library works perfectly with *[OpenGL](https://www.opengl.org)* but it also
 - [*CUDA*](https://developer.nvidia.com/about-cuda) 9.0 and higher (experimental)
 - Any C++17 compiler
 
-For more information about *GLM*, please have a look at the [manual](manual.md) and the [API reference documentation](http://glm.g-truc.net/0.9.9/api/modules.html).
-The source code and the documentation are licensed under either the [Happy Bunny License (Modified MIT) or the MIT License](manual.md#section0).
+For more information about *GLM*, please have a look at the [manual](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/manual.md) and the [API reference documentation](http://glm.g-truc.net/0.9.9/api/modules.html).
+The source code and the documentation are licensed under either the [Happy Bunny License (Modified MIT) or the MIT License](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/manual.md#section0).
 
 Thanks for contributing to the project by [submitting pull requests](https://github.com/g-truc/glm/pulls).
 
@@ -312,7 +312,7 @@ target_link_libraries(main PRIVATE glm::glm)
 - Added *GLM_GTX_vec_swizzle*, faster compile time swizzling then swizzle operator #558
 - Added *GLM_GTX_exterior_product* with a `vec2` `glm::cross` implementation #621
 - Added *GLM_GTX_matrix_factorisation* to factor matrices in various forms #654
-- Added [`GLM_ENABLE_EXPERIMENTAL`](manual.md#section7_4) to enable experimental features.
+- Added [`GLM_ENABLE_EXPERIMENTAL`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/manual.md#section7_4) to enable experimental features.
 - Added packing functions for integer vectors #639
 - Added conan packaging configuration #643 #641
 - Added `glm::quatLookAt` to *GLM_GTX_quaternion* #659

@@ -23,16 +23,16 @@ Strong guarantee: if an exception is thrown, there are no changes in the JSON va
 
 ## Exceptions
 
-- Throws [`parse_error.104`](../../home/exceptions.md#jsonexceptionparse_error104) if the JSON patch does not consist of
+- Throws [`parse_error.104`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error104) if the JSON patch does not consist of
   an array of objects.
-- Throws [`parse_error.105`](../../home/exceptions.md#jsonexceptionparse_error105) if the JSON patch is malformed (e.g.,
+- Throws [`parse_error.105`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error105) if the JSON patch is malformed (e.g.,
   mandatory attributes are missing); example: `"operation add must have member path"`.
-- Throws [`out_of_range.401`](../../home/exceptions.md#jsonexceptionout_of_range401) if an array index is out of range.
-- Throws [`out_of_range.403`](../../home/exceptions.md#jsonexceptionout_of_range403) if a JSON pointer inside the patch
+- Throws [`out_of_range.401`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range401) if an array index is out of range.
+- Throws [`out_of_range.403`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range403) if a JSON pointer inside the patch
   could not be resolved successfully in the current JSON value; example: `"key baz not found"`.
-- Throws [`out_of_range.405`](../../home/exceptions.md#jsonexceptionout_of_range405) if JSON pointer has no parent
+- Throws [`out_of_range.405`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range405) if JSON pointer has no parent
   ("add", "remove", "move")
-- Throws [`out_of_range.501`](../../home/exceptions.md#jsonexceptionother_error501) if "test" operation was
+- Throws [`out_of_range.501`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionother_error501) if "test" operation was
   unsuccessful.
 
 ## Complexity
@@ -65,8 +65,8 @@ is thrown. In any case, the original value is not changed: the patch is applied 
 
 - [RFC 6902 (JSON Patch)](https://tools.ietf.org/html/rfc6902)
 - [RFC 6901 (JSON Pointer)](https://tools.ietf.org/html/rfc6901)
-- [patch_inplace](patch_inplace.md) applies a JSON Patch without creating a copy of the document
-- [merge_patch](merge_patch.md) applies a JSON Merge Patch
+- [patch_inplace](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/patch_inplace.md) applies a JSON Patch without creating a copy of the document
+- [merge_patch](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/merge_patch.md) applies a JSON Merge Patch
 
 ## Version history
 

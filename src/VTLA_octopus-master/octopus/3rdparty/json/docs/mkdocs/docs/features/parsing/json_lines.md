@@ -16,8 +16,8 @@ The [JSON Lines](https://jsonlines.org) format is a text format of newline-delim
     {"name": "Deloise", "wins": [["three of a kind", "5♣"]]}
     ```
 
-JSON Lines input with more than one value is treated as invalid JSON by the [`parse`](../../api/basic_json/parse.md) or
-[`accept`](../../api/basic_json/accept.md) functions. To process it line by line, functions like
+JSON Lines input with more than one value is treated as invalid JSON by the [`parse`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md) or
+[`accept`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/accept.md) functions. To process it line by line, functions like
 [`std::getline`](https://en.cppreference.com/w/cpp/string/basic_string/getline) can be used:
 
 !!! example "Example: Parse JSON Text input line by line"

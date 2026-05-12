@@ -4,8 +4,8 @@
 void clear() noexcept;
 ```
 
-Clears the content of a JSON value and resets it to the default value as if [`basic_json(value_t)`](basic_json.md) would
-have been called with the current value type from [`type()`](type.md):
+Clears the content of a JSON value and resets it to the default value as if [`basic_json(value_t)`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/basic_json.md) would
+have been called with the current value type from [`type()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/type.md):
 
 | Value type | initial value        |
 |------------|----------------------|

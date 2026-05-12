@@ -117,7 +117,7 @@ As described [above](#parse-errors-reading-non-ascii-characters), the library as
 
     Is it possible to indicate a parse error without throwing an exception?
 
-Yes, see [Parsing and exceptions](../features/parsing/parse_exceptions.md).
+Yes, see [Parsing and exceptions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/parsing/parse_exceptions.md).
 
 
 ### Key name in exceptions
@@ -126,7 +126,7 @@ Yes, see [Parsing and exceptions](../features/parsing/parse_exceptions.md).
 
     Can I get the key of the object item that caused an exception?
 
-Yes, you can. Please define the symbol [`JSON_DIAGNOSTICS`](../api/macros/json_diagnostics.md) to get [extended diagnostics messages](exceptions.md#extended-diagnostic-messages).
+Yes, you can. Please define the symbol [`JSON_DIAGNOSTICS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_diagnostics.md) to get [extended diagnostics messages](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#extended-diagnostic-messages).
 
 
 ## Serialization issues
@@ -149,7 +149,7 @@ The library uses `std::numeric_limits<number_float_t>::digits10` (15 for IEEE `d
 
     The website https://float.exposed gives a good insight into the internal storage of floating-point numbers.
 
-See [this section](../features/types/number_handling.md#number-serialization) on the library's number handling for more information.
+See [this section](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/types/number_handling.md#number-serialization) on the library's number handling for more information.
 
 ## Compilation issues
 

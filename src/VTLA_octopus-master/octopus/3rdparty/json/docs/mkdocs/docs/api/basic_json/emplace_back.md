@@ -16,7 +16,7 @@ Creates a JSON value from the passed parameters `args` to the end of the JSON va
 ## Iterator invalidation
 
 By adding an element to the end of the array, a reallocation can happen, in which case all iterators (including the
-[`end()`](end.md) iterator) and all references to the elements are invalidated. Otherwise, only the [`end()`](end.md)
+[`end()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/end.md) iterator) and all references to the elements are invalidated. Otherwise, only the [`end()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/end.md)
 iterator is invalidated.
 
 ## Parameters
@@ -30,7 +30,7 @@ reference to the inserted element
 
 ## Exceptions
 
-Throws [`type_error.311`](../../home/exceptions.md#jsonexceptiontype_error311) when called on a type other than JSON
+Throws [`type_error.311`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error311) when called on a type other than JSON
 array or `#!json null`; example: `"cannot use emplace_back() with number"`
 
 ## Complexity
@@ -56,8 +56,8 @@ Amortized constant.
 
 ## See also
 
-- [operator+=](operator+=.md) add a value to an array/object
-- [push_back](push_back.md) add a value to an array/object
+- [operator+=](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator+=.md) add a value to an array/object
+- [push_back](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/push_back.md) add a value to an array/object
 
 ## Version history
 

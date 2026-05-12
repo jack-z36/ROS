@@ -28,7 +28,7 @@ Read from input and generate SAX events
     The value_type of the iterator must be an integral type with a size of 1, 2, or 4 bytes, which will be interpreted
     respectively as UTF-8, UTF-16, and UTF-32.
 
-The SAX event lister must follow the interface of [`json_sax`](../json_sax/index.md).
+The SAX event lister must follow the interface of [`json_sax`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_sax/index.md).
 
 ## Template parameters
 
@@ -58,7 +58,7 @@ The SAX event lister must follow the interface of [`json_sax`](../json_sax/index
 
 `format` (in)
 :    the format to parse (JSON, CBOR, MessagePack, or UBJSON) (optional, `input_format_t::json` by default), see
-     [`input_format_t`](input_format_t.md) for more information
+     [`input_format_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/input_format_t.md) for more information
 
 `strict` (in)
 :   whether the input has to be consumed completely (optional, `#!cpp true` by default)
@@ -87,12 +87,12 @@ Strong guarantee: if an exception is thrown, there are no changes in the JSON va
 
 ## Exceptions
 
-- Throws [`parse_error.101`](../../home/exceptions.md#jsonexceptionparse_error101) in case of an unexpected token, or
+- Throws [`parse_error.101`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error101) in case of an unexpected token, or
   empty input like a null `FILE*` or `char*` pointer.
-- Throws [`parse_error.102`](../../home/exceptions.md#jsonexceptionparse_error102) if `to_unicode` fails or surrogate
+- Throws [`parse_error.102`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error102) if `to_unicode` fails or surrogate
   error.
-- Throws [`parse_error.103`](../../home/exceptions.md#jsonexceptionparse_error103) if `to_unicode` fails.
-- Throws [`other_error.502`](../../home/exceptions.md#jsonexceptionother_error502) if `sax` is a null pointer.
+- Throws [`parse_error.103`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error103) if `to_unicode` fails.
+- Throws [`other_error.502`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionother_error502) if `sax` is a null pointer.
 
 ## Complexity
 

@@ -15,7 +15,7 @@ so-called document).
 1. Returns a byte vector containing the BSON serialization.
 2. Writes the BSON serialization to an output adapter.
 
-The exact mapping and its limitations are described on a [dedicated page](../../features/binary_formats/bson.md).
+The exact mapping and its limitations are described on a [dedicated page](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/bson.md).
 
 ## Parameters
 

@@ -27,7 +27,7 @@ JSON defines the syntax of numbers as follows:
 
 The following railroad diagram from [json.org](https://json.org) visualizes the number syntax:
 
-![Syntax for JSON numbers](../../images/json_syntax_number.png)
+![Syntax for JSON numbers](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/images/json_syntax_number.png)
 
 ### Number interoperability
 
@@ -58,7 +58,7 @@ This section describes how this library implements the above number specificatio
 
 ### Number storage
 
-In the default [`json`](../../api/json.md) type, numbers are stored as `#!c std::uint64_t`, `#!c std::int64_t`, and
+In the default [`json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json.md) type, numbers are stored as `#!c std::uint64_t`, `#!c std::int64_t`, and
 `#!c double`, respectively. Thereby, `#!c std::uint64_t` and `#!c std::int64_t` are used only if they can store the 
 number without loss of precision. If this is impossible (e.g., if the number is too large), the number is stored as
 `#!c double`.
@@ -84,7 +84,7 @@ number without loss of precision. If this is impossible (e.g., if the number is 
 - Numbers exceeding the limits of `#!c double` (i.e., numbers that after conversion via
 [`std::strtod`](https://en.cppreference.com/w/cpp/string/byte/strtof) are not satisfying
 [`std::isfinite`](https://en.cppreference.com/w/cpp/numeric/math/isfinite) such as `#!c 1E400`) will throw exception
-[`json.exception.out_of_range.406`](../../home/exceptions.md#jsonexceptionout_of_range406) during parsing.
+[`json.exception.out_of_range.406`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range406) during parsing.
 - Floating-point numbers are rounded to the next number representable as `double`. For instance
 `#!c 3.141592653589793238462643383279` is stored as [`0x400921fb54442d18`](https://float.exposed/0x400921fb54442d18).
 This is the same behavior as the code `#!c double x = 3.141592653589793238462643383279;`.
@@ -278,22 +278,22 @@ The rationale is twofold:
 As the example in [Number conversion](#number-conversion) shows, there are different functions to determine the type of
 the stored number:
 
-- [`is_number()`](../../api/basic_json/is_number.md) returns `#!c true` for any number type
-- [`is_number_integer()`](../../api/basic_json/is_number_integer.md) returns `#!c true` for signed and unsigned integers
-- [`is_number_unsigned()`](../../api/basic_json/is_number_unsigned.md) returns `#!c true` for unsigned integers only
-- [`is_number_float()`](../../api/basic_json/is_number_float.md) returns `#!c true` for floating-point numbers
-- [`type_name()`](../../api/basic_json/type_name.md) returns `#!c "number"` for any number type
-- [`type()`](../../api/basic_json/type.md) returns a different enumerator of
-  [`value_t`](../../api/basic_json/value_t.md) for all number types
+- [`is_number()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number.md) returns `#!c true` for any number type
+- [`is_number_integer()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_integer.md) returns `#!c true` for signed and unsigned integers
+- [`is_number_unsigned()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_unsigned.md) returns `#!c true` for unsigned integers only
+- [`is_number_float()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_float.md) returns `#!c true` for floating-point numbers
+- [`type_name()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/type_name.md) returns `#!c "number"` for any number type
+- [`type()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/type.md) returns a different enumerator of
+  [`value_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/value_t.md) for all number types
 
 | function                                                             | unsigned integer  | signed integer   | floating-point | string         |
 |----------------------------------------------------------------------|-------------------|------------------|----------------|----------------|
-| [`is_number()`](../../api/basic_json/is_number.md)                   | `#!c true`        | `#!c true`       | `#!c true`     | `#!c false`    |
-| [`is_number_integer()`](../../api/basic_json/is_number_integer.md)   | `#!c true`        | `#!c true`       | `#!c false`    | `#!c false`    |
-| [`is_number_unsigned()`](../../api/basic_json/is_number_unsigned.md) | `#!c true`        | `#!c false`      | `#!c false`    | `#!c false`    |
-| [`is_number_float()`](../../api/basic_json/is_number_float.md)       | `#!c false`       | `#!c false`      | `#!c true`     | `#!c false`    |
-| [`type_name()`](../../api/basic_json/type_name.md)                   | `#!c "number"`    | `#!c "number"`   | `#!c "number"` | `#!c "string"` |
-| [`type()`](../../api/basic_json/type.md)                             | `number_unsigned` | `number_integer` | `number_float` | `string`       |
+| [`is_number()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number.md)                   | `#!c true`        | `#!c true`       | `#!c true`     | `#!c false`    |
+| [`is_number_integer()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_integer.md)   | `#!c true`        | `#!c true`       | `#!c false`    | `#!c false`    |
+| [`is_number_unsigned()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_unsigned.md) | `#!c true`        | `#!c false`      | `#!c false`    | `#!c false`    |
+| [`is_number_float()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_float.md)       | `#!c false`       | `#!c false`      | `#!c true`     | `#!c false`    |
+| [`type_name()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/type_name.md)                   | `#!c "number"`    | `#!c "number"`   | `#!c "number"` | `#!c "string"` |
+| [`type()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/type.md)                             | `number_unsigned` | `number_integer` | `number_float` | `string`       |
 
 ### Template number types
 

@@ -12,7 +12,7 @@ function to use instead.
 #### Parsing
 
 - Function `friend std::istream& operator<<(basic_json&, std::istream&)` is deprecated since 3.0.0. Please use
-  [`friend std::istream&  operator>>(std::istream&, basic_json&)`](../api/operator_gtgt.md) instead.
+  [`friend std::istream&  operator>>(std::istream&, basic_json&)`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/operator_gtgt.md) instead.
   
     === "Deprecated"
     
@@ -30,10 +30,10 @@ function to use instead.
         ss >> j;
         ```
 
-- Passing iterator pairs or pointer/length pairs to parsing functions ([`parse`](../api/basic_json/parse.md),
-  [`accept`](../api/basic_json/accept.md), [`sax_parse`](../api/basic_json/sax_parse.md),
-  [`from_cbor`](../api/basic_json/from_cbor.md), [`from_msgpack`](../api/basic_json/from_msgpack.md),
-  [`from_ubjson`](../api/basic_json/from_ubjson.md), and [`from_bson`](../api/basic_json/from_bson.md) via initializer
+- Passing iterator pairs or pointer/length pairs to parsing functions ([`parse`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md),
+  [`accept`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/accept.md), [`sax_parse`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/sax_parse.md),
+  [`from_cbor`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/from_cbor.md), [`from_msgpack`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/from_msgpack.md),
+  [`from_ubjson`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/from_ubjson.md), and [`from_bson`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/from_bson.md) via initializer
   lists is deprecated since 3.8.0. Instead, pass two iterators; for instance, call `from_cbor(ptr, ptr+len)` instead of
   `from_cbor({ptr, len})`.
 
@@ -53,11 +53,11 @@ function to use instead.
 
 #### JSON Pointers
 
-- Comparing JSON Pointers with strings via [`operator==`](../api/json_pointer/operator_eq.md) and
-  [`operator!=`](../api/json_pointer/operator_ne.md) is deprecated since 3.11.2. To compare a
-  [`json_pointer`](../api/json_pointer/index.md) `p` with a string `s`, convert `s` to a `json_pointer` first and use
-  [`json_pointer::operator==`](../api/json_pointer/operator_eq.md) or
-  [`json_pointer::operator!=`](../api/json_pointer/operator_ne.md).
+- Comparing JSON Pointers with strings via [`operator==`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/operator_eq.md) and
+  [`operator!=`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/operator_ne.md) is deprecated since 3.11.2. To compare a
+  [`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) `p` with a string `s`, convert `s` to a `json_pointer` first and use
+  [`json_pointer::operator==`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/operator_eq.md) or
+  [`json_pointer::operator!=`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/operator_ne.md).
     
     === "Deprecated"
   
@@ -74,8 +74,8 @@ function to use instead.
         ```
 
 - The implicit conversion from JSON Pointers to string
-  ([`json_pointer::operator string_t`](../api/json_pointer/operator_string_t.md)) is deprecated since 3.11.0. Use
-  [`json_pointer::to_string`](../api/json_pointer/to_string.md) instead.
+  ([`json_pointer::operator string_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/operator_string_t.md)) is deprecated since 3.11.0. Use
+  [`json_pointer::to_string`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/to_string.md) instead.
   
     === "Deprecated"
   
@@ -92,7 +92,7 @@ function to use instead.
           ```
 
 - Passing a `basic_json` specialization as template parameter `RefStringType` to
-  [`json_pointer`](../api/json_pointer/index.md) is deprecated since 3.11.0. The string type can now be directly
+  [`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) is deprecated since 3.11.0. The string type can now be directly
   provided.
   
     === "Deprecated"
@@ -114,7 +114,7 @@ function to use instead.
 #### Miscellaneous functions
 
 - The function `iterator_wrapper` is deprecated since 3.1.0. Please use the member function
-  [`items`](../api/basic_json/items.md) instead.
+  [`items`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/items.md) instead.
   
     === "Deprecated"
 
@@ -135,7 +135,7 @@ function to use instead.
           ```
 
 - Function `friend std::ostream& operator>>(const basic_json&, std::ostream&)` is deprecated since 3.0.0. Please use
-  [`friend operator<<(std::ostream&, const basic_json&)`](../api/operator_ltlt.md) instead.
+  [`friend operator<<(std::ostream&, const basic_json&)`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/operator_ltlt.md) instead.
   
     === "Deprecated"
 
@@ -151,7 +151,7 @@ function to use instead.
 
 - The legacy comparison behavior for discarded values is deprecated since 3.11.0. It is already disabled by default and
   can still be enabled by defining
-  [`JSON_USE_LEGACY_DISCARDED_VALUE_COMPARISON`](../api/macros/json_use_legacy_discarded_value_comparison.md) to `1`.
+  [`JSON_USE_LEGACY_DISCARDED_VALUE_COMPARISON`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_legacy_discarded_value_comparison.md) to `1`.
   
     === "Deprecated"
 
@@ -168,13 +168,13 @@ function to use instead.
 
 ## Replace implicit conversions
 
-Implicit conversions via [`operator ValueType`](../api/basic_json/operator_ValueType.md) will be switched off by default
+Implicit conversions via [`operator ValueType`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator_ValueType.md) will be switched off by default
 in the next major release of the library.
 
 You can prepare existing code by already defining
-[`JSON_USE_IMPLICIT_CONVERSIONS`](../api/macros/json_use_implicit_conversions.md) to `0` and replace any implicit
-conversions with calls to [`get`](../api/basic_json/get.md), [`get_to`](../api/basic_json/get_to.md),
-[`get_ref`](../api/basic_json/get_ref.md), or [`get_ptr`](../api/basic_json/get_ptr.md).
+[`JSON_USE_IMPLICIT_CONVERSIONS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_implicit_conversions.md) to `0` and replace any implicit
+conversions with calls to [`get`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/get.md), [`get_to`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/get_to.md),
+[`get_ref`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/get_ref.md), or [`get_ptr`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/get_ptr.md).
 
 === "Deprecated"
 
@@ -199,13 +199,13 @@ conversions with calls to [`get`](../api/basic_json/get.md), [`get_to`](../api/b
       ```
 
 You can prepare existing code by already defining
-[`JSON_USE_IMPLICIT_CONVERSIONS`](../api/macros/json_use_implicit_conversions.md) to `0` and replace any implicit
-conversions with calls to [`get`](../api/basic_json/get.md).
+[`JSON_USE_IMPLICIT_CONVERSIONS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_implicit_conversions.md) to `0` and replace any implicit
+conversions with calls to [`get`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/get.md).
 
 ## Import namespace `literals` for UDLs
 
-The user-defined string literals [`operator""_json`](../api/operator_literal_json.md) and
-[`operator""_json_pointer`](../api/operator_literal_json_pointer.md) will be removed from the global namespace in the
+The user-defined string literals [`operator""_json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/operator_literal_json.md) and
+[`operator""_json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/operator_literal_json_pointer.md) will be removed from the global namespace in the
 next major release of the library.
 
 === "Deprecated"
@@ -221,15 +221,15 @@ next major release of the library.
       nlohmann::json j = "[1,2,3]"_json;
       ```
 
-To prepare existing code, define [`JSON_USE_GLOBAL_UDLS`](../api/macros/json_use_global_udls.md) to `0` and bring the
+To prepare existing code, define [`JSON_USE_GLOBAL_UDLS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_global_udls.md) to `0` and bring the
 string literals into scope where needed.
 
 ## Do not hard-code the complete library namespace
 
-The [`nlohmann` namespace](../features/namespace.md) contains a sub-namespace to avoid problems when different
+The [`nlohmann` namespace](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/namespace.md) contains a sub-namespace to avoid problems when different
 versions or configurations of the library are used in the same project. Always use `nlohmann` as namespace or, when the
 exact version and configuration is relevant, use macro
-[`NLOHMANN_JSON_NAMESPACE`](../api/macros/nlohmann_json_namespace.md) to denote the namespace.
+[`NLOHMANN_JSON_NAMESPACE`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_namespace.md) to denote the namespace.
 
 === "Dangerous"
 

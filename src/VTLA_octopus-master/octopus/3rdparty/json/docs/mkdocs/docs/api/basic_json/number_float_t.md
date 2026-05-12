@@ -14,7 +14,7 @@ The type used to store JSON numbers (floating-point).
 
 This description includes both integer and floating-point numbers. However, C++ allows more precise storage if it is
 known whether the number is a signed integer, an unsigned integer, or a floating-point number. Therefore, three different
-types, [`number_integer_t`](number_integer_t.md), [`number_unsigned_t`](number_unsigned_t.md) and `number_float_t` are
+types, [`number_integer_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/number_integer_t.md), [`number_unsigned_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/number_unsigned_t.md) and `number_float_t` are
 used.
 
 To store floating-point numbers in C++, a type is defined by the template parameter `NumberFloatType` which chooses the

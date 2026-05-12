@@ -1,8 +1,8 @@
-![Alt](./doc/manual/logo-mini.png "GLM Logo")
+![Alt](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/logo-mini.png "GLM Logo")
 
 # GLM 1.0.0 Manual
 
-![Alt](./doc/manual/g-truc.png "G-Truc Logo")
+![Alt](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/g-truc.png "G-Truc Logo")
 
 ---
 <div style="page-break-after: always;"> </div>
@@ -140,7 +140,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-![](./doc/manual/frontpage1.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/frontpage1.png)
 
 ### The MIT License
 
@@ -165,7 +165,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-![](./doc/manual/frontpage2.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/frontpage2.png)
 
 ---
 <div style="page-break-after: always;"> </div>
@@ -1530,39 +1530,39 @@ Define 2D, 3D and 4D procedural noise functions.
 
 `<glm/gtc/noise.hpp>` need to be included to use these features.
 
-![](./doc/manual/noise-simplex1.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/noise-simplex1.jpg)
 
 Figure 4.10.1: glm::simplex(glm::vec2(x / 16.f, y / 16.f));
 
-![](./doc/manual/noise-simplex2.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/noise-simplex2.jpg)
 
 Figure 4.10.2: glm::simplex(glm::vec3(x / 16.f, y / 16.f, 0.5f));
 
-![](./doc/manual/noise-simplex3.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/noise-simplex3.jpg)
 
 Figure 4.10.3: glm::simplex(glm::vec4(x / 16.f, y / 16.f, 0.5f, 0.5f));
 
-![](./doc/manual/noise-perlin1.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/noise-perlin1.jpg)
 
 Figure 4.10.4: glm::perlin(glm::vec2(x / 16.f, y / 16.f));
 
-![](./doc/manual/noise-perlin2.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/noise-perlin2.jpg)
 
 Figure 4.10.5: glm::perlin(glm::vec3(x / 16.f, y / 16.f, 0.5f));
 
-![](./doc/manual/noise-perlin3.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/noise-perlin3.jpg)
 
 Figure 4.10.6: glm::perlin(glm::vec4(x / 16.f, y / 16.f, 0.5f, 0.5f));
 
-![](./doc/manual/noise-perlin4.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/noise-perlin4.png)
 
 Figure 4.10.7: glm::perlin(glm::vec2(x / 16.f, y / 16.f), glm::vec2(2.0f));
 
-![](./doc/manual/noise-perlin5.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/noise-perlin5.png)
 
 Figure 4.10.8: glm::perlin(glm::vec3(x / 16.f, y / 16.f, 0.5f), glm::vec3(2.0f));
 
-![](./doc/manual/noise-perlin6.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/noise-perlin6.png)
 
 Figure 4.10.9: glm::perlin(glm::vec4(x / 16.f, y / 16.f, glm::vec2(0.5f)), glm::vec4(2.0f));
 
@@ -1584,27 +1584,27 @@ Probability distributions in up to four dimensions.
 
 `<glm/gtc/random.hpp>` need to be included to use these features.
 
-![](./doc/manual/random-linearrand.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/random-linearrand.png)
 
 Figure 4.13.1: glm::vec4(glm::linearRand(glm::vec2(-1), glm::vec2(1)), 0, 1);
 
-![](./doc/manual/random-circularrand.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/random-circularrand.png)
 
 Figure 4.13.2: glm::vec4(glm::circularRand(1.0f), 0, 1);
 
-![](./doc/manual/random-sphericalrand.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/random-sphericalrand.png)
 
 Figure 4.13.3: glm::vec4(glm::sphericalRand(1.0f), 1);
 
-![](./doc/manual/random-diskrand.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/random-diskrand.png)
 
 Figure 4.13.4: glm::vec4(glm::diskRand(1.0f), 0, 1);
 
-![](./doc/manual/random-ballrand.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/random-ballrand.png)
 
 Figure 4.13.5: glm::vec4(glm::ballRand(1.0f), 1);
 
-![](./doc/manual/random-gaussrand.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/random-gaussrand.png)
 
 Figure 4.13.6: glm::vec4(glm::gaussRand(glm::vec3(0), glm::vec3(1)), 1);
 
@@ -2337,9 +2337,9 @@ Beautifully hand-crafted levels bring the story of Leo to life in this epic adve
 
 “Whatever lies ahead, I must recover my fortune.” -Leopold
 
-![](./doc/manual/references-leosfortune.jpeg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-leosfortune.jpeg)
 
-![](./doc/manual/references-leosfortune2.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-leosfortune2.jpg)
 
 [***OpenGL 4.0 Shading Language Cookbook***](http://www.packtpub.com/opengl-4-0-shading-language-cookbook/book?tag=rk/opengl4-abr1/0811)
 
@@ -2351,19 +2351,19 @@ A set of recipes that demonstrates a wide of techniques for producing high-quali
 
 Simple, easy-to-follow examples with GLSL source code are provided, as well as a basic description of the theory behind each technique.
 
-![](./doc/manual/references-glsl4book.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-glsl4book.jpg)
 
 [***Outerra***](http://outerra.com/)
 
 A 3D planetary engine for seamless planet rendering from space down to the surface. Can use arbitrary resolution of elevation data, refining it to centimetre resolution using fractal algorithms.
 
-![](./doc/manual/references-outerra1.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-outerra1.jpg)
 
-![](./doc/manual/references-outerra2.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-outerra2.jpg)
 
-![](./doc/manual/references-outerra3.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-outerra3.jpg)
 
-![](./doc/manual/references-outerra4.jpg)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-outerra4.jpg)
 
 [***Falcor***](https://github.com/NVIDIA/Falcor)
 
@@ -2377,7 +2377,7 @@ Cinder is a C++ library for programming with aesthetic intent - the sort of dev
 
 Cinder is production-proven, powerful enough to be the primary tool for professionals, but still suitable for learning and experimentation. Cinder is released under the [2-Clause BSD License](http://opensource.org/licenses/BSD-2-Clause).
 
-![](./doc/manual/references-cinder.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-cinder.png)
 
 [***opencloth***](https://github.com/mmmovania/opencloth/)
 
@@ -2385,9 +2385,9 @@ A collection of source codes implementing cloth simulation algorithms in OpenGL.
 
 Simple, easy-to-follow examples with GLSL source code, as well as a basic description of the theory behind each technique.
 
-![](./doc/manual/references-opencloth1.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-opencloth1.png)
 
-![](./doc/manual/references-opencloth3.png)
+![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/glm/doc/manual/references-opencloth3.png)
 
 [***LibreOffice***](https://www.libreoffice.org/)
 

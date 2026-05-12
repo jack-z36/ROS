@@ -7,7 +7,7 @@ MCAP is a logging library and file format. It is commonly used in robotics appli
 ## Documentation
 
 - [File format specification](https://mcap.dev/spec)
-  - [Kaitai Struct definition](./website/docs/spec/mcap.ksy)
+  - [Kaitai Struct definition](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/mcap/website/docs/spec/mcap.ksy)
 - [Motivation](https://mcap.dev/files/evaluation.pdf)
 - [Support Matrix](https://mcap.dev/reference)
 
@@ -32,7 +32,7 @@ Install with `brew install mcap` or download the latest version directly from th
 
 ## Contributing
 
-See [AGENTS.md](./AGENTS.md) for build/test/lint commands, prerequisites, and development setup for each language. For releasing packages, see [RELEASING.md](./RELEASING.md).
+See [AGENTS.md](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/mcap/AGENTS.md) for build/test/lint commands, prerequisites, and development setup for each language. For releasing packages, see [RELEASING.md](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/mcap/RELEASING.md).
 
 ## Stay in touch
 

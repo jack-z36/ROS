@@ -491,4 +491,4 @@ This design requirement is fundamental to preserve the portability of the code b
 
 ## License
 By contributing to Zstandard, you agree that your contributions will be licensed
-under both the [LICENSE](LICENSE) file and the [COPYING](COPYING) file in the root directory of this source tree.
+under both the [LICENSE](00-to%20do/oh-my-opencode/LICENSE.md) file and the [COPYING](COPYING) file in the root directory of this source tree.

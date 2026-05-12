@@ -16,7 +16,7 @@ JSON class into byte-sized characters during deserialization.
 
 `StringType`
 :   the container to store strings (e.g., `std::string`). Note this container is used for keys/names in objects, see
-    [object_t](object_t.md).
+    [object_t](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_t.md).
 
 ## Notes
 

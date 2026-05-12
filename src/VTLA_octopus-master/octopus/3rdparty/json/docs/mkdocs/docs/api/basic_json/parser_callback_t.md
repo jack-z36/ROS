@@ -7,7 +7,7 @@ using parser_callback_t =
 ```
 
 With a parser callback function, the result of parsing a JSON text can be influenced. When passed to
-[`parse`](parse.md), it is called on certain events (passed as [`parse_event_t`](parse_event_t.md) via parameter
+[`parse`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md), it is called on certain events (passed as [`parse_event_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse_event_t.md) via parameter
 `event`) with a set recursion depth `depth` and context JSON value `parsed`. The return value of the callback function
 is a boolean indicating whether the element that emitted the callback shall be kept or not.
 
@@ -23,7 +23,7 @@ table describes the values of the parameters `depth`, `event`, and `parsed`.
 | `parse_event_t::array_end`    | the parser read `]` and finished processing a JSON array  | depth of the parent of the JSON array     | the parsed JSON array            |
 | `parse_event_t::value`        | the parser finished reading a JSON value                  | depth of the value                        | the parsed JSON value            |
 
-![Example when certain parse events are triggered](../../images/callback_events.png)
+![Example when certain parse events are triggered](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/images/callback_events.png)
 
 Discarding a value (i.e., returning `#!cpp false`) has different effects depending on the context in which function was
 called:
@@ -39,7 +39,7 @@ called:
 :   the depth of the recursion during parsing
 
 `event` (in)
-:   an event of type [`parse_event_t`](parse_event_t.md) indicating the context in
+:   an event of type [`parse_event_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse_event_t.md) indicating the context in
     the callback function has been called
 
 `parsed` (in, out)

@@ -14,7 +14,7 @@ The type used to store JSON numbers (unsigned).
 
 This description includes both integer and floating-point numbers. However, C++ allows more precise storage if it is
 known whether the number is a signed integer, an unsigned integer, or a floating-point number. Therefore, three different
-types, [`number_integer_t`](number_integer_t.md), `number_unsigned_t` and [`number_float_t`](number_float_t.md) are
+types, [`number_integer_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/number_integer_t.md), `number_unsigned_t` and [`number_float_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/number_float_t.md) are
 used.
 
 To store unsigned integer numbers in C++, a type is defined by the template parameter `NumberUnsignedType` which chooses
@@ -42,7 +42,7 @@ With the default values for `NumberUnsignedType` (`std::uint64_t`), the default 
 When the default type is used, the maximal integer number that can be stored is `18446744073709551615` (UINT64_MAX) and
 the minimal integer number that can be stored is `0`. Integer numbers that are out of range will yield over/underflow
 when used in a constructor. During deserialization, too large or small integer numbers will automatically be stored
-as [`number_integer_t`](number_integer_t.md) or [`number_float_t`](number_float_t.md).
+as [`number_integer_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/number_integer_t.md) or [`number_float_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/number_float_t.md).
 
 [RFC 8259](https://tools.ietf.org/html/rfc8259) further states:
 > Note that when such software is used, numbers that are integers and are in the range \f$[-2^{53}+1, 2^{53}-1]\f$ are

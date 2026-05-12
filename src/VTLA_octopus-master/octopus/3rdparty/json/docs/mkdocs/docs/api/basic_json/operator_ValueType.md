@@ -6,7 +6,7 @@ JSON_EXPLICIT operator ValueType() const;
 ```
 
 Implicit type conversion between the JSON value and a compatible value. The call is realized by calling
-[`get()`](get.md). See [Notes](#notes) for the meaning of `JSON_EXPLICIT`.
+[`get()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/get.md). See [Notes](#notes) for the meaning of `JSON_EXPLICIT`.
 
 ## Template parameters
 
@@ -78,5 +78,5 @@ Linear in the size of the JSON value.
 ## Version history
 
 - Since version 1.0.0.
-- Macros `JSON_EXPLICIT`/[`JSON_USE_IMPLICIT_CONVERSIONS`](../macros/json_use_implicit_conversions.md) added
+- Macros `JSON_EXPLICIT`/[`JSON_USE_IMPLICIT_CONVERSIONS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_implicit_conversions.md) added
   in version 3.9.0.

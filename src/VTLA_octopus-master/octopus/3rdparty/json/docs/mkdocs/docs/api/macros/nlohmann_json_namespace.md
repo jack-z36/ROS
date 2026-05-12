@@ -9,7 +9,7 @@ This macro evaluates to the full name of the `nlohmann` namespace.
 ## Default definition
 
 The default value consists of the root namespace (`nlohmann`) and an inline ABI namespace. See
-[`nlohmann` Namespace](../../features/namespace.md#structure) for details.
+[`nlohmann` Namespace](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/namespace.md#structure) for details.
 
 When the macro is not defined, the library will define it to its default value. Overriding this value has no effect on
 the library.
@@ -33,8 +33,8 @@ the library.
 
 ## See also
 
-- [`NLOHMANN_JSON_NAMESPACE_BEGIN, NLOHMANN_JSON_NAMESPACE_END`](nlohmann_json_namespace_begin.md)
-- [`NLOHMANN_JSON_NAMESPACE_NO_VERSION`](nlohmann_json_namespace_no_version.md)
+- [`NLOHMANN_JSON_NAMESPACE_BEGIN, NLOHMANN_JSON_NAMESPACE_END`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_namespace_begin.md)
+- [`NLOHMANN_JSON_NAMESPACE_NO_VERSION`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_namespace_no_version.md)
 
 ## Version history
 

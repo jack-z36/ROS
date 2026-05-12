@@ -9,12 +9,12 @@
 These macros can be used to simplify the serialization/deserialization of types if you want to use a JSON object as
 serialization and want to use the member variable names as object keys in that object. The macro is to be defined
 **outside** the class/struct to create code for, but **inside** its namespace. Unlike
-[`NLOHMANN_DEFINE_TYPE_INTRUSIVE`](nlohmann_define_type_intrusive.md), it **cannot** access private members. The first
+[`NLOHMANN_DEFINE_TYPE_INTRUSIVE`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_define_type_intrusive.md), it **cannot** access private members. The first
 parameter is the name of the class/struct, and all remaining parameters name the members.
 
-1. Will use [`at`](../basic_json/at.md) during deserialization and will throw
-   [`out_of_range.403`](../../home/exceptions.md#jsonexceptionout_of_range403) if a key is missing in the JSON object.
-2. Will use [`value`](../basic_json/value.md) during deserialization and fall back to the default value for the
+1. Will use [`at`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/at.md) during deserialization and will throw
+   [`out_of_range.403`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range403) if a key is missing in the JSON object.
+2. Will use [`value`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/value.md) during deserialization and fall back to the default value for the
    respective type of the member variable if a key in the JSON object is missing. The generated `from_json()` function
    default constructs an object and uses its values as the defaults when calling the `value` function.
 3. Only defines the serialization. Useful in cases when the type does not have a default constructor and only serialization is required.
@@ -154,15 +154,11 @@ See the examples below for the concrete generated code.
 
 ## See also
 
-- [NLOHMANN_DEFINE_TYPE_INTRUSIVE, NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT,
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE_ONLY_SERIALIZE](nlohmann_define_type_intrusive.md)
+- [](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_define_type_intrusive.md)
   for a similar macro that can be defined _inside_ the type.
-- [NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE, NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE_WITH_DEFAULT,
-  NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE_ONLY_SERIALIZE, NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE,
-  NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE_WITH_DEFAULT,
-  NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE_ONLY_SERIALIZE](nlohmann_define_derived_type.md) for similar macros for
+- [](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_define_derived_type.md) for similar macros for
   derived types
-- [Arbitrary Type Conversions](../../features/arbitrary_types.md) for an overview.
+- [Arbitrary Type Conversions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/arbitrary_types.md) for an overview.
 
 ## Version history
 

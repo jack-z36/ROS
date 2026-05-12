@@ -6,9 +6,9 @@ constexpr bool is_discarded() const noexcept;
 
 This function returns `#!cpp true` for a JSON value if either:
 
-- the value was discarded during parsing with a callback function (see [`parser_callback_t`](parser_callback_t.md)), or
+- the value was discarded during parsing with a callback function (see [`parser_callback_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parser_callback_t.md)), or
 - the value is the result of parsing invalid JSON with parameter `allow_exceptions` set to `#!cpp false`; see
-  [`parse`](parse.md) for more information.
+  [`parse`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md) for more information.
 
 ## Return value
 

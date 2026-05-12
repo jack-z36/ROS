@@ -37,9 +37,9 @@ Constant.
 
 ## See also
 
-- [is_number()](is_number.md) check if the value is a number
-- [is_number_unsigned()](is_number_unsigned.md) check if the value is an unsigned integer number
-- [is_number_float()](is_number_float.md) check if the value is a floating-point number
+- [is_number()](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number.md) check if the value is a number
+- [is_number_unsigned()](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_unsigned.md) check if the value is an unsigned integer number
+- [is_number_float()](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_number_float.md) check if the value is a floating-point number
 
 ## Version history
 

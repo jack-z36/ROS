@@ -30,17 +30,17 @@ const_reference operator[](const json_pointer& ptr) const;
 ## Template parameters
 
 `KeyType`
-:   A type for an object key other than [`json_pointer`](../json_pointer/index.md) that is comparable with
-    [`string_t`](string_t.md) using  [`object_comparator_t`](object_comparator_t.md).
+:   A type for an object key other than [`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) that is comparable with
+    [`string_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/string_t.md) using  [`object_comparator_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_comparator_t.md).
     This can also be a string view (C++17).
 
 ## Iterator invalidation
 
 For the non-const versions 1. and 4., when passing an **array** index that does not exist, it is created and filled with
 a `#!json null` value before a reference to it is returned. For this, a reallocation can happen, in which case all
-iterators (including the [`end()`](end.md) iterator) and all references to the elements are invalidated.
+iterators (including the [`end()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/end.md) iterator) and all references to the elements are invalidated.
 
-For [`ordered_json`](../ordered_json.md), also passing an **object key** to the non-const versions 2., 3., and 4., a
+For [`ordered_json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/ordered_json.md), also passing an **object key** to the non-const versions 2., 3., and 4., a
 reallocation can happen which again invalidates all iterators and all references.
 
 ## Parameters
@@ -68,20 +68,20 @@ Strong exception safety: if an exception occurs, the original value stays intact
 ## Exceptions
 
 1. The function can throw the following exceptions:
-    - Throws [`type_error.305`](../../home/exceptions.md#jsonexceptiontype_error305) if the JSON value is not an array
+    - Throws [`type_error.305`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error305) if the JSON value is not an array
       or null; in that case, using the `[]` operator with an index makes no sense.
 2. The function can throw the following exceptions:
-    - Throws [`type_error.305`](../../home/exceptions.md#jsonexceptiontype_error305) if the JSON value is not an object
+    - Throws [`type_error.305`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error305) if the JSON value is not an object
       or null; in that case, using the `[]` operator with a key makes no sense.
 3. See 2.
 4. The function can throw the following exceptions:
-    - Throws [`parse_error.106`](../../home/exceptions.md#jsonexceptionparse_error106) if an array index in the passed
+    - Throws [`parse_error.106`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error106) if an array index in the passed
       JSON pointer `ptr` begins with '0'.
-    - Throws [`parse_error.109`](../../home/exceptions.md#jsonexceptionparse_error109) if an array index in the passed
+    - Throws [`parse_error.109`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error109) if an array index in the passed
       JSON pointer `ptr` is not a number.
-    - Throws [`out_of_range.402`](../../home/exceptions.md#jsonexceptionout_of_range402) if the array index '-' is used
+    - Throws [`out_of_range.402`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range402) if the array index '-' is used
       in the passed JSON pointer `ptr` for the const version.
-    - Throws [`out_of_range.404`](../../home/exceptions.md#jsonexceptionout_of_range404) if the JSON pointer `ptr` can
+    - Throws [`out_of_range.404`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range404) if the JSON pointer `ptr` can
       not be resolved.
 
 ## Complexity
@@ -236,10 +236,10 @@ Strong exception safety: if an exception occurs, the original value stays intact
 
 ## See also
 
-- documentation on [unchecked access](../../features/element_access/unchecked_access.md)
-- documentation on [runtime assertions](../../features/assertions.md)
-- see [`at`](at.md) for access by reference with range checking
-- see [`value`](value.md) for access with default value
+- documentation on [unchecked access](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/element_access/unchecked_access.md)
+- documentation on [runtime assertions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/assertions.md)
+- see [`at`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/at.md) for access by reference with range checking
+- see [`value`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/value.md) for access with default value
 
 ## Version history
 

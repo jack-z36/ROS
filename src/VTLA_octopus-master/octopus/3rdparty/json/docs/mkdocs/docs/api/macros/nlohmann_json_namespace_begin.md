@@ -6,7 +6,7 @@
 ```
 
 These macros can be used to open and close the `nlohmann` namespace. See
-[`nlohmann` Namespace](../../features/namespace.md#structure) for details.
+[`nlohmann` Namespace](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/namespace.md#structure) for details.
 
 1. Opens the namespace.
 2. Closes the namespace.
@@ -14,7 +14,7 @@ These macros can be used to open and close the `nlohmann` namespace. See
 ## Default definition
 
 The default definitions open and close the `nlohmann` namespace. The precise definition of
-[`NLOHMANN_JSON_NAMESPACE_BEGIN`] varies as described [here](../../features/namespace.md#structure).
+[`NLOHMANN_JSON_NAMESPACE_BEGIN`] varies as described [here](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/namespace.md#structure).
 
 1. Default definition of `NLOHMANN_JSON_NAMESPACE_BEGIN`:
 
@@ -52,9 +52,9 @@ When these macros are not defined, the library will define them to their default
 
 ## See also
 
-- [`nlohmann` Namespace](../../features/namespace.md)
-- [NLOHMANN_JSON_NAMESPACE](nlohmann_json_namespace.md)
-- [`NLOHMANN_JSON_NAMESPACE_NO_VERSION`](nlohmann_json_namespace_no_version.md)
+- [`nlohmann` Namespace](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/namespace.md)
+- [NLOHMANN_JSON_NAMESPACE](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_namespace.md)
+- [`NLOHMANN_JSON_NAMESPACE_NO_VERSION`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_json_namespace_no_version.md)
 
 ## Version history
 

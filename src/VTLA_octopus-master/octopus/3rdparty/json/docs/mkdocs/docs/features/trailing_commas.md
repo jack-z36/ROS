@@ -1,8 +1,8 @@
 # Trailing Commas
 
-Like [comments](comments.md), this library does not support trailing commas in arrays and objects *by default*.
+Like [comments](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/comments.md), this library does not support trailing commas in arrays and objects *by default*.
 
-You can set parameter `ignore_trailing_commas` to `#!cpp true` in the [`parse`](../api/basic_json/parse.md) function to allow trailing commas in arrays and objects. Note that a single comma as the only content of the array or object (`[,]` or `{,}`) is not allowed, and multiple trailing commas (`[1,,]`) are not allowed either.
+You can set parameter `ignore_trailing_commas` to `#!cpp true` in the [`parse`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md) function to allow trailing commas in arrays and objects. Note that a single comma as the only content of the array or object (`[,]` or `{,}`) is not allowed, and multiple trailing commas (`[1,,]`) are not allowed either.
 
 This library does not add trailing commas when serializing JSON data.
 

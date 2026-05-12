@@ -76,7 +76,7 @@ If you're starting from scratch, you can write code that allows you to **write y
 
 ### Guides
 
-- [Python](../python/ros2.md)
+- [Python](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/mcap/website/docs/guides/python/ros2.md)
 
 ### Examples
 

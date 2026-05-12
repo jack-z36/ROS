@@ -20,9 +20,9 @@ the stream `i`
 
 ## Exceptions
 
-- Throws [`parse_error.101`](../home/exceptions.md#jsonexceptionparse_error101) in case of an unexpected token.
-- Throws [`parse_error.102`](../home/exceptions.md#jsonexceptionparse_error102) if `to_unicode` fails or surrogate error.
-- Throws [`parse_error.103`](../home/exceptions.md#jsonexceptionparse_error103) if `to_unicode` fails.
+- Throws [`parse_error.101`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error101) in case of an unexpected token.
+- Throws [`parse_error.102`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error102) if `to_unicode` fails or surrogate error.
+- Throws [`parse_error.103`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error103) if `to_unicode` fails.
 
 ## Complexity
 
@@ -56,8 +56,8 @@ A UTF-8 byte order mark is silently ignored.
 
 ## See also
 
-- [accept](basic_json/accept.md) - check if the input is valid JSON
-- [parse](basic_json/parse.md) - deserialize from a compatible input
+- [accept](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/accept.md) - check if the input is valid JSON
+- [parse](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md) - deserialize from a compatible input
 
 ## Version history
 

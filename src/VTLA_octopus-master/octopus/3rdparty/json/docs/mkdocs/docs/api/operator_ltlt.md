@@ -7,7 +7,7 @@ std::ostream& operator<<(std::ostream& o, const json_pointer& ptr);  // (2)
 ```
 
 1. Serialize the given JSON value `j` to the output stream `o`. The JSON value will be serialized using the
-   [`dump`](basic_json/dump.md) member function.
+   [`dump`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/dump.md) member function.
     - The indentation of the output can be controlled with the member variable `width` of the output stream `o`. For
       instance, using the manipulator `std::setw(4)` on `o` sets the indentation level to `4` and the serialization
       result is the same as calling `dump(4)`.
@@ -15,7 +15,7 @@ std::ostream& operator<<(std::ostream& o, const json_pointer& ptr);  // (2)
       For instance, the manipulator `std::setfill('\\t')` sets indentation to use a tab character rather than the
       default space character.
 2. Write a string representation of the given JSON pointer `ptr` to the output stream `o`. The string representation is
-   obtained using the [`to_string`](json_pointer/to_string.md) member function.
+   obtained using the [`to_string`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/to_string.md) member function.
 
 ## Parameters
 
@@ -34,8 +34,8 @@ the stream `o`
 
 ## Exceptions
 
-1. Throws [`type_error.316`](../home/exceptions.md#jsonexceptiontype_error316) if a string stored inside the JSON
-   value is not UTF-8 encoded. Note that unlike the [`dump`](basic_json/dump.md) member functions, no `error_handler`
+1. Throws [`type_error.316`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error316) if a string stored inside the JSON
+   value is not UTF-8 encoded. Note that unlike the [`dump`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/dump.md) member functions, no `error_handler`
    can be set.
 2. None.
 

@@ -38,7 +38,7 @@ available for MSVC if exceptions are disabled, see [#2824](https://github.com/nl
 
 ## See also
 
-- [Switch off exceptions](../../home/exceptions.md#switch-off-exceptions) for more information how to switch off exceptions
+- [Switch off exceptions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#switch-off-exceptions) for more information how to switch off exceptions
 
 ## Version history
 

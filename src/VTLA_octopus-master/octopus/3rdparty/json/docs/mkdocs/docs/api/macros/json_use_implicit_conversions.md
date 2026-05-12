@@ -5,7 +5,7 @@
 ```
 
 When defined to `0`, implicit conversions are switched off. By default, implicit conversions are switched on. The
-value directly affects [`operator ValueType`](../basic_json/operator_ValueType.md).
+value directly affects [`operator ValueType`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator_ValueType.md).
 
 ## Default definition
 
@@ -51,9 +51,9 @@ By default, implicit conversions are enabled.
 
 ## See also
 
-- [**operator ValueType**](../basic_json/operator_ValueType.md) - get a value (implicit)
-- [**get**](../basic_json/get.md) - get a value (explicit)
-- [:simple-cmake: JSON_ImplicitConversions](../../integration/cmake.md#json_implicitconversions) - CMake option to control the macro
+- [**operator ValueType**](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator_ValueType.md) - get a value (implicit)
+- [**get**](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/get.md) - get a value (explicit)
+- [:simple-cmake: JSON_ImplicitConversions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/integration/cmake.md#json_implicitconversions) - CMake option to control the macro
 
 ## Version history
 

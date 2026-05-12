@@ -5,7 +5,7 @@ targeting real-time compression scenarios at zlib-level and better compression r
 It's backed by a very fast entropy stage, provided by [Huff0 and FSE library](https://github.com/Cyan4973/FiniteStateEntropy).
 
 Zstandard's format is stable and documented in [RFC8878](https://datatracker.ietf.org/doc/html/rfc8878). Multiple independent implementations are already available.
-This repository represents the reference implementation, provided as an open-source dual [BSD](LICENSE) OR [GPLv2](COPYING) licensed **C** library,
+This repository represents the reference implementation, provided as an open-source dual [BSD](00-to%20do/oh-my-opencode/LICENSE.md) OR [GPLv2](COPYING) licensed **C** library,
 and a command line utility producing and decoding `.zst`, `.gz`, `.xz` and `.lz4` files.
 Should your project require another programming language,
 a list of known ports and bindings is provided on [Zstandard homepage](https://facebook.github.io/zstd/#other-languages).
@@ -73,10 +73,10 @@ on the [Silesia compression corpus].
 
 Compression Speed vs Ratio | Decompression Speed
 ---------------------------|--------------------
-![Compression Speed vs Ratio](doc/images/CSpeed2.png "Compression Speed vs Ratio") | ![Decompression Speed](doc/images/DSpeed3.png "Decompression Speed")
+![Compression Speed vs Ratio](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/doc/images/CSpeed2.png "Compression Speed vs Ratio") | ![Decompression Speed](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/doc/images/DSpeed3.png "Decompression Speed")
 
 A few other algorithms can produce higher compression ratios at slower speeds, falling outside of the graph.
-For a larger picture including slow modes, [click on this link](doc/images/DCspeed5.png).
+For a larger picture including slow modes, [click on this link](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/doc/images/DCspeed5.png).
 
 
 ## The case for Small Data compression
@@ -94,7 +94,7 @@ It consists of roughly 10K records weighing about 1KB each.
 
 Compression Ratio | Compression Speed | Decompression Speed
 ------------------|-------------------|--------------------
-![Compression Ratio](doc/images/dict-cr.png "Compression Ratio") | ![Compression Speed](doc/images/dict-cs.png "Compression Speed") | ![Decompression Speed](doc/images/dict-ds.png "Decompression Speed")
+![Compression Ratio](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/doc/images/dict-cr.png "Compression Ratio") | ![Compression Speed](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/doc/images/dict-cs.png "Compression Speed") | ![Decompression Speed](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/doc/images/dict-ds.png "Decompression Speed")
 
 
 These compression gains are achieved while simultaneously providing _faster_ compression and decompression speeds.
@@ -139,8 +139,8 @@ The `Makefile` follows the [GNU Standard Makefile conventions](https://www.gnu.o
 allowing staged install, standard compilation flags, directory variables and command variables.
 
 For advanced use cases, specialized flags which control binary generation and installation paths are documented
-in [`lib/README.md`](lib/README.md#modular-build) for the `libzstd` library
-and in [`programs/README.md`](programs/README.md#compilation-variables) for the `zstd` CLI.
+in [`lib/README.md`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/lib/README.md#modular-build) for the `libzstd` library
+and in [`programs/README.md`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/programs/README.md#compilation-variables) for the `zstd` CLI.
 
 ### cmake
 
@@ -235,10 +235,10 @@ It is also continuously fuzzed for security issues by Google's [oss-fuzz](https:
 
 ## License
 
-Zstandard is dual-licensed under [BSD](LICENSE) OR [GPLv2](COPYING).
+Zstandard is dual-licensed under [BSD](00-to%20do/oh-my-opencode/LICENSE.md) OR [GPLv2](COPYING).
 
 ## Contributing
 
 The `dev` branch is the one where all contributions are merged before reaching `release`.
 Direct commit to `release` are not permitted.
-For more information, please read [CONTRIBUTING](CONTRIBUTING.md).
+For more information, please read [CONTRIBUTING](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/CONTRIBUTING.md).

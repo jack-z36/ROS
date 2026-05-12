@@ -1,6 +1,6 @@
 # Quality assurance
 
-Ensuring quality is paramount for this project, particularly because [numerous other projects](../home/customers.md)
+Ensuring quality is paramount for this project, particularly because [numerous other projects](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/customers.md)
 depend on it. Each commit to the library undergoes rigorous checks against the following requirements, and any
 violations will result in a failed build.
 

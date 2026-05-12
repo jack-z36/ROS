@@ -77,8 +77,8 @@ inline void from_json(const BasicJsonType& j, type& e);
 
 ## See also
 
-- [Specializing enum conversion](../../features/enum_conversion.md)
-- [`JSON_DISABLE_ENUM_SERIALIZATION`](json_disable_enum_serialization.md)
+- [Specializing enum conversion](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/enum_conversion.md)
+- [`JSON_DISABLE_ENUM_SERIALIZATION`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_disable_enum_serialization.md)
 
 ## Version history
 

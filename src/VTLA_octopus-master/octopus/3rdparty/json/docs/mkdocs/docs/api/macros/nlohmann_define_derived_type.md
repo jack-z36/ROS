@@ -22,18 +22,18 @@ These macros can be used to simplify the serialization/deserialization of derive
 object as serialization and want to use the member variable names as object keys in that object.
 
 - Macros 1, 2, and 3 are to be defined **inside** the class/struct to create code for.
-Like [`NLOHMANN_DEFINE_TYPE_INTRUSIVE`](nlohmann_define_type_intrusive.md), they can access private members.
+Like [`NLOHMANN_DEFINE_TYPE_INTRUSIVE`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_define_type_intrusive.md), they can access private members.
 - Macros 4, 5, and 6 are to be defined **outside** the class/struct to create code for, but **inside** its namespace.
-Like [`NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE`](nlohmann_define_type_non_intrusive.md),
+Like [`NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_define_type_non_intrusive.md),
 they **cannot** access private members.
 
 The first parameter is the name of the derived class/struct,
 the second parameter is the name of the base class/struct and all remaining parameters name the members.
 The base type **must** be already serializable/deserializable.
 
-- Macros 1 and 4 will use [`at`](../basic_json/at.md) during deserialization and will throw
-  [`out_of_range.403`](../../home/exceptions.md#jsonexceptionout_of_range403) if a key is missing in the JSON object.
-- Macros 2 and 5 will use [`value`](../basic_json/value.md) during deserialization and fall back to the default value for the
+- Macros 1 and 4 will use [`at`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/at.md) during deserialization and will throw
+  [`out_of_range.403`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range403) if a key is missing in the JSON object.
+- Macros 2 and 5 will use [`value`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/value.md) during deserialization and fall back to the default value for the
    respective type of the member variable if a key in the JSON object is missing. The generated `from_json()` function
    default constructs an object and uses its values as the defaults when calling the `value` function.
 
@@ -159,13 +159,11 @@ void to_json(BasicJsonType& j, const B& b) {
 
 ## See also
 
-- [NLOHMANN_DEFINE_TYPE_INTRUSIVE / NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT / 
-  NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE_ONLY_SERIALIZE](nlohmann_define_type_intrusive.md)
+- [](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_define_type_intrusive.md)
   for similar macros that can be defined _inside_ a non-derived type.
-- [NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE / NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT / 
-  NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE_ONLY_SERIALIZE](nlohmann_define_type_non_intrusive.md)
+- [](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/nlohmann_define_type_non_intrusive.md)
   for similar macros that can be defined _outside_ a non-derived type.
-- [Arbitrary Type Conversions](../../features/arbitrary_types.md) for an overview.
+- [Arbitrary Type Conversions](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/arbitrary_types.md) for an overview.
 
 ## Version history
 

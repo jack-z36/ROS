@@ -21,7 +21,7 @@ There are however other Makefile targets that create different variations of CLI
   This is useful to ensure this feature is not silently disabled.
 
 - __ZSTD_LEGACY_SUPPORT__ : `zstd` can decompress files compressed by older versions of `zstd`.
-  Starting v0.8.0, all versions of `zstd` produce frames compliant with the [specification](../doc/zstd_compression_format.md), and are therefore compatible.
+  Starting v0.8.0, all versions of `zstd` produce frames compliant with the [specification](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/doc/zstd_compression_format.md), and are therefore compatible.
   But older versions (< v0.8.0) produced different, incompatible, frames.
   By default, `zstd` supports decoding legacy formats >= v0.4.0 (`ZSTD_LEGACY_SUPPORT=4`).
   This can be altered by modifying this compilation variable.

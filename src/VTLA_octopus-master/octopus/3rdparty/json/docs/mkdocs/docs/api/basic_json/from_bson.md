@@ -18,7 +18,7 @@ Deserializes a given input to a JSON value using the BSON (Binary JSON) serializ
 1. Reads from a compatible input.
 2. Reads from an iterator range.
 
-The exact mapping and its limitations are described on a [dedicated page](../../features/binary_formats/bson.md).
+The exact mapping and its limitations are described on a [dedicated page](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/bson.md).
 
 ## Template parameters
 
@@ -54,7 +54,7 @@ The exact mapping and its limitations are described on a [dedicated page](../../
 ## Return value
 
 deserialized JSON value; in case of a parse error and `allow_exceptions` set to `#!cpp false`, the return value will be
-`value_t::discarded`.  The latter can be checked with [`is_discarded`](is_discarded.md).
+`value_t::discarded`.  The latter can be checked with [`is_discarded`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_discarded.md).
 
 ## Exception safety
 
@@ -62,7 +62,7 @@ Strong guarantee: if an exception is thrown, there are no changes in the JSON va
 
 ## Exceptions
 
-Throws [`parse_error.114`](../../home/exceptions.md#jsonexceptionparse_error114) if an unsupported BSON record type is
+Throws [`parse_error.114`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error114) if an unsupported BSON record type is
 encountered.
 
 ## Complexity
@@ -88,10 +88,10 @@ Linear in the size of the input.
 ## See also
 
 - [BSON specification](http://bsonspec.org/spec.html)
-- [to_bson](to_bson.md) for the analogous serialization
-- [from_cbor](from_cbor.md) for the related CBOR format
-- [from_msgpack](from_msgpack.md) for the related MessagePack format
-- [from_ubjson](from_ubjson.md) for the related UBJSON format
+- [to_bson](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/to_bson.md) for the analogous serialization
+- [from_cbor](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/from_cbor.md) for the related CBOR format
+- [from_msgpack](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/from_msgpack.md) for the related MessagePack format
+- [from_ubjson](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/from_ubjson.md) for the related UBJSON format
 
 ## Version history
 

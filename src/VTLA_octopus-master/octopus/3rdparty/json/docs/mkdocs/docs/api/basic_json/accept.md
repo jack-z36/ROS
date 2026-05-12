@@ -22,7 +22,7 @@ Checks whether the input is valid JSON.
     The value_type of the iterator must be an integral type with a size of 1, 2, or 4 bytes, which will be interpreted
     respectively as UTF-8, UTF-16, and UTF-32.
     
-Unlike the [`parse()`](parse.md) function, this function neither throws an exception in case of invalid JSON input
+Unlike the [`parse()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md) function, this function neither throws an exception in case of invalid JSON input
 (i.e., a parse error) nor creates diagnostic information.
 
 ## Template parameters
@@ -72,7 +72,7 @@ Strong guarantee: if an exception is thrown, there are no changes in the JSON va
 
 ## Exceptions
 
-Throws [`parse_error.101`](../../home/exceptions.md#jsonexceptionparse_error101) in case of an empty input like a null `#!c FILE*` or `#!c char*` pointer.
+Throws [`parse_error.101`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error101) in case of an empty input like a null `#!c FILE*` or `#!c char*` pointer.
 
 ## Complexity
 
@@ -100,14 +100,14 @@ A UTF-8 byte order mark is silently ignored.
 
 ## See also
 
-- [parse](parse.md) - deserialize from a compatible input
-- [operator>>](../operator_gtgt.md) - deserialize from stream
+- [parse](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md) - deserialize from a compatible input
+- [operator>>](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/operator_gtgt.md) - deserialize from stream
 
 ## Version history
 
 - Added in version 3.0.0.
 - Ignoring comments via `ignore_comments` added in version 3.9.0.
-- Changed [runtime assertion](../../features/assertions.md) in case of `FILE*` null pointers to exception in version 3.12.0.
+- Changed [runtime assertion](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/assertions.md) in case of `FILE*` null pointers to exception in version 3.12.0.
 - Added `ignore_trailing_commas` in version 3.12.1.
 
 !!! warning "Deprecation"

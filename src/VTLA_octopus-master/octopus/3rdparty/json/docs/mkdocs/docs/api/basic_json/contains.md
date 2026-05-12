@@ -21,8 +21,8 @@ bool contains(const json_pointer& ptr) const;
 ## Template parameters
 
 `KeyType`
-:   A type for an object key other than [`json_pointer`](../json_pointer/index.md) that is comparable with
-    [`string_t`](string_t.md) using  [`object_comparator_t`](object_comparator_t.md).
+:   A type for an object key other than [`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md) that is comparable with
+    [`string_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/string_t.md) using  [`object_comparator_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_comparator_t.md).
     This can also be a string view (C++17).
 
 ## Parameters
@@ -49,9 +49,9 @@ Strong exception safety: if an exception occurs, the original value stays intact
 1. The function does not throw exceptions.
 2. The function does not throw exceptions.
 3. The function can throw the following exceptions:
-    - Throws [`parse_error.106`](../../home/exceptions.md#jsonexceptionparse_error106) if an array index begins with
+    - Throws [`parse_error.106`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error106) if an array index begins with
       `0`.
-    - Throws [`parse_error.109`](../../home/exceptions.md#jsonexceptionparse_error109) if an array index was not a
+    - Throws [`parse_error.109`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error109) if an array index was not a
       number.
 
 ## Complexity

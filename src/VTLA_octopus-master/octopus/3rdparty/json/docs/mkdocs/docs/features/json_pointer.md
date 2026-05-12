@@ -52,12 +52,12 @@ auto p = "/nested/one"_json_pointer;
 ```
 
 The escaping rules of [RFC 6901](https://tools.ietf.org/html/rfc6901) are implemented. See the
-[constructor documentation](../api/json_pointer/json_pointer.md) for more information.
+[constructor documentation](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/json_pointer.md) for more information.
 
 ## Value access
 
-JSON Pointers can be used in the [`at`](../api/basic_json/at.md), [`operator[]`](../api/basic_json/operator%5B%5D.md),
-and [`value`](../api/basic_json/value.md) functions just like object keys or array indices.
+JSON Pointers can be used in the [`at`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/at.md), [`operator[]`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator[].md),
+and [`value`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/value.md) functions just like object keys or array indices.
 
 ```cpp
 // the JSON value from above
@@ -79,7 +79,7 @@ auto val3 = j.value(json::json_pointer("/nested/four"), 0); // 0
 
 ## Flatten / unflatten
 
-The library implements a function [`flatten`](../api/basic_json/flatten.md) to convert any JSON document into a JSON
+The library implements a function [`flatten`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/flatten.md) to convert any JSON document into a JSON
 object where each key is a JSON Pointer and each value is a primitive JSON value (i.e., a string, boolean, number, or
 null).
 
@@ -112,7 +112,7 @@ The resulting value `j_flat` is:
 }
 ```
 
-The reverse function, [`unflatten`](../api/basic_json/unflatten.md) recreates the original value.
+The reverse function, [`unflatten`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/unflatten.md) recreates the original value.
 
 ```cpp
 auto j_original = j_flat.unflatten();
@@ -120,7 +120,7 @@ auto j_original = j_flat.unflatten();
 
 ## See also
 
-- Class [`json_pointer`](../api/json_pointer/index.md)
-- Function [`flatten`](../api/basic_json/flatten.md)
-- Function [`unflatten`](../api/basic_json/unflatten.md)
-- [JSON Patch](json_patch.md)
+- Class [`json_pointer`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/index.md)
+- Function [`flatten`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/flatten.md)
+- Function [`unflatten`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/unflatten.md)
+- [JSON Patch](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/json_patch.md)

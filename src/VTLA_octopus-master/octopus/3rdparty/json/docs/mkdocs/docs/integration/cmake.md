@@ -133,16 +133,16 @@ Enable CI build targets. The exact targets are used during the several CI steps 
 
 ### `JSON_Diagnostics`
 
-Enable [extended diagnostic messages](../home/exceptions.md#extended-diagnostic-messages) by defining macro [`JSON_DIAGNOSTICS`](../api/macros/json_diagnostics.md). This option is `OFF` by default.
+Enable [extended diagnostic messages](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#extended-diagnostic-messages) by defining macro [`JSON_DIAGNOSTICS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_diagnostics.md). This option is `OFF` by default.
 
 ### `JSON_Diagnostic_Positions`
 
-Enable position diagnostics by defining macro [`JSON_DIAGNOSTIC_POSITIONS`](../api/macros/json_diagnostic_positions.md). This option is `OFF` by default.
+Enable position diagnostics by defining macro [`JSON_DIAGNOSTIC_POSITIONS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_diagnostic_positions.md). This option is `OFF` by default.
 
 ### `JSON_DisableEnumSerialization`
 
 Disable default `enum` serialization by defining the macro
-[`JSON_DISABLE_ENUM_SERIALIZATION`](../api/macros/json_disable_enum_serialization.md). This option is `OFF` by default.
+[`JSON_DISABLE_ENUM_SERIALIZATION`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_disable_enum_serialization.md). This option is `OFF` by default.
 
 ### `JSON_FastTests`
 
@@ -151,11 +151,11 @@ Skip expensive/slow test suites. This option is `OFF` by default. Depends on `JS
 ### `JSON_GlobalUDLs`
 
 Place user-defined string literals in the global namespace by defining the macro
-[`JSON_USE_GLOBAL_UDLS`](../api/macros/json_use_global_udls.md). This option is `OFF` by default.
+[`JSON_USE_GLOBAL_UDLS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_global_udls.md). This option is `OFF` by default.
 
 ### `JSON_ImplicitConversions`
 
-Enable implicit conversions by defining macro [`JSON_USE_IMPLICIT_CONVERSIONS`](../api/macros/json_use_implicit_conversions.md). This option is `ON` by default.
+Enable implicit conversions by defining macro [`JSON_USE_IMPLICIT_CONVERSIONS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_implicit_conversions.md). This option is `ON` by default.
 
 ### `JSON_Install`
 
@@ -163,7 +163,7 @@ Install CMake targets during install step. This option is `ON` by default if the
 
 ### `JSON_LegacyDiscardedValueComparison`
 
-Enable the (incorrect) legacy comparison behavior of discarded JSON values by defining macro [`JSON_USE_LEGACY_DISCARDED_VALUE_COMPARISON`](../api/macros/json_use_legacy_discarded_value_comparison.md). This option is `OFF` by default.
+Enable the (incorrect) legacy comparison behavior of discarded JSON values by defining macro [`JSON_USE_LEGACY_DISCARDED_VALUE_COMPARISON`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_use_legacy_discarded_value_comparison.md). This option is `OFF` by default.
 
 ### `JSON_MultipleHeaders`
 

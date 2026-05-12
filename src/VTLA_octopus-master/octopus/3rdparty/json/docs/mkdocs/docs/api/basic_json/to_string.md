@@ -10,7 +10,7 @@ This function implements a user-defined to_string for JSON objects.
 ## Template parameters
 
 `BasicJsonType`
-:   a specialization of [`basic_json`](index.md)
+:   a specialization of [`basic_json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/index.md)
 
 ## Return value
 
@@ -22,7 +22,7 @@ Strong guarantee: if an exception is thrown, there are no changes to any JSON va
 
 ## Exceptions
 
-Throws [`type_error.316`](../../home/exceptions.md#jsonexceptiontype_error316) if a string stored inside the JSON value
+Throws [`type_error.316`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error316) if a string stored inside the JSON value
 is not UTF-8 encoded
 
 ## Complexity
@@ -58,7 +58,7 @@ std::string to_string(const BasicJsonType& j)
 
 ## See also
 
-- [dump](dump.md)
+- [dump](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/dump.md)
 
 ## Version history
 

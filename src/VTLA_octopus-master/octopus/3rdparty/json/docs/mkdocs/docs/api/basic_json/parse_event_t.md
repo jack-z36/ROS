@@ -22,7 +22,7 @@ The parser callback distinguishes the following events:
 
 ## Examples
 
-![Example when certain parse events are triggered](../../images/callback_events.png)
+![Example when certain parse events are triggered](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/images/callback_events.png)
 
 ## Version history
 

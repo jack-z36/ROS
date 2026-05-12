@@ -13,11 +13,11 @@ The return value depends on the different types and is defined as follows:
 
 | Value type | return value                              |
 |------------|-------------------------------------------|
-| null       | `0` (same as [`size()`](size.md))         |
-| boolean    | `1` (same as [`size()`](size.md))         |
-| string     | `1` (same as [`size()`](size.md))         |
-| number     | `1` (same as [`size()`](size.md))         |
-| binary     | `1` (same as [`size()`](size.md))         |
+| null       | `0` (same as [`size()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/size.md))         |
+| boolean    | `1` (same as [`size()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/size.md))         |
+| string     | `1` (same as [`size()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/size.md))         |
+| number     | `1` (same as [`size()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/size.md))         |
+| binary     | `1` (same as [`size()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/size.md))         |
 | object     | result of function `object_t::max_size()` |
 | array      | result of function `array_t::max_size()`  |
 
@@ -27,7 +27,7 @@ No-throw guarantee: this function never throws exceptions.
 
 ## Complexity
 
-Constant, as long as [`array_t`](array_t.md) and [`object_t`](object_t.md) satisfy the
+Constant, as long as [`array_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/array_t.md) and [`object_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_t.md) satisfy the
 [Container](https://en.cppreference.com/w/cpp/named_req/Container) concept; that is, their `max_size()` functions have
 constant complexity.
 

@@ -6,7 +6,7 @@ description: Write MCAP files with JSON-encoded messages in Python.
 
 ## Writing
 
-Let's work with some publicly available data – the "[Sydney Urban Objects Dataset](https://www.acfr.usyd.edu.au/papers/SydneyUrbanObjectsDataset.shtml)", released by the [Australian Centre for Field Robotics](https://www.sydney.edu.au/engineering/our-research/robotics-and-intelligent-systems/australian-centre-for-field-robotics.html) – and write it as JSON to an MCAP file. ![sydney](./json-sydney.png)
+Let's work with some publicly available data – the "[Sydney Urban Objects Dataset](https://www.acfr.usyd.edu.au/papers/SydneyUrbanObjectsDataset.shtml)", released by the [Australian Centre for Field Robotics](https://www.sydney.edu.au/engineering/our-research/robotics-and-intelligent-systems/australian-centre-for-field-robotics.html) – and write it as JSON to an MCAP file. ![sydney](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/mcap/website/docs/guides/python/json-sydney.png)
 
 This CSV dataset contains a variety of common urban road objects scanned with a Velodyne HDL-64E LIDAR. Each of the 600+ scanned object contains the following fields:
 
@@ -178,7 +178,7 @@ $ mcap doctor output.mcap
 
 For a more visual representation of this data, let's use Foxglove. Open either the [desktop](https://foxglove.dev/download) or [web app](https://app.foxglove.dev/view), and add a [Raw Messages Panel](https://docs.foxglove.dev/docs/visualization/panels/raw-messages) and [3D Panel](https://docs.foxglove.dev/docs/visualization/panels/3d) to your layout.
 
-Then, simply drag and drop your output MCAP file into the app window to start playing the data. Make sure to enable the `pointcloud` topic in the 3D (Beta) panel to display the point cloud in 3D space. You can also inspect the raw data for the `pointcloud` topic in your Raw Messages panel: ![pointcloud](./json-hero.png)
+Then, simply drag and drop your output MCAP file into the app window to start playing the data. Make sure to enable the `pointcloud` topic in the 3D (Beta) panel to display the point cloud in 3D space. You can also inspect the raw data for the `pointcloud` topic in your Raw Messages panel: ![pointcloud](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/mcap/website/docs/guides/python/json-hero.png)
 
 ## Important links
 

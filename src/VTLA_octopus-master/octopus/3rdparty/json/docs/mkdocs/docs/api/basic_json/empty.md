@@ -4,7 +4,7 @@
 bool empty() const noexcept;
 ```
 
-Checks if a JSON value has no elements (i.e., whether its [`size()`](size.md) is `0`).
+Checks if a JSON value has no elements (i.e., whether its [`size()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/size.md) is `0`).
     
 ## Return value
 
@@ -26,7 +26,7 @@ No-throw guarantee: this function never throws exceptions.
 
 ## Complexity
 
-Constant, as long as [`array_t`](array_t.md) and [`object_t`](object_t.md) satisfy the
+Constant, as long as [`array_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/array_t.md) and [`object_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_t.md) satisfy the
 [Container](https://en.cppreference.com/w/cpp/named_req/Container) concept; that is, their `empty()` functions have
 constant complexity.
 

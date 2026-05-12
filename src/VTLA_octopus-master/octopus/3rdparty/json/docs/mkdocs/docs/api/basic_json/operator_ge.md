@@ -15,7 +15,7 @@ bool operator>=(ScalarType lhs, const const_reference rhs) noexcept;  // (2)
    rules:
     - The comparison always yields `#!cpp false` if (1) either operand is discarded, or (2) either operand is `NaN` and
       the other operand is either `NaN` or any other number.
-    - Otherwise, returns the result of `#!cpp !(lhs < rhs)` (see [**operator<**](operator_lt.md)).
+    - Otherwise, returns the result of `#!cpp !(lhs < rhs)` (see [**operator<**](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator_lt.md)).
 
 2. Compares whether a JSON value is greater than or equal to a scalar or a scalar is greater than or equal to a JSON
    value by converting the scalar to a JSON value and comparing both JSON values according to 1.
@@ -78,7 +78,7 @@ Linear.
 
 ## See also
 
-- [**operator<=>**](operator_spaceship.md) comparison: 3-way
+- [**operator<=>**](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator_spaceship.md) comparison: 3-way
 
 ## Version history
 

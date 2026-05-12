@@ -3,7 +3,7 @@
 The library is used in multiple projects, applications, operating systems, etc. The list below is not exhaustive, but
 the result of an internet search. If you know further customers of the library, [please let me know](mailto:mail@nlohmann.me).
 
-[![](../images/customers.png)](../images/customers.png)
+[![](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/images/customers.png)e/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/images/customers.png)](../images/customers.png)
 
 ## Space Exploration
 

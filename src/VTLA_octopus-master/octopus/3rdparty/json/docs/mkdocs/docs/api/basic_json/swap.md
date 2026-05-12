@@ -55,15 +55,15 @@ void swap(typename binary_t::container_type& other);
 
 1. No-throw guarantee: this function never throws exceptions.
 2. No-throw guarantee: this function never throws exceptions.
-3. Throws [`type_error.310`](../../home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
+3. Throws [`type_error.310`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
    arrays; example: `"cannot use swap() with boolean"`
-4. Throws [`type_error.310`](../../home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
+4. Throws [`type_error.310`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
    objects; example: `"cannot use swap() with boolean"`
-5. Throws [`type_error.310`](../../home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
+5. Throws [`type_error.310`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
    strings; example: `"cannot use swap() with boolean"`
-6. Throws [`type_error.310`](../../home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
+6. Throws [`type_error.310`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
    binaries; example: `"cannot use swap() with boolean"`
-7. Throws [`type_error.310`](../../home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
+7. Throws [`type_error.310`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error310) if called on JSON values other than
    binaries; example: `"cannot use swap() with boolean"`
 
 ## Complexity
@@ -144,7 +144,7 @@ Constant.
 
 ## See also
 
-- [std::swap<basic_json\>](std_swap.md)
+- [std::swap<basic_json\>](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/std_swap.md)
 
 ## Version history
 

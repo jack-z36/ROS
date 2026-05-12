@@ -22,7 +22,7 @@ The [`mcap` GitHub repo](https://github.com/foxglove/mcap/tree/main) includes th
 
 ### Guides
 
-- [Python](../python/ros1.md)
+- [Python](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/mcap/website/docs/guides/python/ros1.md)
 
 ### Examples
 

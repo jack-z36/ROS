@@ -9,7 +9,7 @@ JSON text, BSON, CBOR, MessagePack, UBJSON, as well as when using JSON Patch.
 
 Member `byte` holds the byte index of the last read character in the input file (see note below).
 
-Exceptions have ids 1xx (see [list of parse errors](../../home/exceptions.md#parse-errors)).
+Exceptions have ids 1xx (see [list of parse errors](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#parse-errors)).
 
 ```mermaid
 classDiagram
@@ -75,11 +75,11 @@ or the end of file. This also holds true when reading a byte vector for binary f
 
 ## See also
 
-- [List of parse errors](../../home/exceptions.md#parse-errors)
-- [`invalid_iterator`](invalid_iterator.md) for exceptions indicating errors with iterators
-- [`type_error`](type_error.md) for exceptions indicating executing a member function with a wrong type
-- [`out_of_range`](out_of_range.md) for exceptions indicating access out of the defined range
-- [`other_error`](other_error.md) for exceptions indicating other library errors
+- [List of parse errors](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#parse-errors)
+- [`invalid_iterator`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/invalid_iterator.md) for exceptions indicating errors with iterators
+- [`type_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/type_error.md) for exceptions indicating executing a member function with a wrong type
+- [`out_of_range`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/out_of_range.md) for exceptions indicating access out of the defined range
+- [`other_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/other_error.md) for exceptions indicating other library errors
 
 ## Version history
 

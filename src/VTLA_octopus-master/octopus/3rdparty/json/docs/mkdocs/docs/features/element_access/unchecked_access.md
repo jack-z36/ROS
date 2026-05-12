@@ -2,7 +2,7 @@
 
 ## Overview
 
-Elements in a JSON object and a JSON array can be accessed via [`operator[]`](../../api/basic_json/operator%5B%5D.md)
+Elements in a JSON object and a JSON array can be accessed via [`operator[]`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/operator[].md)
 similar to a `#!cpp std::map` and a `#!cpp std::vector`, respectively.
 
 ??? example "Read access"
@@ -108,5 +108,5 @@ that the passed index is the new maximal index. Intermediate values are filled w
 |-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
 | access to existing object key     | reference to existing value is returned                                                                                                              | const reference to existing value is returned                               |
 | access to valid array index       | reference to existing value is returned                                                                                                              | const reference to existing value is returned                               |
-| access to non-existing object key | reference to newly inserted `#!json null` value is returned                                                                                          | **undefined behavior**; [runtime assertion](../assertions.md) in debug mode |
-| access to invalid array index     | reference to newly inserted `#!json null` value is returned; any index between previous maximal index and passed index are filled with `#!json null` | **undefined behavior**; [runtime assertion](../assertions.md) in debug mode |
+| access to non-existing object key | reference to newly inserted `#!json null` value is returned                                                                                          | **undefined behavior**; [runtime assertion](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/assertions.md) in debug mode |
+| access to invalid array index     | reference to newly inserted `#!json null` value is returned; any index between previous maximal index and passed index are filled with `#!json null` | **undefined behavior**; [runtime assertion](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/assertions.md) in debug mode |

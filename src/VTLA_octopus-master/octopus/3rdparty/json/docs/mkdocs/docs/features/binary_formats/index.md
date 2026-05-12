@@ -3,11 +3,11 @@
 Though JSON is a ubiquitous data format, it is not a very compact format suitable for data exchange, for instance, over
 a network. Hence, the library supports
 
-- [BJData](bjdata.md) (Binary JData),
-- [BSON](bson.md) (Binary JSON),
-- [CBOR](cbor.md) (Concise Binary Object Representation),
-- [MessagePack](messagepack.md), and
-- [UBJSON](ubjson.md) (Universal Binary JSON)
+- [BJData](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/bjdata.md) (Binary JData),
+- [BSON](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/bson.md) (Binary JSON),
+- [CBOR](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/cbor.md) (Concise Binary Object Representation),
+- [MessagePack](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/messagepack.md), and
+- [UBJSON](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/ubjson.md) (Universal Binary JSON)
 
 to efficiently encode JSON values to byte vectors and to decode such vectors.
 
@@ -33,7 +33,7 @@ to efficiently encode JSON values to byte vectors and to decode such vectors.
 | MessagePack | supported     | supported       |
 | UBJSON      | not supported | not supported   |
 
-See [binary values](../binary_values.md) for more information.
+See [binary values](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_values.md) for more information.
 
 ### Sizes
 

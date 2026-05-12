@@ -7,7 +7,7 @@ class out_of_range : public exception;
 This exception is thrown in case a library function is called on an input parameter that exceeds the expected range, for
 instance, in the case of array indices or nonexisting object keys.
 
-Exceptions have ids 4xx (see [list of out-of-range errors](../../home/exceptions.md#out-of-range)).
+Exceptions have ids 4xx (see [list of out-of-range errors](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#out-of-range)).
 
 ```mermaid
 classDiagram
@@ -67,11 +67,11 @@ classDiagram
 
 ## See also
 
-- [List of out-of-range errors](../../home/exceptions.md#out-of-range)
-- [`parse_error`](parse_error.md) for exceptions indicating a parse error
-- [`invalid_iterator`](invalid_iterator.md) for exceptions indicating errors with iterators
-- [`type_error`](type_error.md) for exceptions indicating executing a member function with a wrong type
-- [`other_error`](other_error.md) for exceptions indicating other library errors
+- [List of out-of-range errors](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#out-of-range)
+- [`parse_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse_error.md) for exceptions indicating a parse error
+- [`invalid_iterator`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/invalid_iterator.md) for exceptions indicating errors with iterators
+- [`type_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/type_error.md) for exceptions indicating executing a member function with a wrong type
+- [`other_error`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/other_error.md) for exceptions indicating other library errors
 
 ## Version history
 

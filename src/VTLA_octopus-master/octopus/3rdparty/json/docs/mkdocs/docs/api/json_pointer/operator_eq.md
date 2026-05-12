@@ -38,7 +38,7 @@ class json_pointer {
 :   the string type of the left-hand side or right-hand side JSON pointer, respectively
 
 `StringType`
-:   the string type derived from the `json_pointer` operand ([`json_pointer::string_t`](string_t.md))
+:   the string type derived from the `json_pointer` operand ([`json_pointer::string_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/json_pointer/string_t.md))
 
 ## Parameters
 
@@ -61,9 +61,9 @@ whether the values `lhs`/`*this` and `rhs` are equal
 
 1. (none)
 2. The function can throw the following exceptions:
-   - Throws [parse_error.107](../../home/exceptions.md#jsonexceptionparse_error107) if the given JSON pointer `s` is
+   - Throws [parse_error.107](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error107) if the given JSON pointer `s` is
      nonempty and does not begin with a slash (`/`); see example below.
-   - Throws [parse_error.108](../../home/exceptions.md#jsonexceptionparse_error108) if a tilde (`~`) in the given JSON
+   - Throws [parse_error.108](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionparse_error108) if a tilde (`~`) in the given JSON
      pointer `s` is not followed by `0` (representing `~`) or `1` (representing `/`); see example below.
 
 ## Complexity

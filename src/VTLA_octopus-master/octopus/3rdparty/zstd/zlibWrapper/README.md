@@ -43,7 +43,7 @@ This behavior can be changed using `ZWRAP_setDecompressionType(ZWRAP_FORCE_ZLIB)
 
 
 #### Example
-We have taken the file `test/example.c` from [the zlib library distribution](https://zlib.net/) and copied it to [zlibWrapper/examples/example.c](examples/example.c).
+We have taken the file `test/example.c` from [the zlib library distribution](https://zlib.net/) and copied it to [zlibWrapper/examples/example.c](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/zlibWrapper/examples/example.c).
 After compilation and execution it shows the following results: 
 ```
 zlib version 1.2.8 = 0x1280, compile flags = 0x65
@@ -55,7 +55,7 @@ large_inflate(): OK
 after inflateSync(): hello, hello!
 inflate with dictionary: hello, hello!
 ```
-Then we have changed `#include "zlib.h"` to `#include "zstd_zlibwrapper.h"`, compiled the [example.c](examples/example.c) file
+Then we have changed `#include "zlib.h"` to `#include "zstd_zlibwrapper.h"`, compiled the [example.c](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/zstd/zlibWrapper/examples/example.c) file
 with `-DZWRAP_USE_ZSTD=1` and linked with additional `zstd_zlibwrapper.o gz*.c -lzstd`.
 We were forced to turn off the following functions: `test_flush`, `test_sync` which use currently unsupported features.
 After running it shows the following results:

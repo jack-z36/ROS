@@ -12,7 +12,7 @@ Last reference token.
 
 ## Exceptions
 
-Throws [out_of_range.405](../../home/exceptions.md#jsonexceptionout_of_range405) if the JSON pointer has no parent.
+Throws [out_of_range.405](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptionout_of_range405) if the JSON pointer has no parent.
 
 ## Complexity
 

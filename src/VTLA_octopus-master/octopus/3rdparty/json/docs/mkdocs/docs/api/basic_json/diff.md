@@ -6,7 +6,7 @@ static basic_json diff(const basic_json& source,
 ```
 
 Creates a [JSON Patch](http://jsonpatch.com) so that value `source` can be changed into the value `target` by calling
-[`patch`](patch.md) function.
+[`patch`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/patch.md) function.
 
 For two JSON values `source` and `target`, the following code yields always `#!cpp true`:
 ```cpp

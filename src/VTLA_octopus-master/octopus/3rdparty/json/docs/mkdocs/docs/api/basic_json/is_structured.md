@@ -54,9 +54,9 @@ Note that though strings are containers in C++, they are treated as primitive va
 
 ## See also
 
-- [is_primitive()](is_primitive.md) returns whether JSON value is primitive
-- [is_array()](is_array.md) returns whether the value is an array
-- [is_object()](is_object.md) returns whether the value is an object
+- [is_primitive()](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_primitive.md) returns whether JSON value is primitive
+- [is_array()](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_array.md) returns whether the value is an array
+- [is_object()](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/is_object.md) returns whether the value is an object
 
 ## Version history
 

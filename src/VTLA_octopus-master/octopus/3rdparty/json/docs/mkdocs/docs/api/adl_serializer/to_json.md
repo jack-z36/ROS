@@ -7,7 +7,7 @@ static auto to_json(BasicJsonType& j, TargetType && val) noexcept(
 -> decltype(::nlohmann::to_json(j, std::forward<TargetType>(val)), void())
 ```
 
-This function is usually called by the constructors of the [basic_json](../basic_json/index.md) class.
+This function is usually called by the constructors of the [basic_json](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/index.md) class.
 
 ## Parameters
 
@@ -36,7 +36,7 @@ This function is usually called by the constructors of the [basic_json](../basic
 
 ## See also
 
-- [from_json](from_json.md)
+- [from_json](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/adl_serializer/from_json.md)
 
 ## Version history
 

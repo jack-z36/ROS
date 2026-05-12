@@ -11,7 +11,7 @@ This library does not support comments *by default*. It does so for three reason
 
 3. It is dangerous for interoperability if some libraries add comment support while others do not. Please check [The Harmful Consequences of the Robustness Principle](https://tools.ietf.org/html/draft-iab-protocol-maintenance-01) on this.
 
-However, you can set parameter `ignore_comments` to `#!cpp true` in the [`parse`](../api/basic_json/parse.md) function to ignore `//` or `/* */` comments. Comments will then be treated as whitespace.
+However, you can set parameter `ignore_comments` to `#!cpp true` in the [`parse`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/parse.md) function to ignore `//` or `/* */` comments. Comments will then be treated as whitespace.
 
 For more information, see [JSON With Commas and Comments (JWCC)](https://nigeltao.github.io/blog/2021/json-with-commas-comments.html).
 

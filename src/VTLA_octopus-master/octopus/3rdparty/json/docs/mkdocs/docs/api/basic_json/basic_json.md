@@ -49,7 +49,7 @@ basic_json(basic_json&& other) noexcept;
     | array      | `#!json []`    |
     | binary     | empty array    |
 
-    The postcondition of this constructor can be restored by calling [`clear()`](clear.md).
+    The postcondition of this constructor can be restored by calling [`clear()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/clear.md).
 
 2. Create a `#!json null` JSON value. It either takes a null pointer as parameter (explicitly creating `#!json null`)
    or no parameter (implicitly creating `#!json null`). The passed null pointer itself is not read -- it is only used to
@@ -61,15 +61,15 @@ basic_json(basic_json&& other) noexcept;
    
     Template type `CompatibleType` includes, but is not limited to, the following types:
 
-    - **arrays**: [`array_t`](array_t.md) and all kinds of compatible containers such as `std::vector`, `std::deque`,
+    - **arrays**: [`array_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/array_t.md) and all kinds of compatible containers such as `std::vector`, `std::deque`,
      `std::list`, `std::forward_list`, `std::array`, `std::valarray`, `std::set`, `std::unordered_set`, `std::multiset`,
      and `std::unordered_multiset` with a `value_type` from which a `basic_json` value can be constructed.
-    - **objects**: [`object_t`](object_t.md) and all kinds of compatible associative containers such as `std::map`,
+    - **objects**: [`object_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object_t.md) and all kinds of compatible associative containers such as `std::map`,
      `std::unordered_map`, `std::multimap`, and `std::unordered_multimap` with a `key_type` compatible to `string_t`
      and a `value_type` from which a `basic_json` value can be constructed.
     - **strings**: `string_t`, string literals, and all compatible string containers can be used.
-    - **numbers**: [`number_integer_t`](number_integer_t.md), [`number_unsigned_t`](number_unsigned_t.md),
-     [`number_float_t`](number_float_t.md), and all convertible number types such as `int`, `size_t`, `int64_t`, `float`
+    - **numbers**: [`number_integer_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/number_integer_t.md), [`number_unsigned_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/number_unsigned_t.md),
+     [`number_float_t`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/number_float_t.md), and all convertible number types such as `int`, `size_t`, `int64_t`, `float`
      or `double` can be used.
     - **boolean**: `boolean_t` / `bool` can be used.
     - **binary**: `binary_t` / `std::vector<uint8_t>` may be used; unfortunately because string literals cannot be
@@ -107,7 +107,7 @@ basic_json(basic_json&& other) noexcept;
     - the empty array (`#!json []`): use `array(initializer_list_t)` with an empty initializer list in this case
     - arrays whose elements satisfy rule 2: use `array(initializer_list_t)` with the same initializer list in this case
    
-    Function [`array()`](array.md) and [`object()`](object.md) force array and object creation from initializer lists,
+    Function [`array()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/array.md) and [`object()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/object.md) force array and object creation from initializer lists,
     respectively.
         
 6. Constructs a JSON array value by creating `cnt` copies of a passed value. In case `cnt` is `0`, an empty array is
@@ -116,11 +116,11 @@ basic_json(basic_json&& other) noexcept;
 7. Constructs the JSON value with the contents of the range `[first, last)`. The semantics depend on the different
    types a JSON value can have:
 
-    - In case of a `#!json null` type, [invalid_iterator.206](../../home/exceptions.md#jsonexceptioninvalid_iterator206)
+    - In case of a `#!json null` type, [invalid_iterator.206](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator206)
       is thrown.
     - In case of other primitive types (number, boolean, or string), `first` must be `begin()` and `last` must be
       `end()`. In this case, the value is copied. Otherwise,
-      [`invalid_iterator.204`](../../home/exceptions.md#jsonexceptioninvalid_iterator204) is thrown.
+      [`invalid_iterator.204`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator204) is thrown.
     - In case of structured types (array, object), the constructor behaves as similar versions for `std::vector` or
       `std::map`; that is, a JSON array or object is constructed from the values in the range.
 
@@ -206,19 +206,19 @@ basic_json(basic_json&& other) noexcept;
 3. (none)
 4. (none)
 5. The function can throw the following exceptions:
-    - Throws [`type_error.301`](../../home/exceptions.md#jsonexceptiontype_error301) if `type_deduction` is
+    - Throws [`type_error.301`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error301) if `type_deduction` is
       `#!cpp false`, `manual_type` is `value_t::object`, but `init` contains an element which is not a pair whose first
       element is a string. In this case, the constructor could not create an object. If `type_deduction` would have been
       `#!cpp true`, an array would have been created. See `object(initializer_list_t)` for an example.
 6. (none)
 7. The function can throw the following exceptions:
-    - Throws [`invalid_iterator.201`](../../home/exceptions.md#jsonexceptioninvalid_iterator201) if iterators `first`
+    - Throws [`invalid_iterator.201`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator201) if iterators `first`
       and `last` are not compatible (i.e., do not belong to the same JSON value). In this case, the range
       `[first, last)` is undefined.
-    - Throws [`invalid_iterator.204`](../../home/exceptions.md#jsonexceptioninvalid_iterator204) if iterators `first`
+    - Throws [`invalid_iterator.204`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator204) if iterators `first`
       and `last` belong to a primitive type (number, boolean, or string), but `first` does not point to the first
       element anymore. In this case, the range `[first, last)` is undefined. See the example code below.
-    - Throws [`invalid_iterator.206`](../../home/exceptions.md#jsonexceptioninvalid_iterator206) if iterators `first`
+    - Throws [`invalid_iterator.206`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptioninvalid_iterator206) if iterators `first`
       and `last` belong to a `#!json null` value. In this case, the range `[first, last)` is undefined.
 8. (none)
 9. The function does not throw exceptions.

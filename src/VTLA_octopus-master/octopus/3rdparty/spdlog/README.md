@@ -19,7 +19,7 @@ $ git clone https://github.com/gabime/spdlog.git
 $ cd spdlog && mkdir build && cd build
 $ cmake .. && cmake --build .
 ```
-see example [CMakeLists.txt](example/CMakeLists.txt) on how to use.
+see example [CMakeLists.txt](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/spdlog/example/CMakeLists.txt) on how to use.
 
 ## Platforms
 * Linux, FreeBSD, OpenBSD, Solaris, AIX
@@ -490,7 +490,7 @@ void mdc_example()
 ---
 ## Benchmarks
 
-Below are some [benchmarks](bench/bench.cpp) done in Ubuntu 64 bit, Intel i7-4770 CPU @ 3.40GHz
+Below are some [benchmarks](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/spdlog/bench/bench.cpp) done in Ubuntu 64 bit, Intel i7-4770 CPU @ 3.40GHz
 
 #### Synchronous mode
 ```

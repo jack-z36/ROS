@@ -37,9 +37,9 @@ classDiagram
 
 ### Switch off exceptions
 
-Exceptions are used widely within the library. They can, however, be switched off with either using the compiler flag `-fno-exceptions` or by defining the symbol [`JSON_NOEXCEPTION`](../api/macros/json_noexception.md). In this case, exceptions are replaced by `abort()` calls. You can further control this behavior by defining `JSON_THROW_USER` (overriding `#!cpp throw`), `JSON_TRY_USER` (overriding `#!cpp try`), and `JSON_CATCH_USER` (overriding `#!cpp catch`).
+Exceptions are used widely within the library. They can, however, be switched off with either using the compiler flag `-fno-exceptions` or by defining the symbol [`JSON_NOEXCEPTION`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_noexception.md). In this case, exceptions are replaced by `abort()` calls. You can further control this behavior by defining `JSON_THROW_USER` (overriding `#!cpp throw`), `JSON_TRY_USER` (overriding `#!cpp try`), and `JSON_CATCH_USER` (overriding `#!cpp catch`).
 
-Note that [`JSON_THROW_USER`](../api/macros/json_throw_user.md) should leave the current scope (e.g., by throwing or aborting), as continuing after it may yield undefined behavior.
+Note that [`JSON_THROW_USER`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_throw_user.md) should leave the current scope (e.g., by throwing or aborting), as continuing after it may yield undefined behavior.
 
 ??? example
 
@@ -61,7 +61,7 @@ Note that [`JSON_THROW_USER`](../api/macros/json_throw_user.md) should leave the
 
 Note the explanatory [`what()`](https://en.cppreference.com/w/cpp/error/exception/what) string of exceptions is not available for MSVC if exceptions are disabled, see [#2824](https://github.com/nlohmann/json/discussions/2824).
 
-See [documentation of `JSON_TRY_USER`, `JSON_CATCH_USER` and `JSON_THROW_USER`](../api/macros/json_throw_user.md) for more information.
+See [documentation of `JSON_TRY_USER`, `JSON_CATCH_USER` and `JSON_THROW_USER`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_throw_user.md) for more information.
 
 ### Extended diagnostic messages
 
@@ -81,9 +81,9 @@ Exceptions in the library are thrown in the local context of the JSON value they
 
     This exception can be hard to debug if storing the value `#!c "12"` and accessing it is further apart.
 
-To create better diagnostics messages, each JSON value needs a pointer to its parent value such that a global context (i.e., a path from the root value to the value that led to the exception) can be created. That global context is provided as [JSON Pointer](../features/json_pointer.md).
+To create better diagnostics messages, each JSON value needs a pointer to its parent value such that a global context (i.e., a path from the root value to the value that led to the exception) can be created. That global context is provided as [JSON Pointer](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/json_pointer.md).
 
-As this global context comes at the price of storing one additional pointer per JSON value and runtime overhead to maintain the parent relation, extended diagnostics are disabled by default. They can, however, be enabled by defining the preprocessor symbol [`JSON_DIAGNOSTICS`](../api/macros/json_diagnostics.md) to `1` before including `json.hpp`.
+As this global context comes at the price of storing one additional pointer per JSON value and runtime overhead to maintain the parent relation, extended diagnostics are disabled by default. They can, however, be enabled by defining the preprocessor symbol [`JSON_DIAGNOSTICS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_diagnostics.md) to `1` before including `json.hpp`.
 
 ??? example
 
@@ -99,7 +99,7 @@ As this global context comes at the price of storing one additional pointer per 
 
     Now the exception message contains a JSON Pointer `/address/housenumber` that indicates which value has the wrong type.
 
-See [documentation of `JSON_DIAGNOSTICS`](../api/macros/json_diagnostics.md) for more information.
+See [documentation of `JSON_DIAGNOSTICS`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/macros/json_diagnostics.md) for more information.
 
 ## Parse errors
 
@@ -304,7 +304,7 @@ When parsing CBOR or MessagePack, the byte vector ends before the complete value
 
 ### json.exception.parse_error.112
 
-An unexpected byte was read in a [binary format](../features/binary_formats/index.md) or length information is invalid ([BSON](../features/binary_formats/bson.md)).
+An unexpected byte was read in a [binary format](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/index.md) or length information is invalid ([BSON](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/features/binary_formats/bson.md)).
 
 !!! failure "Example messages"
 
@@ -396,7 +396,7 @@ The iterators passed to constructor `basic_json(InputIT first, InputIT last)` ar
 
 ### json.exception.invalid_iterator.202
 
-In the [erase](../api/basic_json/erase.md) or insert function, the passed iterator `pos` does not belong to the JSON value for which the function was called. It hence does not define a valid position for the deletion/insertion.
+In the [erase](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/erase.md) or insert function, the passed iterator `pos` does not belong to the JSON value for which the function was called. It hence does not define a valid position for the deletion/insertion.
 
 !!! failure "Example messages"
 
@@ -409,7 +409,7 @@ In the [erase](../api/basic_json/erase.md) or insert function, the passed iterat
 
 ### json.exception.invalid_iterator.203
 
-Either iterator passed to function [`erase(IteratorType first, IteratorType last`)](../api/basic_json/erase.md) does not belong to the JSON value from which values shall be erased. It hence does not define a valid range to delete values from.
+Either iterator passed to function [`erase(IteratorType first, IteratorType last`)](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/erase.md) does not belong to the JSON value from which values shall be erased. It hence does not define a valid range to delete values from.
 
 !!! failure "Example message"
 
@@ -419,7 +419,7 @@ Either iterator passed to function [`erase(IteratorType first, IteratorType last
 
 ### json.exception.invalid_iterator.204
 
-When an iterator range for a primitive type (number, boolean, or string) is passed to a constructor or an [erase](../api/basic_json/erase.md) function, this range has to be exactly (`begin(),` `end()),` because this is the only way the single stored value is expressed. All other ranges are invalid.
+When an iterator range for a primitive type (number, boolean, or string) is passed to a constructor or an [erase](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/erase.md) function, this range has to be exactly (`begin(),` `end()),` because this is the only way the single stored value is expressed. All other ranges are invalid.
 
 !!! failure "Example message"
 
@@ -429,7 +429,7 @@ When an iterator range for a primitive type (number, boolean, or string) is pass
 
 ### json.exception.invalid_iterator.205
 
-When an iterator for a primitive type (number, boolean, or string) is passed to an [erase](../api/basic_json/erase.md) function, the iterator has to be the `begin()` iterator, because it is the only way to address the stored value. All other iterators are invalid.
+When an iterator for a primitive type (number, boolean, or string) is passed to an [erase](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/erase.md) function, the iterator has to be the `begin()` iterator, because it is the only way to address the stored value. All other iterators are invalid.
 
 !!! failure "Example message"
 
@@ -622,7 +622,7 @@ The `value()` member functions can only be executed for certain JSON types.
 
 ### json.exception.type_error.307
 
-The [`erase()`](../api/basic_json/erase.md) member functions can only be executed for certain JSON types.
+The [`erase()`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/erase.md) member functions can only be executed for certain JSON types.
 
 !!! failure "Example message"
 
@@ -903,7 +903,7 @@ A JSON Patch operation 'test' failed. The unsuccessful operation is also printed
 
 ### json.exception.other_error.502
 
-This exception is thrown when a null pointer is passed as SAX event listener to the [sax_parse](../api/basic_json/sax_parse.md) function.
+This exception is thrown when a null pointer is passed as SAX event listener to the [sax_parse](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/basic_json/sax_parse.md) function.
 
 !!! failure "Example message"
 

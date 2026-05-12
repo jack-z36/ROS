@@ -16,7 +16,7 @@ created from `args`.
 
 ## Iterator invalidation
 
-For [`ordered_json`](../ordered_json.md), adding a value to an object can yield a reallocation, in which case all
+For [`ordered_json`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/api/ordered_json.md), adding a value to an object can yield a reallocation, in which case all
 iterators (including the `end()` iterator) and all references to the elements are invalidated.
 
 ## Parameters
@@ -31,7 +31,7 @@ a `#!cpp bool` denoting whether the insertion took place.
 
 ## Exceptions
 
-Throws [`type_error.311`](../../home/exceptions.md#jsonexceptiontype_error311) when called on a type other than JSON
+Throws [`type_error.311`](01-doing/00-华威科实习/01-项目工作台/05-参考资料/ROS-git-worktree/src/VTLA_octopus-master/octopus/3rdparty/json/docs/mkdocs/docs/home/exceptions.md#jsonexceptiontype_error311) when called on a type other than JSON
 object or `#!json null`; example: `"cannot use emplace() with number"`
 
 ## Complexity
