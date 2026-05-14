@@ -206,22 +206,23 @@ def _print_calibration_warning(config: AppConfig) -> None:
     print()
     print("配置提醒")
     if config_is_calibrated(config):
-        print("  当前配置标记为完整已标定：左右夹爪和左右 TCP 均已完成。")
+        print("  当前配置标记为完整已标定：左右夹爪和左右 common frame 均已完成。")
     else:
         missing = "、".join(calibration_missing_items(config))
         print("  警告：当前配置未完整标定，可能仍有测试/占位参数。")
         if missing:
             print(f"  未完成分项: {missing}")
         print("  建议先在菜单中选择 c，或运行 ./start_data_clean.sh --calibrate 生成已标定配置。")
-    print("  当前清洗会使用 YAML 中的 TCP transform 和 ArUco 夹爪标定参数。")
+    print("  当前清洗会使用 YAML 中的 common frame transform 和 ArUco 夹爪标定参数。")
     for stream in config.pose_streams:
         transform = config.transform_for_pose_stream(stream)
+        translation = transform.translation
+        rotation = transform.rotation_xyzw
         print(
-            "  TCP: "
+            "  common frame: "
             f"{stream.input_topic} -> {stream.output_topic}, "
-            f"base_pos=({transform.base_position.x}, {transform.base_position.y}, {transform.base_position.z}), "
-            f"rpy=({transform.base_orientation_deg.roll}, {transform.base_orientation_deg.pitch}, {transform.base_orientation_deg.yaw}), "
-            f"offset=({transform.tcp_offset.x}, {transform.tcp_offset.z})"
+            f"start_from_common.xyz=({translation.x}, {translation.y}, {translation.z}), "
+            f"q=({rotation.qx}, {rotation.qy}, {rotation.qz}, {rotation.qw})"
         )
     for stream in config.gripper_streams:
         print(

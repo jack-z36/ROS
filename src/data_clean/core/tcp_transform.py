@@ -1,4 +1,4 @@
-"""Pose transformation helpers derived from FastUMI's TCP processing logic."""
+"""Common-frame pose transformation helpers for Baton Mini odometry."""
 
 from __future__ import annotations
 
@@ -10,40 +10,7 @@ from scipy.spatial.transform import Rotation as R
 from core.mcap_process_config import TransformConfig
 
 
-@lru_cache(maxsize=32)
-def _cached_base_transform(
-    base_x: float,
-    base_y: float,
-    base_z: float,
-    base_roll_deg: float,
-    base_pitch_deg: float,
-    base_yaw_deg: float,
-) -> tuple[tuple[float, ...], ...]:
-    base_roll, base_pitch, base_yaw = np.deg2rad([base_roll_deg, base_pitch_deg, base_yaw_deg])
-    rotation_base_to_local = R.from_euler("xyz", [base_roll, base_pitch, base_yaw]).as_matrix()
-    transform = np.eye(4)
-    transform[:3, :3] = rotation_base_to_local
-    transform[:3, 3] = [base_x, base_y, base_z]
-    return tuple(tuple(float(value) for value in row) for row in transform)
-
-
-def build_base_to_local_transform(config: TransformConfig) -> np.ndarray:
-    """Return the cached homogeneous transform from base to local(camera) frame."""
-
-    return np.asarray(
-        _cached_base_transform(
-            config.base_position.x,
-            config.base_position.y,
-            config.base_position.z,
-            config.base_orientation_deg.roll,
-            config.base_orientation_deg.pitch,
-            config.base_orientation_deg.yaw,
-        ),
-        dtype=np.float64,
-    )
-
-
-def transform_to_base_quat(
+def _pose_to_matrix(
     x: float,
     y: float,
     z: float,
@@ -51,23 +18,47 @@ def transform_to_base_quat(
     qy: float,
     qz: float,
     qw: float,
-    base_to_local_transform: np.ndarray,
-) -> tuple[float, float, float, float, float, float, float]:
-    """Mirror the original FastUMI frame transform from local camera coordinates into base frame."""
-
-    rotation_local = R.from_quat([qx, qy, qz, qw]).as_matrix()
-    local_transform = np.eye(4)
-    local_transform[:3, :3] = rotation_local
-    local_transform[:3, 3] = [x, y, z]
-
-    base_rotation = np.dot(local_transform[:3, :3], base_to_local_transform[:3, :3])
-    base_position = base_to_local_transform[:3, 3] + local_transform[:3, 3]
-    qx_base, qy_base, qz_base, qw_base = R.from_matrix(base_rotation).as_quat()
-    x_base, y_base, z_base = base_position
-    return x_base, y_base, z_base, qx_base, qy_base, qz_base, qw_base
+) -> np.ndarray:
+    transform = np.eye(4, dtype=np.float64)
+    transform[:3, :3] = R.from_quat([qx, qy, qz, qw]).as_matrix()
+    transform[:3, 3] = [x, y, z]
+    return transform
 
 
-def transform_pose_to_tcp(
+@lru_cache(maxsize=32)
+def _cached_start_from_common(
+    x: float,
+    y: float,
+    z: float,
+    qx: float,
+    qy: float,
+    qz: float,
+    qw: float,
+) -> tuple[tuple[float, ...], ...]:
+    transform = _pose_to_matrix(x, y, z, qx, qy, qz, qw)
+    return tuple(tuple(float(value) for value in row) for row in transform)
+
+
+def build_start_from_common_transform(config: TransformConfig) -> np.ndarray:
+    """Return the configured transform from common frame to Baton Mini start frame."""
+
+    translation = config.translation
+    rotation = config.rotation_xyzw
+    return np.asarray(
+        _cached_start_from_common(
+            translation.x,
+            translation.y,
+            translation.z,
+            rotation.qx,
+            rotation.qy,
+            rotation.qz,
+            rotation.qw,
+        ),
+        dtype=np.float64,
+    )
+
+
+def transform_pose_to_common_camera(
     x: float,
     y: float,
     z: float,
@@ -77,30 +68,13 @@ def transform_pose_to_tcp(
     qw: float,
     config: TransformConfig,
 ) -> tuple[float, float, float, float, float, float, float]:
-    """Apply the documented FastUMI TCP transform to a single pose sample."""
+    """Transform one Baton Mini camera pose from start frame into common frame."""
 
-    transform = build_base_to_local_transform(config)
-    offset = config.tcp_offset
+    start_from_common = build_start_from_common_transform(config)
+    common_from_start = np.linalg.inv(start_from_common)
+    start_from_camera = _pose_to_matrix(x, y, z, qx, qy, qz, qw)
+    common_from_camera = common_from_start @ start_from_camera
 
-    x_local = x - offset.x
-    y_local = y
-    z_local = z + offset.z
-
-    x_base, y_base, z_base, qx_base, qy_base, qz_base, qw_base = transform_to_base_quat(
-        x_local,
-        y_local,
-        z_local,
-        qx,
-        qy,
-        qz,
-        qw,
-        transform,
-    )
-
-    orientation_matrix = R.from_quat([qx_base, qy_base, qz_base, qw_base]).as_matrix()
-    position = np.array([x_base, y_base, z_base], dtype=np.float64)
-    position += offset.x * orientation_matrix[:, 2]
-    position -= offset.z * orientation_matrix[:, 0]
-    x_tcp, y_tcp, z_tcp = position.tolist()
-    return x_tcp, y_tcp, z_tcp, qx_base, qy_base, qz_base, qw_base
-
+    tx, ty, tz = common_from_camera[:3, 3].tolist()
+    qx_common, qy_common, qz_common, qw_common = R.from_matrix(common_from_camera[:3, :3]).as_quat()
+    return tx, ty, tz, qx_common, qy_common, qz_common, qw_common

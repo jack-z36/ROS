@@ -38,7 +38,7 @@ calibration:
       closed_frames: 35
       open_frames: 34
       updated_at: '2026-05-03T16:57:43+08:00'
-  tcp:
+  common_frame:
     left:
       calibrated: false
     right:
@@ -53,25 +53,24 @@ batch:
   overwrite: true
   fail_fast: true
 transform:
-  base_position:
-    x: 0.0
-    y: 0.0
-    z: 0.0
-  base_orientation_deg:
-    roll: 0.0
-    pitch: 0.0
-    yaw: 0.0
-  tcp_offset:
-    x: 0.0
-    z: 0.0
+  start_from_common:
+    translation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    rotation_xyzw:
+      qx: 0.0
+      qy: 0.0
+      qz: 0.0
+      qw: 1.0
 pose_streams:
 - input_topic: /baton_mini_left/fast_odom
   msg_type: nav_msgs/msg/Odometry
-  output_topic: /baton_mini_left/tcp_odom
+  output_topic: /baton_mini_left/camera_common_pose
   transform_file: /home/hit/ROS/config/data_clean_left_transform.yaml
 - input_topic: /baton_mini_right/fast_odom
   msg_type: nav_msgs/msg/Odometry
-  output_topic: /baton_mini_right/tcp_odom
+  output_topic: /baton_mini_right/camera_common_pose
   transform_file: /home/hit/ROS/config/data_clean_right_transform.yaml
 gripper_streams:
 - image_topic: /gopro_left/image_raw

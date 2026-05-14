@@ -21,7 +21,7 @@ from core.ros2_codec import (
     normalize_ros2_schema,
 )
 from core.ros2_schemas import STD_MSGS_FLOAT32
-from core.tcp_transform import transform_pose_to_tcp
+from core.tcp_transform import transform_pose_to_common_camera
 from core.validator import (
     FileProcessingReport,
     GripperTopicStats,
@@ -52,18 +52,21 @@ class _McapOutputBuilder:
         self._gripper_schema_id: int | None = None
         self._gripper_channel_ids: dict[str, int] = {}
 
+    def _schema_id(self, schema: Schema | None) -> int:
+        if schema is None:
+            return 0
+        schema = normalize_ros2_schema(schema)
+        schema_id = self._schema_map.get(schema.id, 0)
+        if schema_id == 0:
+            schema_id = self.writer.register_schema(schema.name, schema.encoding, schema.data)
+            self._schema_map[schema.id] = schema_id
+        return schema_id
+
     def ensure_original_channel(self, channel: Channel, schema: Schema | None) -> int:
         if channel.id in self._channel_map:
             return self._channel_map[channel.id]
 
-        schema_id = 0
-        if schema is not None:
-            schema = normalize_ros2_schema(schema)
-            schema_id = self._schema_map.get(schema.id, 0)
-            if schema_id == 0:
-                schema_id = self.writer.register_schema(schema.name, schema.encoding, schema.data)
-                self._schema_map[schema.id] = schema_id
-
+        schema_id = self._schema_id(schema)
         output_channel_id = self.writer.register_channel(
             topic=channel.topic,
             message_encoding=channel.message_encoding,
@@ -118,7 +121,7 @@ def _collect_stream_artifacts(input_path: Path, config: AppConfig) -> _StreamArt
                 if schema is None:
                     raise ProcessingError(f'pose topic "{topic}" has no schema record')
                 decoded_pose = codec.decode(schema, message)
-                transformed_pose = transform_pose_to_tcp(
+                transformed_pose = transform_pose_to_common_camera(
                     *extract_pose_fields(decoded_pose, pose_stream.msg_type),
                     config.transform_for_pose_stream(pose_stream),
                 )

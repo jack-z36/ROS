@@ -85,7 +85,7 @@ def _print_reports(reports: Iterable[FileProcessingReport]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Batch-clean ROS2 MCAP files into TCP/gripper format.")
+    parser = argparse.ArgumentParser(description="Batch-clean ROS2 MCAP files into common-frame camera/gripper format.")
     parser.add_argument("--config", required=True, help="Path to the YAML configuration file.")
     parser.add_argument("--input-dir", help="Override batch.input_dir from the config.")
     parser.add_argument("--output-dir", help="Override batch.output_dir from the config.")

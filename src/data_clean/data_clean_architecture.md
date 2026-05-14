@@ -1,12 +1,12 @@
 # data_clean 架构说明
 
-本文档说明 `/home/hit/ROS/src/data_clean` 离线 MCAP 清洗程序的功能、数据流、使用方式和配置逻辑。该程序属于场景六“MCAP 数据清洗与配置生成（三程序统一入口）”。
+本文档说明 `/home/hit/ROS/src/data_clean` 离线 MCAP 清洗程序的功能、数据流、使用方式和配置逻辑。该程序属于阶段二场景一“提取夹爪开合以及位姿转换”。
 
 ## 1. 概述
 
 `data_clean` 读取 Octopus 录制的原始 `.mcap` 文件，保留原始 topic，同时生成新的清洗结果：
 
-- 将 Baton Mini 位姿 topic 转换为 TCP 位姿 topic。
+- 将 Baton Mini 原始位姿转换为 common frame 下的相机位姿。
 - 从 GoPro 图像中检测 ArUco 标记，估计左右夹爪宽度并写入 `std_msgs/msg/Float32` topic。
 - 通过交互式 launcher 选择要处理的文件、并行数、dry-run、标定向导等。
 
@@ -19,11 +19,11 @@
 | `core/mcap_clean_launcher.py` | 面向用户的交互式入口；选择 MCAP 文件、预览计划、校验首个文件、调度清洗。 |
 | `core/mcap_clean_batch.py` | 非交互批处理入口；读取配置、遍历输入目录、并行处理文件、输出 JSON 报告。 |
 | `core/mcap_calibration_wizard.py` | 配置/标定向导；辅助生成 `config/data_clean_calibrated.yaml`。 |
-| `core/mcap_io.py` | 单文件清洗核心；读取原始 MCAP、生成替换 payload、新增夹爪宽度 topic、写出 MCAP。 |
+| `core/mcap_io.py` | 单文件清洗核心；读取原始 MCAP、生成 common-frame 相机位姿 payload、新增夹爪宽度 topic、写出 MCAP。 |
 | `core/mcap_process_config.py` | YAML 配置解析与校验；定义 batch、transform、pose_streams、gripper_streams。 |
 | `core/ros2_codec.py` | ROS2 CDR 动态编解码、图像转 ndarray、位姿字段提取/注入。 |
 | `core/ros2_schemas.py` | 清洗流程需要写出的 ROS2 schema 文本。 |
-| `core/tcp_transform.py` | FASTUMI TCP 位姿转换。 |
+| `core/tcp_transform.py` | Baton Mini start frame 到 common frame 的标准 SE(3) 位姿转换。 |
 | `core/gripper_width.py` | 基于 OpenCV ArUco 的夹爪宽度提取、缺失帧插值和归一化。 |
 | `core/validator.py` | 输入 MCAP topic/schema 校验、输出契约校验和报告数据结构。 |
 | `core/__init__.py` | Python 包标记。 |
@@ -35,8 +35,8 @@
 | `/home/hit/ROS/start_data_clean.sh` | 推荐启动入口，设置 Python/环境变量后调用 launcher。 |
 | `/home/hit/ROS/config/data_clean_smoke_test.yaml` | 默认测试配置。 |
 | `/home/hit/ROS/config/data_clean_calibrated.yaml` | 标定向导生成的正式配置。 |
-| `/home/hit/ROS/config/data_clean_left_transform.yaml` | 左手 Baton Mini 专用 base transform 与 TCP offset 配置。 |
-| `/home/hit/ROS/config/data_clean_right_transform.yaml` | 右手 Baton Mini 专用 base transform 与 TCP offset 配置。 |
+| `/home/hit/ROS/config/data_clean_left_transform.yaml` | 左手 Baton Mini 专用 `start_from_common` 配置。 |
+| `/home/hit/ROS/config/data_clean_right_transform.yaml` | 右手 Baton Mini 专用 `start_from_common` 配置。 |
 
 ## 3. 数据流
 
@@ -59,7 +59,7 @@ flowchart TD
   GRIP --> ART
   ART --> PASS2[_write_output_file 第二遍读]
   PASS2 --> COPY[复制原始 schema/channel/message]
-  PASS2 --> REPLACE[目标位姿消息替换 payload]
+  PASS2 --> REPLACE[替换 pose payload]
   PASS2 --> ADD[GoPro 图像后追加 gripper_width 消息]
   COPY --> OUT[/home/hit/ROS/mcap_cleaned/*.mcap]
   REPLACE --> OUT
@@ -92,7 +92,7 @@ flowchart TD
 4. 遇到 pose topic 时：
    - `Ros2DynamicCodec.decode(schema, message)` 把 CDR payload 解成 Python 对象。
    - `extract_pose_fields()` 从 `nav_msgs/msg/Odometry` 或 `geometry_msgs/msg/PoseStamped` 中取出 position 和 quaternion。
-   - `transform_pose_to_tcp()` 按该 pose stream 自己的 transform 计算 TCP pose；如果配置了 `transform_file`，参数来自对应外部文件。
+   - `transform_pose_to_common_camera()` 按该 pose stream 自己的 `start_from_common` 计算 common frame 下的 camera pose；如果配置了 `transform_file`，参数来自对应外部文件。
    - `inject_pose_fields()` 把转换后的 pose 写回解码对象。
    - `codec.encode()` 重编码成新的 CDR payload，放入 `pose_payloads[topic]`。
 5. 遇到 image topic 时：
@@ -103,23 +103,23 @@ flowchart TD
 
 ### 3.3 位姿转换机理
 
-`tcp_transform.py` 的核心不是简单平移，而是按 FASTUMI 的 TCP 逻辑做两段处理：
+`tcp_transform.py` 当前承担 common-frame 相机位姿转换。配置文件保存的是 `start_from_common`，也就是 common frame 在 Baton Mini 初始坐标系中的位姿。清洗时每帧 raw pose 可理解为 `T_start_camera(t)`，程序计算：
 
-1. `build_base_to_local_transform()` 根据 `base_position` 和 `base_orientation_deg` 构造 base 到 local/camera 的 4x4 齐次变换；该矩阵按参数值做 LRU cache。
-2. `transform_pose_to_tcp()` 先在 local pose 上应用 TCP offset：`x_local = x - offset.x`、`z_local = z + offset.z`。
-3. `transform_to_base_quat()` 将 local pose 与 base transform 合成，得到 base 坐标系下的位置和四元数。
-4. 再根据 base orientation 的方向轴，把 TCP offset 投影回最终 position：沿姿态矩阵第 3 列加 `offset.x`，沿第 1 列减 `offset.z`。
-5. 输出仍是 position + quaternion，并由 `inject_pose_fields()` 写回原消息结构。
+```text
+T_common_camera(t) = inverse(T_start_common) * T_start_camera(t)
+```
 
-重要现状：当前 `_write_output_file()` 写位姿时复用原始 channel，只替换原 pose topic 的 payload；`pose_streams[].output_topic` 用于报告统计里的语义名称，不会自动新增 `/baton_mini_left/tcp_odom` 或 `/baton_mini_right/tcp_odom` channel。若目标是新增 TCP odom topic，需要修改 `_write_output_file()` 的 channel 注册和消息写入逻辑。
+实现上，`transform_pose_to_common_camera()` 会把配置和每帧 pose 都转成 4x4 齐次矩阵，使用标准 SE(3) 逆变换和矩阵乘法，再输出 `[x, y, z, qx, qy, qz, qw]`。
+
+当前 `_write_output_file()` 不新增独立 camera pose topic，而是复用原始 pose channel，把原 pose payload 替换为 common frame 下的相机位姿 payload；`pose_streams[].output_topic` 只作为报告中的语义名称。
 
 左右手 transform 配置边界：
 
 - 左手 Baton Mini 的 transform 来自 `/home/hit/ROS/config/data_clean_left_transform.yaml`。
 - 右手 Baton Mini 的 transform 来自 `/home/hit/ROS/config/data_clean_right_transform.yaml`。
 - `pose_streams[].transform_file` 优先级高于顶层 `transform`。
-- 顶层 `transform` 只保留为兼容兜底；后续正式左右手参数不得再写成共用一套顶层 transform。
-- 标定向导保存 TCP 偏移时，会按当前手写回对应的 `transform_file`，不会把左右手写进同一份 transform。
+- 新格式不兼容旧 `base_position/base_orientation_deg/tcp_offset`。
+- 标定向导保存 common frame 时，会按当前手写回对应的 `transform_file`，不会把左右手写进同一份 transform。
 
 ### 3.4 夹爪宽度提取机理
 
@@ -141,9 +141,8 @@ flowchart TD
 1. 重新读取输入 MCAP，并打开输出文件创建 `mcap.writer.Writer`。
 2. `_McapOutputBuilder.ensure_original_channel()` 为每个原始 channel 在输出文件中注册对应 schema/channel；schema 会先经过 `normalize_ros2_schema()`，解决 Octopus 写入 schema 缩进导致动态解析失败的问题。
 3. 遍历每条原始 message：
-   - 默认 `payload = message.data`，即原样复制。
-   - 如果 channel.topic 是 pose topic，则从第一遍生成的 `pose_iterators[topic]` 取一个替换 payload，仍写到原始 topic 对应的输出 channel。
-   - 写原始或替换后的 message，保留原始 `log_time`、`publish_time`、`sequence`。
+   - 默认原样复制原始 message。
+   - 如果 channel.topic 是 pose topic，则从第一遍生成的 `pose_iterators[topic]` 取一个转换后的 payload，并写回原始 pose topic 对应 channel。
    - 如果 channel.topic 是配置中的 image topic，则马上注册/获取 gripper output channel，并用同一条图像消息的时间戳写入一个 `Float32` gripper width message。
 4. 写完后检查所有 pose/gripper payload iterator 是否刚好消耗完；多余 payload 表示第一遍与第二遍消息数量不一致，会判为处理错误。
 5. 构造 `FileProcessingReport`，并用 `validate_output_contract()` 确认输出 topic 数等于输入 topic 数加 gripper stream 数，位姿消息数量不变，gripper 消息数量等于图像帧数。
@@ -156,7 +155,7 @@ flowchart TD
 | 清洗输出目录 | `/home/hit/ROS/mcap_cleaned` |
 | 输入匹配 | `*.mcap` |
 | 位姿输入/当前写回 channel | `/baton_mini_left/fast_odom`、`/baton_mini_right/fast_odom` |
-| 位姿目标语义 | `/baton_mini_left/tcp_odom`、`/baton_mini_right/tcp_odom`；当前代码主要用于报告统计，不会新增同名 channel |
+| 位姿目标语义 | `/baton_mini_left/camera_common_pose`、`/baton_mini_right/camera_common_pose`；当前仅用于报告，不新增同名 channel |
 | 左手 transform 文件 | `/home/hit/ROS/config/data_clean_left_transform.yaml` |
 | 右手 transform 文件 | `/home/hit/ROS/config/data_clean_right_transform.yaml` |
 | 图像输入 | `/gopro_left/image_raw`、`/gopro_right/image_raw` |
@@ -201,12 +200,12 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 | --- | --- | --- |
 | `batch` | `input_dir`、`output_dir`、`file_glob` | 输入目录、输出目录、文件匹配规则。 |
 | `batch` | `workers`、`overwrite`、`fail_fast` | 并行数、是否覆盖、失败后是否停止。 |
-| `transform` | `base_position`、`base_orientation_deg`、`tcp_offset` | 默认 TCP 位姿转换参数；后续左右 Baton Mini 不再使用它承载正式参数，只作为兼容兜底。 |
+| `transform` | `start_from_common.translation`、`start_from_common.rotation_xyzw` | 默认 common frame 转换参数；正式左右手参数应优先放入左右独立 transform 文件。 |
 | `pose_streams` | `input_topic`、`msg_type`、`output_topic`、`transform_file` | 位姿输入、类型、输出语义以及左右手独立 transform 文件。 |
-| `pose_streams` | 可选 `transform` | 旧版内联单流覆盖 transform；后续左右 Baton Mini 不再使用内联 transform。 |
+| `pose_streams` | 可选 `transform` | 内联单流覆盖 transform，格式同 `start_from_common`。 |
 | `gripper_streams` | `image_topic`、`output_topic`、`aruco_dict`、`marker_id_0/1` | 图像输入、夹爪宽度输出和 ArUco 标记定义。 |
 | `gripper_streams` | `marker_min`、`marker_max`、`gripper_max` | 像素距离到夹爪宽度的线性映射范围。 |
-| `calibration` | `tcp`、`gripper` | 标定状态记录；launcher 用于提示是否仍为测试参数。 |
+| `calibration` | `common_frame`、`gripper` | 标定状态记录；launcher 用于提示是否仍为测试参数。 |
 
 当前 validator 支持的位姿类型为 `nav_msgs/msg/Odometry` 和 `geometry_msgs/msg/PoseStamped`；夹爪图像输入支持 `sensor_msgs/msg/Image`；夹爪宽度输出固定为 `std_msgs/msg/Float32`。
 
@@ -226,7 +225,7 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 
 - 可启动或复用左右 GoPro-only 图像 topic。
 - 采样 ArUco 检测结果，计算左右夹爪 marker 范围。
-- 读取 MCAP 中位姿样本并结合用户测量值生成 TCP 偏移配置。
+- 订阅左右 Baton Mini 实时 odometry，点击 common frame 标定后采样稳定窗口并生成 `start_from_common` 配置。
 - 输出 `/home/hit/ROS/config/data_clean_calibrated.yaml`，覆盖前应备份旧文件。
 
 ## 7. 与上下游的关系
@@ -245,4 +244,4 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 
 - `data_clean` 不启动 Octopus，不负责实时录制。
 - `data_clean` 不修改原始 MCAP；输出目录中同名文件按配置和 launcher 覆盖策略处理。
-- 修改清洗算法、topic 契约、配置项或交互入口时，必须同步更新本文件和 `/home/hit/ROS/DOCS/场景六/输出程序与文件.md`。
+- 修改清洗算法、topic 契约、配置项或交互入口时，必须同步更新本文件和阶段二场景一的输出程序与文件清单。

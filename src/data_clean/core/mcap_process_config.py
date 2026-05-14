@@ -32,23 +32,17 @@ class Vector3Config:
 
 
 @dataclass(frozen=True)
-class EulerDegConfig:
-    roll: float
-    pitch: float
-    yaw: float
-
-
-@dataclass(frozen=True)
-class TcpOffsetConfig:
-    x: float
-    z: float
+class QuaternionConfig:
+    qx: float
+    qy: float
+    qz: float
+    qw: float
 
 
 @dataclass(frozen=True)
 class TransformConfig:
-    base_position: Vector3Config
-    base_orientation_deg: EulerDegConfig
-    tcp_offset: TcpOffsetConfig
+    translation: Vector3Config
+    rotation_xyzw: QuaternionConfig
 
 
 @dataclass(frozen=True)
@@ -129,23 +123,29 @@ def _resolve_config_path(raw_path: str, config_dir: Path) -> Path:
 
 
 def _build_transform_from_mapping(transform: dict[str, Any]) -> TransformConfig:
-    base_position = _require_mapping(transform, "base_position")
-    base_orientation = _require_mapping(transform, "base_orientation_deg")
-    tcp_offset = _require_mapping(transform, "tcp_offset")
+    start_from_common = _require_mapping(transform, "start_from_common")
+    translation = _require_mapping(start_from_common, "translation")
+    rotation = _require_mapping(start_from_common, "rotation_xyzw")
+    qx = float(rotation["qx"])
+    qy = float(rotation["qy"])
+    qz = float(rotation["qz"])
+    qw = float(rotation["qw"])
+    norm = (qx * qx + qy * qy + qz * qz + qw * qw) ** 0.5
+    if norm == 0.0 or abs(norm - 1.0) > 1e-3:
+        raise ConfigError(
+            f'"start_from_common.rotation_xyzw" must be a unit quaternion, got norm {norm:.6f}'
+        )
     return TransformConfig(
-        base_position=Vector3Config(
-            x=float(base_position["x"]),
-            y=float(base_position["y"]),
-            z=float(base_position["z"]),
+        translation=Vector3Config(
+            x=float(translation["x"]),
+            y=float(translation["y"]),
+            z=float(translation["z"]),
         ),
-        base_orientation_deg=EulerDegConfig(
-            roll=float(base_orientation["roll"]),
-            pitch=float(base_orientation["pitch"]),
-            yaw=float(base_orientation["yaw"]),
-        ),
-        tcp_offset=TcpOffsetConfig(
-            x=float(tcp_offset["x"]),
-            z=float(tcp_offset["z"]),
+        rotation_xyzw=QuaternionConfig(
+            qx=qx / norm,
+            qy=qy / norm,
+            qz=qz / norm,
+            qw=qw / norm,
         ),
     )
 
@@ -234,30 +234,18 @@ def _build_calibration(data: dict[str, Any]) -> dict[str, Any]:
 
 def calibration_item_status(config: AppConfig) -> dict[str, bool]:
     calibration = config.calibration
-    tcp = calibration.get("tcp", {})
+    common_frame = calibration.get("common_frame", {})
     gripper = calibration.get("gripper", {})
 
     def nested_status(section: dict[str, Any], hand: str) -> bool:
         value = section.get(hand, {})
         return isinstance(value, dict) and bool(value.get("calibrated"))
 
-    if isinstance(tcp, dict) and isinstance(gripper, dict):
-        nested = {
-            "gripper_left": nested_status(gripper, "left"),
-            "gripper_right": nested_status(gripper, "right"),
-            "tcp_left": nested_status(tcp, "left"),
-            "tcp_right": nested_status(tcp, "right"),
-        }
-        if any(nested.values()) or any(hand in tcp or hand in gripper for hand in ("left", "right")):
-            return nested
-
-    legacy_gripper = bool(gripper.get("calibrated")) if isinstance(gripper, dict) else False
-    legacy_tcp = bool(tcp.get("calibrated")) if isinstance(tcp, dict) else False
     return {
-        "gripper_left": legacy_gripper,
-        "gripper_right": legacy_gripper,
-        "tcp_left": legacy_tcp,
-        "tcp_right": legacy_tcp,
+        "gripper_left": nested_status(gripper, "left") if isinstance(gripper, dict) else False,
+        "gripper_right": nested_status(gripper, "right") if isinstance(gripper, dict) else False,
+        "common_frame_left": nested_status(common_frame, "left") if isinstance(common_frame, dict) else False,
+        "common_frame_right": nested_status(common_frame, "right") if isinstance(common_frame, dict) else False,
     }
 
 
@@ -269,8 +257,8 @@ def calibration_missing_items(config: AppConfig) -> list[str]:
     labels = {
         "gripper_left": "左手夹爪",
         "gripper_right": "右手夹爪",
-        "tcp_left": "左手 TCP",
-        "tcp_right": "右手 TCP",
+        "common_frame_left": "左手 common frame",
+        "common_frame_right": "右手 common frame",
     }
     status = calibration_item_status(config)
     return [label for key, label in labels.items() if not status.get(key, False)]
@@ -288,6 +276,11 @@ def _validate_cross_field_rules(config: AppConfig) -> None:
     _ensure_unique([stream.output_topic for stream in config.pose_streams], "pose output topics")
     _ensure_unique([stream.image_topic for stream in config.gripper_streams], "image topics")
     _ensure_unique([stream.output_topic for stream in config.gripper_streams], "gripper output topics")
+    _ensure_unique(
+        [stream.output_topic for stream in config.pose_streams]
+        + [stream.output_topic for stream in config.gripper_streams],
+        "derived output topics",
+    )
 
     if any(stream.image_msg_type != "sensor_msgs/msg/Image" for stream in config.gripper_streams):
         raise ConfigError('v1 only supports "sensor_msgs/msg/Image" as gripper image input')

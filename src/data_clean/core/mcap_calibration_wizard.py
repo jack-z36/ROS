@@ -21,25 +21,24 @@ from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from statistics import median
 from typing import Any
 from urllib.parse import urlparse
 
 import cv2
 import numpy as np
 import yaml
-from mcap.reader import make_reader
-
 from core.mcap_process_config import (
     AppConfig,
     GripperStreamConfig,
     PoseStreamConfig,
+    QuaternionConfig,
     TransformConfig,
+    Vector3Config,
     calibration_item_status,
     config_is_calibrated,
     load_app_config,
 )
-from core.ros2_codec import Ros2DynamicCodec, extract_pose_fields
+from core.ros2_codec import extract_pose_fields
 
 
 WORKSPACE_DIR = Path("/home/hit/ROS")
@@ -111,16 +110,13 @@ class GripperSideCalibration:
 
 
 @dataclass(frozen=True)
-class TcpSideCalibration:
+class CommonFrameSideCalibration:
     hand: str
     input_topic: str
     output_topic: str
-    tcp_offset_x: float
-    tcp_offset_z: float
-    measured_x_mm: float
-    measured_z_mm: float
-    config_unit: str
-    scale_mm_per_px: float
+    start_from_common: TransformConfig
+    sample_frames: int
+    position_std: float
 
 
 def _short_path(path: str | Path) -> str:
@@ -146,20 +142,19 @@ def _aruco_dictionaries() -> dict[str, Any]:
 
 def _to_mapping(transform: TransformConfig) -> dict[str, Any]:
     return {
-        "base_position": {
-            "x": transform.base_position.x,
-            "y": transform.base_position.y,
-            "z": transform.base_position.z,
-        },
-        "base_orientation_deg": {
-            "roll": transform.base_orientation_deg.roll,
-            "pitch": transform.base_orientation_deg.pitch,
-            "yaw": transform.base_orientation_deg.yaw,
-        },
-        "tcp_offset": {
-            "x": transform.tcp_offset.x,
-            "z": transform.tcp_offset.z,
-        },
+        "start_from_common": {
+            "translation": {
+                "x": transform.translation.x,
+                "y": transform.translation.y,
+                "z": transform.translation.z,
+            },
+            "rotation_xyzw": {
+                "qx": transform.rotation_xyzw.qx,
+                "qy": transform.rotation_xyzw.qy,
+                "qz": transform.rotation_xyzw.qz,
+                "qw": transform.rotation_xyzw.qw,
+            },
+        }
     }
 
 
@@ -255,9 +250,11 @@ def _ros_image_to_bgr(msg: Any) -> np.ndarray:
 
 
 class LiveImageSubscriber:
-    def __init__(self, topics: dict[str, str]) -> None:
+    def __init__(self, topics: dict[str, str], pose_streams: tuple[PoseStreamConfig, ...]) -> None:
         import rclpy
         from rclpy.qos import qos_profile_sensor_data
+        from geometry_msgs.msg import PoseStamped
+        from nav_msgs.msg import Odometry
         from sensor_msgs.msg import Image
 
         self._rclpy = rclpy
@@ -267,6 +264,12 @@ class LiveImageSubscriber:
         self._lock = threading.Lock()
         self._latest: dict[str, tuple[np.ndarray, float, int]] = {}
         self._seq_by_hand: dict[str, int] = {}
+        self._latest_pose: dict[str, tuple[tuple[float, float, float, float, float, float, float], float, int]] = {}
+        self._pose_seq_by_topic: dict[str, int] = {}
+        pose_msg_types = {
+            "nav_msgs/msg/Odometry": Odometry,
+            "geometry_msgs/msg/PoseStamped": PoseStamped,
+        }
         self._subscriptions = [
             self.node.create_subscription(
                 Image,
@@ -276,6 +279,18 @@ class LiveImageSubscriber:
             )
             for hand, topic in topics.items()
         ]
+        for stream in pose_streams:
+            msg_type = pose_msg_types.get(stream.msg_type)
+            if msg_type is None:
+                raise RuntimeError(f"实时标定暂不支持位姿类型: {stream.msg_type}")
+            self._subscriptions.append(
+                self.node.create_subscription(
+                    msg_type,
+                    stream.input_topic,
+                    self._make_pose_callback(stream),
+                    qos_profile_sensor_data,
+                )
+            )
 
     def _make_callback(self, hand: str):
         def callback(msg: Any) -> None:
@@ -288,6 +303,20 @@ class LiveImageSubscriber:
                 seq = self._seq_by_hand.get(hand, 0) + 1
                 self._seq_by_hand[hand] = seq
                 self._latest[hand] = (image, time.monotonic(), seq)
+
+        return callback
+
+    def _make_pose_callback(self, stream: PoseStreamConfig):
+        def callback(msg: Any) -> None:
+            try:
+                pose = extract_pose_fields(msg, stream.msg_type)
+            except Exception as exc:  # noqa: BLE001 - keep subscriber alive.
+                print(f"\n{stream.input_topic} 位姿解析失败: {exc}", file=sys.stderr)
+                return
+            with self._lock:
+                seq = self._pose_seq_by_topic.get(stream.input_topic, 0) + 1
+                self._pose_seq_by_topic[stream.input_topic] = seq
+                self._latest_pose[stream.input_topic] = (pose, time.monotonic(), seq)
 
         return callback
 
@@ -333,6 +362,19 @@ class LiveImageSubscriber:
                 for hand in hands
                 if hand not in self._latest or now - self._latest[hand][1] > FRESH_IMAGE_MAX_AGE_SEC
             ]
+
+    def latest_pose(
+        self,
+        topic: str,
+        max_age_sec: float | None = None,
+    ) -> tuple[tuple[float, float, float, float, float, float, float], float, int] | None:
+        with self._lock:
+            item = self._latest_pose.get(topic)
+            if item is None:
+                return None
+            if max_age_sec is not None and time.monotonic() - item[1] > max_age_sec:
+                return None
+            return item
 
     def close(self) -> None:
         self.node.destroy_node()
@@ -535,8 +577,9 @@ def _ensure_nested_status(calibration: dict[str, Any]) -> dict[str, Any]:
     calibration.setdefault("generated_by", "core.mcap_calibration_wizard")
     calibration["updated_at"] = datetime.now().astimezone().isoformat(timespec="seconds")
     calibration.setdefault("gripper", {})
-    calibration.setdefault("tcp", {})
-    for section in ("gripper", "tcp"):
+    calibration.setdefault("common_frame", {})
+    calibration.pop("tcp", None)
+    for section in ("gripper", "common_frame"):
         if not isinstance(calibration[section], dict):
             calibration[section] = {}
         for hand in ("left", "right"):
@@ -551,7 +594,7 @@ def _ensure_nested_status(calibration: dict[str, Any]) -> dict[str, Any]:
 def _mark_overall_status(calibration: dict[str, Any]) -> None:
     complete = all(
         bool(calibration.get(section, {}).get(hand, {}).get("calibrated"))
-        for section in ("gripper", "tcp")
+        for section in ("gripper", "common_frame")
         for hand in ("left", "right")
     )
     calibration["calibrated"] = complete
@@ -613,7 +656,7 @@ def _load_transform_mapping_for_write(path: Path, fallback: dict[str, Any]) -> d
     return copy.deepcopy(transform_data)
 
 
-def _apply_tcp_results(data: dict[str, Any], results: list[TcpSideCalibration], base_dir: Path) -> None:
+def _apply_common_frame_results(data: dict[str, Any], results: list[CommonFrameSideCalibration], base_dir: Path) -> None:
     calibration = _ensure_nested_status(data.get("calibration", {}))
     by_hand = {item.hand: item for item in results}
     for stream in data.get("pose_streams", []):
@@ -624,30 +667,20 @@ def _apply_tcp_results(data: dict[str, Any], results: list[TcpSideCalibration], 
         transform_file = str(stream.get("transform_file", "")).strip()
         if transform_file:
             transform_path = _resolve_transform_file_for_write(transform_file, base_dir)
-            transform = _load_transform_mapping_for_write(transform_path, data.get("transform", {}))
+            transform = _to_mapping(item.start_from_common)
         else:
-            transform = stream.setdefault("transform", copy.deepcopy(data.get("transform", {})))
-        tcp_offset = transform.setdefault("tcp_offset", {})
-        tcp_offset["x"] = round(item.tcp_offset_x, 6)
-        tcp_offset["z"] = round(item.tcp_offset_z, 6)
+            transform = _to_mapping(item.start_from_common)
+            stream["transform"] = transform
         if transform_file:
             _write_yaml_with_backup(transform_path, transform)
-        calibration["tcp"][hand] = {
+        calibration["common_frame"][hand] = {
             "calibrated": True,
-            "method": "live_gopro_click_points",
+            "method": "live_baton_pose_window",
             "input_topic": item.input_topic,
             "output_topic": item.output_topic,
-            "offset_unit": item.config_unit,
-            "measured_unit": "mm",
-            "measured_tcp_offset_mm": {
-                "x": round(item.measured_x_mm, 6),
-                "z": round(item.measured_z_mm, 6),
-            },
-            "tcp_offset": {
-                "x": round(item.tcp_offset_x, 6),
-                "z": round(item.tcp_offset_z, 6),
-            },
-            "scale_mm_per_px": round(item.scale_mm_per_px, 6),
+            "start_from_common": _to_mapping(item.start_from_common)["start_from_common"],
+            "sample_frames": item.sample_frames,
+            "position_std": round(item.position_std, 9),
             "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         }
     _mark_overall_status(calibration)
@@ -680,8 +713,8 @@ def _print_status(config: AppConfig) -> None:
     for key, label in (
         ("gripper_left", "左手夹爪"),
         ("gripper_right", "右手夹爪"),
-        ("tcp_left", "左手 TCP"),
-        ("tcp_right", "右手 TCP"),
+        ("common_frame_left", "左手 common frame"),
+        ("common_frame_right", "右手 common frame"),
     ):
         print(f"  {label}: {'已完成' if status[key] else '未完成'}")
     print(f"  总体: {'完整已标定' if config_is_calibrated(config) else '未完整标定'}")
@@ -698,9 +731,9 @@ def _save_gripper(config: AppConfig, output_path: Path, results: list[GripperSid
     return load_app_config(output_path)
 
 
-def _save_tcp(config: AppConfig, output_path: Path, results: list[TcpSideCalibration]) -> AppConfig:
+def _save_common_frame(config: AppConfig, output_path: Path, results: list[CommonFrameSideCalibration]) -> AppConfig:
     data = _base_config_mapping(config)
-    _apply_tcp_results(data, results, output_path.parent)
+    _apply_common_frame_results(data, results, output_path.parent)
     _write_yaml_with_backup(output_path, data)
     return load_app_config(output_path)
 
@@ -715,47 +748,6 @@ def _find_open_port(start_port: int = 8765, host: str = "127.0.0.1") -> int:
                 continue
             return port
     raise RuntimeError(f"无法在 {host}:{start_port}-{start_port + 99} 找到可用端口。")
-
-
-def _latest_mcap_for_pose_units(config: AppConfig) -> Path | None:
-    input_dir = Path(config.batch.input_dir)
-    if not input_dir.is_dir():
-        return None
-    files = sorted(
-        (path for path in input_dir.glob(config.batch.file_glob) if path.is_file()),
-        key=lambda path: path.name,
-        reverse=True,
-    )
-    return files[0] if files else None
-
-
-def _infer_pose_units(config: AppConfig) -> dict[str, str]:
-    mcap_path = _latest_mcap_for_pose_units(config)
-    units = {stream.input_topic: "m" for stream in config.pose_streams}
-    if mcap_path is None:
-        return units
-
-    codec = Ros2DynamicCodec()
-    samples_by_topic: dict[str, list[float]] = {stream.input_topic: [] for stream in config.pose_streams}
-    stream_by_topic = {stream.input_topic: stream for stream in config.pose_streams}
-    with mcap_path.open("rb") as fh:
-        reader = make_reader(fh)
-        for schema, channel, message in reader.iter_messages(log_time_order=False):
-            stream = stream_by_topic.get(channel.topic)
-            if stream is None:
-                continue
-            values = samples_by_topic[channel.topic]
-            if len(values) >= 90:
-                continue
-            x, y, z, _qx, _qy, _qz, _qw = extract_pose_fields(codec.decode(schema, message), stream.msg_type)
-            values.extend([abs(x), abs(y), abs(z)])
-            if all(len(values) >= 90 for values in samples_by_topic.values()):
-                break
-
-    for topic, values in samples_by_topic.items():
-        if values:
-            units[topic] = "mm" if median(values) > 20 else "m"
-    return units
 
 
 def _sample_stats_to_summary(stats: LiveSampleStats, aruco_dict: str, marker_id_0: int, marker_id_1: int) -> dict[str, Any]:
@@ -806,7 +798,31 @@ PHASE_LABELS = {
     "closed": "完全闭合",
     "open": "完全张开",
 }
-CLICK_LABELS = ("Baton Mini 参考点", "夹爪 TCP 点", "比例尺点 A", "比例尺点 B")
+
+
+def _average_quaternion_xyzw(quaternions: list[tuple[float, float, float, float]]) -> tuple[float, float, float, float]:
+    if not quaternions:
+        raise RuntimeError("没有可用于平均的四元数样本。")
+    aligned: list[np.ndarray] = []
+    reference = np.asarray(quaternions[0], dtype=np.float64)
+    for quat in quaternions:
+        values = np.asarray(quat, dtype=np.float64)
+        norm = float(np.linalg.norm(values))
+        if norm == 0.0:
+            raise RuntimeError("收到零四元数位姿样本。")
+        values = values / norm
+        if float(np.dot(values, reference)) < 0:
+            values = -values
+        aligned.append(values)
+    accumulator = np.zeros((4, 4), dtype=np.float64)
+    for values in aligned:
+        accumulator += np.outer(values, values)
+    eigenvalues, eigenvectors = np.linalg.eigh(accumulator)
+    average = eigenvectors[:, int(np.argmax(eigenvalues))]
+    if average[3] < 0:
+        average = -average
+    average = average / np.linalg.norm(average)
+    return tuple(float(value) for value in average)
 
 
 class BrowserCalibrationSession:
@@ -825,7 +841,6 @@ class BrowserCalibrationSession:
         self.process = process
         self.dictionaries = _aruco_dictionaries()
         self.parameters = _detector_parameters()
-        self.pose_units = _infer_pose_units(config)
         self.lock = threading.RLock()
         self.stop_event = threading.Event()
         self.mode = "home"
@@ -835,9 +850,8 @@ class BrowserCalibrationSession:
         self.message = ""
         self.current_detection: dict[str, Any] = {}
         self.sample_summaries: dict[str, dict[str, Any]] = {}
-        self.tcp_hand = "left"
-        self.tcp_snapshot: np.ndarray | None = None
-        self.tcp_points: list[dict[str, float]] = []
+        self.common_hand = "left"
+        self.common_status = "ready"
         self.last_heartbeat: float | None = None
         self.saw_browser = False
         self.force_stop_gopro = True
@@ -905,12 +919,10 @@ class BrowserCalibrationSession:
                     "step_status": self.step_status,
                     "done": self.gripper_index >= len(GRIPPER_STEPS),
                 },
-                "tcp": {
-                    "hand": self.tcp_hand,
-                    "hand_label": HAND_LABELS[self.tcp_hand],
-                    "points": self.tcp_points,
-                    "point_labels": CLICK_LABELS,
-                    "pose_units": self.pose_units,
+                "common_frame": {
+                    "hand": self.common_hand,
+                    "hand_label": HAND_LABELS[self.common_hand],
+                    "step_status": self.common_status,
                 },
                 "detection": self.current_detection,
                 "message": self.message,
@@ -928,14 +940,14 @@ class BrowserCalibrationSession:
                 if self.gripper_index >= len(GRIPPER_STEPS):
                     self.gripper_index = 0
                 self.step_status = "ready"
-            elif mode == "tcp":
+            elif mode == "common":
                 if hand not in {"left", "right"}:
-                    raise RuntimeError("TCP 标定必须指定 left 或 right。")
-                self.mode = "tcp"
-                self.tcp_hand = hand
-                self.tcp_snapshot = self._capture_frame_locked(hand)
-                self.tcp_points = []
-                self.message = f"请依次点击：{'、'.join(CLICK_LABELS)}。"
+                    raise RuntimeError("common frame 标定必须指定 left 或 right。")
+                self.mode = "common"
+                self.common_hand = hand
+                self.common_status = "ready"
+                stream = _pose_for_hand(self.config.pose_streams, hand)
+                self.message = f"请将 {HAND_LABELS[hand]} Baton Mini 放到 common frame 原点/标准姿态，然后点击开始采样。位姿 topic: {stream.input_topic}"
             elif mode == "home":
                 self.mode = "home"
             else:
@@ -1084,7 +1096,7 @@ class BrowserCalibrationSession:
 
     def frame_jpeg(self) -> bytes:
         with self.lock:
-            hand = self.tcp_hand if self.mode == "tcp" else self.current_gripper_step()[0]
+            hand = self.common_hand if self.mode == "common" else self.current_gripper_step()[0]
             title = f"{HAND_LABELS[hand]} 实时画面"
         frame = self.subscriber.latest_frame(hand, max_age_sec=FRESH_IMAGE_MAX_AGE_SEC)
         if frame is None:
@@ -1101,58 +1113,83 @@ class BrowserCalibrationSession:
             }
         return _encode_jpeg(_draw_detection_overlay(image, detection, title))
 
-    def snapshot_jpeg(self) -> bytes:
+    def start_common_frame_sample(self) -> dict[str, Any]:
         with self.lock:
-            if self.tcp_snapshot is None:
-                self.tcp_snapshot = self._capture_frame_locked(self.tcp_hand)
-            image = self.tcp_snapshot.copy()
-            for index, point in enumerate(self.tcp_points):
-                x = int(point["x"])
-                y = int(point["y"])
-                cv2.circle(image, (x, y), 6, (0, 180, 255), -1)
-                cv2.putText(image, str(index + 1), (x + 8, y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 180, 255), 2)
-            return _encode_jpeg(image, quality=90)
+            if self.common_status == "sampling":
+                raise RuntimeError("当前正在采样，请稍等。")
+            self.common_status = "sampling"
+            self.error = ""
+            self.message = f"正在采样 {HAND_LABELS[self.common_hand]} Baton Mini 位姿 2 秒，请保持设备静止。"
+            self._sample_thread = threading.Thread(target=self._sample_current_common_frame, daemon=True)
+            self._sample_thread.start()
+        return self.state()
 
-    def set_tcp_points(self, points: list[dict[str, float]], scale_mm: float) -> dict[str, Any]:
-        if len(points) != 4:
-            raise RuntimeError("TCP 点选需要 4 个点。")
-        if scale_mm <= 0:
-            raise RuntimeError("比例尺真实距离必须大于 0。")
-        ref = points[0]
-        tcp = points[1]
-        scale_a = points[2]
-        scale_b = points[3]
-        scale_px = float(np.linalg.norm(np.asarray([scale_a["x"], scale_a["y"]]) - np.asarray([scale_b["x"], scale_b["y"]])))
-        if scale_px <= 0:
-            raise RuntimeError("比例尺两点不能重合。")
-        mm_per_px = scale_mm / scale_px
-        x_mm = (tcp["x"] - ref["x"]) * mm_per_px
-        z_mm = (ref["y"] - tcp["y"]) * mm_per_px
+    def _sample_current_common_frame(self) -> None:
+        hand = self.common_hand
+        stream = _pose_for_hand(self.config.pose_streams, hand)
+        try:
+            result = self._sample_common_frame_pose(hand, stream)
+            with self.lock:
+                self.config = _save_common_frame(self.config, self.output_path, [result])
+                self.common_status = "sampled"
+                self.error = ""
+                self.message = (
+                    f"{HAND_LABELS[hand]} common frame 已保存："
+                    f"{result.sample_frames} 帧，位置标准差 {result.position_std:.6g}。"
+                )
+        except Exception as exc:  # noqa: BLE001 - report to browser.
+            with self.lock:
+                self.common_status = "failed"
+                self.error = str(exc)
+                self.message = "common frame 采样失败，请确认 Baton Mini 位姿 topic 正在发布且设备保持静止。"
 
-        stream = _pose_for_hand(self.config.pose_streams, self.tcp_hand)
-        unit = self.pose_units.get(stream.input_topic, "m")
-        tcp_x = x_mm / 1000.0 if unit == "m" else x_mm
-        tcp_z = z_mm / 1000.0 if unit == "m" else z_mm
-        result = TcpSideCalibration(
-            hand=self.tcp_hand,
+    def _sample_common_frame_pose(self, hand: str, stream: PoseStreamConfig) -> CommonFrameSideCalibration:
+        deadline = time.monotonic() + SAMPLE_SECONDS
+        positions: list[tuple[float, float, float]] = []
+        quaternions: list[tuple[float, float, float, float]] = []
+        last_seq: int | None = None
+        last_fresh_pose_time = time.monotonic()
+
+        while time.monotonic() < deadline:
+            sample = self.subscriber.latest_pose(stream.input_topic, max_age_sec=FRESH_IMAGE_MAX_AGE_SEC)
+            if sample is None:
+                if time.monotonic() - last_fresh_pose_time > LOST_IMAGE_TIMEOUT_SEC:
+                    raise RuntimeError(f"{stream.input_topic} 超过 {LOST_IMAGE_TIMEOUT_SEC:.0f} 秒没有新位姿。")
+                time.sleep(0.01)
+                continue
+            pose, _stamp, seq = sample
+            if last_seq == seq:
+                time.sleep(0.005)
+                continue
+            last_seq = seq
+            last_fresh_pose_time = time.monotonic()
+            x, y, z, qx, qy, qz, qw = pose
+            positions.append((x, y, z))
+            quaternions.append((qx, qy, qz, qw))
+
+        if len(positions) < MIN_SAMPLE_FRAMES:
+            raise RuntimeError(f"{HAND_LABELS[hand]} 位姿采样帧数不足：{len(positions)} < {MIN_SAMPLE_FRAMES}")
+
+        position_array = np.asarray(positions, dtype=np.float64)
+        median_position = np.median(position_array, axis=0)
+        position_std = float(np.mean(np.std(position_array, axis=0)))
+        qx, qy, qz, qw = _average_quaternion_xyzw(quaternions)
+        transform = TransformConfig(
+            translation=Vector3Config(
+                x=float(median_position[0]),
+                y=float(median_position[1]),
+                z=float(median_position[2]),
+            ),
+            rotation_xyzw=QuaternionConfig(qx=qx, qy=qy, qz=qz, qw=qw),
+        )
+        return CommonFrameSideCalibration(
+            hand=hand,
             input_topic=stream.input_topic,
             output_topic=stream.output_topic,
-            tcp_offset_x=tcp_x,
-            tcp_offset_z=tcp_z,
-            measured_x_mm=x_mm,
-            measured_z_mm=z_mm,
-            config_unit=unit,
-            scale_mm_per_px=mm_per_px,
+            start_from_common=transform,
+            sample_frames=len(positions),
+            position_std=position_std,
         )
-        with self.lock:
-            self.tcp_points = points
-            self.config = _save_tcp(self.config, self.output_path, [result])
-            self.message = (
-                f"{HAND_LABELS[self.tcp_hand]} TCP 已保存：测量 x={x_mm:.2f}mm, z={z_mm:.2f}mm；"
-                f"配置单位 {unit}，写入 x={tcp_x:.6g}, z={tcp_z:.6g}。"
-            )
-            self.error = ""
-        return self.state()
 
     def exit(self) -> dict[str, Any]:
         with self.lock:
@@ -1187,11 +1224,6 @@ def _html_page() -> str:
     .error { white-space: pre-wrap; background: #fff1f0; border: 1px solid #ffccc7; color: #a8071a; border-radius: 6px; padding: 10px; margin: 10px 0; }
     .muted { color: #64748b; font-size: 13px; }
     .hidden { display: none; }
-    .tcp-wrap { position: relative; }
-    .dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #ffb020; border: 2px solid #1f2937; transform: translate(-50%, -50%); pointer-events: none; }
-    .dot-label { position: absolute; transform: translate(8px, -22px); background: rgba(255,255,255,.9); border: 1px solid #d8dee7; border-radius: 4px; padding: 2px 5px; font-size: 12px; pointer-events: none; }
-    .point-list { margin-top: 8px; font-size: 14px; }
-    input { padding: 8px; border: 1px solid #bcc7d4; border-radius: 6px; width: 140px; }
     @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -1204,15 +1236,6 @@ def _html_page() -> str:
   <div class="grid">
     <section class="panel">
       <img id="live" class="video" src="/frame.jpg" alt="GoPro 实时画面">
-      <div id="tcpArea" class="hidden">
-        <p class="muted">在截图上依次点击：Baton Mini 参考点、夹爪 TCP 点、比例尺点 A、比例尺点 B。</p>
-        <div id="snapshotBox" class="tcp-wrap">
-          <img id="snapshot" class="video" src="/snapshot.jpg" alt="TCP 点选截图">
-          <div id="pointOverlay"></div>
-        </div>
-        <div class="point-list" id="pointList"></div>
-        <p>比例尺真实距离 mm：<input id="scaleMm" type="number" min="0.1" step="0.1" value="20"></p>
-      </div>
     </section>
     <section class="panel">
       <h3>标定状态</h3>
@@ -1222,8 +1245,8 @@ def _html_page() -> str:
       <h3>操作</h3>
       <div id="homeControls">
         <button class="primary" onclick="setMode('gripper')">夹爪宽度实时标定</button>
-        <button onclick="setMode('tcp','left')">左手 TCP 点选</button>
-        <button onclick="setMode('tcp','right')">右手 TCP 点选</button>
+        <button onclick="setMode('common','left')">左手 common frame 标定</button>
+        <button onclick="setMode('common','right')">右手 common frame 标定</button>
         <button onclick="setMode('home')">查看状态</button>
         <button class="danger" onclick="exitWizard()">退出标定中心</button>
       </div>
@@ -1235,10 +1258,10 @@ def _html_page() -> str:
         <button id="nextBtn" onclick="nextGripper()">确认并进入下一步</button>
         <button onclick="setMode('home')">返回中心</button>
       </div>
-      <div id="tcpControls" class="hidden">
-        <h4 id="tcpTitle"></h4>
-        <button onclick="clearTcpPoints()">重选点</button>
-        <button class="primary" onclick="submitTcp()">确认保存 TCP</button>
+      <div id="commonControls" class="hidden">
+        <h4 id="commonTitle"></h4>
+        <p class="muted">将对应 Baton Mini 放到 common frame 原点/标准姿态，并保持静止。程序会读取实时 odometry，保存 start_from_common。</p>
+        <button class="primary" id="commonSampleBtn" onclick="sampleCommon()">开始采样并保存</button>
         <button onclick="setMode('home')">返回中心</button>
       </div>
       <h3>检测信息</h3>
@@ -1249,8 +1272,6 @@ def _html_page() -> str:
 </main>
 <script>
 let state = null;
-let points = [];
-const pointLabels = ["Baton Mini 参考点", "夹爪 TCP 点", "比例尺点 A", "比例尺点 B"];
 
 async function api(path, body = {}) {
   const res = await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
@@ -1270,16 +1291,12 @@ async function poll() {
 async function heartbeat() { try { await fetch('/api/heartbeat', {method: 'POST'}); } catch (e) {} }
 function refreshImages() {
   if (!state) return;
-  if (state.mode === 'tcp') {
-    document.getElementById('snapshot').src = '/snapshot.jpg?t=' + Date.now();
-  } else {
-    document.getElementById('live').src = '/frame.jpg?t=' + Date.now();
-  }
+  document.getElementById('live').src = '/frame.jpg?t=' + Date.now();
 }
 function render() {
   if (!state) return;
   document.getElementById('overall').textContent = state.is_calibrated ? '完整已标定' : '未完整标定';
-  const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪', tcp_left:'左手 TCP', tcp_right:'右手 TCP'};
+  const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪', common_frame_left:'左手 common frame', common_frame_right:'右手 common frame'};
   document.getElementById('status').innerHTML = Object.keys(labels).map(k => `<div class="badge ${state.status[k] ? 'done' : 'todo'}">${labels[k]}：${state.status[k] ? '已完成' : '未完成'}</div>`).join('');
   const msg = document.getElementById('message');
   msg.textContent = state.message || '';
@@ -1290,61 +1307,26 @@ function render() {
   document.getElementById('detect').textContent = JSON.stringify(state.detection || {}, null, 2);
   document.getElementById('homeControls').classList.toggle('hidden', state.mode !== 'home');
   document.getElementById('gripperControls').classList.toggle('hidden', state.mode !== 'gripper');
-  document.getElementById('tcpControls').classList.toggle('hidden', state.mode !== 'tcp');
-  document.getElementById('live').classList.toggle('hidden', state.mode === 'tcp');
-  document.getElementById('tcpArea').classList.toggle('hidden', state.mode !== 'tcp');
+  document.getElementById('commonControls').classList.toggle('hidden', state.mode !== 'common');
   if (state.mode === 'gripper') {
     document.getElementById('gripperTitle').textContent = `${state.gripper.hand_label}${state.gripper.phase_label} (${Math.min(state.gripper.index + 1, state.gripper.total)}/${state.gripper.total})`;
     document.getElementById('gripperHint').textContent = state.gripper.done ? '夹爪标定已完成。' : '摆好动作后点击“开始采样”，采样 2 秒内请保持稳定。';
     document.getElementById('sampleBtn').disabled = state.gripper.step_status === 'sampling' || state.gripper.done;
     document.getElementById('nextBtn').disabled = state.gripper.step_status !== 'sampled';
   }
-  if (state.mode === 'tcp') {
-    document.getElementById('tcpTitle').textContent = `${state.tcp.hand_label} TCP 点选`;
-    renderPoints();
+  if (state.mode === 'common') {
+    document.getElementById('commonTitle').textContent = `${state.common_frame.hand_label} common frame 标定`;
+    document.getElementById('commonSampleBtn').disabled = state.common_frame.step_status === 'sampling';
   }
-}
-function renderPoints() {
-  document.getElementById('pointList').innerHTML = pointLabels.map((label, i) => {
-    const p = points[i];
-    return `<div>${i + 1}. ${label}: ${p ? `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})` : '未选择'}</div>`;
-  }).join('');
-  const img = document.getElementById('snapshot');
-  const overlay = document.getElementById('pointOverlay');
-  if (!img.naturalWidth || !img.clientWidth) {
-    overlay.innerHTML = '';
-    return;
-  }
-  overlay.innerHTML = points.map((p, i) => {
-    const left = p.x * img.clientWidth / img.naturalWidth;
-    const top = p.y * img.clientHeight / img.naturalHeight;
-    return `<div class="dot" style="left:${left}px;top:${top}px"></div><div class="dot-label" style="left:${left}px;top:${top}px">${i + 1}</div>`;
-  }).join('');
 }
 async function setMode(mode, hand=null) {
-  points = [];
   await api('/api/mode', {mode, hand});
 }
 async function sampleGripper() { await api('/api/gripper/sample'); }
 async function retryGripper() { await api('/api/gripper/retry'); }
 async function nextGripper() { await api('/api/gripper/next'); }
+async function sampleCommon() { await api('/api/common/sample'); }
 async function exitWizard() { await api('/api/exit'); document.body.innerHTML = '<main><h2>标定中心已退出</h2></main>'; }
-function clearTcpPoints() { points = []; renderPoints(); }
-async function submitTcp() {
-  const scale = Number(document.getElementById('scaleMm').value);
-  await api('/api/tcp/save', {points, scale_mm: scale});
-  points = [];
-}
-document.getElementById('snapshot').addEventListener('click', (event) => {
-  if (points.length >= 4) return;
-  const img = event.target;
-  const rect = img.getBoundingClientRect();
-  const x = (event.clientX - rect.left) * img.naturalWidth / rect.width;
-  const y = (event.clientY - rect.top) * img.naturalHeight / rect.height;
-  points.push({x, y});
-  renderPoints();
-});
-document.getElementById('snapshot').addEventListener('load', renderPoints);
 setInterval(poll, 500);
 setInterval(refreshImages, 250);
 setInterval(heartbeat, 2000);
@@ -1376,8 +1358,6 @@ class CalibrationRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(self.server.session.state())
             elif parsed.path == "/frame.jpg":
                 self._send_bytes(self.server.session.frame_jpeg(), "image/jpeg")
-            elif parsed.path == "/snapshot.jpg":
-                self._send_bytes(self.server.session.snapshot_jpeg(), "image/jpeg")
             else:
                 self.send_error(HTTPStatus.NOT_FOUND, "not found")
         except Exception as exc:  # noqa: BLE001 - return browser-readable errors.
@@ -1398,10 +1378,8 @@ class CalibrationRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(self.server.session.retry_current_gripper_step())
             elif parsed.path == "/api/gripper/next":
                 self._send_json(self.server.session.confirm_next_gripper_step())
-            elif parsed.path == "/api/tcp/save":
-                points = body.get("points", [])
-                scale_mm = float(body.get("scale_mm", 0))
-                self._send_json(self.server.session.set_tcp_points(points, scale_mm))
+            elif parsed.path == "/api/common/sample":
+                self._send_json(self.server.session.start_common_frame_sample())
             elif parsed.path == "/api/exit":
                 self._send_json(self.server.session.exit())
             else:
@@ -1446,7 +1424,7 @@ def _wait_until_not_sampling(session: BrowserCalibrationSession) -> None:
 
 def _terminal_gripper_fallback(session: BrowserCalibrationSession) -> None:
     print()
-    print("进入夹爪宽度终端兜底流程。TCP 点选仍需浏览器页面。")
+    print("进入夹爪宽度终端兜底流程。common frame 标定仍需浏览器页面。")
     session.set_mode("gripper")
     while True:
         state = session.state()
@@ -1477,7 +1455,7 @@ def _calibration_center_menu() -> str:
     print()
     print("标定中心")
     print("  1  夹爪宽度实时标定")
-    print("  2  TCP 截图点选标定")
+    print("  2  common frame 位姿标定")
     print("  3  查看当前标定状态")
     print("  q  返回/退出")
     return input("选择: ").strip().lower()
@@ -1510,10 +1488,11 @@ def run_calibration_wizard(
     output_path = Path(output_path)
     config = _reload_config(output_path, config_path)
 
-    print("数据清洗实时 GoPro 标定中心")
+    print("数据清洗实时标定中心")
     print(f"  当前基础配置: {_short_path(config_path)}")
     print(f"  标定配置输出: {_short_path(output_path)}")
     print("  夹爪标定订阅: /gopro_left/image_raw, /gopro_right/image_raw")
+    print("  common frame 标定订阅: pose_streams 中的左右 Baton Mini odometry topic")
     print("  交互方式: 浏览器向导，OpenCV 仅做后台 ArUco 检测。")
 
     process = ManagedGoProProcess(None)
@@ -1523,8 +1502,13 @@ def run_calibration_wizard(
     server_thread: threading.Thread | None = None
     force_stop_gopro = False
     try:
-        subscriber = LiveImageSubscriber(GOPRO_TOPICS)
-        process = _ensure_gopro_topics(subscriber)
+        subscriber = LiveImageSubscriber(GOPRO_TOPICS, config.pose_streams)
+        try:
+            process = _ensure_gopro_topics(subscriber)
+        except Exception as exc:  # noqa: BLE001 - common-frame calibration can still run.
+            print(f"  GoPro 图像未就绪：{exc}")
+            print("  可继续使用 common frame 标定；夹爪宽度标定需要 GoPro 图像。")
+            process = ManagedGoProProcess(None)
         session = BrowserCalibrationSession(config_path, output_path, config, subscriber, process)
         session.start_background_threads()
         port = _find_open_port()

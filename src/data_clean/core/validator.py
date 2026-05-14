@@ -104,7 +104,6 @@ def validate_input_inventory(config: AppConfig, inventory: dict[str, TopicInvent
             raise ValidationError(
                 f'pose topic "{pose_stream.input_topic}" uses unsupported type "{pose_stream.msg_type}"'
             )
-
     for gripper_stream in config.gripper_streams:
         topic_inventory = inventory.get(gripper_stream.image_topic)
         if topic_inventory is None:

@@ -32,6 +32,14 @@
 
 当我问到与 `/home/hit/ROS/src/data_clean` 或 `start_data_clean.sh` 相关的问题时，必须先阅读阶段二的四个阶段级文档，再阅读阶段二场景一的五个固定文档。
 
+## 工作流
+
+目录：`/home/hit/ROS/DOCS/工作流`
+
+当交互模式识别为"从零编写程序"时，必须加载以下工作流文档并按步骤执行：
+
+- 从零编写程序：`/home/hit/ROS/DOCS/工作流/从零编写程序.md`
+
 ## 阶段一：数据采集
 
 目录：`/home/hit/ROS/DOCS/阶段一：数据采集`
@@ -104,7 +112,7 @@
 - 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/当前进度.md`
 - 阶段产出：`/home/hit/ROS/DOCS/阶段二：数据清洗/阶段产出.md`
 
-### 阶段二场景一：MCAP 数据清洗与配置生成（三程序统一入口）
+### 阶段二场景一：提取夹爪开合以及位姿转换
 
 目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一`
 
@@ -113,6 +121,46 @@
 - 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一/执行约束.md`
 - 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一/执行记录.md`
 - 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一/当前进度.md`
+
+### 阶段二场景二：硬件数据可靠性验证（滤波、异常值处理与 IK 仿真）
+
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二`
+
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/当前进度.md`
+
+### 阶段二场景三：MCAP 多 topic 时间轴对齐
+
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三`
+
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/当前进度.md`
+
+### 阶段二场景四：构建标准 canonical dataset
+
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四`
+
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/当前进度.md`
+
+### 阶段二场景五：模型训练格式导出器
+
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五`
+
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/当前进度.md`
 
 ## 阶段三：模型训练
 
