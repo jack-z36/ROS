@@ -3,10 +3,10 @@
 set -euo pipefail
 
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV:-${WORKSPACE_DIR}/.conda-envs/data-clean}"
+CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV:-${WORKSPACE_DIR}/src/data_clean/.conda-envs/data-clean}"
 PYTHON_BIN="${DATA_CLEAN_PYTHON:-${CONDA_ENV_DIR}/bin/python}"
-SMOKE_CONFIG="${WORKSPACE_DIR}/config/data_clean_smoke_test.yaml"
-CALIBRATED_CONFIG="${WORKSPACE_DIR}/config/data_clean_calibrated.yaml"
+SMOKE_CONFIG="${WORKSPACE_DIR}/config/data_clean/data_clean_smoke_test.yaml"
+CALIBRATED_CONFIG="${WORKSPACE_DIR}/config/data_clean/data_clean_calibrated.yaml"
 if [[ -n "${DATA_CLEAN_CONFIG:-}" ]]; then
   DEFAULT_CONFIG="${DATA_CLEAN_CONFIG}"
   DEFAULT_CONFIG_KIND="environment override"
@@ -55,7 +55,7 @@ Default config:
   ${DEFAULT_CONFIG} (${DEFAULT_CONFIG_KIND})
 
 Config priority:
-  --config / DATA_CLEAN_CONFIG > config/data_clean_calibrated.yaml > config/data_clean_smoke_test.yaml
+  --config / DATA_CLEAN_CONFIG > config/data_clean/data_clean_calibrated.yaml > config/data_clean/data_clean_smoke_test.yaml
 
 Notes:
   The script prints a human-readable summary. Set DATA_CLEAN_RAW_JSON=1 to print raw JSON lines.
@@ -90,7 +90,7 @@ export PYTHONPATH="${DATA_CLEAN_SOURCE}:${PYTHONPATH:-}"
 if has_arg "--help" "$@" || has_arg "-h" "$@"; then
   usage
   echo
-  exec "${PYTHON_BIN}" -m core.mcap_clean_launcher --help
+  exec "${PYTHON_BIN}" -m runtime.mcap_clean_launcher --help
 fi
 
 ARGS=("$@")
@@ -108,8 +108,8 @@ if [[ "${DATA_CLEAN_RAW_JSON:-0}" != "1" ]]; then
   echo "Python: ${PYTHON_BIN}"
   echo "PYTHONPATH: ${PYTHONPATH}"
   echo "Default config: ${DEFAULT_CONFIG} (${DEFAULT_CONFIG_KIND})"
-  echo "Command: ${PYTHON_BIN} -m core.mcap_clean_launcher ${ARGS[*]}"
+  echo "Command: ${PYTHON_BIN} -m runtime.mcap_clean_launcher ${ARGS[*]}"
   echo
 fi
 
-exec "${PYTHON_BIN}" -m core.mcap_clean_launcher "${ARGS[@]}"
+exec "${PYTHON_BIN}" -m runtime.mcap_clean_launcher "${ARGS[@]}"

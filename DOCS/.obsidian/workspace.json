@@ -1,0 +1,221 @@
+{
+  "main": {
+    "id": "1522bb4381096203",
+    "type": "split",
+    "children": [
+      {
+        "id": "f9b9c5284582b6e4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "580ecbcf9427f557",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "新标签页"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "5236456834dc5275",
+    "type": "split",
+    "children": [
+      {
+        "id": "fd33770cf19b5d87",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "be91182700312beb",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "39cb51159ce5debf",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "90ee37e4c71038b9",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "right": {
+    "id": "fbdbf803ffb4127f",
+    "type": "split",
+    "children": [
+      {
+        "id": "3cb3cc1d62cb5772",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "91b96619a4d107b1",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "阶段二：数据清洗/其他/阶段二产物架构设计.md",
+                "collapseAll": false,
+                "extraContext": true,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "阶段二产物架构设计 的反向链接列表"
+            }
+          },
+          {
+            "id": "63e0430e5e9983c3",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "阶段二：数据清洗/其他/阶段二产物架构设计.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "阶段二产物架构设计 的出链列表"
+            }
+          },
+          {
+            "id": "3da9ccd0a2f04b1d",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "bbabe55466f9f153",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "3778ea2e2e32906f",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "大纲"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "580ecbcf9427f557",
+  "lastOpenFiles": [
+    "阶段二：数据清洗/AGENTS.md.tmp.22834.f50fb9acf46b",
+    "阶段二：数据清洗/文件存放规范.md",
+    "阶段二：数据清洗/文件存放规范.md.tmp.22834.bed755d33caa",
+    "阶段二：数据清洗/03_tasks/active/001_runtime_mvp_harness.md",
+    "阶段二：数据清洗/03_tasks/completed/README.md",
+    "阶段二：数据清洗/03_tasks/README.md",
+    "阶段二：数据清洗/03_tasks/completed",
+    "阶段二：数据清洗/03_tasks/active",
+    "阶段二：数据清洗/03_tasks",
+    "阶段二：数据清洗/02_service/输出程序与文件.md",
+    "阶段二：数据清洗/02_service/当前进度.md",
+    "阶段二：数据清洗/02_service/执行记录.md",
+    "阶段二：数据清洗/02_service/执行约束.md",
+    "阶段二：数据清洗/02_service/背景信息.md",
+    "阶段二：数据清洗/02_service/目标描述.md",
+    "阶段二：数据清洗/02_service/AGENTS.md",
+    "阶段二：数据清洗/01_runtime_mvp/输出程序与文件.md",
+    "阶段二：数据清洗/01_runtime_mvp/当前进度.md",
+    "阶段二：数据清洗/01_runtime_mvp/执行记录.md",
+    "阶段二：数据清洗/01_runtime_mvp/执行约束.md",
+    "阶段二：数据清洗/01_runtime_mvp/背景信息.md",
+    "阶段二：数据清洗/01_runtime_mvp/目标描述.md",
+    "阶段二：数据清洗/其他/README.md",
+    "阶段二：数据清洗/AGENTS.md",
+    "阶段二：数据清洗/02_service/场景五/输出程序与文件.md",
+    "阶段二：数据清洗/02_service/场景五/背景信息.md",
+    "阶段二：数据清洗/02_service/场景五/目标描述.md",
+    "阶段二：数据清洗/02_service/场景五/执行记录.md",
+    "阶段二：数据清洗/02_service/场景五/执行约束.md",
+    "阶段二：数据清洗/02_service/场景五/当前进度.md",
+    "阶段二：数据清洗/02_service/场景五",
+    "阶段二：数据清洗/02_service/场景四",
+    "阶段二：数据清洗/02_service/场景三",
+    "阶段二：数据清洗/02_service/场景二",
+    "阶段二：数据清洗/02_service/场景一",
+    "阶段二：数据清洗/00_架构与路线图/阶段二产物架构可视化.html"
+  ]
+}

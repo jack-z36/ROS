@@ -30,7 +30,7 @@
 - `/home/hit/ROS/src/gopro_camera_launch/ARCHITECTURE.md`
 - `/home/hit/ROS/src/gopro_camera_launch/gopro节点运行操作指南.md`
 
-当我问到与 `/home/hit/ROS/src/data_clean` 或 `start_data_clean.sh` 相关的问题时，必须先阅读阶段二的四个阶段级文档，再阅读阶段二场景一的五个固定文档。
+当我问到与 `/home/hit/ROS/src/data_clean` 或 `start_data_clean.sh` 相关的问题时，必须先阅读阶段二的四个阶段级文档，再阅读阶段二的文件存放规范，再阅读阶段二场景一的五个固定文档。
 
 ## 工作流
 
@@ -105,6 +105,15 @@
 
 目录：`/home/hit/ROS/DOCS/阶段二：数据清洗`
 
+阶段二工作入口：
+
+- 阶段二 AGENTS：`/home/hit/ROS/DOCS/阶段二：数据清洗/AGENTS.md`
+- 架构与路线图：`/home/hit/ROS/DOCS/阶段二：数据清洗/00_架构与路线图`
+- Runtime MVP 任务线：`/home/hit/ROS/DOCS/阶段二：数据清洗/01_runtime_mvp`
+- Service 任务线：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service`
+- 任务记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/03_tasks`
+- 真实数据产物：`/home/hit/ROS/asset/阶段二：数据清洗`
+
 阶段级文档：
 
 - 阶段目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/阶段目标描述.md`
@@ -112,55 +121,84 @@
 - 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/当前进度.md`
 - 阶段产出：`/home/hit/ROS/DOCS/阶段二：数据清洗/阶段产出.md`
 
+### 阶段二开发任务一：Runtime MVP
+
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/01_runtime_mvp`
+
+- 当前任务计划：`/home/hit/ROS/DOCS/阶段二：数据清洗/03_tasks/active/001_runtime_mvp_harness.md`
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/01_runtime_mvp/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/01_runtime_mvp/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/01_runtime_mvp/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/01_runtime_mvp/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/01_runtime_mvp/当前进度.md`
+- 输出程序与文件：`/home/hit/ROS/DOCS/阶段二：数据清洗/01_runtime_mvp/输出程序与文件.md`
+
+### 阶段二开发任务二：Service
+
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service`
+
+- Service AGENTS：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/AGENTS.md`
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/当前进度.md`
+- 输出程序与文件：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/输出程序与文件.md`
+
 ### 阶段二场景一：提取夹爪开合以及位姿转换
 
-目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一`
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景一`
 
-- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一/目标描述.md`
-- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一/背景信息.md`
-- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一/执行约束.md`
-- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一/执行记录.md`
-- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景一/当前进度.md`
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景一/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景一/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景一/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景一/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景一/当前进度.md`
+- 输出程序与文件：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景一/输出程序与文件.md`
 
 ### 阶段二场景二：硬件数据可靠性验证（滤波、异常值处理与 IK 仿真）
 
-目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二`
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景二`
 
-- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/目标描述.md`
-- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/背景信息.md`
-- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/执行约束.md`
-- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/执行记录.md`
-- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景二/当前进度.md`
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景二/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景二/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景二/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景二/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景二/当前进度.md`
+- 输出程序与文件：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景二/输出程序与文件.md`
 
 ### 阶段二场景三：MCAP 多 topic 时间轴对齐
 
-目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三`
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景三`
 
-- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/目标描述.md`
-- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/背景信息.md`
-- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/执行约束.md`
-- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/执行记录.md`
-- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景三/当前进度.md`
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景三/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景三/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景三/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景三/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景三/当前进度.md`
+- 输出程序与文件：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景三/输出程序与文件.md`
 
 ### 阶段二场景四：构建标准 canonical dataset
 
-目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四`
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景四`
 
-- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/目标描述.md`
-- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/背景信息.md`
-- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/执行约束.md`
-- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/执行记录.md`
-- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景四/当前进度.md`
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景四/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景四/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景四/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景四/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景四/当前进度.md`
+- 输出程序与文件：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景四/输出程序与文件.md`
 
 ### 阶段二场景五：模型训练格式导出器
 
-目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五`
+目录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景五`
 
-- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/目标描述.md`
-- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/背景信息.md`
-- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/执行约束.md`
-- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/执行记录.md`
-- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/场景五/当前进度.md`
+- 目标描述：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景五/目标描述.md`
+- 背景信息：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景五/背景信息.md`
+- 执行约束：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景五/执行约束.md`
+- 执行记录：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景五/执行记录.md`
+- 当前进度：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景五/当前进度.md`
+- 输出程序与文件：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/场景五/输出程序与文件.md`
 
 ## 阶段三：模型训练
 

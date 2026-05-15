@@ -14,19 +14,26 @@
 
 ## 2. 目录结构
 
-| 路径 | 职责 |
-| --- | --- |
-| `core/mcap_clean_launcher.py` | 面向用户的交互式入口；选择 MCAP 文件、预览计划、校验首个文件、调度清洗。 |
-| `core/mcap_clean_batch.py` | 非交互批处理入口；读取配置、遍历输入目录、并行处理文件、输出 JSON 报告。 |
-| `core/mcap_calibration_wizard.py` | 配置/标定向导；辅助生成 `config/data_clean_calibrated.yaml`。 |
-| `core/mcap_io.py` | 单文件清洗核心；读取原始 MCAP、生成 common-frame 相机位姿 payload、新增夹爪宽度 topic、写出 MCAP。 |
-| `core/mcap_process_config.py` | YAML 配置解析与校验；定义 batch、transform、pose_streams、gripper_streams。 |
-| `core/ros2_codec.py` | ROS2 CDR 动态编解码、图像转 ndarray、位姿字段提取/注入。 |
-| `core/ros2_schemas.py` | 清洗流程需要写出的 ROS2 schema 文本。 |
-| `core/tcp_transform.py` | Baton Mini start frame 到 common frame 的标准 SE(3) 位姿转换。 |
-| `core/gripper_width.py` | 基于 OpenCV ArUco 的夹爪宽度提取、缺失帧插值和归一化。 |
-| `core/validator.py` | 输入 MCAP topic/schema 校验、输出契约校验和报告数据结构。 |
-| `core/__init__.py` | Python 包标记。 |
+代码按单向依赖分层组织：`Schemas → Config → Repo → Service → Runtime → UI`，后层可调前层，前层不能反向依赖后层。
+
+| 路径 | 层级 | 职责 |
+| --- | --- | --- |
+| `schemas/__init__.py` | Schemas | Python 包标记。 |
+| `schemas/ros2_schemas.py` | Schemas | 清洗流程需要写出的 ROS2 schema 文本。零依赖。 |
+| `config/__init__.py` | Config | Python 包标记。 |
+| `config/mcap_process_config.py` | Config | YAML 配置解析与校验；定义 batch、transform、pose_streams、gripper_streams。零内部依赖。 |
+| `repo/__init__.py` | Repo | Python 包标记。 |
+| `repo/ros2_codec.py` | Repo | ROS2 CDR 动态编解码、图像转 ndarray、位姿字段提取/注入。依赖 types。 |
+| `service/__init__.py` | Service | Python 包标记。 |
+| `service/validator.py` | Service | 输入 MCAP topic/schema 校验、输出契约校验和报告数据结构。依赖 config。 |
+| `service/tcp_transform.py` | Service | Baton Mini start frame 到 common frame 的标准 SE(3) 位姿转换。依赖 config。 |
+| `service/gripper_width.py` | Service | 基于 OpenCV ArUco 的夹爪宽度提取、缺失帧插值和归一化。依赖 config。 |
+| `service/mcap_io.py` | Service | 单文件清洗核心；读取原始 MCAP、生成 common-frame 相机位姿 payload、新增夹爪宽度 topic、写出 MCAP。依赖 config、repo、service 内部模块、types。 |
+| `runtime/__init__.py` | Runtime | Python 包标记。 |
+| `runtime/mcap_clean_batch.py` | Runtime | 非交互批处理入口；读取配置、遍历输入目录、并行处理文件、输出 JSON 报告。依赖 config、service。 |
+| `runtime/mcap_clean_launcher.py` | Runtime | 面向用户的交互式入口；选择 MCAP 文件、预览计划、校验首个文件、调度清洗。依赖 config、service。 |
+| `ui/__init__.py` | UI | Python 包标记。 |
+| `ui/mcap_calibration_wizard.py` | UI | 配置/标定向导；辅助生成 `config/data_clean_calibrated.yaml`。依赖 config、repo。 |
 
 相关入口和配置在代码包外：
 
@@ -44,7 +51,7 @@
 
 ```mermaid
 flowchart TD
-  CMD[start_data_clean.sh] --> PY[python -m core.mcap_clean_launcher]
+  CMD[start_data_clean.sh] --> PY[python -m runtime.mcap_clean_launcher]
   PY --> CFG[load_app_config 解析 YAML]
   CFG --> FILES[扫描 input_dir + file_glob]
   FILES --> SELECT[latest/all/交互菜单选择文件]

@@ -1,0 +1,1 @@
+"""Business logic — validation, transforms, gripper extraction, MCAP processing."""

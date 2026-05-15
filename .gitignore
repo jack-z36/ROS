@@ -28,3 +28,24 @@ src/VTLA_octopus-master/.deps/
 src/.obsidian/
 src/gopro_camera_launch/.idea/
 .claude/settings.local.json
+
+# 阶段二运行记录和缓存
+src/data_clean/runs/
+src/data_clean/.cache/
+
+# 阶段二测试（代码 + 结果 + fixture）
+src/data_clean/tests/
+
+# 阶段二数据产物
+asset/阶段二：数据清洗/dev/
+asset/阶段二：数据清洗/prod/
+
+# 临时目录
+_tmp/
+
+# 测试缓存
+.pytest_cache/
+
+# Python 构建产物
+*.egg-info/
+dist/
