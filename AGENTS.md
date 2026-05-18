@@ -30,7 +30,7 @@
 - `src/gopro_camera_launch/ARCHITECTURE.md`
 - `src/gopro_camera_launch/gopro节点运行操作指南.md`
 
-当我问到与 `src/data_clean` 或 `start_data_clean.sh` 相关的问题时，必须先阅读阶段二的四个阶段级文档，再阅读阶段二的文件存放规范，再阅读阶段二场景一的五个固定文档。
+当我问到与 `src/data_clean` 或 `start_data_clean.sh` 相关的问题时，必须先阅读阶段二的四个阶段级文档，再阅读 `DOCS/阶段二：数据清洗/约束文件/文件存放规范.md`，再阅读阶段二场景一的五个固定文档。
 
 ## 工作流
 
@@ -43,6 +43,9 @@
 当交互模式识别为"阶段二开发范式"时，必须加载以下工作流文档并按步骤执行：
 
 - 阶段二开发范式：`DOCS/工作流/阶段二开发范式.md`
+- L2 模板系统入口：`DOCS/工作流/attachments/L2能力模块说明文件模板.md`
+- L3 模板系统入口：`DOCS/工作流/attachments/L3微元任务文件模板.md`
+- L2/L3 模板组件目录：`DOCS/工作流/attachments/templates`
 
 ## 阶段一：数据采集
 
@@ -116,8 +119,15 @@
 - Runtime MVP 任务线：`DOCS/阶段二：数据清洗/01_runtime_mvp`
 - Service 任务线：`DOCS/阶段二：数据清洗/02_service`
 - 任务记录：`DOCS/阶段二：数据清洗/03_tasks`
+- 约束文件：`DOCS/阶段二：数据清洗/约束文件`
 - 执行记录与状态快照：`DOCS/阶段二：数据清洗/执行记录`
 - 真实数据产物：`asset/阶段二：数据清洗`
+
+阶段二约束文件：
+
+- L3 编码执行原则：`DOCS/阶段二：数据清洗/约束文件/L3编码执行原则.md`
+- 文件存放规范：`DOCS/阶段二：数据清洗/约束文件/文件存放规范.md`
+- 上游依赖接口对齐约束：`DOCS/阶段二：数据清洗/约束文件/上游依赖接口对齐约束.md`
 
 阶段级文档：
 
