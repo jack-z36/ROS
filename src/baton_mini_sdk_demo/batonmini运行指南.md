@@ -153,8 +153,8 @@ ifconfig
 建议你直接用这个目录：
 
 ```bash
-mkdir -p /home/hit/ROS/src
-cd /home/hit/ROS/src
+mkdir -p src
+cd src
 ```
 
 ### 下载官方源码
@@ -174,15 +174,15 @@ git clone https://github.com/Hessian-matrix/baton_mini_sdk_demo
 下载完成后，目录应该像这样：
 
 ```text
-/home/hit/ROS/src/baton_mini_sdk_demo
+src/baton_mini_sdk_demo
 ```
 
 ### 这一步完成后的状态
 
 你现在应该已经有：
 
-* 一个标准 workspace：`/home/hit/ROS`
-* 一份源码目录：`/home/hit/ROS/src/baton_mini_sdk_demo`
+* 一个标准 workspace：`.`
+* 一份源码目录：`src/baton_mini_sdk_demo`
 
 ---
 
@@ -309,12 +309,12 @@ pkg-config --modversion opencv4
 
 文件位置：
 
-* `/home/hit/ROS/src/baton_mini_sdk_demo/launch/baton_mini.launch.py`
+* `src/baton_mini_sdk_demo/launch/baton_mini.launch.py`
 
 你可以用任意编辑器打开，比如：
 
 ```bash
-nano /home/hit/ROS/src/baton_mini_sdk_demo/launch/baton_mini.launch.py
+nano src/baton_mini_sdk_demo/launch/baton_mini.launch.py
 ```
 
 ### 你会看到类似内容
@@ -375,7 +375,7 @@ Note
 先进入工作空间根目录：
 
 ```bash
-cd /home/hit/ROS
+cd .
 ```
 
 然后编译：
@@ -398,8 +398,8 @@ colcon build --cmake-args -DUSE_ROS=ON
 
 先不要慌，按这个顺序检查：
 
-1. 你是不是在 `/home/hit/ROS` 根目录
-2. 源码是不是在 `/home/hit/ROS/src/baton_mini_sdk_demo`
+1. 你是不是在 `.` 根目录
+2. 源码是不是在 `src/baton_mini_sdk_demo`
 3. 你有没有先执行：
    ```bash
    source /opt/ros/jazzy/setup.bash
@@ -420,7 +420,7 @@ colcon build --cmake-args -DUSE_ROS=ON
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/hit/ROS/install/setup.bash
+source install/setup.bash
 ```
 
 ### 启动节点
@@ -465,7 +465,7 @@ ros2 launch baton_mini baton_mini.launch.py
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/hit/ROS/install/setup.bash
+source install/setup.bash
 ros2 topic list
 ```
 

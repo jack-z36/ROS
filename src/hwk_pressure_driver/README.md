@@ -119,7 +119,7 @@ pressure_driver_node:
 - `default_poll_rate_hz`：默认轮询频率，默认 `100.0`。
 - `serial_timeout`：串口读取 timeout，默认 `0.01` 秒。
 - `timeout_warn_sec`：传感器无有效数据时的超时 warning 周期，默认 `1.0` 秒。
-- `identity_map_file`：硬件身份映射表，默认场景五使用 `/home/hit/ROS/config/hardware_identity_map.yaml`。
+- `identity_map_file`：硬件身份映射表，默认场景五使用 `config/hardware_identity_map.yaml`。
 - `serial_port_globs`：候选串口 glob，例如 `/dev/ttyUSB*`；串口只用于打开设备，不决定最终 topic。
 - `serial_ports`：可选串口列表，每个串口包含 `name`、`port`、`baudrate` 和 `sensors`；不配置时会使用 `serial_port_globs` 动态发现串口。
 - `sensors`：该串口下挂载的传感器列表；当前硬件拓扑下每个列表只配置一个 sensor。

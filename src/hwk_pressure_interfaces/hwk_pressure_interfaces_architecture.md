@@ -1,6 +1,6 @@
 # hwk_pressure_interfaces 架构说明
 
-本文档说明 `/home/hit/ROS/src/hwk_pressure_interfaces` 自定义 ROS2 消息接口包。该包为 HWK 触觉压力传感器提供统一消息类型，供 `hwk_pressure_driver`、Octopus 和 MCAP 录制链路共享。
+本文档说明 `src/hwk_pressure_interfaces` 自定义 ROS2 消息接口包。该包为 HWK 触觉压力传感器提供统一消息类型，供 `hwk_pressure_driver`、Octopus 和 MCAP 录制链路共享。
 
 ## 1. 概述
 
@@ -100,14 +100,14 @@ flowchart TD
 构建：
 
 ```bash
-cd /home/hit/ROS
+cd .
 colcon build --packages-select hwk_pressure_interfaces
 ```
 
 查看接口：
 
 ```bash
-source /home/hit/ROS/install/setup.bash
+source install/setup.bash
 ros2 interface show hwk_pressure_interfaces/msg/PressureFrame
 ```
 

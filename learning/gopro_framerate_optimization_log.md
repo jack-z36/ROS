@@ -100,9 +100,9 @@ Octopus 录制 MCAP 时会创建独立的 ROS2 订阅者（McapRecorder 节点�
 
 因此当前 launch 已改为：启动 `v4l2_camera_node` 前先执行 `v4l2-ctl -d <video_device> --set-parm <frame_rate>`，默认 `frame_rate:=30`。
 
-2026-04-28 17:40 补充验证：在总 launch 同时启动左右 GoPro 时，必须保证两次 include 的 launch 参数作用域彼此隔离。当前 `/home/hit/ROS/launch/all_sensor_nodes.launch.py` 已为每个 GoPro include 增加 scoped `GroupAction`，`gopro_pose_record.launch.py` 已改用 `OpaqueFunction` 提前解析参数，避免延迟启动的相机节点拿到另一侧 GoPro 的 namespace 或设备路径。
+2026-04-28 17:40 补充验证：在总 launch 同时启动左右 GoPro 时，必须保证两次 include 的 launch 参数作用域彼此隔离。当前 `launch/all_sensor_nodes.launch.py` 已为每个 GoPro include 增加 scoped `GroupAction`，`gopro_pose_record.launch.py` 已改用 `OpaqueFunction` 提前解析参数，避免延迟启动的相机节点拿到另一侧 GoPro 的 namespace 或设备路径。
 
-短测 `/home/hit/ROS/log/start_all_sensor/20260428_173834.log` 已确认：
+短测 `log/start_all_sensor/20260428_173834.log` 已确认：
 
 | 项目 | 结果 |
 | ---- | ---- |

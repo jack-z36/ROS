@@ -11,7 +11,7 @@ originSessionId: 93e31d10-2492-4e58-b781-08963f9a7141
 
 ## 包位置
 
-`/home/hit/ROS/src/baton_mini_sdk_demo/`，构建输出在 `/home/hit/ROS/build/baton_mini/`。
+`src/baton_mini_sdk_demo/`，构建输出在 `build/baton_mini/`。
 
 ## 概述
 
@@ -210,7 +210,7 @@ src/baton_mini_sdk_demo/
 
 # 构建
 
-cd/home/hit/ROS && colconbuild--packages-selectbaton_mini
+cd. && colconbuild--packages-selectbaton_mini
 
 sourceinstall/setup.bash
 

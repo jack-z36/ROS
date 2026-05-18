@@ -2,11 +2,11 @@
 
 Date: 2026-04-27
 
-Workspace after migration: `/home/hit/ROS`
+Workspace after migration: `.`
 
-Project path after migration: `/home/hit/ROS/src/VTLA_octopus-master`
+Project path after migration: `src/VTLA_octopus-master`
 
-ROS package path: `/home/hit/ROS/src/VTLA_octopus-master/octopus`
+ROS package path: `src/VTLA_octopus-master/octopus`
 
 Package name: `octopus`
 
@@ -137,7 +137,7 @@ Workaround used:
 - Keep using existing system packages where possible.
 - Download required FFmpeg 8 packages with `apt-get download`.
 - Extract `.deb` files into a local project dependency directory:
-  `/home/hit/ROS/src/VTLA_octopus-master/.deps/ffmpeg8`
+  `src/VTLA_octopus-master/.deps/ffmpeg8`
 
 ## 6. Third-Party Source Dependencies
 
@@ -404,7 +404,7 @@ Resolution:
 From workspace root:
 
 ```bash
-cd /home/hit/ROS
+cd .
 
 source /opt/ros/jazzy/setup.bash
 
@@ -450,16 +450,16 @@ Original path:
 Moved to:
 
 ```text
-/home/hit/ROS/src/VTLA_octopus-master
+src/VTLA_octopus-master
 ```
 
 Command used:
 
 ```bash
-mv /home/hit/VTLA_octopus-master /home/hit/ROS/src/VTLA_octopus-master
+mv /home/hit/VTLA_octopus-master src/VTLA_octopus-master
 ```
 
-Verified from `/home/hit/ROS`:
+Verified from `.`:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -484,36 +484,36 @@ gopro_camera_launch
 Workspace install artifact:
 
 ```text
-/home/hit/ROS/install/octopus/lib/octopus/octopus
+install/octopus/lib/octopus/octopus
 ```
 
 Installed runtime resources:
 
 ```text
-/home/hit/ROS/install/octopus/lib/octopus/models/RH56E2-R.bin
-/home/hit/ROS/install/octopus/lib/octopus/models/RH56E2-R.gltf
-/home/hit/ROS/install/octopus/lib/octopus/models/loong_96.stl
-/home/hit/ROS/install/octopus/lib/octopus/models/molding.stl
-/home/hit/ROS/install/octopus/lib/octopus/translations/scanner_en_US.qm
-/home/hit/ROS/install/octopus/lib/octopus/translations/scanner_zh_CN.qm
+install/octopus/lib/octopus/models/RH56E2-R.bin
+install/octopus/lib/octopus/models/RH56E2-R.gltf
+install/octopus/lib/octopus/models/loong_96.stl
+install/octopus/lib/octopus/models/molding.stl
+install/octopus/lib/octopus/translations/scanner_en_US.qm
+install/octopus/lib/octopus/translations/scanner_zh_CN.qm
 ```
 
 Size summary after deployment:
 
 ```text
-175M  /home/hit/ROS/src/VTLA_octopus-master/.deps
-54M   /home/hit/ROS/src/VTLA_octopus-master/build
-27M   /home/hit/ROS/src/VTLA_octopus-master/install
+175M  src/VTLA_octopus-master/.deps
+54M   src/VTLA_octopus-master/build
+27M   src/VTLA_octopus-master/install
 ```
 
-Note: The authoritative workspace install after migration is `/home/hit/ROS/install`, not the old per-project `install` directory.
+Note: The authoritative workspace install after migration is `install`, not the old per-project `install` directory.
 
 ## 13. Runtime Command
 
 Use this from the ROS workspace root:
 
 ```bash
-cd /home/hit/ROS
+cd .
 
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
@@ -541,10 +541,10 @@ export LIBRARY_PATH=$FFMPEG_ROOT/lib/x86_64-linux-gnu:${LIBRARY_PATH:-}
 Dynamic library check:
 
 ```bash
-cd /home/hit/ROS
+cd .
 
 LD_LIBRARY_PATH=$PWD/src/VTLA_octopus-master/.deps/ffmpeg8/usr/lib/x86_64-linux-gnu:$HOME/Qt/6.11.0/gcc_64/lib:${LD_LIBRARY_PATH:-} \
-ldd /home/hit/ROS/install/octopus/lib/octopus/octopus | awk '/not found/ {print}'
+ldd install/octopus/lib/octopus/octopus | awk '/not found/ {print}'
 ```
 
 Observed result:
@@ -558,7 +558,7 @@ Meaning: no unresolved dynamic libraries with the expected `LD_LIBRARY_PATH`.
 No-hardware launch check:
 
 ```bash
-cd /home/hit/ROS
+cd .
 
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
@@ -674,7 +674,7 @@ ros2 topic list | grep -E 'realsense|inspire'
 
 ## 16. Known Gotchas for Future Debug
 
-### Run from `/home/hit/ROS`, not the old path
+### Run from `.`, not the old path
 
 The old path was moved:
 
@@ -685,7 +685,7 @@ The old path was moved:
 Use:
 
 ```text
-/home/hit/ROS/src/VTLA_octopus-master
+src/VTLA_octopus-master
 ```
 
 ### Always set FFmpeg local library path
@@ -746,7 +746,7 @@ Octopus can launch, but camera topics will not appear unless another machine/pro
 Build only Octopus:
 
 ```bash
-cd /home/hit/ROS
+cd .
 source /opt/ros/jazzy/setup.bash
 
 export QT_ROOT=$HOME/Qt/6.11.0/gcc_64
@@ -767,7 +767,7 @@ colcon build --packages-select octopus --cmake-args \
 Run Octopus:
 
 ```bash
-cd /home/hit/ROS
+cd .
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 
@@ -781,7 +781,7 @@ ros2 run octopus octopus
 Check package discovery:
 
 ```bash
-cd /home/hit/ROS
+cd .
 source /opt/ros/jazzy/setup.bash
 colcon list | grep octopus
 ```
@@ -789,7 +789,7 @@ colcon list | grep octopus
 Check library resolution:
 
 ```bash
-cd /home/hit/ROS
+cd .
 LD_LIBRARY_PATH=$PWD/src/VTLA_octopus-master/.deps/ffmpeg8/usr/lib/x86_64-linux-gnu:$HOME/Qt/6.11.0/gcc_64/lib:${LD_LIBRARY_PATH:-} \
 ldd install/octopus/lib/octopus/octopus | awk '/not found/ {print}'
 ```

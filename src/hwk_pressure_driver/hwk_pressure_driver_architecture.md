@@ -1,6 +1,6 @@
 # hwk_pressure_driver 架构说明
 
-本文档说明 `/home/hit/ROS/src/hwk_pressure_driver` 触觉压力传感器 ROS2 驱动的功能、数据流、运行方式和配置项。该包服务于场景三和场景五：将真实 HWK 触觉硬件稳定映射为固定 ROS2 topic，供 Octopus 显示和 MCAP 录制。
+本文档说明 `src/hwk_pressure_driver` 触觉压力传感器 ROS2 驱动的功能、数据流、运行方式和配置项。该包服务于场景三和场景五：将真实 HWK 触觉硬件稳定映射为固定 ROS2 topic，供 Octopus 显示和 MCAP 录制。
 
 ## 1. 概述
 
@@ -163,14 +163,14 @@ flowchart TD
 构建：
 
 ```bash
-cd /home/hit/ROS
+cd .
 colcon build --packages-select hwk_pressure_driver hwk_pressure_interfaces
 ```
 
 单独启动：
 
 ```bash
-cd /home/hit/ROS
+cd .
 source install/setup.bash
 ros2 launch hwk_pressure_driver pressure_driver.launch.py
 ```
@@ -179,14 +179,14 @@ ros2 launch hwk_pressure_driver pressure_driver.launch.py
 
 ```bash
 ros2 launch hwk_pressure_driver pressure_driver.launch.py \
-  config_file:=/home/hit/ROS/src/hwk_pressure_driver/config/pressure_sensors.yaml
+  config_file:=src/hwk_pressure_driver/config/pressure_sensors.yaml
 ```
 
-场景三/五通常通过 `/home/hit/ROS/start_all_sensor.sh` 和 `/home/hit/ROS/launch/all_sensor_nodes.launch.py` 间接启动。
+场景三/五通常通过 `start_all_sensor.sh` 和 `launch/all_sensor_nodes.launch.py` 间接启动。
 
 ## 5. 配置项说明
 
-默认配置文件：`/home/hit/ROS/src/hwk_pressure_driver/config/pressure_sensors.yaml`。
+默认配置文件：`src/hwk_pressure_driver/config/pressure_sensors.yaml`。
 
 | 参数 | 默认值 | 含义 |
 | --- | --- | --- |
@@ -195,7 +195,7 @@ ros2 launch hwk_pressure_driver pressure_driver.launch.py \
 | `default_poll_rate_hz` | `100.0` | 默认每个传感器轮询频率。 |
 | `serial_timeout` | `0.01` | 串口读超时，单位秒。 |
 | `timeout_warn_sec` | `1.0` | 传感器超过多久无有效 ACK 后打印 warning。 |
-| `identity_map_file` | `/home/hit/ROS/config/hardware_identity_map.yaml` | 硬件 UID 到逻辑名称/topic 的映射表。 |
+| `identity_map_file` | `config/hardware_identity_map.yaml` | 硬件 UID 到逻辑名称/topic 的映射表。 |
 | `strict_identity` | `true` | 严格使用身份映射；未知 UID 不发布。 |
 | `identity_query_timeout` | `1.0` | 查询 chip UID 的超时时间。 |
 | `identity_query_package_id` | `29` | 身份查询使用的 package id，范围 0..63。 |
@@ -237,8 +237,8 @@ ros2 launch hwk_pressure_driver pressure_driver.launch.py \
 
 上游：
 
-- `/home/hit/ROS/config/hardware_identity_map.yaml` 维护硬件 UID 到逻辑 topic 的映射。
-- `/home/hit/ROS/config/99-hwk-pressure.rules` 可提供稳定 `/dev/hwk_pressure_*` 软链接，但驱动当前也会扫描 `/dev/ttyUSB*` 和 `/dev/ttyACM*`。
+- `config/hardware_identity_map.yaml` 维护硬件 UID 到逻辑 topic 的映射。
+- `config/99-hwk-pressure.rules` 可提供稳定 `/dev/hwk_pressure_*` 软链接，但驱动当前也会扫描 `/dev/ttyUSB*` 和 `/dev/ttyACM*`。
 
 下游：
 

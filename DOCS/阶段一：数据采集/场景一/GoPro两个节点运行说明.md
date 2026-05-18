@@ -23,7 +23,7 @@ gopro_camera_launch
 使用 launch 文件：
 
 ```bash
-/home/hit/ROS/src/gopro_camera_launch/launch/gopro_pose_record.launch.py
+src/gopro_camera_launch/launch/gopro_pose_record.launch.py
 ```
 
 这个 launch 文件启动的是 `v4l2_camera` 包里的节点：
@@ -48,18 +48,18 @@ v4l2_camera_node
 每次启动前先进入工作区并 source 环境：
 
 ```bash
-cd /home/hit/ROS
+cd .
 source /opt/ros/jazzy/setup.bash
-source /home/hit/ROS/install/setup.bash
+source install/setup.bash
 ```
 
 如果刚修改过 `gopro_camera_launch`，先重新构建：
 
 ```bash
-cd /home/hit/ROS
+cd .
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select gopro_camera_launch
-source /home/hit/ROS/install/setup.bash
+source install/setup.bash
 ```
 
 ## 4. 确认采集卡设备
@@ -106,9 +106,9 @@ GoPro right 使用 `/dev/video5`。
 启动命令：
 
 ```bash
-cd /home/hit/ROS
+cd .
 source /opt/ros/jazzy/setup.bash
-source /home/hit/ROS/install/setup.bash
+source install/setup.bash
 
 ros2 launch gopro_camera_launch gopro_pose_record.launch.py \
   video_device:=/dev/video5 \
@@ -132,9 +132,9 @@ GoPro left 使用 `/dev/video4`。
 启动命令：
 
 ```bash
-cd /home/hit/ROS
+cd .
 source /opt/ros/jazzy/setup.bash
-source /home/hit/ROS/install/setup.bash
+source install/setup.bash
 
 ros2 launch gopro_camera_launch gopro_pose_record.launch.py \
   video_device:=/dev/video4 \

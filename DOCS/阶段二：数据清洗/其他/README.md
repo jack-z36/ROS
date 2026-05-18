@@ -4,9 +4,9 @@
 
 阶段二已改为两层工作环境：
 
-- 阶段二总入口：`/home/hit/ROS/DOCS/阶段二：数据清洗/AGENTS.md`
-- 架构与路线图：`/home/hit/ROS/DOCS/阶段二：数据清洗/00_架构与路线图/`
-- Runtime MVP 任务线：`/home/hit/ROS/DOCS/阶段二：数据清洗/01_runtime_mvp/`
-- Service 任务线：`/home/hit/ROS/DOCS/阶段二：数据清洗/02_service/`
+- 阶段二总入口：`DOCS/阶段二：数据清洗/AGENTS.md`
+- 架构与路线图：`DOCS/阶段二：数据清洗/00_架构与路线图/`
+- Runtime MVP 任务线：`DOCS/阶段二：数据清洗/01_runtime_mvp/`
+- Service 任务线：`DOCS/阶段二：数据清洗/02_service/`
 
 原先放在本目录的架构、路线图和可视化 HTML 已迁入 `00_架构与路线图/`。后续不要在本目录新增阶段二主文档。

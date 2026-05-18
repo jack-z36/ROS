@@ -3,10 +3,10 @@
 ## 编译
 
 ```bash
-cd /home/hit/ROS
+cd .
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select gopro_camera_launch
-source /home/hit/ROS/install/setup.bash
+source install/setup.bash
 ```
 
 ## 确认采集卡设备
@@ -47,7 +47,7 @@ ros2 launch gopro_camera_launch gopro_pose_record.launch.py video_device:=/dev/v
 一键启动左右两路 GoPro 时，推荐通过工作区总入口启动：
 
 ```bash
-cd /home/hit/ROS
+cd .
 ./start_all_sensor.sh
 ```
 
@@ -56,7 +56,7 @@ cd /home/hit/ROS
 或者使用自动化脚本：
 
 ```bash
-cd /home/hit/ROS/src/gopro_camera_launch
+cd src/gopro_camera_launch
 ./start_capture_demo.sh run
 ```
 

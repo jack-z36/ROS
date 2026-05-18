@@ -4,13 +4,13 @@
 
 ## 必读顺序
 
-1. `/home/hit/ROS/DOCS/public_rules.md`
-2. `/home/hit/ROS/AGENTS.md`
-3. `/home/hit/ROS/DOCS/阶段二：数据清洗/AGENTS.md`
-4. `/home/hit/ROS/DOCS/阶段二：数据清洗/阶段目标描述.md`
-5. `/home/hit/ROS/DOCS/阶段二：数据清洗/背景信息.md`
-6. `/home/hit/ROS/DOCS/阶段二：数据清洗/当前进度.md`
-7. `/home/hit/ROS/DOCS/阶段二：数据清洗/阶段产出.md`
+1. `DOCS/public_rules.md`
+2. `AGENTS.md`
+3. `DOCS/阶段二：数据清洗/AGENTS.md`
+4. `DOCS/阶段二：数据清洗/阶段目标描述.md`
+5. `DOCS/阶段二：数据清洗/背景信息.md`
+6. `DOCS/阶段二：数据清洗/当前进度.md`
+7. `DOCS/阶段二：数据清洗/阶段产出.md`
 8. 本目录六件套。
 9. 具体场景六件套。
 

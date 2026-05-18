@@ -1,6 +1,6 @@
 # Octopus 包内架构说明
 
-本文档是 `/home/hit/ROS/src/VTLA_octopus-master/octopus` 代码包内的架构说明。全局项目视角仍以 `/home/hit/ROS/DOCS/Octopus_architecture.md` 为第一入口；本文件聚焦包内程序职责、数据流、运行方式和 UI 逻辑。
+本文档是 `src/VTLA_octopus-master/octopus` 代码包内的架构说明。全局项目视角仍以 `DOCS/Octopus_architecture.md` 为第一入口；本文件聚焦包内程序职责、数据流、运行方式和 UI 逻辑。
 
 ## 1. 概述
 
@@ -108,7 +108,7 @@ flowchart TD
   GENSUB --> SER[收到 SerializedMessage]
   SER --> THROTTLE[fast_odom 按 60 Hz 节流]
   THROTTLE --> WRITE[writer_->write mcap::Message]
-  WRITE --> FILE[/home/hit/ROS/mcap 时间戳.mcap]
+  WRITE --> FILE[mcap 时间戳.mcap]
   STOP[Stop 按钮] --> DESTROY[reset recorder]
   DESTROY --> CLOSE[析构关闭 writer 和 executor]
 ```
@@ -152,7 +152,7 @@ flowchart TD
 1. `Scanner` 启动时调用 `config::load()`。
 2. `config::load()` 用 Qt `QStandardPaths::GenericConfigLocation` 拼出 `scanner.json` 路径，当前机器通常对应 `/home/hit/.config/scanner.json`。
 3. 文件存在且 JSON 可解析时，`from_json()` 只读取已支持字段：语言、主题、MCAP path、compression、topics。
-4. 如果 `recording.mcap.path` 为空，默认写为 Qt Documents 目录；项目启动脚本会提前用 `configure_octopus_scanner.py` 改成 `/home/hit/ROS/mcap`。
+4. 如果 `recording.mcap.path` 为空，默认写为 Qt Documents 目录；项目启动脚本会提前用 `configure_octopus_scanner.py` 改成 `mcap`。
 5. 如果 `recording.mcap.topics` 为空，`config.cpp` 内置 8 个目标 topic。Operation 面板只在构造时读取这份列表，所以启动后的配置文件变化不会自动刷新已创建的列表。
 6. `config::save()` 在应用退出或设置保存时覆盖写回 JSON。它保存的是当前全局 `config` namespace 状态。
 
@@ -167,21 +167,21 @@ flowchart TD
 构建示例：
 
 ```bash
-cd /home/hit/ROS
+cd .
 colcon build --packages-select octopus --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
 推荐运行入口：
 
 ```bash
-cd /home/hit/ROS
+cd .
 ./start_octopus.sh
 ```
 
 直接运行安装产物：
 
 ```bash
-/home/hit/ROS/install/octopus/lib/octopus/octopus
+install/octopus/lib/octopus/octopus
 ```
 
 直接运行时需要调用方自行保证 ROS2 环境、Qt/FFmpeg 动态库路径和 `scanner.json` 已配置。
@@ -190,7 +190,7 @@ cd /home/hit/ROS
 
 | 配置项                             | 默认或来源                                            | 含义                                       |
 | ---------------------------------- | ----------------------------------------------------- | ------------------------------------------ |
-| `recording.mcap.path`            | `scanner.json`；启动脚本写为 `/home/hit/ROS/mcap` | MCAP 输出目录。                            |
+| `recording.mcap.path`            | `scanner.json`；启动脚本写为 `mcap` | MCAP 输出目录。                            |
 | `recording.mcap.compression`     | `scanner.json`                                      | MCAP 压缩方式。                            |
 | `recording.mcap.topics`          | `scanner.json` 或 `config.cpp` 内置 8 topic       | Operation 面板默认展示并勾选的录制 topic。 |
 | `language`                       | `scanner.json`                                      | UI 语言。                                  |
@@ -213,18 +213,18 @@ cd /home/hit/ROS
 
 上游：
 
-- `/home/hit/ROS/start_all_sensor.sh` 启动左右 Baton Mini、左右 GoPro 和触觉驱动。
-- `/home/hit/ROS/src/baton_mini_sdk_demo` 发布 Baton Mini odometry。
-- `/home/hit/ROS/src/gopro_camera_launch` 发布 GoPro image。
-- `/home/hit/ROS/src/hwk_pressure_driver` 发布 PressureFrame。
+- `start_all_sensor.sh` 启动左右 Baton Mini、左右 GoPro 和触觉驱动。
+- `src/baton_mini_sdk_demo` 发布 Baton Mini odometry。
+- `src/gopro_camera_launch` 发布 GoPro image。
+- `src/hwk_pressure_driver` 发布 PressureFrame。
 
 下游：
 
-- MCAP 原始输出写入 `/home/hit/ROS/mcap`。
-- `/home/hit/ROS/src/data_clean` 读取原始 MCAP，生成 TCP odom 和 gripper width 后写入 `/home/hit/ROS/mcap_cleaned`。
+- MCAP 原始输出写入 `mcap`。
+- `src/data_clean` 读取原始 MCAP，生成 TCP odom 和 gripper width 后写入 `mcap_cleaned`。
 
 边界：
 
 - Octopus 负责实时显示和原始 MCAP 录制，不负责硬件身份解析。
 - Octopus 录制的是序列化 ROS2 原始消息，不负责 data_clean 的离线转换。
-- 修改显示 topic、录制 topic、schema 支持或 UI 面板时，必须同步更新本文件和 `/home/hit/ROS/DOCS/Octopus_architecture.md`。
+- 修改显示 topic、录制 topic、schema 支持或 UI 面板时，必须同步更新本文件和 `DOCS/Octopus_architecture.md`。

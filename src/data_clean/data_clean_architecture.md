@@ -1,6 +1,6 @@
 # data_clean 架构说明
 
-本文档说明 `/home/hit/ROS/src/data_clean` 离线 MCAP 清洗程序的功能、数据流、使用方式和配置逻辑。该程序属于阶段二场景一“提取夹爪开合以及位姿转换”。
+本文档说明 `src/data_clean` 离线 MCAP 清洗程序的功能、数据流、使用方式和配置逻辑。该程序属于阶段二场景一“提取夹爪开合以及位姿转换”。
 
 ## 1. 概述
 
@@ -10,7 +10,7 @@
 - 从 GoPro 图像中检测 ArUco 标记，估计左右夹爪宽度并写入 `std_msgs/msg/Float32` topic。
 - 通过交互式 launcher 选择要处理的文件、并行数、dry-run、标定向导等。
 
-它不是 ROS2 节点，而是 Python 离线处理工具。入口由 `/home/hit/ROS/start_data_clean.sh` 包装，避免用户手工设置 `PYTHONPATH`。
+它不是 ROS2 节点，而是 Python 离线处理工具。入口由 `start_data_clean.sh` 包装，避免用户手工设置 `PYTHONPATH`。
 
 ## 2. 目录结构
 
@@ -39,11 +39,11 @@
 
 | 路径 | 职责 |
 | --- | --- |
-| `/home/hit/ROS/start_data_clean.sh` | 推荐启动入口，设置 Python/环境变量后调用 launcher。 |
-| `/home/hit/ROS/config/data_clean_smoke_test.yaml` | 默认测试配置。 |
-| `/home/hit/ROS/config/data_clean_calibrated.yaml` | 标定向导生成的正式配置。 |
-| `/home/hit/ROS/config/data_clean_left_transform.yaml` | 左手 Baton Mini 专用 `start_from_common` 配置。 |
-| `/home/hit/ROS/config/data_clean_right_transform.yaml` | 右手 Baton Mini 专用 `start_from_common` 配置。 |
+| `start_data_clean.sh` | 推荐启动入口，设置 Python/环境变量后调用 launcher。 |
+| `config/data_clean_smoke_test.yaml` | 默认测试配置。 |
+| `config/data_clean_calibrated.yaml` | 标定向导生成的正式配置。 |
+| `config/data_clean_left_transform.yaml` | 左手 Baton Mini 专用 `start_from_common` 配置。 |
+| `config/data_clean_right_transform.yaml` | 右手 Baton Mini 专用 `start_from_common` 配置。 |
 
 ## 3. 数据流
 
@@ -68,7 +68,7 @@ flowchart TD
   PASS2 --> COPY[复制原始 schema/channel/message]
   PASS2 --> REPLACE[替换 pose payload]
   PASS2 --> ADD[GoPro 图像后追加 gripper_width 消息]
-  COPY --> OUT[/home/hit/ROS/mcap_cleaned/*.mcap]
+  COPY --> OUT[mcap_cleaned/*.mcap]
   REPLACE --> OUT
   ADD --> OUT
 ```
@@ -122,8 +122,8 @@ T_common_camera(t) = inverse(T_start_common) * T_start_camera(t)
 
 左右手 transform 配置边界：
 
-- 左手 Baton Mini 的 transform 来自 `/home/hit/ROS/config/data_clean_left_transform.yaml`。
-- 右手 Baton Mini 的 transform 来自 `/home/hit/ROS/config/data_clean_right_transform.yaml`。
+- 左手 Baton Mini 的 transform 来自 `config/data_clean_left_transform.yaml`。
+- 右手 Baton Mini 的 transform 来自 `config/data_clean_right_transform.yaml`。
 - `pose_streams[].transform_file` 优先级高于顶层 `transform`。
 - 新格式不兼容旧 `base_position/base_orientation_deg/tcp_offset`。
 - 标定向导保存 common frame 时，会按当前手写回对应的 `transform_file`，不会把左右手写进同一份 transform。
@@ -158,13 +158,13 @@ T_common_camera(t) = inverse(T_start_common) * T_start_camera(t)
 
 | 类型 | 默认值 |
 | --- | --- |
-| 原始输入目录 | `/home/hit/ROS/mcap` |
-| 清洗输出目录 | `/home/hit/ROS/mcap_cleaned` |
+| 原始输入目录 | `mcap` |
+| 清洗输出目录 | `mcap_cleaned` |
 | 输入匹配 | `*.mcap` |
 | 位姿输入/当前写回 channel | `/baton_mini_left/fast_odom`、`/baton_mini_right/fast_odom` |
 | 位姿目标语义 | `/baton_mini_left/camera_common_pose`、`/baton_mini_right/camera_common_pose`；当前仅用于报告，不新增同名 channel |
-| 左手 transform 文件 | `/home/hit/ROS/config/data_clean_left_transform.yaml` |
-| 右手 transform 文件 | `/home/hit/ROS/config/data_clean_right_transform.yaml` |
+| 左手 transform 文件 | `config/data_clean_left_transform.yaml` |
+| 右手 transform 文件 | `config/data_clean_right_transform.yaml` |
 | 图像输入 | `/gopro_left/image_raw`、`/gopro_right/image_raw` |
 | 夹爪宽度输出 | `/gopro_left/gripper_width`、`/gopro_right/gripper_width` |
 
@@ -183,7 +183,7 @@ T_common_camera(t) = inverse(T_start_common) * T_start_camera(t)
 推荐运行：
 
 ```bash
-cd /home/hit/ROS
+cd .
 ./start_data_clean.sh
 ```
 
@@ -201,7 +201,7 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 
 ## 5. 配置项说明
 
-配置文件优先级：命令行 `--config` 或 `DATA_CLEAN_CONFIG` > `/home/hit/ROS/config/data_clean_calibrated.yaml` > `/home/hit/ROS/config/data_clean_smoke_test.yaml`。
+配置文件优先级：命令行 `--config` 或 `DATA_CLEAN_CONFIG` > `config/data_clean_calibrated.yaml` > `config/data_clean_smoke_test.yaml`。
 
 | 配置块 | 字段 | 含义 |
 | --- | --- | --- |
@@ -233,18 +233,18 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 - 可启动或复用左右 GoPro-only 图像 topic。
 - 采样 ArUco 检测结果，计算左右夹爪 marker 范围。
 - 订阅左右 Baton Mini 实时 odometry，点击 common frame 标定后采样稳定窗口并生成 `start_from_common` 配置。
-- 输出 `/home/hit/ROS/config/data_clean_calibrated.yaml`，覆盖前应备份旧文件。
+- 输出 `config/data_clean_calibrated.yaml`，覆盖前应备份旧文件。
 
 ## 7. 与上下游的关系
 
 上游：
 
-- Octopus 在场景三/四生成 `/home/hit/ROS/mcap/*.mcap`。
+- Octopus 在场景三/四生成 `mcap/*.mcap`。
 - 原始 MCAP 应包含 2 路 Baton Mini 位姿、2 路 GoPro 图像和其他原始 topic。
 
 下游：
 
-- 清洗后 MCAP 写入 `/home/hit/ROS/mcap_cleaned`，供后续回放、验证或训练数据处理使用。
+- 清洗后 MCAP 写入 `mcap_cleaned`，供后续回放、验证或训练数据处理使用。
 - 输出报告可被人工阅读，也可通过 `DATA_CLEAN_RAW_JSON=1` 被脚本解析。
 
 边界：
