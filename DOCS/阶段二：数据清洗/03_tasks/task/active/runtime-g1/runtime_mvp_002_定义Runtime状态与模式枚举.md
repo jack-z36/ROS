@@ -135,13 +135,13 @@ L3 编号：`runtime_mvp_002`
 ## 13. 验收命令
 
 ```bash
-python -m pytest src/data_clean/tests/runtime/test_runtime_context_enums.py
+python3 -m pytest src/data_clean/tests/runtime/test_runtime_context_enums.py
 ```
 
 如果测试目录或测试运行环境尚未就绪，必须至少执行：
 
 ```bash
-python -m compileall src/data_clean/schemas
+python3 -m compileall src/data_clean/schemas
 ```
 
 并在交接记录中说明未运行 pytest 的具体原因。
@@ -167,4 +167,3 @@ python -m compileall src/data_clean/schemas
 3. 如何运行验收。
 4. 当前没做什么。
 5. 下一步建议。
-

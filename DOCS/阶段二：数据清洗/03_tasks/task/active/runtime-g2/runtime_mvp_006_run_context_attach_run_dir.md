@@ -88,8 +88,8 @@ run_result.json
 
 ### 必读任务文档
 
-1. `DOCS/阶段二：数据清洗/03_tasks/active/runtime_mvp_004_run_directory_types.md`
-2. `DOCS/阶段二：数据清洗/03_tasks/active/runtime_mvp_005_run_directory_creator.md`
+1. `DOCS/阶段二：数据清洗/03_tasks/task/runtime-g2/runtime_mvp_004_run_directory_types.md`
+2. `DOCS/阶段二：数据清洗/03_tasks/task/runtime-g2/runtime_mvp_005_run_directory_creator.md`
 3. `DOCS/阶段二：数据清洗/01_runtime_mvp/L2能力模块/02_Run目录管理模块.md`
 4. `DOCS/阶段二：数据清洗/01_runtime_mvp/L2能力模块/01_Runtime运行上下文定义.md`
 5. `DOCS/阶段二：数据清洗/01_runtime_mvp/L2数据定义/RunContext.md`
@@ -125,7 +125,7 @@ run_result.json
 ## 13. 验收命令
 
 ```bash
-python -m pytest src/data_clean/tests/runtime -q
+python3 -m pytest src/data_clean/tests/runtime -q
 ```
 
 ## 14. 成功标准

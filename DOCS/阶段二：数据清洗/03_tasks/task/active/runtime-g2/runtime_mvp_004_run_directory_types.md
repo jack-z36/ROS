@@ -121,7 +121,7 @@ L3 编号：`runtime_mvp_004`
 ## 13. 验收命令
 
 ```bash
-python -m pytest src/data_clean/tests/runtime -q
+python3 -m pytest src/data_clean/tests/runtime -q
 ```
 
 若当前环境缺少 pytest，可至少运行对应 Python import / 构造检查，并在交接记录中说明未运行 pytest 的原因。

@@ -118,7 +118,7 @@
 - 架构与路线图：`DOCS/阶段二：数据清洗/00_架构与路线图`
 - Runtime MVP 任务线：`DOCS/阶段二：数据清洗/01_runtime_mvp`
 - Service 任务线：`DOCS/阶段二：数据清洗/02_service`
-- 任务记录：`DOCS/阶段二：数据清洗/03_tasks`
+- 任务记录：`DOCS/阶段二：数据清洗/03_tasks`，L3 微元任务按功能组放入 `DOCS/阶段二：数据清洗/03_tasks/task/active/<功能组>/`
 - 约束文件：`DOCS/阶段二：数据清洗/约束文件`
 - 执行记录与状态快照：`DOCS/阶段二：数据清洗/执行记录`
 - 真实数据产物：`asset/阶段二：数据清洗`
@@ -126,6 +126,7 @@
 阶段二约束文件：
 
 - L3 编码执行原则：`DOCS/阶段二：数据清洗/约束文件/L3编码执行原则.md`
+- L3 执行 TDD 与归档约束：`DOCS/阶段二：数据清洗/约束文件/L3执行TDD与归档约束.md`
 - 文件存放规范：`DOCS/阶段二：数据清洗/约束文件/文件存放规范.md`
 - 上游依赖接口对齐约束：`DOCS/阶段二：数据清洗/约束文件/上游依赖接口对齐约束.md`
 
@@ -140,7 +141,7 @@
 
 目录：`DOCS/阶段二：数据清洗/01_runtime_mvp`
 
-- 当前任务计划：`DOCS/阶段二：数据清洗/03_tasks/active/001_runtime_mvp_harness.md`
+- Runtime 功能组任务：`DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g1/` 等
 - 目标描述：`DOCS/阶段二：数据清洗/01_runtime_mvp/目标描述.md`
 - 背景信息：`DOCS/阶段二：数据清洗/01_runtime_mvp/背景信息.md`
 - 执行约束：`DOCS/阶段二：数据清洗/01_runtime_mvp/执行约束.md`
