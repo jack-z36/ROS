@@ -1,4 +1,4 @@
-# L3 微元任务：定义 Runtime 上下文 Types
+﻿# L3 微元任务：定义 Runtime 上下文 Types
 
 ## 1. 任务定位
 
@@ -33,7 +33,7 @@ L3 编号：`runtime_mvp_001`
 ## 5. 执行依赖
 
 - [[RunContext]] 原子数据定义必须已经存在。
-- [[RunMode]]、[[ServiceMode]]、[[SceneName]]、[[RunStatus]] 的实现可能尚未完成；本任务可以引用它们的既有实现，或在缺失时通过类型占位/字符串注解保持边界清晰，并在交接记录中说明依赖未完成。
+- [[RunMode]]、[[ServiceMode]]、[[SceneName]]、[[RunStatus]] 的实现可能尚未完成；本任务可以引用它们的既有实现，或在缺失时通过类型占位/字符串注解保持边界清晰，并在执行摘要中说明依赖未完成。
 - 必须遵守 `Types -> Config -> Repo -> Service -> Runtime -> UI` 单向依赖；本任务只能落在 Types/Schemas 层。
 
 ## 6. 上游接口确认
@@ -43,7 +43,7 @@ L3 编号：`runtime_mvp_001`
 上游接口定义位置：无。
 当前 L3 期望消费的字段 / 文件 / 返回值：不消费上游运行时接口，只读取 L2 与原子数据定义文档。
 是否存在接口冲突：无。
-如果有冲突，本次处理策略：如发现现有 schemas 中已有同名对象，先复用或兼容现有对象，不得另起冲突定义；在交接记录中说明。
+如果有冲突，本次处理策略：如发现现有 schemas 中已有同名对象，先复用或兼容现有对象，不得另起冲突定义；在执行摘要中说明。
 ```
 
 ## 7. 预期改动形态
@@ -119,7 +119,6 @@ L3 编号：`runtime_mvp_001`
 - `src/data_clean/schemas/__init__.py`
 - `src/data_clean/tests/` 下与本任务直接相关的最小测试。
 - `src/data_clean/data_clean_architecture.md`
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_001_定义Runtime上下文Types>.md`
 
 ## 12. 禁止修改
 
@@ -131,16 +130,16 @@ L3 编号：`runtime_mvp_001`
 ## 13. 验收命令
 
 ```bash
-python -m pytest src/data_clean/tests/runtime/test_runtime_context_types.py
+python3 -m pytest src/data_clean/tests/runtime/test_runtime_context_types.py
 ```
 
 如果测试目录或测试运行环境尚未就绪，必须至少执行：
 
 ```bash
-python -m compileall src/data_clean/schemas
+python3 -m compileall src/data_clean/schemas
 ```
 
-并在交接记录中说明未运行 pytest 的具体原因。
+并在执行摘要中说明未运行 pytest 的具体原因。
 
 ## 14. 成功标准
 
@@ -148,13 +147,17 @@ python -m compileall src/data_clean/schemas
 - [ ] [[RunContext]] 可以被 import 和最小实例化。
 - [ ] 必需字段和空 `target_scenes` 的失败行为有测试或替代检查。
 - [ ] 未实现 run 目录、配置加载、调度或日志。
-- [ ] 执行记录已写入阶段二执行记录目录。
+- [ ] 执行摘要已追加到当前 L3 文件末尾。
+- [ ] 当前 L3 已归档到对应 `task/completed/<功能组>/`。
 
 ## 15. 完成后交接
 
 必须更新：
 
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_001_定义Runtime上下文Types>.md`
+- 当前 L3 任务文件本身：勾选已验证成功标准，并在末尾追加执行摘要
+- 完成并更新任务文件后，将当前 L3 移到对应 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`
+- 不写 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`
+
 
 交接摘要必须包含：
 
@@ -163,4 +166,3 @@ python -m compileall src/data_clean/schemas
 3. 如何运行验收。
 4. 当前没做什么。
 5. 下一步建议。
-
