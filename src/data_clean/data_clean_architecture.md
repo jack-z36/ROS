@@ -18,10 +18,18 @@
 
 | 路径 | 层级 | 职责 |
 | --- | --- | --- |
-| `schemas/__init__.py` | Schemas | Python 包标记。 |
+| `schemas/__init__.py` | Schemas | Python 包标记，导出 Runtime 上下文类型。 |
 | `schemas/ros2_schemas.py` | Schemas | 清洗流程需要写出的 ROS2 schema 文本。零依赖。 |
+| `schemas/runtime_context.py` | Schemas | Runtime 运行上下文类型定义：RunContext、RunMode、ServiceMode、SceneName、RunStatus。零依赖。 |
+
+| `schemas/runtime_results.py` | Schemas | Runtime 结果与错误引用类型：SceneResult、PipelineResult、RuntimeStepRecord、RuntimeErrorRef。依赖 runtime_enums。零外部依赖。 |
+| `schemas/runtime_config_types.py` | Schemas | Runtime 配置来源与快照类型：RuntimeConfigSourceKind、RuntimeConfigSource、ConfigOverrideSet、EffectiveRuntimeConfig、ConfigSnapshot。零依赖。 |
+| `schemas/runtime_enums.py` | Schemas | Runtime 状态、运行模式、服务模式和场景名称枚举。零依赖。 |
+| `schemas/run_directory_types.py` | Schemas | Run 目录相关类型：RunDirectory、RunDirectoryLayout、RunArtifactPath、RunArtifactKind 与 run_id 命名辅助函数。零依赖。 |
+| `schemas/runtime_results.py` | Schemas | Runtime 结果和错误引用类型：RuntimeErrorRef、RuntimeStepRecord、SceneResult、PipelineResult。依赖 runtime_enums。 |
 | `config/__init__.py` | Config | Python 包标记。 |
 | `config/mcap_process_config.py` | Config | YAML 配置解析与校验；定义 batch、transform、pose_streams、gripper_streams。零内部依赖。 |
+| `config/runtime_config_loader.py` | Config | Runtime 配置加载与覆盖应用；读取 YAML、校验顶层 mapping、应用 dot-path 覆盖。依赖 schemas。 |
 | `repo/__init__.py` | Repo | Python 包标记。 |
 | `repo/ros2_codec.py` | Repo | ROS2 CDR 动态编解码、图像转 ndarray、位姿字段提取/注入。依赖 types。 |
 | `service/__init__.py` | Service | Python 包标记。 |
@@ -29,7 +37,10 @@
 | `service/tcp_transform.py` | Service | Baton Mini start frame 到 common frame 的标准 SE(3) 位姿转换。依赖 config。 |
 | `service/gripper_width.py` | Service | 基于 OpenCV ArUco 的夹爪宽度提取、缺失帧插值和归一化。依赖 config。 |
 | `service/mcap_io.py` | Service | 单文件清洗核心；读取原始 MCAP、生成 common-frame 相机位姿 payload、新增夹爪宽度 topic、写出 MCAP。依赖 config、repo、service 内部模块、types。 |
-| `runtime/__init__.py` | Runtime | Python 包标记。 |
+| `runtime/__init__.py` | Runtime | Python 包标记，导出 run 目录创建和上下文衔接函数。 |
+| `runtime/run_directory_creator.py` | Runtime | Run 目录创建器：校验场景、生成唯一 run_id、创建 run 目录和 outputs/。依赖 schemas。 |
+| `runtime/run_context_attach.py` | Runtime | RunContext 与 RunDirectory 衔接：创建 run 目录并回填到 RunContext。依赖 schemas、run_directory_creator。 |
+| `runtime/config_snapshot.py` | Runtime | 配置快照写入与上下文衔接；把 EffectiveRuntimeConfig 写入 run 目录的 config_snapshot.yaml。依赖 schemas、config。 |
 | `runtime/mcap_clean_batch.py` | Runtime | 非交互批处理入口；读取配置、遍历输入目录、并行处理文件、输出 JSON 报告。依赖 config、service。 |
 | `runtime/mcap_clean_launcher.py` | Runtime | 面向用户的交互式入口；选择 MCAP 文件、预览计划、校验首个文件、调度清洗。依赖 config、service。 |
 | `ui/__init__.py` | UI | Python 包标记。 |
