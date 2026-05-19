@@ -1,4 +1,4 @@
-# L3 微元任务：实现 run_result 统一结果索引
+﻿# L3 微元任务：实现 run_result 统一结果索引
 
 ## 1. 任务定位
 
@@ -102,7 +102,6 @@ L3 编号：`runtime_mvp_029`
 2. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g9/runtime_mvp_026_manifest_error_types.md`
 3. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g9/runtime_mvp_027_processing_manifest_writer.md`
 4. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g9/runtime_mvp_028_error_summary_writer.md`
-5. `DOCS/阶段二：数据清洗/执行记录/`
 
 如果没有找到相关 L3 历史记录，执行摘要中必须明确写明“未找到相关 L3 历史记录”。
 
@@ -132,7 +131,6 @@ L3 编号：`runtime_mvp_029`
 - `src/data_clean/repo/`，仅当仓库现有读写能力集中在 repo 层
 - `src/data_clean/tests/runtime/`
 - `src/data_clean/data_clean_architecture.md`
-- `DOCS/阶段二：数据清洗/执行记录/`
 
 ## 13. 禁止修改
 
@@ -156,6 +154,24 @@ python3 -m pytest src/data_clean/tests/runtime -k "run_result" -q
 - [ ] `run_result.json` 可被 JSON 解析，并包含 `schema_version`、`run_id`、`status`、`run_dir`、`run_log_path`、`scene_results`、`created_at`。
 - [ ] 路径逃逸、成功缺 manifest、失败缺 error summary 时失败清楚。
 
+- [ ] 执行摘要已追加到当前 L3 文件末尾。
+- [ ] 当前 L3 已归档到对应 `task/completed/<功能组>/`。
+
 ## 16. 完成后交接
 
-必须更新当前 L3 任务文件、写入 `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_029_run_result_index_writer>.md`，并将当前 L3 移到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/runtime-g9/`。
+必须更新：
+
+- 当前 L3 任务文件本身：勾选已验证成功标准，并在末尾追加执行摘要
+- 完成并更新任务文件后，将当前 L3 移到对应 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`
+- 不写 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`
+
+交接摘要必须包含：
+
+1. 修改了哪些文件。
+2. 新增或修改了哪些函数 / 测试。
+3. 如何运行验收。
+4. TDD red / green / refactor 如何执行。
+5. 成功标准勾选情况。
+6. 当前没做什么。
+7. 建议 Win 端后续同步整理什么。
+

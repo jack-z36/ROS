@@ -1,4 +1,4 @@
-# L3 微元任务：实现 Runtime 日志事件转换器
+﻿# L3 微元任务：实现 Runtime 日志事件转换器
 
 ## 1. 任务定位
 
@@ -115,7 +115,6 @@ L3 编号：`runtime_mvp_024`
 2. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g1/runtime_mvp_003_定义Runtime结果与错误引用Types.md`
 3. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g6/runtime_mvp_013_service_dispatch_types.md`
 4. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g6/runtime_mvp_016_pipeline_dispatcher.md`
-5. `DOCS/阶段二：数据清洗/执行记录/`
 
 如果没有找到相关 L3 历史记录，执行摘要中必须明确写明“未找到相关 L3 历史记录”。
 
@@ -150,7 +149,6 @@ $tdd
 - `src/data_clean/tests/runtime/`
 - 必要的同层导出文件
 - `src/data_clean/data_clean_architecture.md`
-- `DOCS/阶段二：数据清洗/执行记录/`
 
 ## 13. 禁止修改
 
@@ -180,18 +178,22 @@ python3 -m pytest src/data_clean/tests/runtime -k log_event -q
 - [ ] [[RuntimeErrorRef]] 能转换为 `error` 日志事件。
 - [ ] 缺少 `run_id` 或不可序列化 details 时失败清楚。
 
+- [ ] 执行摘要已追加到当前 L3 文件末尾。
+- [ ] 当前 L3 已归档到对应 `task/completed/<功能组>/`。
+
 ## 16. 完成后交接
 
 必须更新：
 
 - 当前 L3 任务文件本身：勾选已验证成功标准，并在末尾追加执行摘要
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_024_runtime_log_event_converter>.md`
-- 执行过程、当前状态、未完成事项和下一步建议写在同一个记录文件中
-- 完成并更新任务文件后，将当前 L3 从 `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g8/` 移到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/runtime-g8/`
+- 完成并更新任务文件后，将当前 L3 移到对应 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`
+- 不写 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`
+
+- 执行过程、当前状态、未完成事项和下一步建议写在当前 L3 任务文件末尾的执行摘要中
 
 交接摘要必须包含：
 
-1. 读取了哪些相关 L3 任务文件或执行记录
+1. 读取了哪些相关 L3 任务文件或历史记录
 2. 修改了哪些文件
 3. 新增或修改了哪些函数 / 测试
 4. TDD red / green / refactor 如何执行
@@ -199,3 +201,4 @@ python3 -m pytest src/data_clean/tests/runtime -k log_event -q
 6. 成功标准勾选情况
 7. 当前没做什么
 8. 下一步建议
+

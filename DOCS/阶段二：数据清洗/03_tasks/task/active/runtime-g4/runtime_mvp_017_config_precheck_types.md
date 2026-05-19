@@ -1,4 +1,4 @@
-# L3 微元任务：定义配置预检查 Types 与规则常量
+﻿# L3 微元任务：定义配置预检查 Types 与规则常量
 
 ## 1. 任务定位
 
@@ -41,7 +41,7 @@ L3 编号：`runtime_mvp_017`
 上游接口定义位置：DOCS/阶段二：数据清洗/01_runtime_mvp/L2能力模块/01_Runtime运行上下文定义.md；DOCS/阶段二：数据清洗/01_runtime_mvp/L2能力模块/03_配置加载与配置快照模块.md；DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g1/；DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g3/
 当前 L3 期望消费的字段 / 文件 / 返回值：RunContext.target_scenes、RunContext.run_dir、SceneName、RuntimeErrorRef、EffectiveRuntimeConfig.effective_data、ConfigSnapshot.snapshot_path
 是否存在接口冲突：未知，执行时必须读取现有代码和上游 L3 状态确认
-如果有冲突，本次处理策略：不重写上游 Types；优先复用现有字段，无法复用时在执行记录中说明阻塞并只做最小兼容定义
+如果有冲突，本次处理策略：不重写上游 Types；优先复用现有字段，无法复用时在执行摘要中说明阻塞并只做最小兼容定义
 ```
 
 ## 7. 预期改动形态
@@ -98,7 +98,6 @@ L3 编号：`runtime_mvp_017`
 
 1. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g1/`
 2. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g3/`
-3. `DOCS/阶段二：数据清洗/执行记录/` 中与 Runtime Types 或配置加载相关的记录
 
 如果没有找到相关 L3 历史记录，执行摘要中必须明确写明“未找到相关 L3 历史记录”。
 
@@ -132,7 +131,6 @@ $tdd
 - `src/data_clean/config/`，仅当现有配置相关 Types 已放在配置层
 - `src/data_clean/tests/runtime/` 或 `src/data_clean/tests/contract/`
 - `src/data_clean/data_clean_architecture.md`
-- `DOCS/阶段二：数据清洗/执行记录/`
 
 ## 13. 禁止修改
 
@@ -159,18 +157,22 @@ python3 -m pytest src/data_clean/tests/runtime -q
 - [ ] 能构造 [[ConfigPrecheckRule]] 和 [[SceneConfigRequirement]]。
 - [ ] 未实现配置预检查计算逻辑和 Runtime 接入逻辑。
 
+- [ ] 执行摘要已追加到当前 L3 文件末尾。
+- [ ] 当前 L3 已归档到对应 `task/completed/<功能组>/`。
+
 ## 16. 完成后交接
 
 必须更新：
 
 - 当前 L3 任务文件本身：勾选已验证成功标准，并在末尾追加执行摘要
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_017_config_precheck_types>.md`
-- 执行过程、当前状态、未完成事项和下一步建议写在同一个记录文件中
-- 完成并更新任务文件后，将当前 L3 从 `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g4/` 移到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/runtime-g4/`
+- 完成并更新任务文件后，将当前 L3 移到对应 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`
+- 不写 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`
+
+- 执行过程、当前状态、未完成事项和下一步建议写在当前 L3 任务文件末尾的执行摘要中
 
 交接摘要必须包含：
 
-1. 读取了哪些相关 L3 任务文件或执行记录
+1. 读取了哪些相关 L3 任务文件或历史记录
 2. 修改了哪些文件
 3. 新增或修改了哪些函数 / 测试
 4. TDD red / green / refactor 如何执行
@@ -178,3 +180,4 @@ python3 -m pytest src/data_clean/tests/runtime -q
 6. 成功标准勾选情况
 7. 当前没做什么
 8. 下一步建议
+

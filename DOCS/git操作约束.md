@@ -1,50 +1,117 @@
-# Git 操作约束
+﻿# Git 操作约束
 
-本文件记录 `.` 工作区的 Git 同步习惯与强制操作流程。每次涉及 Git 状态、提交、推送、远端、账号、分支或同步时，必须先阅读本文件。
+本文件记录 `.` 工作区的 Git 同步习惯与强制操作流程。每次涉及 Git 状态、提交、推送、拉取、远端、账号、分支、合并或同步时，必须先阅读本文件。
 
 ## 一、触发条件
 
-- 只有当用户明确提出“同步”“提交”“推送”“拉取”“远端”“分支”“Git 状态”等 Git 相关需求时，才执行 Git 写操作。
-- 用户没有明确要求 Git 操作时，不主动提交、推送、改远端或改分支。
-- 用户明确要求“提交”时，默认含义改为：完成提交后自动继续推送到 `origin/main`；除非用户明确说明“只提交不推送”或“暂不推送”。
-- “同步”默认含义为：检查当前状态，生成提交，并推送到 `origin/main`。
+- 只有当用户明确提出“同步”“提交”“推送”“拉取”“远端”“分支”“合并”“Git 状态”等 Git 相关需求时，才执行 Git 写操作。
+- 用户没有明确要求 Git 操作时，不主动提交、推送、改远端、改分支或合并。
+- 用户明确要求“提交”时，默认含义是：提交当前分支，并推送到当前分支对应的远端跟踪分支；不得把 `origin/main` 当作默认目标。
+- “同步”默认含义是：检查当前分支状态，按当前分支生成提交，并推送到当前分支对应远端；阶段二开发中默认同步当前 L1 feature 分支。
 
 ## 二、仓库与账号
 
 - 默认 GitHub 账号：`jack-z36`。
 - 默认远端仓库：`https://github.com/jack-z36/ROS.git`。
 - 默认远端名：`origin`。
-- 默认分支：`main`。
-- 默认推送目标：`origin/main`。
+- 稳定分支：`main`。
+- 阶段二工作分支：一个 L1 任务线对应一个长期 feature 分支。
 - GitHub 仓库必须保持 `private`，除非用户明确要求改为公开。
 
-## 三、提交策略
+阶段二默认分支：
 
-- 默认尽量少提交：按一个阶段、一批稳定成果或一次明确同步需求汇总成一个提交。
-- 提交信息默认使用简短中文，说明本次同步的核心变化。
-- 每次提交并推送到远端时，提交信息末尾必须注明本次提交的北京时间（格式：`北京时间 YYYY-MM-DD HH:MM`）。
-- 提交成功后必须自动执行推送流程，把本次提交推送到 `origin/main`；推送前仍需遵守远端变化检查，发现远端领先、分叉或冲突风险时停止并等待用户确认。
+| L1 任务线 | 默认 feature 分支 |
+|---|---|
+| Runtime MVP | `runtime-mvp` |
+| Service | `feature/stage2-service` |
+
+## 三、阶段二分支策略
+
+- `main` 只保存稳定完成结果，不作为 Win 或 Ubuntu 的日常工作台。
+- Win 主机负责创建和推进阶段二 L1 feature 分支上的架构文档、L2、L3。
+- Ubuntu 主机只在对应 L1 feature 分支上执行 L3、修改代码和测试、更新当前 L3 文件并归档。
+- Ubuntu 主机禁止直接提交或推送 `main`。
+- 阶段二 feature 分支合并回 `main` 只由 Win 主机执行。
+- Win 和 Ubuntu 如果在同一个 L1 feature 分支接力，开始工作前必须先 `git pull --ff-only`；遇到分叉或冲突时停止，不自动 merge/rebase。
+
+## 四、固定操作流程
+
+Win 开始 Runtime MVP 分支：
+
+```powershell
+git switch main
+git pull --ff-only
+git switch -c runtime-mvp
+```
+
+Win 写完阶段二规划文档、L2 或 L3 后：
+
+```powershell
+git add -A
+git status
+git commit -m "docs(runtime): plan <模块名>"
+git push -u origin runtime-mvp
+```
+
+Ubuntu 执行 Runtime MVP L3 前：
+
+```bash
+git fetch origin
+git switch runtime-mvp || git switch -c runtime-mvp origin/runtime-mvp
+git pull --ff-only
+```
+
+Ubuntu 完成单个 L3 后：
+
+```bash
+git add -A
+git status
+git commit -m "feat(runtime): complete <L3任务名>"
+git push
+```
+
+Win 将 Runtime MVP 分支合并到 `main`：
+
+```powershell
+git switch main
+git pull --ff-only
+git fetch origin
+git merge --no-ff runtime-mvp
+git push
+```
+
+Service 任务线使用同样流程，把分支名替换为 `feature/stage2-service`，提交信息前缀按内容使用 `docs(service): ...` 或 `feat(service): ...`。
+
+## 五、提交策略
+
+- 默认尽量少提交：按一个稳定文档批次、一个 L3 完成结果或一次明确同步需求提交。
+- 阶段二 Win 文档规划提交默认使用 `docs(runtime): plan <模块名>` 或 `docs(service): plan <模块名>`。
+- 阶段二 Ubuntu L3 执行提交默认使用 `feat(runtime): complete <L3任务名>` 或 `feat(service): complete <L3任务名>`。
+- 每次提交并推送到远端时，提交信息末尾必须注明本次提交的北京时间（格式：`北京时间 YYYY-MM-DD HH:MM`），除非用户明确指定提交信息不可改。
 - 提交前需要给出摘要确认，至少包括：
-  - 当前分支与远端。
+  - 当前分支与远端跟踪分支。
   - 变更范围摘要。
   - 是否存在风险点。
   - 拟使用的提交信息。
 - 低风险且用户已经明确要求同步时，可以在摘要后继续执行提交和推送。
 
-## 四、严格检查
+## 六、严格检查
 
 提交或推送前必须检查：
 
 - `git status --short --branch`
 - 当前远端是否为 `origin`，并指向 `https://github.com/jack-z36/ROS.git`
 - 当前 Git 用户是否为 `jack-z36 <jack-z36@users.noreply.github.com>`
-- 当前分支是否为 `main`
-- 暂存区和工作区变更是否符合本次任务
-- 是否存在新增嵌套 `.git` 仓库或子模块指针
-- 是否存在超过 GitHub 普通限制的大文件风险
-- `.gitignore` 是否覆盖本地生成物、缓存、数据文件和私有配置
+- 当前分支是否符合当前任务：
+  - 阶段二 Win 文档规划：对应 L1 feature 分支。
+  - 阶段二 Ubuntu L3 执行：当前 L3 所属 L1 feature 分支。
+  - 阶段二合并：Win 主机在 `main` 上执行 `merge --no-ff`。
+- 暂存区和工作区变更是否符合本次任务。
+- 是否存在新增嵌套 `.git` 仓库或子模块指针。
+- 是否存在超过 GitHub 普通限制的大文件风险。
+- `.gitignore` 是否覆盖本地生成物、缓存、数据文件和私有配置。
 
-## 五、忽略规则
+## 七、忽略规则
 
 敏感文件、生成文件和本地环境文件主要通过 `.gitignore` 控制。
 
@@ -58,17 +125,25 @@
 
 如果同步前发现应该忽略但未被忽略的文件，默认先更新 `.gitignore`，从暂存区移除对应文件，再继续同步。
 
-## 六、远端变化处理
+## 八、远端变化处理
 
+- 所有拉取默认使用 `git pull --ff-only`。
 - 推送前如果发现远端领先、本地与远端分叉、需要合并或可能冲突，不自动 `merge`、`rebase` 或强推。
 - 遇到上述情况时，先停止 Git 写操作，说明当前分支关系、风险和建议命令，等待用户明确确认。
 - 禁止使用 `git push --force` 或会改写远端历史的操作，除非用户明确要求并确认风险。
 
-## 七、完成后验证
+## 九、完成后验证
 
 同步完成后必须确认：
 
-- `git status --short --branch` 显示本地分支与 `origin/main` 对齐。
+- `git status --short --branch` 显示当前分支与对应远端跟踪分支对齐。
 - 最近一次提交符合本次同步目标。
 - GitHub 仓库仍为 `PRIVATE`。
 - 工作区没有意外未提交变更；如有，说明原因和路径。
+
+阶段二合并到 `main` 完成后，还必须确认：
+
+- `main` 已包含目标 L1 feature 分支的最新提交。
+- `main` 已推送到 `origin/main`。
+- 后续 Win/Ubuntu 继续工作时重新回到对应 L1 feature 分支，不在 `main` 上继续开发。
+

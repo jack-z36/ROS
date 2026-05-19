@@ -1,4 +1,4 @@
-# L3 微元任务：实现配置加载与覆盖应用
+﻿# L3 微元任务：实现配置加载与覆盖应用
 
 ## 1. 任务定位
 
@@ -107,7 +107,6 @@ config/data_clean/
 - `src/data_clean/schemas/`，仅当必须补齐 `runtime_mvp_007` 暴露的小缺口
 - `src/data_clean/tests/runtime/` 或 `src/data_clean/tests/contract/`
 - `src/data_clean/data_clean_architecture.md`
-- `DOCS/阶段二：数据清洗/执行记录/`
 
 ## 12. 禁止修改
 
@@ -131,12 +130,18 @@ python3 -m pytest src/data_clean/tests/runtime -q
 - [ ] 非 YAML mapping 配置失败信息清楚。
 - [ ] 本任务不生成 `config_snapshot.yaml`。
 
+- [ ] 执行摘要已追加到当前 L3 文件末尾。
+- [ ] 当前 L3 已归档到对应 `task/completed/<功能组>/`。
+
 ## 15. 完成后交接
 
 必须更新：
 
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_008_config_load_and_overrides>.md`
-- 执行过程、当前状态、未完成事项和下一步建议写在同一个记录文件中
+- 当前 L3 任务文件本身：勾选已验证成功标准，并在末尾追加执行摘要
+- 完成并更新任务文件后，将当前 L3 移到对应 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`
+- 不写 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`
+
+- 执行过程、当前状态、未完成事项和下一步建议写在当前 L3 任务文件末尾的执行摘要中
 
 交接摘要必须包含：
 
@@ -145,3 +150,4 @@ python3 -m pytest src/data_clean/tests/runtime -q
 3. 如何运行验收
 4. 当前没做什么
 5. 下一步建议
+

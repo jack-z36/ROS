@@ -1,4 +1,4 @@
-# L3 微元任务：定义 Runtime 结果与错误引用 Types
+﻿# L3 微元任务：定义 Runtime 结果与错误引用 Types
 
 ## 1. 任务定位
 
@@ -124,7 +124,6 @@ L3 编号：`runtime_mvp_003`
 - `src/data_clean/schemas/__init__.py`
 - `src/data_clean/tests/` 下与本任务直接相关的最小测试。
 - `src/data_clean/data_clean_architecture.md`
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_003_定义Runtime结果与错误引用Types>.md`
 
 ## 12. 禁止修改
 
@@ -146,7 +145,7 @@ python3 -m pytest src/data_clean/tests/runtime/test_runtime_result_types.py
 python3 -m compileall src/data_clean/schemas
 ```
 
-并在交接记录中说明未运行 pytest 的具体原因。
+并在执行摘要中说明未运行 pytest 的具体原因。
 
 ## 14. 成功标准
 
@@ -154,13 +153,17 @@ python3 -m compileall src/data_clean/schemas
 - [ ] 四个对象能被 import。
 - [ ] 成功路径和失败路径的最小构造测试或替代检查通过。
 - [ ] 未实现日志、manifest、错误摘要文件写入或调度逻辑。
-- [ ] 执行记录已写入阶段二执行记录目录。
+- [ ] 执行摘要已追加到当前 L3 文件末尾。
+- [ ] 当前 L3 已归档到对应 `task/completed/<功能组>/`。
 
 ## 15. 完成后交接
 
 必须更新：
 
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_003_定义Runtime结果与错误引用Types>.md`
+- 当前 L3 任务文件本身：勾选已验证成功标准，并在末尾追加执行摘要
+- 完成并更新任务文件后，将当前 L3 移到对应 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`
+- 不写 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`
+
 
 交接摘要必须包含：
 

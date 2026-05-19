@@ -1,4 +1,4 @@
-# L3 微元任务：实现输入产物最小边界检查
+﻿# L3 微元任务：实现输入产物最小边界检查
 
 ## 1. 任务定位
 
@@ -93,7 +93,6 @@ L3 编号：`runtime_mvp_012`
 1. `DOCS/阶段二：数据清洗/03_tasks/task/runtime-g3/runtime_mvp_008_config_load_and_overrides.md`
 2. `DOCS/阶段二：数据清洗/03_tasks/task/runtime-g5/runtime_mvp_010_input_artifact_precheck_types.md`
 3. `DOCS/阶段二：数据清洗/03_tasks/task/runtime-g5/runtime_mvp_011_scene_input_requirements.md`
-4. `DOCS/阶段二：数据清洗/执行记录/051809_runtime_mvp_l2_docs.md`
 
 如果没有找到相关 L3 历史记录，执行摘要中必须明确写明“未找到相关 L3 历史记录”。
 
@@ -129,7 +128,6 @@ $tdd
 - `src/data_clean/repo/`，仅当文件系统边界检查已有 Repo 层约定
 - `src/data_clean/tests/runtime/`
 - `src/data_clean/data_clean_architecture.md`
-- `DOCS/阶段二：数据清洗/执行记录/`
 
 ## 13. 禁止修改
 
@@ -159,18 +157,22 @@ python3 -m pytest src/data_clean/tests/runtime -q
 - [ ] 文件/目录类型不匹配时失败清楚。
 - [ ] 本任务未实现业务深度校验、Service 调度或日志/manifest 写入。
 
+- [ ] 执行摘要已追加到当前 L3 文件末尾。
+- [ ] 当前 L3 已归档到对应 `task/completed/<功能组>/`。
+
 ## 16. 完成后交接
 
 必须更新：
 
 - 当前 L3 任务文件本身：勾选已验证成功标准，并在末尾追加执行摘要
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_012_input_artifact_min_boundary_check>.md`
-- 执行过程、当前状态、未完成事项和下一步建议写在同一个记录文件中
-- 完成并更新任务文件后，将当前 L3 从 `DOCS/阶段二：数据清洗/03_tasks/task/runtime-g5/` 移到 `DOCS/阶段二：数据清洗/03_tasks/completed/runtime-g5/`
+- 完成并更新任务文件后，将当前 L3 移到对应 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`
+- 不写 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`
+
+- 执行过程、当前状态、未完成事项和下一步建议写在当前 L3 任务文件末尾的执行摘要中
 
 交接摘要必须包含：
 
-1. 读取了哪些相关 L3 任务文件或执行记录
+1. 读取了哪些相关 L3 任务文件或历史记录
 2. 修改了哪些文件
 3. 新增或修改了哪些函数 / 测试
 4. TDD red / green / refactor 如何执行
@@ -178,3 +180,4 @@ python3 -m pytest src/data_clean/tests/runtime -q
 6. 成功标准勾选情况
 7. 当前没做什么
 8. 下一步建议
+

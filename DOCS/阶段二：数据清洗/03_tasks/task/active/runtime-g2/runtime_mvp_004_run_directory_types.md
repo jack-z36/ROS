@@ -1,4 +1,4 @@
-# L3 微元任务：定义 Run 目录 Types 与命名规则
+﻿# L3 微元任务：定义 Run 目录 Types 与命名规则
 
 ## 1. 任务定位
 
@@ -45,7 +45,7 @@ L3 编号：`runtime_mvp_004`
 上游接口定义位置：DOCS/阶段二：数据清洗/01_runtime_mvp/L2能力模块/01_Runtime运行上下文定义.md
 当前 L3 期望消费的字段 / 文件 / 返回值：RunContext 中的 run_id、target_scenes、run_dir 语义；SceneName 的受控场景名。
 是否存在接口冲突：无已知冲突。
-如果有冲突，本次处理策略：停止实现并在交接记录中说明冲突，不静默修改功能一边界。
+如果有冲突，本次处理策略：停止实现并在执行摘要中说明冲突，不静默修改功能一边界。
 ```
 
 ## 7. 预期改动形态
@@ -109,7 +109,6 @@ L3 编号：`runtime_mvp_004`
 - `src/data_clean/schemas/`
 - `src/data_clean/tests/`
 - `src/data_clean/data_clean_architecture.md`
-- `DOCS/阶段二：数据清洗/执行记录/`
 
 ## 12. 禁止修改
 
@@ -124,7 +123,7 @@ L3 编号：`runtime_mvp_004`
 python3 -m pytest src/data_clean/tests/runtime -q
 ```
 
-若当前环境缺少 pytest，可至少运行对应 Python import / 构造检查，并在交接记录中说明未运行 pytest 的原因。
+若当前环境缺少 pytest，可至少运行对应 Python import / 构造检查，并在执行摘要中说明未运行 pytest 的原因。
 
 ## 14. 成功标准
 
@@ -134,12 +133,18 @@ python3 -m pytest src/data_clean/tests/runtime -q
 - [ ] 重复序号规则在测试中被覆盖。
 - [ ] 未创建真实 run 目录。
 
+- [ ] 执行摘要已追加到当前 L3 文件末尾。
+- [ ] 当前 L3 已归档到对应 `task/completed/<功能组>/`。
+
 ## 15. 完成后交接
 
 必须更新：
 
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_004_run_directory_types>.md`
-- 执行过程、当前状态、未完成事项和下一步建议写在同一个记录文件中
+- 当前 L3 任务文件本身：勾选已验证成功标准，并在末尾追加执行摘要
+- 完成并更新任务文件后，将当前 L3 移到对应 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`
+- 不写 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`
+
+- 执行过程、当前状态、未完成事项和下一步建议写在当前 L3 任务文件末尾的执行摘要中
 
 交接摘要必须包含：
 
@@ -148,3 +153,4 @@ python3 -m pytest src/data_clean/tests/runtime -q
 3. 如何运行验收
 4. 当前没做什么
 5. 下一步建议
+

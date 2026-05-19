@@ -1,4 +1,4 @@
-# L3 微元任务：定义 Manifest 与错误摘要 Types
+﻿# L3 微元任务：定义 Manifest 与错误摘要 Types
 
 ## 1. 任务定位
 
@@ -114,7 +114,6 @@ L3 编号：`runtime_mvp_026`
 3. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g1/runtime_mvp_003_定义Runtime结果与错误引用Types.md`
 4. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g2/runtime_mvp_004_run_directory_types.md`
 5. `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g8/runtime_mvp_023_structured_log_types.md`
-6. `DOCS/阶段二：数据清洗/执行记录/`
 
 如果没有找到相关 L3 历史记录，执行摘要中必须明确写明“未找到相关 L3 历史记录”。
 
@@ -149,7 +148,6 @@ $tdd
 - `src/data_clean/runtime/`，仅当现有 Runtime Types 已放在该层
 - `src/data_clean/tests/runtime/`
 - `src/data_clean/data_clean_architecture.md`
-- `DOCS/阶段二：数据清洗/执行记录/`
 
 ## 13. 禁止修改
 
@@ -172,12 +170,17 @@ python3 -m pytest src/data_clean/tests/runtime -k "manifest or error_summary or 
 - [ ] 成功 manifest、失败 error summary 和统一 run result 的必填字段能被校验。
 - [ ] 必填字段缺失、失败摘要缺少 [[RuntimeErrorRef]]、成功结果缺少 manifest 路径能被清楚表达。
 
+- [ ] 执行摘要已追加到当前 L3 文件末尾。
+- [ ] 当前 L3 已归档到对应 `task/completed/<功能组>/`。
+
 ## 16. 完成后交接
 
 必须更新：
 
 - 当前 L3 任务文件本身：勾选已验证成功标准，并在末尾追加执行摘要
-- `DOCS/阶段二：数据清洗/执行记录/<MMDDHH_runtime_mvp_026_manifest_error_types>.md`
-- 完成并更新任务文件后，将当前 L3 从 `DOCS/阶段二：数据清洗/03_tasks/task/active/runtime-g9/` 移到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/runtime-g9/`
+- 完成并更新任务文件后，将当前 L3 移到对应 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`
+- 不写 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`
+
 
 交接摘要必须包含读取记录、修改文件、TDD 过程、验收命令、成功标准勾选情况、当前没做什么和下一步建议。
+
