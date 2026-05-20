@@ -20,8 +20,18 @@
 
 | 路径 | 层级 | 职责 |
 | --- | --- | --- |
-| `schemas/__init__.py` | Schemas | Python 包标记。 |
+| `schemas/__init__.py` | Schemas | Python 包标记；导出公共类型。 |
 | `schemas/ros2_schemas.py` | Schemas | 清洗流程需要写出的 ROS2 schema 文本。零依赖。 |
+| `schemas/runtime_enums.py` | Schemas | Runtime 枚举（RunStatus、RunMode、SceneName、ServiceMode）。零依赖。 |
+| `schemas/runtime_context.py` | Schemas | RunContext 定义。依赖 runtime_enums、run_directory_types。 |
+| `schemas/runtime_config_types.py` | Schemas | 配置加载相关类型（EffectiveRuntimeConfig、ConfigSnapshot 等）。零依赖。 |
+| `schemas/runtime_results.py` | Schemas | 运行结果与错误引用类型。依赖 runtime_enums。 |
+| `schemas/run_directory_types.py` | Schemas | Run 目录结构与命名规则类型。零内部类型依赖。 |
+| `schemas/runtime_log_types.py` | Schemas | 结构化日志类型（RunLogFile、RuntimeLogEvent、RuntimeLogWriteResult）。依赖 runtime_enums、runtime_results。 |
+| `schemas/runtime_precheck_types.py` | Schemas | 配置预检查类型（ConfigPrecheckIssue、ConfigPrecheckResult、ConfigPrecheckRule、SceneConfigRequirement）及 PRECHECK_RULES 常量。依赖 runtime_enums、runtime_config_types、runtime_results。 |
+| `schemas/input_artifact_types.py` | Schemas | 输入产物预检查类型（InputArtifactRequirement、InputArtifactCheckResult、InputArtifactPrecheckSummary）。依赖 runtime_enums、runtime_results。 |
+| `schemas/service_dispatch_types.py` | Schemas | Service 调度类型（ServiceRegistry、ServiceBinding、SceneDispatchPlan、SceneDispatchEvent、DispatchEventType）。依赖 runtime_enums、input_artifact_types、runtime_results。 |
+| `schemas/structured_log_types.py` | Schemas | 结构化日志类型（RunLogFile、RuntimeLogEvent、RuntimeLogWriteResult、RuntimeLogEventType）。依赖 runtime_enums、runtime_results。 |
 | `config/__init__.py` | Config | Python 包标记。 |
 | `config/mcap_process_config.py` | Config | YAML 配置解析与校验；定义 batch、transform、pose_streams、gripper_streams。零内部依赖。 |
 | `repo/__init__.py` | Repo | Python 包标记。 |
@@ -34,6 +44,13 @@
 | `runtime/__init__.py` | Runtime | Python 包标记。 |
 | `runtime/mcap_clean_batch.py` | Runtime | 非交互批处理入口；读取配置、遍历输入目录、并行处理文件、输出 JSON 报告。依赖 config、service。 |
 | `runtime/mcap_clean_launcher.py` | Runtime | 面向用户的交互式入口；选择 MCAP 文件、预览计划、校验首个文件、调度清洗。依赖 config、service。 |
+| `runtime/scene_input_requirements.py` | Runtime | 场景输入需求解析；按 SceneName 返回 InputArtifactRequirement 列表。依赖 schemas。 |
+| `runtime/service_registry.py` | Runtime | Service 注册表构建与查询；按 SceneName 查找 ServiceBinding。依赖 schemas。 |
+| `runtime/config_prechecker.py` | Runtime | Runtime 级配置预检查器；基于 RunContext、EffectiveRuntimeConfig、ConfigSnapshot 产出 ConfigPrecheckResult。依赖 schemas。 |
+| `runtime/runtime_init.py` | Runtime | Runtime 初始化编排入口；装配配置加载、配置预检查、输入预检查和 Service 调度步骤，预检查失败时停止后续流程。依赖 schemas、runtime/config_prechecker。 |
+| `runtime/scene_dispatcher.py` | Runtime | 单场景调度器；按 SceneDispatchPlan 调度单个场景，预检查失败时不调用 Service。依赖 schemas、runtime/service_registry。 |
+| `runtime/pipeline_dispatcher.py` | Runtime | 全流程调度器；按 SceneDispatchPlan 顺序执行多个场景，任一场景失败时停止后续场景并汇总 PipelineResult。依赖 schemas、runtime/scene_dispatcher。 |
+| `runtime/structured_log_writer.py` | Runtime | 结构化日志写入器；将 RunLogFile 写入 run_log.json 并返回 RuntimeLogWriteResult。依赖 schemas。 |
 | `ui/__init__.py` | UI | Python 包标记。 |
 | `ui/mcap_calibration_wizard.py` | UI | 配置/标定向导；辅助生成 `config/data_clean/data_clean_calibrated.yaml`。依赖 config、repo。 |
 
