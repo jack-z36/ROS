@@ -2,11 +2,13 @@
 
 本文档说明 `src/data_clean` 离线 MCAP 清洗程序的功能、数据流、使用方式和配置逻辑。该程序属于阶段二场景一“提取夹爪开合以及位姿转换”。
 
+> 阶段二 service-s1 目标契约已更新：raw pose 必须保留或可追溯，位姿配置目标迁移为 `frame_alignment.common_anchor`，默认 `common_frame = left_umi_start_frame`，并输出 common frame camera pose 与 TCP pose。本文中关于 `start_from_common` 和替换 pose payload 的描述表示当前旧实现，后续由 `service_s1_006` 到 `service_s1_008` 改造。
+
 ## 1. 概述
 
 `data_clean` 读取 Octopus 录制的原始 `.mcap` 文件，保留原始 topic，同时生成新的清洗结果：
 
-- 将 Baton Mini 原始位姿转换为 common frame 下的相机位姿。
+- 将 Baton Mini 原始位姿转换为 common frame 下的相机位姿；目标契约还要求保留 raw pose，并叠加 TCP 外参得到 common frame TCP pose。
 - 从 GoPro 图像中检测 ArUco 标记，估计左右夹爪宽度并写入 `std_msgs/msg/Float32` topic。
 - 通过交互式 launcher 选择要处理的文件、并行数、dry-run、标定向导等。
 
@@ -33,17 +35,17 @@
 | `runtime/mcap_clean_batch.py` | Runtime | 非交互批处理入口；读取配置、遍历输入目录、并行处理文件、输出 JSON 报告。依赖 config、service。 |
 | `runtime/mcap_clean_launcher.py` | Runtime | 面向用户的交互式入口；选择 MCAP 文件、预览计划、校验首个文件、调度清洗。依赖 config、service。 |
 | `ui/__init__.py` | UI | Python 包标记。 |
-| `ui/mcap_calibration_wizard.py` | UI | 配置/标定向导；辅助生成 `config/data_clean_calibrated.yaml`。依赖 config、repo。 |
+| `ui/mcap_calibration_wizard.py` | UI | 配置/标定向导；辅助生成 `config/data_clean/data_clean_calibrated.yaml`。依赖 config、repo。 |
 
 相关入口和配置在代码包外：
 
 | 路径 | 职责 |
 | --- | --- |
 | `start_data_clean.sh` | 推荐启动入口，设置 Python/环境变量后调用 launcher。 |
-| `config/data_clean_smoke_test.yaml` | 默认测试配置。 |
-| `config/data_clean_calibrated.yaml` | 标定向导生成的正式配置。 |
-| `config/data_clean_left_transform.yaml` | 左手 Baton Mini 专用 `start_from_common` 配置。 |
-| `config/data_clean_right_transform.yaml` | 右手 Baton Mini 专用 `start_from_common` 配置。 |
+| `config/data_clean/data_clean_smoke_test.yaml` | 默认测试配置。 |
+| `config/data_clean/data_clean_calibrated.yaml` | 标定向导生成的正式配置。 |
+| `config/data_clean/data_clean_left_transform.yaml` | 左手 Baton Mini 专用 `start_from_common` 配置。 |
+| `config/data_clean/data_clean_right_transform.yaml` | 右手 Baton Mini 专用 `start_from_common` 配置。 |
 
 ## 3. 数据流
 
@@ -68,7 +70,7 @@ flowchart TD
   PASS2 --> COPY[复制原始 schema/channel/message]
   PASS2 --> REPLACE[替换 pose payload]
   PASS2 --> ADD[GoPro 图像后追加 gripper_width 消息]
-  COPY --> OUT[mcap_cleaned/*.mcap]
+  COPY --> OUT[asset/阶段二：数据清洗/dev/mcap_cleaned/*.mcap]
   REPLACE --> OUT
   ADD --> OUT
 ```
@@ -118,12 +120,14 @@ T_common_camera(t) = inverse(T_start_common) * T_start_camera(t)
 
 实现上，`transform_pose_to_common_camera()` 会把配置和每帧 pose 都转成 4x4 齐次矩阵，使用标准 SE(3) 逆变换和矩阵乘法，再输出 `[x, y, z, qx, qy, qz, qw]`。
 
-当前 `_write_output_file()` 不新增独立 camera pose topic，而是复用原始 pose channel，把原 pose payload 替换为 common frame 下的相机位姿 payload；`pose_streams[].output_topic` 只作为报告中的语义名称。
+当前旧实现中，`_write_output_file()` 不新增独立 camera pose topic，而是复用原始 pose channel，把原 pose payload 替换为 common frame 下的相机位姿 payload；`pose_streams[].output_topic` 只作为报告和配置中的目标语义名称。
+
+目标契约中，这一行为需要改造：`/baton_mini_left/fast_odom` 与 `/baton_mini_right/fast_odom` 的 raw pose 必须保留或可追溯，cleaned MCAP 还需要输出 common frame camera pose 和 common frame TCP pose。新配置入口为 `frame_alignment`，默认 `common_anchor: left`。
 
 左右手 transform 配置边界：
 
-- 左手 Baton Mini 的 transform 来自 `config/data_clean_left_transform.yaml`。
-- 右手 Baton Mini 的 transform 来自 `config/data_clean_right_transform.yaml`。
+- 左手 Baton Mini 的 transform 来自 `config/data_clean/data_clean_left_transform.yaml`。
+- 右手 Baton Mini 的 transform 来自 `config/data_clean/data_clean_right_transform.yaml`。
 - `pose_streams[].transform_file` 优先级高于顶层 `transform`。
 - 新格式不兼容旧 `base_position/base_orientation_deg/tcp_offset`。
 - 标定向导保存 common frame 时，会按当前手写回对应的 `transform_file`，不会把左右手写进同一份 transform。
@@ -158,13 +162,13 @@ T_common_camera(t) = inverse(T_start_common) * T_start_camera(t)
 
 | 类型 | 默认值 |
 | --- | --- |
-| 原始输入目录 | `mcap` |
-| 清洗输出目录 | `mcap_cleaned` |
+| 原始输入目录 | `asset/阶段二：数据清洗/dev/mcap_raw` |
+| 清洗输出目录 | `asset/阶段二：数据清洗/dev/mcap_cleaned` |
 | 输入匹配 | `*.mcap` |
 | 位姿输入/当前写回 channel | `/baton_mini_left/fast_odom`、`/baton_mini_right/fast_odom` |
 | 位姿目标语义 | `/baton_mini_left/camera_common_pose`、`/baton_mini_right/camera_common_pose`；当前仅用于报告，不新增同名 channel |
-| 左手 transform 文件 | `config/data_clean_left_transform.yaml` |
-| 右手 transform 文件 | `config/data_clean_right_transform.yaml` |
+| 左手 transform 文件 | `config/data_clean/data_clean_left_transform.yaml` |
+| 右手 transform 文件 | `config/data_clean/data_clean_right_transform.yaml` |
 | 图像输入 | `/gopro_left/image_raw`、`/gopro_right/image_raw` |
 | 夹爪宽度输出 | `/gopro_left/gripper_width`、`/gopro_right/gripper_width` |
 
@@ -201,7 +205,7 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 
 ## 5. 配置项说明
 
-配置文件优先级：命令行 `--config` 或 `DATA_CLEAN_CONFIG` > `config/data_clean_calibrated.yaml` > `config/data_clean_smoke_test.yaml`。
+配置文件优先级：命令行 `--config` 或 `DATA_CLEAN_CONFIG` > `config/data_clean/data_clean_calibrated.yaml` > `config/data_clean/data_clean_smoke_test.yaml`。
 
 | 配置块 | 字段 | 含义 |
 | --- | --- | --- |
@@ -233,18 +237,18 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 - 可启动或复用左右 GoPro-only 图像 topic。
 - 采样 ArUco 检测结果，计算左右夹爪 marker 范围。
 - 订阅左右 Baton Mini 实时 odometry，点击 common frame 标定后采样稳定窗口并生成 `start_from_common` 配置。
-- 输出 `config/data_clean_calibrated.yaml`，覆盖前应备份旧文件。
+- 输出 `config/data_clean/data_clean_calibrated.yaml`，覆盖前应备份旧文件。
 
 ## 7. 与上下游的关系
 
 上游：
 
-- Octopus 在场景三/四生成 `mcap/*.mcap`。
+- Octopus 在阶段一采集链路生成 raw MCAP；阶段二默认从 `asset/阶段二：数据清洗/dev/mcap_raw/*.mcap` 读取。
 - 原始 MCAP 应包含 2 路 Baton Mini 位姿、2 路 GoPro 图像和其他原始 topic。
 
 下游：
 
-- 清洗后 MCAP 写入 `mcap_cleaned`，供后续回放、验证或训练数据处理使用。
+- 清洗后 MCAP 写入 `asset/阶段二：数据清洗/dev/mcap_cleaned`，供后续回放、验证或训练数据处理使用。
 - 输出报告可被人工阅读，也可通过 `DATA_CLEAN_RAW_JSON=1` 被脚本解析。
 
 边界：

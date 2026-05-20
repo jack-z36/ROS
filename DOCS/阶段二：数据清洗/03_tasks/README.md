@@ -18,24 +18,29 @@ L3 微元任务不再统一堆放到单一 `active/` 目录，而是放入 `task
 │   │   ├── service-s1-g1/
 │   │   └── service-s1-g2/
 │   └── completed/
-│       ├── runtime-g1/
-│       ├── runtime-g2/
-│       ├── service-s1-g1/
-│       └── service-s1-g2/
+│       ├── 01-runtime/
+│       │   ├── runtime-g1/
+│       │   └── runtime-g2/
+│       ├── 02-service-s1/
+│       │   ├── service-s1-g1/
+│       │   └── service-s1-g2/
+│       └── 03-service-s2/
+│           └── service-s2-g1/
 ```
 
 命名含义：
 
 - `task/active/<功能组>/`：当前待执行或正在执行的 L3 微元任务。
-- `task/completed/<功能组>/`：已经完成并归档的 L3 微元任务。
+- `task/completed/<L1归档目录>/<功能组>/`：已经完成并归档的 L3 微元任务。
 - `<功能组>` 表示某个 L2 功能模块的任务组，例如 `runtime-g1` 表示 Runtime 第 1 个功能模块，`service-s1-g1` 表示 Service 场景一第 1 个功能模块。
+- `<L1归档目录>` 表示 completed 下的 L1 / 场景归档层，例如 Runtime 使用 `01-runtime`，Service 场景一使用 `02-service-s1`，Service 场景二使用 `03-service-s2`。
 
 旧目录 `active/` 和 `completed/` 只作为历史兼容目录，不再作为新 L3 的默认写入或归档位置。
 
 ## 职责边界
 
 - `task/active/<功能组>/`：保存对应 L2 功能模块拆出的待执行或正在执行 L3 微元任务。
-- `task/completed/<功能组>/`：保存对应功能组已经完成的 L3 任务记录。
+- `task/completed/<L1归档目录>/<功能组>/`：保存对应 L1 / 场景下对应功能组已经完成的 L3 任务记录。
 - `总执行日志.md`：只记录跨阶段、公共维护或阶段级摘要，不承载任务细节。
 
 ## 功能组命名规则
@@ -72,7 +77,7 @@ DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g2/xxx.md
 执行具体 L3 前，还必须读取：
 
 1. 当前任务所属 L2 能力模块说明。
-2. 当前任务直接依赖的上游 L3 文件，优先检查 `task/active/<上游功能组>/` 和 `task/completed/<上游功能组>/`。
+2. 当前任务直接依赖的上游 L3 文件，优先检查 `task/active/<上游功能组>/` 和 `task/completed/<L1归档目录>/<上游功能组>/`。
 3. 同一功能组下已经完成的 L3 任务文件。
 4. 当前 L3 文件明确列出的其他必读历史记录。
 
@@ -86,6 +91,7 @@ DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g2/xxx.md
 2. 未验证或未完成的条目保持 `- [ ]`，并在执行摘要中说明原因。
 3. 在任务文件末尾追加执行摘要。
 4. 写明实际修改文件、验证命令、结论和遗留风险；Python 验证命令必须使用 `python3`。
-5. 将任务文件从 `DOCS/阶段二：数据清洗/03_tasks/task/active/<功能组>/` 移到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<功能组>/`。
+5. 将任务文件从 `DOCS/阶段二：数据清洗/03_tasks/task/active/<功能组>/` 移到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<L1归档目录>/<功能组>/`。
+6. 如果原 `DOCS/阶段二：数据清洗/03_tasks/task/active/<功能组>/` 已经没有任何任务文件或其他保留文件，删除该空目录。
 
 Ubuntu L3 执行端不得写入 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`。如需同步阶段状态，只在当前 L3 执行摘要中建议 Win 端后续整理。

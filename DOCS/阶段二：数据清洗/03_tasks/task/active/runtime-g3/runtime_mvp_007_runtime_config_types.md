@@ -1,4 +1,4 @@
-﻿# L3 微元任务：定义 Runtime 配置来源与快照 Types
+# L3 微元任务：定义 Runtime 配置来源与快照 Types
 
 ## 1. 任务定位
 
