@@ -87,3 +87,32 @@ common frame camera pose 和 common frame TCP pose 必须有独立、明确的�
 1. 代码类 L3 必须使用 `$tdd`。
 2. 不得在文档中宣称代码已完成尚未执行的改造。
 3. 每个 L3 完成后移动到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/service-s1-g1/`。
+
+## 12. 开发者功能检验契约
+
+本能力在 `./start_data_clean.sh --dev -> 场景一` 下对应的功能检验项：
+
+```text
+scene1_contract_preview
+```
+
+检验目标：
+
+- 读取生产 [[Scene1Config]]。
+- 检查 [[CleanedMcap]]、[[Scene1CleanReport]] 和场景一数据定义是否齐全。
+- 生成场景一契约摘要，供开发者确认当前 cleaned MCAP 接口是否满足下游场景二消费。
+
+测试产物：
+
+- [[Scene1DevArtifact]]：`artifacts/contract_summary.json`
+- [[Scene1DevArtifact]]：`artifacts/contract_summary.md`
+- [[Scene1DevRunLog]]：`logs/run_log.json`
+
+临时覆盖：
+
+- 允许临时覆盖配置路径。
+- 默认不写回正式配置。
+
+输出隔离：
+
+- 所有产物写入本次 [[Scene1DevRun]]，不得写入正式 cleaned/canonical 输出目录。

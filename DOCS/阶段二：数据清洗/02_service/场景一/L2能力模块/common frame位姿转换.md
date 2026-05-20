@@ -110,3 +110,32 @@ L1：service_s1
 1. 不得继续把 raw pose 不可追溯地替换为 common pose。
 2. 不得混用 `camera_from_tcp` 和已废弃的 `tcp_from_camera`。
 3. 输出数量必须与输入 pose topic 数量一致。
+
+## 15. 开发者功能检验契约
+
+本能力在 `./start_data_clean.sh --dev -> 场景一` 下对应的功能检验项：
+
+```text
+scene1_common_pose_transform
+```
+
+检验目标：
+
+- 读取小样本 raw pose 和 [[FrameAlignmentConfig]]。
+- 输出 [[CommonFrameCameraPose]] 和 [[CommonFrameTcpPose]] 调试样本。
+- 验证 raw pose 可追溯保留。
+
+测试产物：
+
+- [[Scene1DevArtifact]]：`artifacts/common_pose_samples.json`
+- 可选 [[Scene1DevArtifact]]：`artifacts/debug_common_pose.mcap`
+- [[Scene1DevRunLog]]：`logs/run_log.json`
+
+临时覆盖：
+
+- 允许覆盖小样本输入、frame alignment 配置、camera 到 TCP 外参。
+- 默认不写回正式配置。
+
+输出隔离：
+
+- 调试 pose 产物只写入本次 [[Scene1DevRun]]。

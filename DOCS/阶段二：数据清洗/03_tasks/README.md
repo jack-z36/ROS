@@ -83,6 +83,8 @@ DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g2/xxx.md
 
 代码类 L3 必须使用 `$tdd` 技能，按垂直切片执行 red / green / refactor。Python 命令统一使用 `python3`，不得写成 `python`。任务文件和执行记录中的仓库内文件路径必须使用相对仓库根目录路径，不得写入开发者本机绝对路径。
 
+Service 场景一到场景五的 L3 必须说明它对应或影响 `./start_data_clean.sh --dev` 下哪个场景菜单、功能检验项或场景完整 smoke test。单个 L3 的自动化验收只证明局部实现正确，场景最终验收必须由用户本人运行开发者入口后确认。
+
 ## task/active 到 task/completed 的流转
 
 任务完成后：
@@ -93,5 +95,6 @@ DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g2/xxx.md
 4. 写明实际修改文件、验证命令、结论和遗留风险；Python 验证命令必须使用 `python3`。
 5. 将任务文件从 `DOCS/阶段二：数据清洗/03_tasks/task/active/<功能组>/` 移到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<L1归档目录>/<功能组>/`。
 6. 如果原 `DOCS/阶段二：数据清洗/03_tasks/task/active/<功能组>/` 已经没有任何任务文件或其他保留文件，删除该空目录。
+7. Service 场景 L3 的执行摘要必须写明建议用户后续运行 `./start_data_clean.sh --dev` 的哪个场景、哪个功能检验项或 smoke test 做最终人工验收。
 
 Ubuntu L3 执行端不得写入 `DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md` 或 `DOCS/总执行日志.md`。如需同步阶段状态，只在当前 L3 执行摘要中建议 Win 端后续整理。
