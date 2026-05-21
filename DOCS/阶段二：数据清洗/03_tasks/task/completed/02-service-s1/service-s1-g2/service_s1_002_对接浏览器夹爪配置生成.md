@@ -160,10 +160,82 @@ python3 -m pytest src/data_clean/tests -q
 
 ## 17. 成功标准
 
-- [ ] dev 检验项产物契约明确。
-- [ ] 配置写回符合 [[GripperCalibrationConfig]]。
-- [ ] 执行摘要说明现有 wizard 复用情况。
+- [x] dev 检验项产物契约明确。
+- [x] 配置写回符合 [[GripperCalibrationConfig]]。
+- [x] 执行摘要说明现有 wizard 复用情况。
 
 ## 18. 完成后交接
 
 必须更新当前 L3 任务文件本身，追加执行摘要，并将当前 L3 移动到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/02-service-s1/service-s1-g2/`。移动后如果 active 功能组为空，删除该空目录。不写共享执行记录。
+
+## 19. 执行摘要
+
+### 任务文件身份校验
+
+```text
+用户指定路径：DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g2/service_s1_002_对接浏览器夹爪配置生成.md
+实际读取路径：DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g2/service_s1_002_对接浏览器夹爪配置生成.md
+文件名编号：service_s1_002
+正文 L3 编号：service_s1_002
+校验结论：通过
+```
+
+### 本次读取的相关 L3 任务文件或执行记录
+
+- 未找到相关 L3 历史记录（service-s1-g1 的 service_s1_001 路径不存在）。
+
+### TDD red / green / refactor 过程
+
+1. **RED:** 编写 `TestCreateScene1DevRun` 测试 dev run 目录创建和 run_log.json 初始状态 → 测试失败（函数不存在）
+2. **GREEN:** 实现 `Scene1DevRun` dataclass 和 `create_scene1_dev_run()` 函数 → 3 tests pass
+3. **RED:** 编写 `TestWriteGripperCalibrationArtifacts` 测试临时配置和摘要写入 → 测试失败（函数不存在）
+4. **GREEN:** 实现 `write_gripper_calibration_artifacts()` 函数 → 4 tests pass (total 7)
+5. **RED:** 编写 `TestSaveGripperCalibrationToProduction` 测试显式保存到生产配置 → 测试失败（函数不存在）
+6. **GREEN:** 实现 `save_gripper_calibration_to_production()` 函数 → 2 tests pass (total 9)
+
+### 实际修改的文件
+
+1. `src/data_clean/ui/mcap_calibration_wizard.py` - 新增 `Scene1DevRun`、`create_scene1_dev_run()`、`write_gripper_calibration_artifacts()`、`save_gripper_calibration_to_production()`
+2. `src/data_clean/config/__init__.py` - 新建 config 包（修复导入路径问题）
+3. `src/data_clean/config/mcap_process_config.py` - 新建 re-export 模块（向后兼容）
+4. `src/data_clean/tests/service/test_scene1_gripper_calibration_config.py` - 新建测试文件
+
+### 新增或修改的函数、类
+
+- `Scene1DevRun` (dataclass) - dev run 目录结构定义
+- `create_scene1_dev_run(check_id)` - 创建独立 dev run 目录和初始 run_log.json
+- `write_gripper_calibration_artifacts(dev_run, results)` - 写出临时 gripper 配置、摘要和更新 run_log
+- `save_gripper_calibration_to_production(output_path, results)` - 显式保存夹爪标定到生产配置
+
+### 验收命令
+
+```bash
+cd /home/hit/ROS/src/data_clean && PYTHONPATH="" /home/hit/ROS/src/data_clean/.conda-envs/data-clean/bin/python -m pytest tests/service/ -q
+```
+
+结果：17 passed（包含 9 个新增测试）
+
+### 对 ./start_data_clean.sh --dev 开发者入口的影响
+
+本 L3 为 `./start_data_clean.sh --dev -> 场景一 -> scene1_gripper_calibration_config` 检验项提供底层函数支持：
+- `create_scene1_dev_run()` 创建独立运行目录
+- `write_gripper_calibration_artifacts()` 产出 `artifacts/gripper_calibration_config.yaml`、`artifacts/gripper_calibration_summary.json`、`logs/run_log.json`
+- `save_gripper_calibration_to_production()` 提供显式保存到生产配置的能力
+
+### 现有 wizard 复用情况
+
+- 完全复用 `mcap_calibration_wizard.py` 中的 `GripperSideCalibration`、`_save_gripper()` 等现有函数
+- 未重写浏览器标定中心，未修改夹爪宽度提取算法
+- 新增的 dev 检验项函数作为现有 wizard 的上层编排入口
+
+### 明确没做什么
+
+- 未实现统一 `--dev` 一级入口（留给后续 L3）
+- 未修改 common frame 位姿转换
+- 未实现夹爪宽度提取算法
+- 未修改浏览器 UI 交互
+
+### 归档
+
+- 已从 `DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g2/` 移动到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/02-service-s1/service-s1-g2/`
+- 原 active 功能组目录 `service-s1-g2/` 已为空，已删除该空目录

@@ -119,6 +119,148 @@ class CommonFrameSideCalibration:
     position_std: float
 
 
+ASSET_BASE = WORKSPACE_DIR / "asset/阶段二：数据清洗"
+DEV_RUNS_BASE = ASSET_BASE / "dev_runs/scene1"
+
+
+@dataclass(frozen=True)
+class Scene1DevRun:
+    run_id: str
+    check_id: str
+    run_dir: Path
+    artifact_dir: Path
+    log_dir: Path
+    config_dir: Path
+    effective_config: Path
+    status: str
+
+
+def create_scene1_dev_run(check_id: str) -> Scene1DevRun:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_id = f"{timestamp}_{check_id}"
+    run_dir = DEV_RUNS_BASE / run_id
+    artifact_dir = run_dir / "artifacts"
+    log_dir = run_dir / "logs"
+    config_dir = run_dir / "config"
+    effective_config = config_dir / "effective_config.yaml"
+
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    config_dir.mkdir(parents=True, exist_ok=True)
+
+    run_log = {
+        "run_id": run_id,
+        "check_id": check_id,
+        "run_dir": str(run_dir),
+        "artifact_dir": str(artifact_dir),
+        "log_dir": str(log_dir),
+        "effective_config": str(effective_config),
+        "status": "ready",
+        "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+    with (log_dir / "run_log.json").open("w", encoding="utf-8") as fh:
+        json.dump(run_log, fh, ensure_ascii=False, indent=2)
+
+    with effective_config.open("w", encoding="utf-8") as fh:
+        yaml.safe_dump({"#": "effective config snapshot"}, fh, allow_unicode=True)
+
+    return Scene1DevRun(
+        run_id=run_id,
+        check_id=check_id,
+        run_dir=run_dir,
+        artifact_dir=artifact_dir,
+        log_dir=log_dir,
+        config_dir=config_dir,
+        effective_config=effective_config,
+        status="ready",
+    )
+
+
+def write_gripper_calibration_artifacts(
+    dev_run: Scene1DevRun,
+    results: list[GripperSideCalibration],
+) -> Scene1DevRun:
+    config_path = dev_run.artifact_dir / "gripper_calibration_config.yaml"
+    summary_path = dev_run.artifact_dir / "gripper_calibration_summary.json"
+    run_log_path = dev_run.log_dir / "run_log.json"
+
+    config_data = {
+        "gripper_calibration": {
+            "generated_by": "scene1_gripper_calibration_config",
+            "calibrated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "sides": {},
+        }
+    }
+    summary = {}
+
+    for item in results:
+        side_config = {
+            "hand": item.hand,
+            "image_topic": item.image_topic,
+            "output_topic": item.output_topic,
+            "aruco_dict": item.aruco_dict,
+            "marker_id_0": item.marker_id_0,
+            "marker_id_1": item.marker_id_1,
+            "marker_min": round(item.marker_min, 3),
+            "marker_max": round(item.marker_max, 3),
+            "gripper_max": 100.0,
+            "calibration_source": "browser_gopro_calibration",
+        }
+        config_data["gripper_calibration"]["sides"][item.hand] = side_config
+
+        summary[item.hand] = {
+            "marker_id_0": item.marker_id_0,
+            "marker_id_1": item.marker_id_1,
+            "marker_min": round(item.marker_min, 3),
+            "marker_max": round(item.marker_max, 3),
+            "gripper_max": 100.0,
+            "closed_rate": round(item.closed_rate, 4),
+            "open_rate": round(item.open_rate, 4),
+            "closed_std": round(item.closed_std, 3),
+            "open_std": round(item.open_std, 3),
+            "closed_frames": item.closed_frames,
+            "open_frames": item.open_frames,
+        }
+
+    with config_path.open("w", encoding="utf-8") as fh:
+        yaml.safe_dump(config_data, fh, allow_unicode=True, sort_keys=False)
+
+    with summary_path.open("w", encoding="utf-8") as fh:
+        json.dump(summary, fh, ensure_ascii=False, indent=2)
+
+    with run_log_path.open("r", encoding="utf-8") as fh:
+        run_log = json.load(fh)
+
+    run_log["status"] = "success"
+    run_log["artifacts"] = {
+        "gripper_calibration_config.yaml": str(config_path),
+        "gripper_calibration_summary.json": str(summary_path),
+    }
+    run_log["completed_at"] = datetime.now().astimezone().isoformat(timespec="seconds")
+
+    with run_log_path.open("w", encoding="utf-8") as fh:
+        json.dump(run_log, fh, ensure_ascii=False, indent=2)
+
+    return Scene1DevRun(
+        run_id=dev_run.run_id,
+        check_id=dev_run.check_id,
+        run_dir=dev_run.run_dir,
+        artifact_dir=dev_run.artifact_dir,
+        log_dir=dev_run.log_dir,
+        config_dir=dev_run.config_dir,
+        effective_config=dev_run.effective_config,
+        status="success",
+    )
+
+
+def save_gripper_calibration_to_production(
+    output_path: Path,
+    results: list[GripperSideCalibration],
+) -> AppConfig:
+    config = load_app_config(output_path)
+    return _save_gripper(config, output_path, results)
+
+
 def _short_path(path: str | Path) -> str:
     try:
         return os.path.relpath(str(path), str(WORKSPACE_DIR))
