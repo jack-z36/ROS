@@ -5,6 +5,8 @@ from repo.config.mcap_process_config import (
     AppConfig,
     BatchConfig,
     ConfigError,
+    ExtrinsicConfig,
+    FrameAlignmentConfig,
     GripperStreamConfig,
     PoseStreamConfig,
     QuaternionConfig,
@@ -14,4 +16,6 @@ from repo.config.mcap_process_config import (
     calibration_missing_items,
     config_is_calibrated,
     load_app_config,
+    load_frame_alignment,
+    validate_frame_alignment,
 )

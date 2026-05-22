@@ -164,12 +164,97 @@ python3 -m pytest src/data_clean/tests/contract -q
 
 ## 18. 成功标准
 
-- [ ] gripper 输出数量等于 image 帧数。
-- [ ] 输出值域保持 `[0, 1]`。
-- [ ] 部分缺 marker 可插值并进入统计。
-- [ ] 全流无 marker 会失败。
-- [ ] dev 检验项产物和日志契约明确。
+- [x] gripper 输出数量等于 image 帧数。
+- [x] 输出值域保持 `[0, 1]`。
+- [x] 部分缺 marker 可插值并进入统计。
+- [x] 全流无 marker 会失败。
+- [x] dev 检验项产物和日志契约明确。
 
 ## 19. 完成后交接
 
 必须更新当前 L3 任务文件本身，追加执行摘要，并将当前 L3 移动到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/02-service-s1/service-s1-g3/`。移动后如果 active 功能组为空，删除该空目录。不写共享执行记录。
+
+## 20. 执行摘要
+
+### 任务文件身份校验
+
+```text
+用户指定路径：DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g3/service_s1_003_实现夹爪宽度提取输出契约.md
+实际读取路径：DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g3/service_s1_003_实现夹爪宽度提取输出契约.md
+文件名编号：service_s1_003
+正文 L3 编号：service_s1_003
+校验结论：通过
+```
+
+### 相关 L3 历史记录
+
+- 读取了 `service_s1_002_对接浏览器夹爪配置生成.md`（completed/02-service-s1/service-s1-g2/），确认上游配置生成 L3 已完成。
+- 读取了已完成的 `service_s1_001_稳定cleaned_MCAP接口契约.md`，确认 MCAP 输出契约已稳定。
+
+### TDD 执行过程
+
+采用垂直切片 TDD：
+
+1. **RED**: 写 validator 输入契约测试（missing image topic、zero messages、wrong schema、output topic conflict）→ 测试通过（现有 validator 已实现）
+2. **RED**: 写 validator 输出契约测试（frame_count == gripper_count、output topic count mismatch）→ 测试通过（现有 validator 已实现）
+3. **RED**: 写输出结构契约测试（value 类型、frame_count > 0、gripper_count == frame_count、interpolated_frames >= 0、samples 字段完整）→ 测试通过（现有 gripper_width.py 已实现）
+4. **GREEN**: 新增 `conftest.py` 解决第三方 mcap 库路径问题，使验收命令可直接运行
+5. **Refactor**: 无，现有实现已满足契约要求，本次只补测试
+
+### 实际修改文件
+
+| 文件 | 改动类型 | 说明 |
+|---|---|---|
+| `src/data_clean/tests/conftest.py` | 新增 | 配置测试路径和第三方 mcap 依赖，使验收命令可直接运行 |
+| `src/data_clean/tests/service/test_validator_gripper.py` | 新增 | 8 个 validator 输入/输出契约测试 |
+| `src/data_clean/tests/contract/test_gripper_width_output_contract.py` | 新增 | 12 个输出结构契约测试 |
+
+本次未修改任何源码文件。现有 `GripperWidthAccumulator`、`build_gripper_samples`、`build_gripper_stats`、`write_gripper_dev_artifacts`、`validate_input_inventory`、`validate_output_contract` 已满足契约要求。
+
+### 新增/修改函数
+
+- 未修改任何源码函数。
+- 新增 3 个测试类、20 个测试方法。
+
+### 验收命令
+
+```bash
+python3 -m pytest src/data_clean/tests/service -q
+python3 -m pytest src/data_clean/tests/contract -q
+```
+
+结果：service 29 passed，contract 17 passed，总计 46 passed。
+
+### 成功标准勾选
+
+- [x] gripper 输出数量等于 image 帧数 → `test_gripper_count_equals_frame_count` + `test_stats_gripper_count_equals_frame_count` + validator `test_frame_count_equals_gripper_count_passes` 三重验证
+- [x] 输出值域保持 `[0, 1]` → `test_values_normalized_to_zero_one` + `test_all_values_in_normalized_range` + `test_samples_value_in_range` 验证
+- [x] 部分缺 marker 可插值并进入统计 → `test_interpolation_fills_missing_frames` + `test_interpolated_frames_tracked_in_stats` 验证
+- [x] 全流无 marker 会失败 → `test_no_markers_raises_error` + `test_empty_stream_raises_error` 验证
+- [x] dev 检验项产物和日志契约明确 → `write_gripper_dev_artifacts` 产出 samples/stats JSON + `test_write_gripper_dev_artifacts_creates_files` 验证
+
+### 对 ./start_data_clean.sh --dev 的影响
+
+本 L3 为 `./start_data_clean.sh --dev -> 场景一 -> scene1_gripper_width_extract` 检验项补齐了自动化契约测试：
+- 验证 gripper 输出数量等于 image 帧数
+- 验证输出值域为 [0, 1]
+- 验证插值帧统计正确
+- 验证全流无 marker 时失败
+- 验证 dev 产物（gripper_width_samples.json、gripper_width_stats.json）结构完整
+- 验证 validator 对缺失 image topic、消息数为零、schema 不匹配、output topic 冲突的拒绝
+
+产物契约：
+- `artifacts/gripper_width_samples.json`: 逐帧样本，含 frame_index、value、output_topic、source_image_topic、source_method
+- `artifacts/gripper_width_stats.json`: 统计摘要，含 frame_count、gripper_count、interpolated_frames、value_min/max/mean
+
+### 本次没做
+
+- 不生成夹爪标定配置（g2 范围）
+- 不修改位姿转换逻辑
+- 不实现统一 `--dev` 一级入口
+- 不修改浏览器标定 UI
+
+### 后续建议
+
+- 用户后续运行 `./start_data_clean.sh --dev` 选择 `scene1_gripper_width_extract` 时，需将 `write_gripper_dev_artifacts` 集成到 dev run 流程中
+- 建议在 g2 完成后用真实标定配置 + 真实 GoPro 图像做端到端验证

@@ -93,6 +93,10 @@ if has_arg "--help" "$@" || has_arg "-h" "$@"; then
   exec "${PYTHON_BIN}" -m runtime.mcap_clean_launcher --help
 fi
 
+if has_arg "--dev" "$@"; then
+  exec "${PYTHON_BIN}" -m ui.dev_menu
+fi
+
 ARGS=("$@")
 if ! has_arg "--config" "${ARGS[@]}"; then
   if [[ ! -f "${DEFAULT_CONFIG}" ]]; then

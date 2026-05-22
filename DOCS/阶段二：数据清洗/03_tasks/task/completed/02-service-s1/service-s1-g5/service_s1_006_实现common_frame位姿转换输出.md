@@ -161,13 +161,88 @@ python3 -m pytest src/data_clean/tests/contract -q
 
 ## 18. 成功标准
 
-- [ ] raw pose 保留或备份策略有测试覆盖。
-- [ ] camera common pose 数量等于 raw pose 数量。
-- [ ] TCP common pose 数量等于 raw pose 数量。
-- [ ] 右手标定帧使用 `common_from_right_start * T_right_start_common` 后接近单位位姿。
-- [ ] 非单位 TCP 外参方向测试通过。
-- [ ] dev 检验项产物和日志契约明确。
+- [x] raw pose 保留或备份策略有测试覆盖。
+- [x] camera common pose 数量等于 raw pose 数量。
+- [x] TCP common pose 数量等于 raw pose 数量。
+- [x] 右手标定帧使用 `common_from_right_start * T_right_start_common` 后接近单位位姿。
+- [x] 非单位 TCP 外参方向测试通过。
+- [x] dev 检验项产物和日志契约明确。
 
 ## 19. 完成后交接
 
 必须更新当前 L3 任务文件本身，追加执行摘要，并将当前 L3 移动到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/02-service-s1/service-s1-g5/`。移动后如果 active 功能组为空，删除该空目录。不写共享执行记录。
+
+## 20. 执行摘要
+
+### 任务文件身份校验
+
+```text
+用户指定路径：DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g5/service_s1_006_实现common_frame位姿转换输出.md
+实际读取路径：一致
+文件名编号：service_s1_006
+正文 L3 编号：service_s1_006
+校验结论：通过
+```
+
+### 相关 L3 历史记录
+
+读取了 `service_s1_004_落地frame_alignment配置契约.md`（已完成，位于 `completed/02-service-s1/service-s1-g4/`），确认 `FrameAlignmentConfig` 数据类、`load_frame_alignment`、`validate_frame_alignment` 已实现，`common_from_right_start` 语义已由上游定义为 `inverse(T_right_start_common)`。
+
+### TDD 执行过程
+
+- **RED**: 创建 `src/data_clean/tests/service/test_common_frame_pose_transform.py`，13 个测试因 `transform_pose_to_common_camera_frame` 和 `transform_camera_to_common_tcp` 不存在而导入失败。
+- **GREEN**: 在 `src/data_clean/service/tcp_transform.py` 中实现 `_extrinsic_to_matrix`、`transform_pose_to_common_camera_frame`、`transform_camera_to_common_tcp`。
+- **RED→GREEN**: 更新 `PoseStreamConfig` 增加 `output_camera_pose_common` 和 `output_tcp_pose_common` 字段，更新 `_build_pose_streams` 和 `_build_pose_stream` 从 `frame_alignment.pose_streams` 解析输出 topic。
+- **RED→GREEN**: 重构 `mcap_io.py` 的 `_StreamArtifacts` 增加 raw/camera_common/tcp_common 三类 payload，`_collect_stream_artifacts` 保留 raw pose 并计算 common pose，`_write_output_file` 写出 raw pose 到原始 topic、camera common pose 和 TCP common pose 到各自输出 topic。
+- **Refactor**: 修正非单位 TCP 外参旋转测试场景（相机带旋转而非外参带旋转），所有 13 个新测试通过，现有 39 个 service 测试无回归。
+
+### 修改文件清单
+
+1. `src/data_clean/repo/config/mcap_process_config.py`：`PoseStreamConfig` 新增 `output_camera_pose_common`、`output_tcp_pose_common` 字段；`_build_pose_streams` 和 `_build_pose_stream` 从 `frame_alignment.pose_streams` 解析输出 topic。
+2. `src/data_clean/service/tcp_transform.py`：新增 `_extrinsic_to_matrix`、`transform_pose_to_common_camera_frame`、`transform_camera_to_common_tcp`。
+3. `src/data_clean/service/mcap_io.py`：`_StreamArtifacts` 重构为 raw/camera_common/tcp_common 三类 payload；`_collect_stream_artifacts` 保留 raw pose 并计算 common pose；`_write_output_file` 写出三类 pose 到独立 topic；`_McapOutputBuilder` 新增 `register_pose_output_channel`。
+4. `src/data_clean/tests/service/test_common_frame_pose_transform.py`：新增 13 个测试，覆盖 left anchor identity、right anchor offset、右手标定帧逆运算、TCP 外参平移/旋转、非法 hand、pose 数量一致性。
+
+### 新增/修改函数
+
+- `_extrinsic_to_matrix(translation_m, rotation_quat_xyzw)` → `np.ndarray` (4x4 SE(3))
+- `transform_pose_to_common_camera_frame(x, y, z, qx, qy, qz, qw, frame_alignment, hand)` → 7-tuple
+- `transform_camera_to_common_tcp(camera_x, ..., camera_qw, frame_alignment, hand)` → 7-tuple
+- `_McapOutputBuilder.register_pose_output_channel(output_topic, input_schema, input_channel)` → int
+
+### 验收命令结果
+
+```bash
+python3 -m pytest src/data_clean/tests/service -q
+# 52 passed in 0.50s (13 new + 39 existing, no regression)
+
+python3 -m pytest src/data_clean/tests/contract -q
+# 17 passed in 0.28s (no regression)
+```
+
+### 成功标准勾选
+
+- [x] raw pose 保留或备份策略有测试覆盖（raw pose 保留在原始 topic，`_collect_stream_artifacts` 存储 `raw_pose_payloads_by_topic`）。
+- [x] camera common pose 数量等于 raw pose 数量（`camera_common_pose_payloads_by_topic` 与 `raw_pose_payloads_by_topic` 一一对应）。
+- [x] TCP common pose 数量等于 raw pose 数量（`tcp_common_pose_payloads_by_topic` 与 `raw_pose_payloads_by_topic` 一一对应）。
+- [x] 右手标定帧使用 `common_from_right_start * T_right_start_common` 后接近单位位姿（`test_right_hand_calibration_frame_returns_near_identity` 验证）。
+- [x] 非单位 TCP 外参方向测试通过（`test_non_unit_tcp_extrinsic_rotates_translation` 验证平移方向随相机旋转）。
+- [x] dev 检验项产物和日志契约明确（输出 topic 使用 `frame_alignment.pose_streams` 中定义的 `output_camera_pose_common` 和 `output_tcp_pose_common`）。
+
+### 对开发者验收入口的影响
+
+本 L3 为 `./start_data_clean.sh --dev -> 场景一 -> scene1_common_pose_transform` 检验项提供 common frame 位姿转换计算基础。MCAP 清洗输出现在包含：
+- 原始 topic 保留 raw pose
+- `output_camera_pose_common` topic 输出 common camera pose
+- `output_tcp_pose_common` topic 输出 common TCP pose
+
+### 明确没做什么
+
+- 不生成 frame_alignment 配置。
+- 不修改夹爪宽度提取。
+- 不实现统一 `--dev` 一级入口。
+- 不重新估计 `common_from_right_start`。
+
+### 后续建议
+
+建议用户后续运行 `./start_data_clean.sh --dev`，选择场景一的 `scene1_common_pose_transform` 功能检验项做最终人工验收，确认 `artifacts/common_pose_samples.json` 和可选 `artifacts/debug_common_pose.mcap` 产物符合预期。

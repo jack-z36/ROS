@@ -119,6 +119,18 @@ class CommonFrameSideCalibration:
     position_std: float
 
 
+@dataclass(frozen=True)
+class CommonFrameRightCalibration:
+    """Right-hand common frame calibration with raw pose and inverse extrinsic."""
+
+    input_topic: str
+    output_topic: str
+    sample_frames: int
+    position_std: float
+    t_right_start_common: TransformConfig
+    common_from_right_start: TransformConfig
+
+
 ASSET_BASE = WORKSPACE_DIR / "asset/阶段二：数据清洗"
 DEV_RUNS_BASE = ASSET_BASE / "dev_runs/scene1"
 
@@ -283,6 +295,24 @@ def _aruco_dictionaries() -> dict[str, Any]:
 
 
 def _to_mapping(transform: TransformConfig) -> dict[str, Any]:
+    return {
+        "start_from_common": {
+            "translation": {
+                "x": transform.translation.x,
+                "y": transform.translation.y,
+                "z": transform.translation.z,
+            },
+            "rotation_xyzw": {
+                "qx": transform.rotation_xyzw.qx,
+                "qy": transform.rotation_xyzw.qy,
+                "qz": transform.rotation_xyzw.qz,
+                "qw": transform.rotation_xyzw.qw,
+            },
+        }
+    }
+
+
+def _to_mapping_from_transform(transform: TransformConfig) -> dict[str, Any]:
     return {
         "start_from_common": {
             "translation": {
@@ -880,6 +910,34 @@ def _save_common_frame(config: AppConfig, output_path: Path, results: list[Commo
     return load_app_config(output_path)
 
 
+def _save_frame_alignment_from_right(
+    config: AppConfig,
+    output_path: Path,
+    result: CommonFrameRightCalibration,
+) -> AppConfig:
+    data = _base_config_mapping(config)
+    _apply_frame_alignment_from_right(data, result)
+    _write_yaml_with_backup(output_path, data)
+    return load_app_config(output_path)
+
+
+def _apply_frame_alignment_from_right(data: dict[str, Any], result: CommonFrameRightCalibration) -> None:
+    calibration = _ensure_nested_status(data.get("calibration", {}))
+    calibration["common_frame"]["right"] = {
+        "calibrated": True,
+        "method": "live_baton_pose_window_frame_alignment",
+        "input_topic": result.input_topic,
+        "output_topic": result.output_topic,
+        "t_right_start_common": _to_mapping_from_transform(result.t_right_start_common)["start_from_common"],
+        "common_from_right_start": _to_mapping_from_transform(result.common_from_right_start)["start_from_common"],
+        "sample_frames": result.sample_frames,
+        "position_std": round(result.position_std, 9),
+        "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+    _mark_overall_status(calibration)
+    data["calibration"] = calibration
+
+
 def _find_open_port(start_port: int = 8765, host: str = "127.0.0.1") -> int:
     for port in range(start_port, start_port + 100):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -965,6 +1023,27 @@ def _average_quaternion_xyzw(quaternions: list[tuple[float, float, float, float]
         average = -average
     average = average / np.linalg.norm(average)
     return tuple(float(value) for value in average)
+
+
+def _se3_inverse_xyzw(
+    translation: tuple[float, float, float],
+    rotation_xyzw: tuple[float, float, float, float],
+) -> tuple[tuple[float, float, float], tuple[float, float, float, float]]:
+    """Compute SE(3) inverse of (translation, quaternion_xyzw).
+
+    For T = (t, R), T^(-1) = (-R^T * t, R^(-1)).
+    Quaternion conjugate gives R^(-1) for unit quaternions.
+    """
+    qx, qy, qz, qw = rotation_xyzw
+    tx, ty, tz = translation
+
+    inv_qx, inv_qy, inv_qz, inv_qw = -qx, -qy, -qz, qw
+
+    inv_tx = -(tx * (1 - 2 * (qy * qy + qz * qz)) + ty * 2 * (qx * qy + qz * qw) + tz * 2 * (qx * qz - qy * qw))
+    inv_ty = -(tx * 2 * (qx * qy - qz * qw) + ty * (1 - 2 * (qx * qx + qz * qz)) + tz * 2 * (qy * qz + qx * qw))
+    inv_tz = -(tx * 2 * (qx * qz + qy * qw) + ty * 2 * (qy * qz - qx * qw) + tz * (1 - 2 * (qx * qx + qy * qy)))
+
+    return (inv_tx, inv_ty, inv_tz), (inv_qx, inv_qy, inv_qz, inv_qw)
 
 
 class BrowserCalibrationSession:
@@ -1270,15 +1349,29 @@ class BrowserCalibrationSession:
         hand = self.common_hand
         stream = _pose_for_hand(self.config.pose_streams, hand)
         try:
-            result = self._sample_common_frame_pose(hand, stream)
-            with self.lock:
-                self.config = _save_common_frame(self.config, self.output_path, [result])
-                self.common_status = "sampled"
-                self.error = ""
-                self.message = (
-                    f"{HAND_LABELS[hand]} common frame 已保存："
-                    f"{result.sample_frames} 帧，位置标准差 {result.position_std:.6g}。"
-                )
+            if hand == "right":
+                result = self._sample_right_common_frame_pose(stream)
+                with self.lock:
+                    self.config = _save_frame_alignment_from_right(
+                        self.config, self.output_path, result
+                    )
+                    self.common_status = "sampled"
+                    self.error = ""
+                    self.message = (
+                        f"{HAND_LABELS[hand]} common frame 外参已生成："
+                        f"{result.sample_frames} 帧，位置标准差 {result.position_std:.6g}。"
+                        f"common_from_right_start 由 inverse(T_right_start_common) 计算。"
+                    )
+            else:
+                result = self._sample_common_frame_pose(hand, stream)
+                with self.lock:
+                    self.config = _save_common_frame(self.config, self.output_path, [result])
+                    self.common_status = "sampled"
+                    self.error = ""
+                    self.message = (
+                        f"{HAND_LABELS[hand]} common frame 已保存："
+                        f"{result.sample_frames} 帧，位置标准差 {result.position_std:.6g}。"
+                    )
         except Exception as exc:  # noqa: BLE001 - report to browser.
             with self.lock:
                 self.common_status = "failed"
@@ -1331,6 +1424,74 @@ class BrowserCalibrationSession:
             start_from_common=transform,
             sample_frames=len(positions),
             position_std=position_std,
+        )
+
+    def _sample_right_common_frame_pose(self, stream: PoseStreamConfig) -> CommonFrameRightCalibration:
+        deadline = time.monotonic() + SAMPLE_SECONDS
+        positions: list[tuple[float, float, float]] = []
+        quaternions: list[tuple[float, float, float, float]] = []
+        last_seq: int | None = None
+        last_fresh_pose_time = time.monotonic()
+
+        while time.monotonic() < deadline:
+            sample = self.subscriber.latest_pose(stream.input_topic, max_age_sec=FRESH_IMAGE_MAX_AGE_SEC)
+            if sample is None:
+                if time.monotonic() - last_fresh_pose_time > LOST_IMAGE_TIMEOUT_SEC:
+                    raise RuntimeError(f"{stream.input_topic} 超过 {LOST_IMAGE_TIMEOUT_SEC:.0f} 秒没有新位姿。")
+                time.sleep(0.01)
+                continue
+            pose, _stamp, seq = sample
+            if last_seq == seq:
+                time.sleep(0.005)
+                continue
+            last_seq = seq
+            last_fresh_pose_time = time.monotonic()
+            x, y, z, qx, qy, qz, qw = pose
+            positions.append((x, y, z))
+            quaternions.append((qx, qy, qz, qw))
+
+        if len(positions) < MIN_SAMPLE_FRAMES:
+            raise RuntimeError(f"右手位姿采样帧数不足：{len(positions)} < {MIN_SAMPLE_FRAMES}")
+
+        position_array = np.asarray(positions, dtype=np.float64)
+        median_position = np.median(position_array, axis=0)
+        position_std = float(np.mean(np.std(position_array, axis=0)))
+        qx, qy, qz, qw = _average_quaternion_xyzw(quaternions)
+
+        t_right_start_common = TransformConfig(
+            translation=Vector3Config(
+                x=float(median_position[0]),
+                y=float(median_position[1]),
+                z=float(median_position[2]),
+            ),
+            rotation_xyzw=QuaternionConfig(qx=qx, qy=qy, qz=qz, qw=qw),
+        )
+
+        inv_translation, inv_rotation = _se3_inverse_xyzw(
+            (float(median_position[0]), float(median_position[1]), float(median_position[2])),
+            (qx, qy, qz, qw),
+        )
+        common_from_right_start = TransformConfig(
+            translation=Vector3Config(
+                x=inv_translation[0],
+                y=inv_translation[1],
+                z=inv_translation[2],
+            ),
+            rotation_xyzw=QuaternionConfig(
+                qx=inv_rotation[0],
+                qy=inv_rotation[1],
+                qz=inv_rotation[2],
+                qw=inv_rotation[3],
+            ),
+        )
+
+        return CommonFrameRightCalibration(
+            input_topic=stream.input_topic,
+            output_topic=stream.output_topic,
+            sample_frames=len(positions),
+            position_std=position_std,
+            t_right_start_common=t_right_start_common,
+            common_from_right_start=common_from_right_start,
         )
 
     def exit(self) -> dict[str, Any]:

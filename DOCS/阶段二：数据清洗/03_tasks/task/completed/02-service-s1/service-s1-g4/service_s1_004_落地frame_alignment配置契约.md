@@ -172,3 +172,75 @@ python3 -m pytest src/data_clean/tests/config -q
 ## 19. 完成后交接
 
 必须更新当前 L3 任务文件本身，追加执行摘要，并将当前 L3 移动到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/02-service-s1/service-s1-g4/`。移动后如果 active 功能组为空，删除该空目录。不写共享执行记录。
+
+## 20. 执行摘要
+
+### 任务文件身份校验
+
+```text
+用户指定路径：DOCS/阶段二：数据清洗/03_tasks/task/active/service-s1-g4/service_s1_004_落地frame_alignment配置契约.md
+实际读取路径：一致
+文件名编号：service_s1_004
+正文 L3 编号：service_s1_004
+校验结论：通过
+```
+
+### 相关 L3 历史记录
+
+未找到相关 L3 历史记录（本 L3 为 service-s1-g4 功能组首个执行任务）。
+
+### TDD 执行过程
+
+- **RED**: 创建 `src/data_clean/tests/config/test_frame_alignment_config.py`，16 个测试因 `ExtrinsicConfig`/`FrameAlignmentConfig` 不存在而导入失败。
+- **GREEN**: 在 `src/data_clean/repo/config/mcap_process_config.py` 中实现 `ExtrinsicConfig`、`FrameAlignmentConfig` 数据类，`load_frame_alignment()`、`validate_frame_alignment()` 函数，更新 `AppConfig` 增加可选 `frame_alignment` 字段，更新 `load_app_config()` 加载逻辑。
+- **Refactor**: 修复测试数据浅拷贝问题（改用 `copy.deepcopy`），修正 `load_frame_alignment` API 为接收完整 config dict。
+- 所有 16 个测试通过，现有 29 个 service 测试无回归。
+
+### 修改文件清单
+
+1. `src/data_clean/repo/config/mcap_process_config.py`：新增 `ExtrinsicConfig`、`FrameAlignmentConfig` 数据类，`load_frame_alignment()`、`validate_frame_alignment()` 函数，`AppConfig` 增加 `frame_alignment` 可选字段。
+2. `src/data_clean/config/mcap_process_config.py`：更新 re-export，新增 `ExtrinsicConfig`、`FrameAlignmentConfig`、`load_frame_alignment`、`validate_frame_alignment`。
+3. `src/data_clean/tests/config/test_frame_alignment_config.py`：新增 16 个测试，覆盖数据类、加载、校验、集成。
+4. `config/data_clean/data_clean_smoke_test.yaml`：新增 `frame_alignment` 配置段及注释。
+5. `config/data_clean/data_clean_calibrated.yaml`：新增 `frame_alignment` 配置段及注释。
+
+### 新增/修改函数
+
+- `ExtrinsicConfig.identity()` / `.from_dict()` / `.is_identity()` / `.quaternion_norm()`
+- `FrameAlignmentConfig.from_dict()`
+- `load_frame_alignment(data)` → `FrameAlignmentConfig`
+- `validate_frame_alignment(config)` → None (raises ConfigError on invalid)
+- `AppConfig.frame_alignment: FrameAlignmentConfig | None`
+
+### 验收命令结果
+
+```bash
+python3 -m pytest src/data_clean/tests/config -q
+# 16 passed in 0.03s
+
+python3 -m pytest src/data_clean/tests/service -q
+# 29 passed in 0.37s (no regression)
+```
+
+### 成功标准勾选
+
+- [x] `frame_alignment` 合法配置加载通过。
+- [x] 非法 `common_anchor` 会失败。
+- [x] `camera_from_*_tcp` 方向语义有测试覆盖。
+- [x] `common_from_right_start` 来源语义明确为 `inverse(T_right_start_common)`（配置注释和文档明确标明）。
+- [x] dev 检验项配置校验产物契约明确（`load_frame_alignment` + `validate_frame_alignment` 可被 `scene1_frame_alignment_config` 检验项调用）。
+
+### 对开发者验收入口的影响
+
+本 L3 为 `./start_data_clean.sh --dev -> 场景一 -> scene1_frame_alignment_config` 检验项提供配置加载与校验基础。后续 `service_s1_005` 将改造位姿转换配置生成器，本 L3 提供的 `load_frame_alignment` 和 `validate_frame_alignment` 可被该检验项直接调用。
+
+### 明确没做什么
+
+- 不改 MCAP 写出。
+- 不改 calibration wizard 页面。
+- 不实现统一 `--dev` 一级入口。
+- 不做位姿矩阵计算输出。
+
+### 后续建议
+
+建议用户后续运行 `./start_data_clean.sh --dev`，选择场景一的 `scene1_frame_alignment_config` 功能检验项做最终人工验收。
