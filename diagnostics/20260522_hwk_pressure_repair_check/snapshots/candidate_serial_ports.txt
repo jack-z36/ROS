@@ -1,0 +1,3 @@
+$ for dev in /dev/ttyUSB* /dev/ttyACM*; do [ -e "$dev" ] && printf '%s\n' "$dev"; done | sort
+
+/dev/ttyUSB1

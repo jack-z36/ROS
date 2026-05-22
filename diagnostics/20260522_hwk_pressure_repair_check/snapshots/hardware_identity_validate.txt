@@ -1,0 +1,11 @@
+$ python3 /home/hit/ROS/scripts/hardware_identity_scan.py validate --map /home/hit/ROS/config/hardware_identity_map.yaml --write-resolved /home/hit/ROS/diagnostics/20260522_hwk_pressure_repair_check/snapshots/hardware_identity_resolved.yaml
+
+
+[mapping validation]
+FAIL pressure.l1: no current serial device matches {'ID_VENDOR_ID': '1a86', 'ID_MODEL_ID': '7523', 'HWK_CHIP_UID': '003F000F-3035510B-3735333', 'HWK_DEVICE_ADDR': '6', 'HWK_PACKAGE_ID': '29'}
+FAIL pressure.l2: no current serial device matches {'ID_VENDOR_ID': '1a86', 'ID_MODEL_ID': '7523', 'HWK_CHIP_UID': '005C0039-3035510B-3735333', 'HWK_DEVICE_ADDR': '6', 'HWK_PACKAGE_ID': '29'}
+FAIL pressure.r1: no current serial device matches {'ID_VENDOR_ID': '1a86', 'ID_MODEL_ID': '7523', 'HWK_CHIP_UID': '00600012-3035510B-3735333', 'HWK_DEVICE_ADDR': '6', 'HWK_PACKAGE_ID': '29'}
+FAIL pressure.r2: no current serial device matches {'ID_VENDOR_ID': '1a86', 'ID_MODEL_ID': '7523', 'HWK_CHIP_UID': '007B0036-3035510B-3735333', 'HWK_DEVICE_ADDR': '6', 'HWK_PACKAGE_ID': '29'}
+FAIL pressure.unknown: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0 is a HWK CH340 candidate but did not return HWK_CHIP_UID
+
+validation failed: 5 failure(s), 0 warning(s)

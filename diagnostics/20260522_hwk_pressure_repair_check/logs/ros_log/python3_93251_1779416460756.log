@@ -1,0 +1,3 @@
+[INFO] [1779416460.866958844] [pressure_driver_node]: Serial port opened: name=discovered_ttyUSB1_0, port=/dev/ttyUSB1, baudrate=460800, timeout=0.01
+[ERROR] [1779416461.877224508] [pressure_driver_node]: HWK identity query failed: serial=discovered_ttyUSB1_0, port=/dev/ttyUSB1, device_addr=6; this sensor will not be bound to a topic
+[INFO] [1779416461.894218726] [pressure_driver_node]: Serial port closed: name=discovered_ttyUSB1_0, port=/dev/ttyUSB1

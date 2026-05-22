@@ -1,0 +1,4 @@
+1779416460.5663280 [INFO] [launch]: All log files can be found below /home/hit/ROS/diagnostics/20260522_hwk_pressure_repair_check/logs/ros_log/2026-05-22-10-21-00-565579-hit-ThinkBook-16-G6-IMH-93247
+1779416460.5664308 [INFO] [launch]: Default logging verbosity is set to INFO
+1779416460.6070497 [INFO] [pressure_driver_node-1]: process started with pid [93251]
+1779416462.0603864 [ERROR] [pressure_driver_node-1]: process has died [pid 93251, exit code 1, cmd '/home/hit/ROS/install/hwk_pressure_driver/lib/hwk_pressure_driver/pressure_driver_node --ros-args -r __node:=pressure_driver_node --params-file /tmp/launch_params_j7r2cxf9'].

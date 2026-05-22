@@ -1,0 +1,22 @@
+$ journalctl -k --since today --no-pager 2>/dev/null | grep -Ei 'ch341|ttyUSB|ttyACM|1a86|device descriptor|over-current|unable to enumerate|USB disconnect' | tail -n 120 || true
+
+May 22 10:08:19 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.4.1.1: New USB device found, idVendor=1a86, idProduct=7523, bcdDevice= 2.64
+May 22 10:08:19 hit-ThinkBook-16-G6-IMH kernel: usbcore: registered new interface driver ch341
+May 22 10:08:19 hit-ThinkBook-16-G6-IMH kernel: usbserial: USB Serial support registered for ch341-uart
+May 22 10:08:19 hit-ThinkBook-16-G6-IMH kernel: ch341 3-2.4.1.1:1.0: ch341-uart converter detected
+May 22 10:08:19 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.4.1.1: ch341-uart converter now attached to ttyUSB0
+May 22 10:08:20 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.4.3.2.2: New USB device found, idVendor=1a86, idProduct=7523, bcdDevice= 2.64
+May 22 10:08:20 hit-ThinkBook-16-G6-IMH kernel: ch341 3-2.4.3.2.2:1.0: ch341-uart converter detected
+May 22 10:08:20 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.4.3.2.2: ch341-uart converter now attached to ttyUSB1
+May 22 10:09:37 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.4.1.2: USB disconnect, device number 21
+May 22 10:10:07 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.4.1.2: USB disconnect, device number 22
+May 22 10:10:22 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.4.1.2: USB disconnect, device number 23
+May 22 10:12:27 hit-ThinkBook-16-G6-IMH kernel: usb 2-3.4.1.4: USB disconnect, device number 10
+May 22 10:12:28 hit-ThinkBook-16-G6-IMH kernel: usb 2-3.4.1.3: USB disconnect, device number 9
+May 22 10:12:32 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.4.1.1: USB disconnect, device number 15
+May 22 10:12:32 hit-ThinkBook-16-G6-IMH kernel: ch341-uart ttyUSB0: ch341-uart converter now disconnected from ttyUSB0
+May 22 10:12:32 hit-ThinkBook-16-G6-IMH kernel: ch341 3-2.4.1.1:1.0: device disconnected
+May 22 10:13:20 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.2: USB disconnect, device number 8
+May 22 10:13:46 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.4.1.2: USB disconnect, device number 24
+May 22 10:15:06 hit-ThinkBook-16-G6-IMH kernel: usb 2-3.4.1.4: USB disconnect, device number 12
+May 22 10:15:52 hit-ThinkBook-16-G6-IMH kernel: usb 3-2.3: USB disconnect, device number 9

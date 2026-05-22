@@ -1,0 +1,9 @@
+$ python3 /home/hit/ROS/scripts/hwk_query_device_info.py --port /dev/ttyUSB1 --addr 6 --package-id 29 --cmd uid --timeout 1.5 --serial-timeout 0.02
+
+port: /dev/ttyUSB1
+baudrate: 460800
+addr: 6
+package_id: 29
+cmd: 0x05 (chip_uid)
+request_hex: 3C 3C 61 75 01 00 05 C0 03 3E 3E
+result: timeout/no matching ACK

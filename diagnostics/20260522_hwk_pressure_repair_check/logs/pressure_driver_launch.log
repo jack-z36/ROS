@@ -1,0 +1,17 @@
+[INFO] [launch]: All log files can be found below /home/hit/ROS/diagnostics/20260522_hwk_pressure_repair_check/logs/ros_log/2026-05-22-10-21-00-565579-hit-ThinkBook-16-G6-IMH-93247
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [pressure_driver_node-1]: process started with pid [93251]
+[pressure_driver_node-1] [INFO] [1779416460.866958844] [pressure_driver_node]: Serial port opened: name=discovered_ttyUSB1_0, port=/dev/ttyUSB1, baudrate=460800, timeout=0.01
+[pressure_driver_node-1] [ERROR] [1779416461.877224508] [pressure_driver_node]: HWK identity query failed: serial=discovered_ttyUSB1_0, port=/dev/ttyUSB1, device_addr=6; this sensor will not be bound to a topic
+[pressure_driver_node-1] [INFO] [1779416461.894218726] [pressure_driver_node]: Serial port closed: name=discovered_ttyUSB1_0, port=/dev/ttyUSB1
+[pressure_driver_node-1] Traceback (most recent call last):
+[pressure_driver_node-1]   File "/home/hit/ROS/install/hwk_pressure_driver/lib/hwk_pressure_driver/pressure_driver_node", line 33, in <module>
+[pressure_driver_node-1]     sys.exit(load_entry_point('hwk-pressure-driver==0.1.0', 'console_scripts', 'pressure_driver_node')())
+[pressure_driver_node-1]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[pressure_driver_node-1]   File "/home/hit/ROS/install/hwk_pressure_driver/lib/python3.12/site-packages/hwk_pressure_driver/pressure_driver_node.py", line 386, in main
+[pressure_driver_node-1]     node = PressureDriverNode()
+[pressure_driver_node-1]            ^^^^^^^^^^^^^^^^^^^^
+[pressure_driver_node-1]   File "/home/hit/ROS/install/hwk_pressure_driver/lib/python3.12/site-packages/hwk_pressure_driver/pressure_driver_node.py", line 71, in __init__
+[pressure_driver_node-1]     raise RuntimeError(
+[pressure_driver_node-1] RuntimeError: No HWK pressure sensors were bound to publishers. Check serial devices and HWK_CHIP_UID mappings.
+[ERROR] [pressure_driver_node-1]: process has died [pid 93251, exit code 1, cmd '/home/hit/ROS/install/hwk_pressure_driver/lib/hwk_pressure_driver/pressure_driver_node --ros-args -r __node:=pressure_driver_node --params-file /tmp/launch_params_j7r2cxf9'].

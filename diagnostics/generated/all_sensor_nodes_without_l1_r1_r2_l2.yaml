@@ -1,0 +1,93 @@
+baton_mini:
+  right:
+    enabled: true
+    server_ip: 192.168.1.10
+    local_ip: auto
+    node_name: baton_mini_right
+    topics:
+      odometry:
+        enabled: true
+        name: /baton_mini_right/odometry
+      fast_odom:
+        enabled: true
+        name: /baton_mini_right/fast_odom
+      imu:
+        enabled: false
+        name: /baton_mini_right/imu
+      image_left:
+        enabled: false
+        name: /baton_mini_right/image_left
+      image_right:
+        enabled: false
+        name: /baton_mini_right/image_right
+  left:
+    enabled: true
+    server_ip: 192.168.2.10
+    local_ip: auto
+    node_name: baton_mini_left
+    topics:
+      odometry:
+        enabled: true
+        name: /baton_mini_left/odometry
+      fast_odom:
+        enabled: true
+        name: /baton_mini_left/fast_odom
+      imu:
+        enabled: false
+        name: /baton_mini_left/imu
+      image_left:
+        enabled: false
+        name: /baton_mini_left/image_left
+      image_right:
+        enabled: false
+        name: /baton_mini_left/image_right
+hardware_identity:
+  enabled: false
+gopro:
+  right:
+    enabled: true
+    video_device: /dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.1.3:1.0-video-index0
+    namespace: gopro_right
+    node_name: gopro_right_camera
+    camera_name: gopro_right
+    frame_id: gopro_right_optical_frame
+    frame_rate: 30
+    topics:
+      image_raw:
+        enabled: true
+        name: image_raw
+      camera_info:
+        enabled: false
+        name: camera_info
+  left:
+    enabled: true
+    video_device: /dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.1.4:1.0-video-index0
+    namespace: gopro_left
+    node_name: gopro_left_camera
+    camera_name: gopro_left
+    frame_id: gopro_left_optical_frame
+    frame_rate: 30
+    topics:
+      image_raw:
+        enabled: true
+        name: image_raw
+      camera_info:
+        enabled: false
+        name: camera_info
+pressure:
+  enabled: false
+  config_file: /home/hit/ROS/src/hwk_pressure_driver/config/pressure_sensors.yaml
+  node_name: pressure_driver_node
+  topics:
+    left_gripper_1:
+      enabled: false
+      name: /pressure/left_hand/gripper_1
+    left_gripper_2:
+      enabled: false
+      name: /pressure/left_hand/gripper_2
+    right_gripper_1:
+      enabled: false
+      name: /pressure/right_hand/gripper_1
+    right_gripper_2:
+      enabled: false
+      name: /pressure/right_hand/gripper_2

@@ -1,0 +1,4 @@
+$ find /dev/serial/by-path -maxdepth 1 -type l -printf '%p -> %l\n' 2>/dev/null | sort || true
+
+/dev/serial/by-path/pci-0000:00:14.0-usb-0:2.4.3.2.2:1.0-port0 -> ../../ttyUSB1
+/dev/serial/by-path/pci-0000:00:14.0-usbv2-0:2.4.3.2.2:1.0-port0 -> ../../ttyUSB1

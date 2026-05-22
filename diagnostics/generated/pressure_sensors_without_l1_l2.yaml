@@ -1,0 +1,18 @@
+pressure_driver_node:
+  ros__parameters:
+    frame_id_prefix: pressure_sensor
+    default_baudrate: 460800
+    default_poll_rate_hz: 100.0
+    serial_timeout: 0.01
+    timeout_warn_sec: 1.0
+    identity_map_file: /home/hit/ROS/diagnostics/generated/hardware_identity_map_without_l1_l2_driver.yaml
+    strict_identity: true
+    identity_query_timeout: 1.0
+    identity_query_package_id: 29
+    sensor_defaults:
+      device_addr: 6
+      rows: 6
+      cols: 15
+    serial_port_globs:
+    - /dev/ttyUSB*
+    - /dev/ttyACM*
