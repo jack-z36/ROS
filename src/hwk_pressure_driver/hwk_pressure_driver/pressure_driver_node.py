@@ -7,7 +7,7 @@ import time
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Deque, Dict, Optional, Tuple
+from typing import Deque, Dict, List, Optional, Set, Tuple
 
 import rclpy
 from rclpy._rclpy_pybind11 import RCLError
@@ -16,7 +16,7 @@ from hwk_pressure_interfaces.msg import PressureFrame
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
-from .config import DriverConfig, IdentityTargetConfig, SensorConfig, load_config
+from .config import DriverConfig, IdentityTargetConfig, SensorConfig, SerialPortConfig, load_config
 from .protocol import ParsedFrame
 from .serial_worker import SerialWorker
 
@@ -62,6 +62,10 @@ class PressureDriverNode(Node):
         self._sensors: Dict[SensorKey, SensorRuntime] = {}
         self._publishers_by_uid: Dict[str, object] = {}
         self._bound_identity_uids = set()
+        self._serialized_serials: Set[str] = set()
+        self._serial_poll_order: Dict[str, List[SensorKey]] = {}
+        self._serial_poll_index: Dict[str, int] = {}
+        self._serial_next_poll_time: Dict[str, float] = {}
         self._timer = None
 
         self._create_publishers(self._config)
@@ -72,10 +76,10 @@ class PressureDriverNode(Node):
                 "No HWK pressure sensors were bound to publishers. "
                 "Check serial devices and HWK_CHIP_UID mappings."
             )
+        self._configure_serialized_polling()
         self._log_startup_summary(str(config_file))
 
-        max_poll_rate = max(runtime.config.poll_rate_hz for runtime in self._sensors.values())
-        timer_period = max(0.001, 1.0 / max_poll_rate)
+        timer_period = self._timer_period_sec()
         self._timer = self.create_timer(timer_period, self._poll_timer_callback)
 
     def destroy_node(self) -> bool:
@@ -156,6 +160,14 @@ class PressureDriverNode(Node):
                     "add it to hardware_identity_map.yaml before publishing"
                 )
                 continue
+            if target.device_addr is not None and target.device_addr != sensor_cfg.device_addr:
+                self.get_logger().error(
+                    f"HWK_CHIP_UID detected at unexpected device_addr: serial={serial_name}, "
+                    f"detected_addr={sensor_cfg.device_addr}, expected_addr={target.device_addr}, "
+                    f"HWK_CHIP_UID={uid}, logical={target.logical_name}; "
+                    "update the hardware address or hardware_identity_map.yaml before publishing"
+                )
+                continue
             if uid in self._bound_identity_uids:
                 raise RuntimeError(
                     f"Duplicate HWK_CHIP_UID detected across serial ports: {uid}"
@@ -198,8 +210,44 @@ class PressureDriverNode(Node):
             )
             self.get_logger().info(
                 f"Configured serial port: name={port.name}, port={port.port}, "
-                f"baudrate={port.baudrate}, sensors=[{sensor_summary}]"
+                f"baudrate={port.baudrate}, serialized_polling={port.serialized_polling}, "
+                f"data_response_timeout={port.data_response_timeout}, "
+                f"inter_request_gap_sec={port.inter_request_gap_sec}, sensors=[{sensor_summary}]"
             )
+
+    def _configure_serialized_polling(self) -> None:
+        now = time.monotonic()
+        serial_cfg_by_name = {port.name: port for port in self._config.serial_ports}
+        for serial_name, serial_cfg in serial_cfg_by_name.items():
+            if not serial_cfg.serialized_polling:
+                continue
+
+            keys = [
+                (serial_name, sensor_cfg.device_addr)
+                for sensor_cfg in serial_cfg.sensors
+                if (serial_name, sensor_cfg.device_addr) in self._sensors
+            ]
+            if not keys:
+                continue
+
+            self._serialized_serials.add(serial_name)
+            self._serial_poll_order[serial_name] = keys
+            self._serial_poll_index[serial_name] = 0
+            self._serial_next_poll_time[serial_name] = now
+
+            for index, key in enumerate(keys):
+                runtime = self._sensors[key]
+                period = 1.0 / runtime.config.poll_rate_hz
+                runtime.next_poll_time = now + (period * index / max(1, len(keys)))
+
+    def _timer_period_sec(self) -> float:
+        max_poll_rate = max(runtime.config.poll_rate_hz for runtime in self._sensors.values())
+        fastest_period = 1.0 / max_poll_rate
+        serialized_sensor_count = max(
+            (len(keys) for keys in self._serial_poll_order.values()),
+            default=1,
+        )
+        return max(0.001, fastest_period / max(1, serialized_sensor_count * 2))
 
     def _poll_timer_callback(self) -> None:
         if self._stopping:
@@ -207,6 +255,8 @@ class PressureDriverNode(Node):
 
         now = time.monotonic()
         for key, runtime in self._sensors.items():
+            if runtime.serial_name in self._serialized_serials:
+                continue
             if now >= runtime.next_poll_time:
                 worker = self._workers.get(runtime.serial_name)
                 if worker is not None:
@@ -217,6 +267,76 @@ class PressureDriverNode(Node):
                 runtime.next_poll_time = now + (1.0 / runtime.config.poll_rate_hz)
 
             self._check_sensor_timeout(now, key, runtime)
+
+        self._poll_serialized_ports(now)
+
+        check_now = time.monotonic()
+        for key, runtime in self._sensors.items():
+            if runtime.serial_name in self._serialized_serials:
+                self._check_sensor_timeout(check_now, key, runtime)
+
+    def _poll_serialized_ports(self, now: float) -> None:
+        for serial_name in sorted(self._serialized_serials):
+            if now < self._serial_next_poll_time.get(serial_name, 0.0):
+                continue
+
+            key = self._next_due_serialized_sensor(serial_name, now)
+            if key is None:
+                continue
+
+            runtime = self._sensors[key]
+            worker = self._workers.get(serial_name)
+            serial_cfg = self._serial_config(serial_name)
+            if worker is None or serial_cfg is None:
+                runtime.next_poll_time = now + (1.0 / runtime.config.poll_rate_hz)
+                continue
+
+            package_id = runtime.next_package_id
+            runtime.recent_package_ids.append(package_id)
+            previous_poll_time = runtime.next_poll_time
+            frame = worker.request_data_frame(runtime.config.device_addr, package_id)
+            runtime.next_package_id = (package_id + 1) & 0x3F
+
+            end_time = time.monotonic()
+            period = 1.0 / runtime.config.poll_rate_hz
+            runtime.next_poll_time = max(previous_poll_time + period, end_time)
+            self._serial_next_poll_time[serial_name] = end_time + serial_cfg.inter_request_gap_sec
+
+            if frame is not None:
+                self._handle_frame(serial_name, frame)
+
+    def _next_due_serialized_sensor(
+        self,
+        serial_name: str,
+        now: float,
+    ) -> Optional[SensorKey]:
+        keys = self._serial_poll_order.get(serial_name) or []
+        if not keys:
+            return None
+
+        start_index = self._serial_poll_index.get(serial_name, 0) % len(keys)
+        fallback_key: Optional[SensorKey] = None
+        fallback_time: Optional[float] = None
+        for offset in range(len(keys)):
+            index = (start_index + offset) % len(keys)
+            key = keys[index]
+            runtime = self._sensors[key]
+            if fallback_time is None or runtime.next_poll_time < fallback_time:
+                fallback_key = key
+                fallback_time = runtime.next_poll_time
+            if now >= runtime.next_poll_time:
+                self._serial_poll_index[serial_name] = (index + 1) % len(keys)
+                return key
+
+        if fallback_key is not None and fallback_time is not None:
+            self._serial_next_poll_time[serial_name] = fallback_time
+        return None
+
+    def _serial_config(self, serial_name: str) -> Optional[SerialPortConfig]:
+        for serial_cfg in self._config.serial_ports:
+            if serial_cfg.name == serial_name:
+                return serial_cfg
+        return None
 
     def _check_sensor_timeout(
         self,

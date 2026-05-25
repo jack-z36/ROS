@@ -231,7 +231,7 @@ void MainWindow::subscribeTopics()
                                      QPointer<PressureDockWidget> panel) {
         subscriptions_[topic] =
             sub_node_->create_subscription<hwk_pressure_interfaces::msg::PressureFrame>(
-                topic, rclcpp::QoS(rclcpp::KeepLast(10)).reliable(),
+                topic, rclcpp::QoS(rclcpp::KeepLast(1)).reliable(),
                 [panel](const hwk_pressure_interfaces::msg::PressureFrame& msg) {
                     if (panel) panel->preset(msg);
                 });

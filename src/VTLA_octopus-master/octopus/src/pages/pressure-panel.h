@@ -32,7 +32,7 @@ private:
     std::array<bool, 2> has_latest_{ false, false };
 
     QPointer<QTimer> timer_{};
-    safe_queue<hwk_pressure_interfaces::msg::PressureFrame> frames_{ 64 };
+    safe_queue<hwk_pressure_interfaces::msg::PressureFrame> frames_{ 8 };
 };
 
 #endif //! SCANNER_PRESSURE_PANEL_H

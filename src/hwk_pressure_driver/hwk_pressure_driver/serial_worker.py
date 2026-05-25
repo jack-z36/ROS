@@ -58,6 +58,7 @@ class SerialWorker:
         self.identity_by_addr: Dict[int, str] = {}
         self._rx_buffer = bytearray()
         self._write_lock = threading.Lock()
+        self._transaction_lock = threading.Lock()
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._serial: Optional[serial.Serial] = None
@@ -95,13 +96,21 @@ class SerialWorker:
 
         self._query_configured_identities()
 
-        self._stop_event.clear()
-        self._thread = threading.Thread(
-            target=self._reader_loop,
-            name=f"pressure-reader-{self.name}",
-            daemon=True,
-        )
-        self._thread.start()
+        if self.config.serialized_polling:
+            self._logger.info(
+                f"Serialized polling enabled: name={self.name}, port={self.config.port}, "
+                f"sensors={len(self.config.sensors)}, "
+                f"data_response_timeout={self.config.data_response_timeout}, "
+                f"inter_request_gap_sec={self.config.inter_request_gap_sec}"
+            )
+        else:
+            self._stop_event.clear()
+            self._thread = threading.Thread(
+                target=self._reader_loop,
+                name=f"pressure-reader-{self.name}",
+                daemon=True,
+            )
+            self._thread.start()
         return True
 
     def stop(self, join_timeout: float = 1.0) -> None:
@@ -153,6 +162,66 @@ class SerialWorker:
             )
             return False
         return True
+
+    def request_data_frame(self, device_addr: int, package_id: int) -> Optional[ParsedFrame]:
+        """Send one GET request and synchronously wait for its matching data ACK."""
+
+        serial_obj = self._serial
+        if serial_obj is None or not serial_obj.is_open:
+            return None
+
+        try:
+            request = build_get_data_frame(device_addr=device_addr, package_id=package_id)
+        except ValueError as exc:
+            self._logger.error(
+                f"Failed to build GET frame: serial={self.name}, device_addr={device_addr}, "
+                f"package_id={package_id}, error={exc}"
+            )
+            return None
+
+        local_buffer = bytearray()
+        deadline = time.monotonic() + self.config.data_response_timeout
+
+        try:
+            with self._transaction_lock:
+                serial_obj.reset_input_buffer()
+                serial_obj.reset_output_buffer()
+                serial_obj.write(request)
+                serial_obj.flush()
+
+                while time.monotonic() < deadline:
+                    waiting = getattr(serial_obj, "in_waiting", 0)
+                    read_size = min(512, waiting) if waiting else 1
+                    chunk = serial_obj.read(read_size)
+                    if chunk:
+                        local_buffer.extend(chunk)
+
+                    frame = self._pop_data_frame(local_buffer, context="transaction")
+                    while frame is not None:
+                        if (
+                            frame.device_addr == device_addr
+                            and frame.channel == CHAN_DATA
+                            and frame.frame_type == TYPE_ACK
+                            and frame.package_id == package_id
+                        ):
+                            return frame
+                        self._logger.debug(
+                            f"Ignoring unmatched data frame during transaction: "
+                            f"serial={self.name}, expected_addr={device_addr}, "
+                            f"expected_package_id={package_id}, addr={frame.device_addr}, "
+                            f"package_id={frame.package_id}, channel=0x{frame.channel:02X}, "
+                            f"type=0x{frame.frame_type:02X}"
+                        )
+                        frame = self._pop_data_frame(local_buffer, context="transaction")
+        except Exception as exc:
+            self._logger.error(
+                f"Serial transaction error: name={self.name}, port={self.config.port}, "
+                f"device_addr={device_addr}, package_id={package_id}, error={exc}\n"
+                f"{traceback.format_exc()}"
+            )
+            return None
+
+        return None
 
     def _query_configured_identities(self) -> None:
         self.identity_by_addr.clear()
@@ -353,6 +422,55 @@ class SerialWorker:
                     f"Frame callback error on serial={self.name}: error={exc}\n"
                     f"{traceback.format_exc()}"
                 )
+
+    def _pop_data_frame(self, rx_buffer: bytearray, context: str) -> Optional[ParsedFrame]:
+        while True:
+            head_index = rx_buffer.find(HEAD)
+            if head_index < 0:
+                if rx_buffer[-1:] == HEAD[:1]:
+                    del rx_buffer[:-1]
+                else:
+                    rx_buffer.clear()
+                return None
+            if head_index > 0:
+                del rx_buffer[:head_index]
+
+            if len(rx_buffer) < MIN_FRAME_LEN:
+                return None
+
+            length = int.from_bytes(rx_buffer[4:6], byteorder="little", signed=False)
+            if length > self._max_payload_length:
+                self._logger.warn(
+                    f"Payload length too large on serial={self.name} during {context}: "
+                    f"length={length}, max={self._max_payload_length}; resyncing"
+                )
+                del rx_buffer[0]
+                continue
+
+            frame_len = MIN_FRAME_LEN + length
+            if len(rx_buffer) < frame_len:
+                return None
+
+            frame = bytes(rx_buffer[:frame_len])
+            if frame[-2:] != TAIL:
+                self._logger.warn(
+                    f"Frame tail error on serial={self.name} during {context}: "
+                    "dropping current frame head"
+                )
+                del rx_buffer[0]
+                continue
+
+            del rx_buffer[:frame_len]
+            parsed, error = parse_frame(frame)
+            if parsed is None:
+                if error and "CRC" in error:
+                    self._logger.warn(f"CRC error on serial={self.name} during {context}: {error}")
+                else:
+                    self._logger.warn(
+                        f"Frame parse error on serial={self.name} during {context}: {error}"
+                    )
+                continue
+            return parsed
 
     def _drop_until_possible_head(self) -> None:
         if not self._rx_buffer:

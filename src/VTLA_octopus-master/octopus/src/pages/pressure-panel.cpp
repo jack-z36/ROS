@@ -148,7 +148,7 @@ PressureDockWidget::PressureDockWidget(const QString& title, QWidget *parent,
     stats_[1] = gripper_2_stats;
 
     timer_ = new QTimer(this);
-    timer_->start(100);
+    timer_->start(33);
     connect(timer_, &QTimer::timeout, this, &PressureDockWidget::refresh);
 }
 

@@ -37,6 +37,7 @@ class IdentityTargetConfig:
     topic: str
     frame_id: str
     required: bool
+    device_addr: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,9 @@ class SerialPortConfig:
     port: str
     baudrate: int
     sensors: List[SensorConfig]
+    serialized_polling: bool
+    data_response_timeout: float
+    inter_request_gap_sec: float
 
 
 @dataclass(frozen=True)
@@ -106,6 +110,12 @@ def _parse_driver_config(params: Mapping[str, Any], config_dir: Path) -> DriverC
     identity_query_package_id = _as_int(
         params.get("identity_query_package_id", 29), "identity_query_package_id"
     )
+    default_data_response_timeout = _as_float(
+        params.get("data_response_timeout", 0.05), "data_response_timeout"
+    )
+    default_inter_request_gap_sec = _as_float(
+        params.get("inter_request_gap_sec", 0.005), "inter_request_gap_sec"
+    )
     strict_identity = _as_bool(params.get("strict_identity", True), "strict_identity")
 
     identity_map_file_raw = str(params.get("identity_map_file", "")).strip()
@@ -129,6 +139,10 @@ def _parse_driver_config(params: Mapping[str, Any], config_dir: Path) -> DriverC
         raise ConfigError("identity_query_timeout must be positive")
     if not 0 <= identity_query_package_id <= 0x3F:
         raise ConfigError("identity_query_package_id must be in range 0..63")
+    if default_data_response_timeout <= 0.0:
+        raise ConfigError("data_response_timeout must be positive")
+    if default_inter_request_gap_sec < 0.0:
+        raise ConfigError("inter_request_gap_sec must be non-negative")
 
     serial_ports: List[SerialPortConfig] = []
     used_serial_names = set()
@@ -164,9 +178,33 @@ def _parse_driver_config(params: Mapping[str, Any], config_dir: Path) -> DriverC
             path=path,
             port_name=name,
         )
+        serialized_polling = _as_bool(
+            port_map.get("serialized_polling", len(sensors) > 1),
+            f"{path}.serialized_polling",
+        )
+        data_response_timeout = _as_float(
+            port_map.get("data_response_timeout", default_data_response_timeout),
+            f"{path}.data_response_timeout",
+        )
+        inter_request_gap_sec = _as_float(
+            port_map.get("inter_request_gap_sec", default_inter_request_gap_sec),
+            f"{path}.inter_request_gap_sec",
+        )
+        if data_response_timeout <= 0.0:
+            raise ConfigError(f"{path}.data_response_timeout must be positive")
+        if inter_request_gap_sec < 0.0:
+            raise ConfigError(f"{path}.inter_request_gap_sec must be non-negative")
 
         serial_ports.append(
-            SerialPortConfig(name=name, port=port, baudrate=baudrate, sensors=sensors)
+            SerialPortConfig(
+                name=name,
+                port=port,
+                baudrate=baudrate,
+                sensors=sensors,
+                serialized_polling=serialized_polling,
+                data_response_timeout=data_response_timeout,
+                inter_request_gap_sec=inter_request_gap_sec,
+            )
         )
         _remember_realpath(port, used_serial_realpaths)
 
@@ -184,6 +222,9 @@ def _parse_driver_config(params: Mapping[str, Any], config_dir: Path) -> DriverC
                 port=port,
                 baudrate=default_baudrate,
                 sensors=[default_sensor],
+                serialized_polling=False,
+                data_response_timeout=default_data_response_timeout,
+                inter_request_gap_sec=default_inter_request_gap_sec,
             )
         )
 
@@ -337,6 +378,7 @@ def _load_identity_targets(
         uid = str(match.get("HWK_CHIP_UID", "")).strip()
         if not uid:
             continue
+        device_addr = _optional_device_addr(match.get("HWK_DEVICE_ADDR"), f"pressure.{logical_name}.match.HWK_DEVICE_ADDR")
 
         topic = str(target.get("topic", "")).strip()
         hand = str(target.get("hand", "")).strip()
@@ -365,6 +407,7 @@ def _load_identity_targets(
             topic=topic,
             frame_id=str(target.get("frame_id", "")).strip(),
             required=_as_bool(entry_raw.get("required", True), f"pressure.{logical_name}.required"),
+            device_addr=device_addr,
         )
 
     if strict_identity and not targets:
@@ -377,6 +420,17 @@ def _infer_hand_gripper_from_topic(topic: str) -> tuple[str, str]:
     if len(parts) >= 3 and parts[-3] == "pressure":
         return parts[-2], parts[-1]
     return "", ""
+
+
+def _optional_device_addr(value: Any, path: str) -> Optional[int]:
+    if value is None:
+        return None
+    if str(value).strip() == "":
+        return None
+    device_addr = _as_int(value, path)
+    if not 0 <= device_addr <= 0x0F:
+        raise ConfigError(f"{path} must be in range 0..15")
+    return device_addr
 
 
 def _resolve_path(value: str, base_dir: Path) -> Path:
