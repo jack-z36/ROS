@@ -35,7 +35,9 @@ Project source files and checked-in base configs are not modified.
 Environment:
   START_PRESSURE_GENERATE_ONLY=1  Generate configs without launching.
   AUTO_BUILD=1                   Run colcon build before launching.
-  PRESSURE_ONLY_PORT=/dev/ttyUSB0 Override all selected targets to one serial port.
+  PRESSURE_ONLY_PORT=/dev/ttyUSB0 Force all selected targets onto one shared serial port.
+  PRESSURE_ONLY_L1_PORT=/dev/ttyUSB0 Override one target serial port.
+  PRESSURE_ONLY_L2_PORT=/dev/ttyUSB1 Override one target serial port.
   PRESSURE_ONLY_POLL_RATE=40     Override poll rate in Hz for selected targets.
   PRESSURE_ONLY_DATA_TIMEOUT=0.05 Override one data response timeout in seconds.
   PRESSURE_ONLY_INTER_REQUEST_GAP=0 Override shared-bus request gap in seconds.
@@ -61,8 +63,10 @@ import glob
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
+import serial
 import yaml
 
 
@@ -117,23 +121,197 @@ default_sensor.setdefault("rows", 6)
 default_sensor.setdefault("cols", 15)
 port_override = os.environ.get("PRESSURE_ONLY_PORT", "").strip()
 auto_ports = sorted(glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*"))
+auto_detect_timeout = float(os.environ.get("PRESSURE_ONLY_AUTO_DETECT_TIMEOUT", "0.35"))
+auto_detect_serial_timeout = float(os.environ.get("PRESSURE_ONLY_AUTO_DETECT_SERIAL_TIMEOUT", "0.02"))
+
+HEAD = bytes((0x3C, 0x3C))
+TAIL = bytes((0x3E, 0x3E))
+CHAN_DEVICE_INFO = 0x01
+TYPE_GET = 0x01
+TYPE_DEVICE_INFO_RESPONSE = 0x02
+TYPE_ACK = 0x03
+DEVICE_INFO_RESPONSE_TYPES = (TYPE_DEVICE_INFO_RESPONSE, TYPE_ACK)
+MIN_FRAME_LEN = 10
+CMD_CHIP_UID = 0x05
 
 
-def resolve_target_port(target_cfg: dict) -> str:
+def crc16(payload: bytes) -> int:
+    crc = 0
+    for byte in payload:
+        crc ^= byte
+        for _ in range(8):
+            if crc & 0x0001:
+                crc = (crc >> 1) ^ 0xA001
+            else:
+                crc >>= 1
+            crc &= 0xFFFF
+    return crc & 0xFFFF
+
+
+def build_get_uid_frame(device_addr: int, package_id: int) -> bytes:
+    payload = bytes((CMD_CHIP_UID,))
+    id_channel = ((device_addr & 0x0F) << 4) | CHAN_DEVICE_INFO
+    flags = ((package_id & 0x3F) << 2) | TYPE_GET
+    checksum = crc16(payload)
+    return b"".join(
+        (
+            HEAD,
+            bytes((id_channel, flags)),
+            len(payload).to_bytes(2, byteorder="little", signed=False),
+            payload,
+            checksum.to_bytes(2, byteorder="little", signed=False),
+            TAIL,
+        )
+    )
+
+
+def parse_frame(frame: bytes):
+    if len(frame) < MIN_FRAME_LEN or frame[:2] != HEAD or frame[-2:] != TAIL:
+        return None
+    length = int.from_bytes(frame[4:6], byteorder="little", signed=False)
+    expected_len = MIN_FRAME_LEN + length
+    if len(frame) != expected_len:
+        return None
+    payload_start = 6
+    payload_end = payload_start + length
+    payload = frame[payload_start:payload_end]
+    received_crc = int.from_bytes(frame[payload_end : payload_end + 2], byteorder="little")
+    if received_crc != crc16(payload):
+        return None
+    id_channel = frame[2]
+    flags = frame[3]
+    return {
+        "device_addr": (id_channel >> 4) & 0x0F,
+        "channel": id_channel & 0x0F,
+        "frame_type": flags & 0x03,
+        "package_id": (flags >> 2) & 0x3F,
+        "payload": payload,
+    }
+
+
+def pop_frame(rx_buffer: bytearray):
+    while True:
+        head_index = rx_buffer.find(HEAD)
+        if head_index < 0:
+            if rx_buffer[-1:] == HEAD[:1]:
+                del rx_buffer[:-1]
+            else:
+                rx_buffer.clear()
+            return None
+        if head_index > 0:
+            del rx_buffer[:head_index]
+        if len(rx_buffer) < MIN_FRAME_LEN:
+            return None
+        length = int.from_bytes(rx_buffer[4:6], byteorder="little", signed=False)
+        if length > 4096:
+            del rx_buffer[0]
+            continue
+        frame_len = MIN_FRAME_LEN + length
+        if len(rx_buffer) < frame_len:
+            return None
+        frame = bytes(rx_buffer[:frame_len])
+        del rx_buffer[:frame_len]
+        parsed = parse_frame(frame)
+        if parsed is not None:
+            return parsed
+
+
+def decode_chip_uid(payload: bytes) -> str:
+    text = payload.split(b"\x00", 1)[0]
+    if text:
+        try:
+            decoded = text.decode("ascii")
+        except UnicodeDecodeError:
+            decoded = ""
+        if decoded and all(char.isprintable() for char in decoded):
+            return decoded
+    raw_hex = payload.hex().upper()
+    return "-".join(raw_hex[index : index + 8] for index in range(0, len(raw_hex), 8))
+
+
+def query_uid(port: str, baudrate: int, device_addr: int, package_id: int):
+    request = build_get_uid_frame(device_addr, package_id)
+    rx_buffer = bytearray()
+    deadline = time.monotonic() + auto_detect_timeout
+    try:
+        with serial.Serial(
+            port=port,
+            baudrate=baudrate,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            timeout=auto_detect_serial_timeout,
+        ) as serial_obj:
+            serial_obj.reset_input_buffer()
+            serial_obj.reset_output_buffer()
+            serial_obj.write(request)
+            serial_obj.flush()
+            while time.monotonic() < deadline:
+                waiting = getattr(serial_obj, "in_waiting", 0)
+                read_size = min(512, waiting) if waiting else 1
+                chunk = serial_obj.read(read_size)
+                if chunk:
+                    rx_buffer.extend(chunk)
+                frame = pop_frame(rx_buffer)
+                while frame is not None:
+                    if (
+                        frame["device_addr"] == device_addr
+                        and frame["channel"] == CHAN_DEVICE_INFO
+                        and frame["frame_type"] in DEVICE_INFO_RESPONSE_TYPES
+                        and frame["package_id"] == package_id
+                    ):
+                        return decode_chip_uid(frame["payload"])
+                    frame = pop_frame(rx_buffer)
+    except Exception:
+        return None
+    return None
+
+
+def resolve_target_port(target: str, match_cfg: dict, target_cfg: dict) -> str:
     if port_override:
         return port_override
+
+    target_override = os.environ.get(f"PRESSURE_ONLY_{target.upper()}_PORT", "").strip()
+    if target_override:
+        return target_override
 
     stable_name = str(target_cfg.get("stable_name", "")).strip()
     if stable_name and Path(stable_name).exists():
         return stable_name
 
-    if len(auto_ports) == 1:
+    if len(auto_ports) == 1 and len(targets) == 1:
         return auto_ports[0]
 
+    uid = str(match_cfg.get("HWK_CHIP_UID", "")).strip()
+    addr_raw = str(match_cfg.get("HWK_DEVICE_ADDR", "")).strip()
+    package_id_raw = str(match_cfg.get("HWK_PACKAGE_ID", "29")).strip()
+    if uid and addr_raw and len(auto_ports) > 1:
+        device_addr = int(addr_raw, 0)
+        package_id = int(package_id_raw, 0)
+        matches = []
+        for port in auto_ports:
+            detected_uid = query_uid(port, default_baudrate, device_addr, package_id)
+            if detected_uid == uid:
+                matches.append(port)
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            raise SystemExit(
+                f"Target {target} matched multiple ports by HWK_CHIP_UID {uid}: "
+                + ", ".join(matches)
+            )
+
     if stable_name:
-        return stable_name
+        raise SystemExit(
+            f"No usable serial port found for {target}. Stable path does not exist: {stable_name}. "
+            f"Auto ports: {', '.join(auto_ports) or '(none)'}. "
+            f"Set PRESSURE_ONLY_{target.upper()}_PORT=/dev/ttyUSBx to override, "
+            "or install/update config/99-hwk-pressure.rules for stable /dev/hwk_pressure_* links."
+        )
     raise SystemExit(
-        "No serial port could be resolved. Set PRESSURE_ONLY_PORT=/dev/ttyUSB0."
+        f"No serial port could be resolved for {target}. "
+        f"Auto ports: {', '.join(auto_ports) or '(none)'}. "
+        f"Set PRESSURE_ONLY_{target.upper()}_PORT=/dev/ttyUSBx."
     )
 
 for target in targets:
@@ -141,7 +319,7 @@ for target in targets:
     selected_identity[target] = entry
     match_cfg = entry.get("match") or {}
     target_cfg = entry.get("target") or {}
-    port = resolve_target_port(target_cfg)
+    port = resolve_target_port(target, match_cfg, target_cfg)
 
     sensor_cfg = copy.deepcopy(default_sensor)
     if str(match_cfg.get("HWK_DEVICE_ADDR", "")).strip():
