@@ -184,6 +184,25 @@ ros2 launch hwk_pressure_driver pressure_driver.launch.py \
 
 场景三/五通常通过 `start_all_sensor.sh` 和 `launch/all_sensor_nodes.launch.py` 间接启动。
 
+只启动触觉链路时，使用仓库根目录的组合启动脚本：
+
+```bash
+./start_pressure_only.sh l1 l2
+./start_pressure_only.sh r1,l2
+./start_pressure_only.sh
+```
+
+`start_pressure_only.sh` 不启动 Baton Mini、GoPro 或总传感器 launch。它支持 `l1/l2/r1/r2` 的任意子集和任意顺序，重复参数会自动去重；不传参数时默认选择四路触觉。脚本会在 `diagnostics/generated/` 下生成本次运行专用的 `hardware_identity_map_pressure_only_<组合>.yaml` 和 `pressure_sensors_pressure_only_<组合>.yaml`，再用生成的配置启动一个 `pressure_driver_node`。因此“选择 l1/l2/r1/r2”在当前架构中的含义是：同一个触觉节点只绑定并发布所选 UID 对应的 topic。
+
+可用环境变量：
+
+| 变量 | 默认值 | 含义 |
+| --- | --- | --- |
+| `AUTO_BUILD` | `1` | 启动前编译 `hwk_pressure_interfaces` 和 `hwk_pressure_driver`；设为 `0` 可跳过。 |
+| `START_PRESSURE_ONLY_GENERATE_ONLY` | `0` | 设为 `1` 时只生成临时配置，不启动 ROS 节点。 |
+| `PRESSURE_LOCAL_ONLY` | `1` | 设为 `1` 时限制 ROS discovery 到 `LOCALHOST`。 |
+| `PRESSURE_IDENTITY_QUERY_TIMEOUT` | `0.3` | 触觉专用脚本生成多地址探测配置时，每个地址查询 UID 的超时时间。 |
+
 ## 5. 配置项说明
 
 默认配置文件：`src/hwk_pressure_driver/config/pressure_sensors.yaml`。

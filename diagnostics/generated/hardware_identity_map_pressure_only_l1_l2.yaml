@@ -1,0 +1,31 @@
+pressure:
+  l1:
+    device_type: serial
+    required: true
+    match:
+      ID_VENDOR_ID: 1a86
+      ID_MODEL_ID: '7523'
+      HWK_CHIP_UID: 003F000F-3035510B-3735333
+      HWK_DEVICE_ADDR: '6'
+      HWK_PACKAGE_ID: '29'
+    target:
+      port_config_name: left_gripper_1_port
+      topic: /pressure/left_hand/gripper_1
+      hand: left_hand
+      gripper: gripper_1
+      stable_name: /dev/hwk_pressure_left_gripper_1
+  l2:
+    device_type: serial
+    required: true
+    match:
+      ID_VENDOR_ID: 1a86
+      ID_MODEL_ID: '7523'
+      HWK_CHIP_UID: 005C0039-3035510B-3735333
+      HWK_DEVICE_ADDR: '6'
+      HWK_PACKAGE_ID: '29'
+    target:
+      port_config_name: left_gripper_2_port
+      topic: /pressure/left_hand/gripper_2
+      hand: left_hand
+      gripper: gripper_2
+      stable_name: /dev/hwk_pressure_left_gripper_2
