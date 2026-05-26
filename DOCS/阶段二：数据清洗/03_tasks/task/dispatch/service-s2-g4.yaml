@@ -1,0 +1,55 @@
+dispatch_index:
+  group: service-s2-g4
+  branch: service-s2
+  source_l2: DOCS/阶段二：数据清洗/02_service/场景二/L2能力模块/触觉滤波器.md
+  max_parallel_agents: 1
+  waves:
+    - wave: 1
+      parallel_group: service-s2-g4-p1
+      depends_on: [service_s2_005]
+      tasks: [service_s2_013]
+    - wave: 2
+      parallel_group: service-s2-g4-p2
+      depends_on: [service_s2_007, service_s2_013]
+      tasks: [service_s2_014]
+    - wave: 3
+      parallel_group: service-s2-g4-p3
+      depends_on: [service_s2_014]
+      tasks: [service_s2_015]
+    - wave: 4
+      parallel_group: service-s2-g4-p4
+      depends_on: [service_s2_008, service_s2_015]
+      tasks: [service_s2_016]
+  tasks:
+    service_s2_013:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g4/service_s2_013_定义触觉滤波器配置输入审计记录和结果类型.md
+      title: 定义触觉滤波器配置输入审计记录和结果类型
+      depends_on: [service_s2_005]
+      conflict_scope:
+        files: [src/data_clean/schemas/, src/data_clean/tests/, DOCS/阶段二：数据清洗/02_service/场景二/L2数据定义/]
+        modules: [data_clean.schemas]
+        config_keys: []
+    service_s2_014:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g4/service_s2_014_实现触觉滤波片段切分与接触变化边界.md
+      title: 实现触觉滤波片段切分与接触变化边界
+      depends_on: [service_s2_007, service_s2_013]
+      conflict_scope:
+        files: [src/data_clean/service/, src/data_clean/tests/]
+        modules: [data_clean.service]
+        config_keys: [tactile_filter.contact_reset_threshold]
+    service_s2_015:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g4/service_s2_015_实现逐cell中值EMA触觉滤波与审计.md
+      title: 实现逐 cell 中值 EMA 触觉滤波与审计
+      depends_on: [service_s2_014]
+      conflict_scope:
+        files: [src/data_clean/service/, src/data_clean/tests/]
+        modules: [data_clean.service]
+        config_keys: [tactile_filter.median_window, tactile_filter.ema_alpha]
+    service_s2_016:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g4/service_s2_016_接入触觉滤波开发者功能检验项.md
+      title: 接入触觉滤波开发者功能检验项
+      depends_on: [service_s2_008, service_s2_015]
+      conflict_scope:
+        files: [start_data_clean.sh, src/data_clean/runtime/, src/data_clean/ui/, src/data_clean/tests/]
+        modules: [data_clean.runtime, data_clean.ui]
+        config_keys: [dev_menu.scene2.tactile_filter]

@@ -1,0 +1,57 @@
+dispatch_index:
+  group: service-s2-g5
+  branch: service-s2
+  source_l2: DOCS/阶段二：数据清洗/02_service/场景二/L2能力模块/MCAP_A生成器.md
+  max_parallel_agents: 1
+  waves:
+    - wave: 1
+      parallel_group: service-s2-g5-p1
+      depends_on: [service_s2_005, service_s2_009, service_s2_013]
+      tasks: [service_s2_017]
+    - wave: 2
+      parallel_group: service-s2-g5-p2
+      depends_on: [service_s2_017]
+      tasks: [service_s2_018]
+    - wave: 3
+      parallel_group: service-s2-g5-p3
+      depends_on: [service_s2_018]
+      tasks: [service_s2_019]
+    - wave: 4
+      parallel_group: service-s2-g5-p4
+      depends_on: [service_s2_018]
+      must_run_after: [service_s2_019]
+      tasks: [service_s2_020]
+  tasks:
+    service_s2_017:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g5/service_s2_017_定义MCAP_A写出配置摘要和契约.md
+      title: 定义 MCAP_A 写出配置摘要和契约
+      depends_on: [service_s2_005, service_s2_009, service_s2_013]
+      conflict_scope:
+        files: [src/data_clean/schemas/, src/data_clean/tests/, DOCS/阶段二：数据清洗/02_service/场景二/L2数据定义/]
+        modules: [data_clean.schemas]
+        config_keys: [mcap_a_writer]
+    service_s2_018:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g5/service_s2_018_实现MCAP_A复制替换写出器.md
+      title: 实现 MCAP_A 复制替换写出器
+      depends_on: [service_s2_017]
+      conflict_scope:
+        files: [src/data_clean/repo/, src/data_clean/service/, src/data_clean/tests/]
+        modules: [data_clean.repo, data_clean.service]
+        config_keys: [mcap_a_writer]
+    service_s2_019:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g5/service_s2_019_补充MCAP_A契约与场景三兼容验收.md
+      title: 补充 MCAP_A 契约与场景三兼容验收
+      depends_on: [service_s2_018]
+      conflict_scope:
+        files: [src/data_clean/tests/contract/, src/data_clean/tests/]
+        modules: [data_clean.tests]
+        config_keys: []
+    service_s2_020:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g5/service_s2_020_接入MCAP_A开发者功能检验项.md
+      title: 接入 MCAP_A 开发者功能检验项
+      depends_on: [service_s2_018]
+      must_run_after: [service_s2_019]
+      conflict_scope:
+        files: [start_data_clean.sh, src/data_clean/runtime/, src/data_clean/ui/, src/data_clean/tests/]
+        modules: [data_clean.runtime, data_clean.ui]
+        config_keys: [dev_menu.scene2.mcap_a_writer]
