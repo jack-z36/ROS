@@ -52,6 +52,8 @@
 | `runtime/pipeline_dispatcher.py` | Runtime | 全流程调度器；按 SceneDispatchPlan 顺序执行多个场景，任一场景失败时停止后续场景并汇总 PipelineResult。依赖 schemas、runtime/scene_dispatcher。 |
 | `runtime/structured_log_writer.py` | Runtime | 结构化日志写入器；将 RunLogFile 写入 run_log.json 并返回 RuntimeLogWriteResult。依赖 schemas。 |
 | `ui/__init__.py` | UI | Python 包标记。 |
+| `ui/dev_menu.py` | UI | `./start_data_clean.sh --dev` 开发者功能检验菜单；按场景和功能项分发到具体 dev check。依赖 ui/scene1_dev_checks。 |
+| `ui/scene1_dev_checks.py` | UI | 场景一开发者检验项；为位姿配置生成、common pose 转换、夹爪提取、夹爪配置生成、输出契约检查和 smoke test 创建隔离运行目录、测试产物和 run log。依赖 config、service、runtime。 |
 | `ui/mcap_calibration_wizard.py` | UI | 配置/标定向导；辅助生成 `config/data_clean/data_clean_calibrated.yaml`。依赖 config、repo。 |
 
 相关入口和配置在代码包外：
@@ -255,6 +257,13 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 - 采样 ArUco 检测结果，计算左右夹爪 marker 范围。
 - 订阅左右 Baton Mini 实时 odometry，点击 common frame 标定后采样稳定窗口并生成 `start_from_common` 配置。
 - 输出 `config/data_clean/data_clean_calibrated.yaml`，覆盖前应备份旧文件。
+
+`dev_menu.py` 是开发者验收入口：
+
+- `./start_data_clean.sh --dev` 进入一级场景菜单，目前暴露场景一。
+- 选择场景一后按 L2 功能模块显示 6 个检验项：位姿转换配置生成、位姿转换、夹爪开合提取、夹爪开合配置生成、检查配置报告是否完整、全场景测试。
+- 每个检验项由 `scene1_dev_checks.py` 创建独立 `asset/阶段二：数据清洗/dev_runs/scene1/<run_id>/`，并写入 `artifacts/`、`logs/run_log.json` 和必要的 `config/effective_config.yaml`。
+- `scene1_smoke_test` 优先在隔离输出目录运行真实最小清洗；当配置输入目录没有匹配 MCAP 时，写出 skipped smoke summary，不写正式 cleaned/canonical 输出。
 
 ## 7. 与上下游的关系
 

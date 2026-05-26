@@ -9,12 +9,22 @@ DATA_CLEAN_SOURCE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(DATA_CLEAN_SOURCE))
 
 from ui.scene1_dev_checks import (  # noqa: E402
+    run_scene1_common_pose_transform,
     run_scene1_frame_alignment_config,
+    run_scene1_gripper_calibration_config,
+    run_scene1_gripper_width_extract,
+    run_scene1_output_contract_validate,
+    run_scene1_smoke_test,
     save_frame_alignment_to_production,
 )
 
 SCENE1_CHECKS = [
-    ("scene1_frame_alignment_config", "位姿转换 frame_alignment 配置生成"),
+    ("scene1_frame_alignment_config", "位姿转换配置生成", None),
+    ("scene1_common_pose_transform", "位姿转换", run_scene1_common_pose_transform),
+    ("scene1_gripper_width_extract", "夹爪开合提取", run_scene1_gripper_width_extract),
+    ("scene1_gripper_calibration_config", "夹爪开合配置生成", run_scene1_gripper_calibration_config),
+    ("scene1_output_contract_validate", "检查配置报告是否完整", run_scene1_output_contract_validate),
+    ("scene1_smoke_test", "全场景测试", run_scene1_smoke_test),
 ]
 
 
@@ -22,7 +32,7 @@ def _scene1_menu() -> None:
     print()
     print("场景一：提取夹爪开合以及位姿转换")
     print("  功能检验项:")
-    for idx, (check_id, label) in enumerate(SCENE1_CHECKS, 1):
+    for idx, (check_id, label, _runner) in enumerate(SCENE1_CHECKS, 1):
         print(f"    {idx}  {label} ({check_id})")
     print("    q  返回")
     print()
@@ -31,10 +41,28 @@ def _scene1_menu() -> None:
         choice = input("选择检验项: ").strip().lower()
         if choice in {"q", "quit", "exit"}:
             return
-        if choice == "1":
-            _run_frame_alignment_check()
+        try:
+            index = int(choice)
+        except ValueError:
+            print("无效选择，请重试。")
+            continue
+        if 1 <= index <= len(SCENE1_CHECKS):
+            _run_scene1_check(SCENE1_CHECKS[index - 1])
             return
         print("无效选择，请重试。")
+
+
+def _run_scene1_check(check: tuple) -> None:
+    check_id, _label, runner = check
+    if runner is None:
+        _run_frame_alignment_check()
+        return
+    print()
+    print(f"运行 {check_id} ...")
+    try:
+        runner()
+    except Exception as exc:
+        print(f"检验失败: {exc}")
 
 
 def _run_frame_alignment_check() -> None:
