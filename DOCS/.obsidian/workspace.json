@@ -11,10 +11,14 @@
             "id": "580ecbcf9427f557",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "git操作约束.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新标签页"
+              "title": "git操作约束"
             }
           }
         ]
@@ -74,8 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "fbdbf803ffb4127f",
@@ -153,12 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "git操作约束.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "大纲"
+              "title": "git操作约束 的大纲"
             }
           }
         ],
@@ -179,7 +183,7 @@
       "bases:新建数据库": false
     }
   },
-  "active": "580ecbcf9427f557",
+  "active": "be91182700312beb",
   "lastOpenFiles": [
     "阶段二：数据清洗/AGENTS.md.tmp.22834.f50fb9acf46b",
     "阶段二：数据清洗/文件存放规范.md",
