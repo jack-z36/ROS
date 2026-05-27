@@ -7,7 +7,7 @@ from typing import Any
 
 from mcap.summary import Summary
 
-from config.mcap_process_config import AppConfig
+from repo.config.mcap_process_config import AppConfig
 
 SUPPORTED_POSE_TYPES = {
     "nav_msgs/msg/Odometry",
