@@ -10,7 +10,7 @@ from mcap.records import Channel, Message, Schema
 from mcap.well_known import SchemaEncoding
 from mcap.writer import Writer
 
-from config.mcap_process_config import AppConfig, GripperStreamConfig
+from repo.config.mcap_process_config import AppConfig, GripperStreamConfig
 from repo.ros2_codec import (
     Ros2CodecError,
     Ros2DynamicCodec,

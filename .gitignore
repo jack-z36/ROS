@@ -17,6 +17,7 @@ mcap_cleaned/
 
 # Vendored/downloaded dependency caches
 src/VTLA_octopus-master/.deps/
+vendor/RealManRobot/
 
 # Runtime/editor noise
 .DS_Store

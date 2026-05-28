@@ -1,0 +1,55 @@
+dispatch_index:
+  group: service-s2-g3
+  branch: service-s2
+  source_l2: DOCS/阶段二：数据清洗/02_service/场景二/L2能力模块/位姿滤波器.md
+  max_parallel_agents: 1
+  waves:
+    - wave: 1
+      parallel_group: service-s2-g3-p1
+      depends_on: [service_s2_005]
+      tasks: [service_s2_009]
+    - wave: 2
+      parallel_group: service-s2-g3-p2
+      depends_on: [service_s2_007, service_s2_009]
+      tasks: [service_s2_010]
+    - wave: 3
+      parallel_group: service-s2-g3-p3
+      depends_on: [service_s2_010]
+      tasks: [service_s2_011]
+    - wave: 4
+      parallel_group: service-s2-g3-p4
+      depends_on: [service_s2_008, service_s2_011]
+      tasks: [service_s2_012]
+  tasks:
+    service_s2_009:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g3/service_s2_009_定义位姿滤波器配置输入审计记录和结果类型.md
+      title: 定义位姿滤波器配置输入审计记录和结果类型
+      depends_on: [service_s2_005]
+      conflict_scope:
+        files: [src/data_clean/schemas/, src/data_clean/tests/, DOCS/阶段二：数据清洗/02_service/场景二/L2数据定义/]
+        modules: [data_clean.schemas]
+        config_keys: []
+    service_s2_010:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g3/service_s2_010_实现可靠片段切分与时间窗口换算.md
+      title: 实现可靠片段切分与时间窗口换算
+      depends_on: [service_s2_007, service_s2_009]
+      conflict_scope:
+        files: [src/data_clean/service/, src/data_clean/tests/]
+        modules: [data_clean.service]
+        config_keys: [pose_filter.window_duration_ms, pose_filter.polyorder]
+    service_s2_011:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g3/service_s2_011_实现位置姿态滤波与guard审计.md
+      title: 实现位置姿态滤波与 guard 审计
+      depends_on: [service_s2_010]
+      conflict_scope:
+        files: [src/data_clean/service/, src/data_clean/tests/]
+        modules: [data_clean.service]
+        config_keys: [pose_filter.position_guard_max_delta_m, pose_filter.orientation_guard_max_delta_deg]
+    service_s2_012:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g3/service_s2_012_接入位姿滤波开发者功能检验项.md
+      title: 接入位姿滤波开发者功能检验项
+      depends_on: [service_s2_008, service_s2_011]
+      conflict_scope:
+        files: [start_data_clean.sh, src/data_clean/runtime/, src/data_clean/ui/, src/data_clean/tests/]
+        modules: [data_clean.runtime, data_clean.ui]
+        config_keys: [dev_menu.scene2.pose_filter]

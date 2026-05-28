@@ -7,7 +7,7 @@ from functools import lru_cache
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from config.mcap_process_config import TransformConfig
+from repo.config.mcap_process_config import TransformConfig
 
 
 def _pose_to_matrix(

@@ -14,6 +14,21 @@ from .manifest_types import (
     RunResultIndex,
     RuntimeResultSchemaVersion,
 )
+from .mcap_a_writer import (
+    MCAP_A_OutputContract,
+    MCAP_A_WritePlan,
+    MCAP_A_WriterConfig,
+    MCAP_A_WriterResult,
+)
+from .pose_filter import (
+    PoseFilterAlgorithm,
+    PoseFilterConfig,
+    PoseFilterInputSequence,
+    PoseFilterResult,
+    PoseFilterSampleRecord,
+    PoseFilterSampleStatus,
+    PoseFilterSegmentSummary,
+)
 from .run_directory_types import (
     RunArtifactKind,
     RunArtifactPath,
@@ -23,6 +38,24 @@ from .run_directory_types import (
     build_run_directory,
     build_run_id,
     ensure_unique_run_id,
+)
+from .reliability import (
+    AnomalySource,
+    IssueSeverity,
+    IssueType,
+    MissingIntervalIssue,
+    ReliabilityIssueGroup,
+    SampleReliabilityIssue,
+    SignalReliabilityDetectionResult,
+    SignalSampleRef,
+)
+from .repair import (
+    RepairDecisionStatus,
+    RepairMethod,
+    SignalRepairPolicyConfig,
+    SignalRepairResult,
+    SignalRepairRun,
+    SignalRepairSampleRecord,
 )
 from .runtime_context import (
     RunContext,
@@ -64,6 +97,15 @@ from .runtime_smoke_test_types import (
     RuntimeSmokeTestResult,
     RuntimeSmokeTestSuite,
 )
+from .tactile_filter import (
+    TactileFilterAlgorithm,
+    TactileFilterConfig,
+    TactileFilterInputSequence,
+    TactileFilterResult,
+    TactileFilterSampleRecord,
+    TactileFilterSampleStatus,
+    TactileFilterSegmentSummary,
+)
 from .structured_log_types import (
     RunLogFile,
     RuntimeLogEvent,
@@ -72,6 +114,31 @@ from .structured_log_types import (
 )
 
 __all__ = [
+    "AnomalySource",
+    "IssueSeverity",
+    "IssueType",
+    "MissingIntervalIssue",
+    "MCAP_A_OutputContract",
+    "MCAP_A_WritePlan",
+    "MCAP_A_WriterConfig",
+    "MCAP_A_WriterResult",
+    "PoseFilterAlgorithm",
+    "PoseFilterConfig",
+    "PoseFilterInputSequence",
+    "PoseFilterResult",
+    "PoseFilterSampleRecord",
+    "PoseFilterSampleStatus",
+    "PoseFilterSegmentSummary",
+    "ReliabilityIssueGroup",
+    "SampleReliabilityIssue",
+    "SignalReliabilityDetectionResult",
+    "SignalSampleRef",
+    "RepairDecisionStatus",
+    "RepairMethod",
+    "SignalRepairPolicyConfig",
+    "SignalRepairResult",
+    "SignalRepairRun",
+    "SignalRepairSampleRecord",
     "ConfigPrecheckIssue",
     "ConfigPrecheckResult",
     "ConfigPrecheckRule",
@@ -112,6 +179,13 @@ __all__ = [
     "ServiceBinding",
     "ServiceMode",
     "ServiceRegistry",
+    "TactileFilterAlgorithm",
+    "TactileFilterConfig",
+    "TactileFilterInputSequence",
+    "TactileFilterResult",
+    "TactileFilterSampleRecord",
+    "TactileFilterSampleStatus",
+    "TactileFilterSegmentSummary",
     "RunLogFile",
     "RuntimeLogEvent",
     "RuntimeLogEventType",

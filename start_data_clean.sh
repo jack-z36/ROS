@@ -18,6 +18,8 @@ else
   DEFAULT_CONFIG_KIND="smoke test"
 fi
 DATA_CLEAN_SOURCE="${WORKSPACE_DIR}/src/data_clean"
+MCAP_PYTHON_SOURCE="${WORKSPACE_DIR}/src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap"
+MCAP_ROS2_SOURCE="${WORKSPACE_DIR}/src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support"
 
 if [[ -f /opt/ros/jazzy/setup.bash ]]; then
   # shellcheck source=/opt/ros/jazzy/setup.bash
@@ -41,6 +43,7 @@ Usage:
 Examples:
   ./start_data_clean.sh
   ./start_data_clean.sh --calibrate
+  ./start_data_clean.sh --dev
   ./start_data_clean.sh --latest 5
   ./start_data_clean.sh --all --workers auto
   ./start_data_clean.sh --dry-run --latest 5
@@ -85,12 +88,45 @@ if [[ ! -d "${DATA_CLEAN_SOURCE}" ]]; then
   exit 1
 fi
 
-export PYTHONPATH="${DATA_CLEAN_SOURCE}:${PYTHONPATH:-}"
+PYTHONPATH_ENTRIES=("${DATA_CLEAN_SOURCE}")
+if [[ -d "${MCAP_PYTHON_SOURCE}" ]]; then
+  PYTHONPATH_ENTRIES+=("${MCAP_PYTHON_SOURCE}")
+fi
+if [[ -d "${MCAP_ROS2_SOURCE}" ]]; then
+  PYTHONPATH_ENTRIES+=("${MCAP_ROS2_SOURCE}")
+fi
+export PYTHONPATH="$(IFS=:; echo "${PYTHONPATH_ENTRIES[*]}"):${PYTHONPATH:-}"
 
 if has_arg "--help" "$@" || has_arg "-h" "$@"; then
   usage
   echo
   exec "${PYTHON_BIN}" -m runtime.mcap_clean_launcher --help
+fi
+
+
+if has_arg "--dev" "$@"; then
+  DEV_ARGS=()
+  for arg in "$@"; do
+    if [[ "${arg}" != "--dev" ]]; then
+      DEV_ARGS+=("${arg}")
+    fi
+  done
+  if ! has_arg "--config" "${DEV_ARGS[@]}"; then
+    if [[ ! -f "${DEFAULT_CONFIG}" ]]; then
+      echo "Default config file not found: ${DEFAULT_CONFIG}" >&2
+      echo "Pass a config explicitly: ./start_data_clean.sh --dev --config /path/to/config.yaml" >&2
+      exit 1
+    fi
+    DEV_ARGS=(--config "${DEFAULT_CONFIG}" "${DEV_ARGS[@]}")
+  fi
+  if [[ "${DATA_CLEAN_RAW_JSON:-0}" != "1" ]]; then
+    echo "Data clean developer menu"
+    echo "Workspace: ${WORKSPACE_DIR}"
+    echo "Python: ${PYTHON_BIN}"
+    echo "Default config: ${DEFAULT_CONFIG} (${DEFAULT_CONFIG_KIND})"
+    echo
+  fi
+  exec "${PYTHON_BIN}" -m ui.dev_menu "${DEV_ARGS[@]}"
 fi
 
 ARGS=("$@")

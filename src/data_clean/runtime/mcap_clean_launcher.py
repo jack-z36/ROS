@@ -13,7 +13,7 @@ from typing import Iterable
 
 from mcap.reader import make_reader
 
-from config.mcap_process_config import AppConfig, calibration_missing_items, config_is_calibrated, load_app_config
+from repo.config.mcap_process_config import AppConfig, calibration_missing_items, config_is_calibrated, load_app_config
 from service.mcap_io import process_mcap_file
 from service.validator import FileProcessingReport, build_topic_inventory, validate_input_inventory
 

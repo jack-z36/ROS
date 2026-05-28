@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from config.mcap_process_config import GripperStreamConfig
+from repo.config.mcap_process_config import GripperStreamConfig
 
 
 class GripperDetectionError(RuntimeError):

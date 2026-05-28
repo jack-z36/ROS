@@ -27,7 +27,7 @@ from urllib.parse import urlparse
 import cv2
 import numpy as np
 import yaml
-from config.mcap_process_config import (
+from repo.config.mcap_process_config import (
     AppConfig,
     GripperStreamConfig,
     PoseStreamConfig,

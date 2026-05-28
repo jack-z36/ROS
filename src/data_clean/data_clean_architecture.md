@@ -23,6 +23,10 @@
 | `schemas/__init__.py` | Schemas | Python 包标记；导出公共类型。 |
 | `schemas/ros2_schemas.py` | Schemas | 清洗流程需要写出的 ROS2 schema 文本。零依赖。 |
 | `schemas/runtime_enums.py` | Schemas | Runtime 枚举（RunStatus、RunMode、SceneName、ServiceMode）。零依赖。 |
+| `schemas/reliability.py` | Schemas | 场景二可靠性检测结果类型（样本级问题、缺失区间、问题组和聚合结果）。零依赖。 |
+| `schemas/repair.py` | Schemas | 场景二数据补全器策略、方法、决策状态、run、样本记录和聚合结果类型。依赖 reliability。 |
+| `schemas/pose_filter.py` | Schemas | 场景二位姿滤波器配置、输入序列、样本审计、分段摘要和聚合结果类型。依赖 reliability、repair。 |
+| `schemas/tactile_filter.py` | Schemas | 场景二触觉滤波器配置、输入序列、样本审计、分段摘要和聚合结果类型。依赖 reliability、repair。 |
 | `schemas/runtime_context.py` | Schemas | RunContext 定义。依赖 runtime_enums、run_directory_types。 |
 | `schemas/runtime_config_types.py` | Schemas | 配置加载相关类型（EffectiveRuntimeConfig、ConfigSnapshot 等）。零依赖。 |
 | `schemas/runtime_results.py` | Schemas | 运行结果与错误引用类型。依赖 runtime_enums。 |
@@ -37,6 +41,11 @@
 | `repo/__init__.py` | Repo | Python 包标记。 |
 | `repo/ros2_codec.py` | Repo | ROS2 CDR 动态编解码、图像转 ndarray、位姿字段提取/注入。依赖 types。 |
 | `service/__init__.py` | Service | Python 包标记。 |
+| `service/detectors.py` | Service | 场景二位姿和夹爪样本级异常、缺失区间检测。依赖 schemas。 |
+| `service/repair_run.py` | Service | 场景二数据补全器样本问题聚合、repair run 构建和合法邻居查找。依赖 schemas。 |
+| `service/repair_compute.py` | Service | 场景二数据补全器 pose/gripper/tactile 修复值计算、hold/copy 和 SignalRepairResult 聚合。依赖 schemas。 |
+| `service/pose_segment.py` | Service | 场景二位姿滤波器可靠片段切分、时间窗口样本数换算和短片段处理。依赖 schemas。 |
+| `service/pose_filter.py` | Service | 场景二位姿滤波器位置 Savitzky-Golay 滤波、姿态原值保留和 guard 样本级审计。依赖 schemas。 |
 | `service/validator.py` | Service | 输入 MCAP topic/schema 校验、输出契约校验和报告数据结构。依赖 config。 |
 | `service/tcp_transform.py` | Service | Baton Mini start frame 到 common frame 的标准 SE(3) 位姿转换。依赖 config。 |
 | `service/gripper_width.py` | Service | 基于 OpenCV ArUco 的夹爪宽度提取、缺失帧插值和归一化。依赖 config。 |
