@@ -52,6 +52,8 @@ class PoseStreamConfig:
     output_topic: str
     transform: TransformConfig | None = None
     transform_file: str = ""
+    output_camera_pose_common: str = ""
+    output_tcp_pose_common: str = ""
 
 
 @dataclass(frozen=True)
@@ -69,12 +71,108 @@ class GripperStreamConfig:
 
 
 @dataclass(frozen=True)
+class ExtrinsicConfig:
+    """SE(3) extrinsic with translation (m) and quaternion (xyzw)."""
+
+    translation_m: tuple[float, float, float]
+    rotation_quat_xyzw: tuple[float, float, float, float]
+
+    @classmethod
+    def identity(cls) -> "ExtrinsicConfig":
+        return cls(
+            translation_m=(0.0, 0.0, 0.0),
+            rotation_quat_xyzw=(0.0, 0.0, 0.0, 1.0),
+        )
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ExtrinsicConfig":
+        translation = data.get("translation_m")
+        if not isinstance(translation, (list, tuple)) or len(translation) != 3:
+            raise ConfigError(
+                f'"translation_m" must be a list of 3 floats, got {translation!r}'
+            )
+        rotation = data.get("rotation_quat_xyzw")
+        if not isinstance(rotation, (list, tuple)) or len(rotation) != 4:
+            raise ConfigError(
+                f'"rotation_quat_xyzw" must be a list of 4 floats (xyzw), got {rotation!r}'
+            )
+        return cls(
+            translation_m=(float(translation[0]), float(translation[1]), float(translation[2])),
+            rotation_quat_xyzw=(
+                float(rotation[0]),
+                float(rotation[1]),
+                float(rotation[2]),
+                float(rotation[3]),
+            ),
+        )
+
+    def is_identity(self, tol: float = 1e-6) -> bool:
+        tx, ty, tz = self.translation_m
+        qx, qy, qz, qw = self.rotation_quat_xyzw
+        return (
+            abs(tx) < tol
+            and abs(ty) < tol
+            and abs(tz) < tol
+            and abs(qx) < tol
+            and abs(qy) < tol
+            and abs(qz) < tol
+            and abs(qw - 1.0) < tol
+        )
+
+    def quaternion_norm(self) -> float:
+        qx, qy, qz, qw = self.rotation_quat_xyzw
+        return (qx * qx + qy * qy + qz * qz + qw * qw) ** 0.5
+
+
+@dataclass(frozen=True)
+class FrameAlignmentConfig:
+    """Configuration for frame alignment in scene 1 pose transformation."""
+
+    common_anchor: str
+    common_from_left_start: ExtrinsicConfig
+    common_from_right_start: ExtrinsicConfig
+    camera_from_left_tcp: ExtrinsicConfig
+    camera_from_right_tcp: ExtrinsicConfig
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "FrameAlignmentConfig":
+        anchor = data.get("common_anchor")
+        if anchor not in ("left", "right"):
+            raise ConfigError(
+                f'"common_anchor" must be "left" or "right", got {anchor!r}'
+            )
+
+        extrinsics = data.get("extrinsics")
+        if not isinstance(extrinsics, dict):
+            raise ConfigError('"frame_alignment.extrinsics" must be a mapping')
+
+        required_keys = [
+            "common_from_left_start",
+            "common_from_right_start",
+            "camera_from_left_tcp",
+            "camera_from_right_tcp",
+        ]
+        for key in required_keys:
+            if key not in extrinsics:
+                raise ConfigError(f'missing required extrinsic "{key}"')
+
+        return cls(
+            common_anchor=anchor,
+            common_from_left_start=ExtrinsicConfig.from_dict(extrinsics["common_from_left_start"]),
+            common_from_right_start=ExtrinsicConfig.from_dict(extrinsics["common_from_right_start"]),
+            camera_from_left_tcp=ExtrinsicConfig.from_dict(extrinsics["camera_from_left_tcp"]),
+            camera_from_right_tcp=ExtrinsicConfig.from_dict(extrinsics["camera_from_right_tcp"]),
+        )
+
+
+@dataclass(frozen=True)
 class AppConfig:
     batch: BatchConfig
     transform: TransformConfig
     pose_streams: tuple[PoseStreamConfig, ...]
     gripper_streams: tuple[GripperStreamConfig, ...]
     calibration: dict[str, Any]
+    frame_alignment: FrameAlignmentConfig | None = None
 
     def pose_by_topic(self) -> dict[str, PoseStreamConfig]:
         return {stream.input_topic: stream for stream in self.pose_streams}
@@ -168,9 +266,25 @@ def _load_transform_file(path_raw: str, config_dir: Path) -> tuple[TransformConf
     return _build_transform_from_mapping(transform_data), str(path)
 
 
-def _build_pose_streams(data: dict[str, Any], config_dir: Path) -> tuple[PoseStreamConfig, ...]:
+def _build_pose_streams(
+    data: dict[str, Any],
+    config_dir: Path,
+    frame_alignment: FrameAlignmentConfig | None = None,
+) -> tuple[PoseStreamConfig, ...]:
+    fa_pose_streams = {}
+    if frame_alignment is not None:
+        fa_data = data.get("frame_alignment")
+        if isinstance(fa_data, dict):
+            fa_pose_streams_data = fa_data.get("pose_streams", {})
+            if isinstance(fa_pose_streams_data, dict):
+                for hand, hand_config in fa_pose_streams_data.items():
+                    if isinstance(hand_config, dict):
+                        input_topic = hand_config.get("input_topic", "")
+                        if input_topic:
+                            fa_pose_streams[input_topic] = hand_config
+
     streams = tuple(
-        _build_pose_stream(item, config_dir)
+        _build_pose_stream(item, config_dir, fa_pose_streams.get(item.get("input_topic", "")))
         for item in _require_sequence(data, "pose_streams")
     )
     if not streams:
@@ -178,7 +292,11 @@ def _build_pose_streams(data: dict[str, Any], config_dir: Path) -> tuple[PoseStr
     return streams
 
 
-def _build_pose_stream(item: dict[str, Any], config_dir: Path) -> PoseStreamConfig:
+def _build_pose_stream(
+    item: dict[str, Any],
+    config_dir: Path,
+    fa_pose_stream: dict[str, Any] | None = None,
+) -> PoseStreamConfig:
     transform_file_raw = str(item.get("transform_file", "")).strip()
     inline_transform = item.get("transform")
     if transform_file_raw and isinstance(inline_transform, dict):
@@ -193,12 +311,20 @@ def _build_pose_stream(item: dict[str, Any], config_dir: Path) -> PoseStreamConf
     elif isinstance(inline_transform, dict):
         transform = _build_transform_from_mapping(inline_transform)
 
+    output_camera_pose_common = ""
+    output_tcp_pose_common = ""
+    if fa_pose_stream is not None:
+        output_camera_pose_common = str(fa_pose_stream.get("output_camera_pose_common", ""))
+        output_tcp_pose_common = str(fa_pose_stream.get("output_tcp_pose_common", ""))
+
     return PoseStreamConfig(
         input_topic=str(item["input_topic"]),
         msg_type=str(item["msg_type"]),
         output_topic=str(item["output_topic"]),
         transform=transform,
         transform_file=transform_file,
+        output_camera_pose_common=output_camera_pose_common,
+        output_tcp_pose_common=output_tcp_pose_common,
     )
 
 
@@ -262,6 +388,38 @@ def calibration_missing_items(config: AppConfig) -> list[str]:
     }
     status = calibration_item_status(config)
     return [label for key, label in labels.items() if not status.get(key, False)]
+
+
+def load_frame_alignment(data: dict[str, Any]) -> FrameAlignmentConfig:
+    """Load and parse frame_alignment section from config dict."""
+    fa_data = data.get("frame_alignment")
+    if fa_data is None or not isinstance(fa_data, dict):
+        raise ConfigError('"frame_alignment" section is required and must be a mapping')
+    return FrameAlignmentConfig.from_dict(fa_data)
+
+
+def validate_frame_alignment(config: FrameAlignmentConfig) -> None:
+    """Validate frame_alignment config for semantic correctness."""
+    if config.common_anchor == "left" and not config.common_from_left_start.is_identity():
+        raise ConfigError(
+            'when common_anchor is "left", common_from_left_start must be identity'
+        )
+    if config.common_anchor == "right" and not config.common_from_right_start.is_identity():
+        raise ConfigError(
+            'when common_anchor is "right", common_from_right_start must be identity'
+        )
+
+    for name, ext in [
+        ("common_from_left_start", config.common_from_left_start),
+        ("common_from_right_start", config.common_from_right_start),
+        ("camera_from_left_tcp", config.camera_from_left_tcp),
+        ("camera_from_right_tcp", config.camera_from_right_tcp),
+    ]:
+        norm = ext.quaternion_norm()
+        if norm == 0.0 or abs(norm - 1.0) > 1e-3:
+            raise ConfigError(
+                f'extrinsic "{name}" has invalid quaternion norm {norm:.6f}, must be unit quaternion'
+            )
 
 
 def _ensure_unique(values: list[str], label: str) -> None:
@@ -342,12 +500,19 @@ def load_app_config(
             fail_fast=batch.fail_fast,
         )
 
+    frame_alignment_data = raw_data.get("frame_alignment")
+    frame_alignment = None
+    if frame_alignment_data is not None:
+        frame_alignment = load_frame_alignment(raw_data)
+        validate_frame_alignment(frame_alignment)
+
     app_config = AppConfig(
         batch=batch,
         transform=_build_transform_config(raw_data),
-        pose_streams=_build_pose_streams(raw_data, config_path.parent),
+        pose_streams=_build_pose_streams(raw_data, config_path.parent, frame_alignment),
         gripper_streams=_build_gripper_streams(raw_data),
         calibration=_build_calibration(raw_data),
+        frame_alignment=frame_alignment,
     )
     _validate_cross_field_rules(app_config)
     return app_config

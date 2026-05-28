@@ -93,3 +93,22 @@ gripper_streams:
   marker_min: 69.029
   marker_max: 233.65
   gripper_max: 100.0
+
+# frame_alignment: 场景一位姿转换配置契约
+# common_from_right_start 由 inverse(T_right_start_common) 生成
+# camera_from_*_tcp 表示 T_camera_tcp
+frame_alignment:
+  common_anchor: left
+  extrinsics:
+    common_from_left_start:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    common_from_right_start:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    camera_from_left_tcp:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    camera_from_right_tcp:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]

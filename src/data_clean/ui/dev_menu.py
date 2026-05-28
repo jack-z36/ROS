@@ -3,29 +3,79 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
+from typing import Any
 
 from runtime.scene2_mcap_a_writer import run_scene2_mcap_a_writer
 from runtime.scene2_pose_filter import run_scene2_pose_filter
 from runtime.scene2_signal_reliability import run_scene2_signal_reliability_detection
 from runtime.scene2_signal_repair import run_scene2_signal_repair
 from runtime.scene2_tactile_filter import run_scene2_tactile_filter
+from ui.scene1_dev_checks import (
+    run_scene1_common_pose_transform,
+    run_scene1_frame_alignment_config,
+    run_scene1_gripper_calibration_config,
+    run_scene1_gripper_width_extract,
+    run_scene1_output_contract_validate,
+    run_scene1_smoke_test,
+    save_frame_alignment_to_production,
+)
 
 MenuRunner = Callable[[argparse.Namespace], int]
-
-
-def _not_implemented(check_id: str) -> MenuRunner:
-    def runner(_args: argparse.Namespace) -> int:
-        print(f"{check_id} 尚未接入当前源码入口。")
-        return 1
-
-    return runner
+Scene1Runner = Callable[[str | Path], Any]
 
 
 def _latest_mcap(input_dir: Path) -> Path | None:
     files = sorted((path for path in input_dir.glob("*.mcap") if path.is_file()), key=lambda path: path.stat().st_mtime, reverse=True)
     return files[0] if files else None
+
+
+def _run_scene1_frame_alignment_check(args: argparse.Namespace) -> int:
+    print()
+    print("运行 scene1_frame_alignment_config ...")
+    print()
+    print("提示: 此检验项生成 frame_alignment 配置模板。")
+    print("如需从右手 Baton Mini 标定采样生成 common_from_right_start，")
+    print("请使用实时标定中心: ./start_data_clean.sh --calibrate")
+    print()
+
+    answer = input("继续生成默认配置？[Y/n]: ").strip().lower()
+    if answer in {"n", "no"}:
+        print("已取消。")
+        return 0
+
+    try:
+        dev_run = run_scene1_frame_alignment_config(Path(args.config))
+    except Exception as exc:
+        print(f"配置生成失败: {exc}")
+        return 1
+
+    print()
+    save_answer = input("是否保存到正式配置？[y/N]: ").strip().lower()
+    if save_answer in {"y", "yes"}:
+        try:
+            save_frame_alignment_to_production(dev_run, Path(args.config))
+        except Exception as exc:
+            print(f"保存失败: {exc}")
+            return 1
+    else:
+        print("保留临时配置，未写入正式配置。")
+    return 0
+
+
+def _scene1_runner(check_id: str, runner: Scene1Runner) -> MenuRunner:
+    def wrapped(args: argparse.Namespace) -> int:
+        print()
+        print(f"运行 {check_id} ...")
+        try:
+            dev_run = runner(Path(args.config))
+        except Exception as exc:
+            print(f"检验失败: {exc}")
+            return 1
+        return 0 if getattr(dev_run, "status", "success") == "success" else 1
+
+    return wrapped
 
 
 def run_scene2_signal_reliability_check(args: argparse.Namespace) -> int:
@@ -175,12 +225,12 @@ def run_scene2_mcap_a_writer_check(args: argparse.Namespace) -> int:
 
 
 SCENE1_CHECKS: list[tuple[str, str, MenuRunner]] = [
-    ("scene1_frame_alignment_config", "位姿转换配置生成", _not_implemented("scene1_frame_alignment_config")),
-    ("scene1_common_pose_transform", "位姿转换", _not_implemented("scene1_common_pose_transform")),
-    ("scene1_gripper_width_extract", "夹爪开合提取", _not_implemented("scene1_gripper_width_extract")),
-    ("scene1_gripper_calibration_config", "夹爪开合配置生成", _not_implemented("scene1_gripper_calibration_config")),
-    ("scene1_output_contract_validate", "检查配置报告是否完整", _not_implemented("scene1_output_contract_validate")),
-    ("scene1_smoke_test", "全场景测试", _not_implemented("scene1_smoke_test")),
+    ("scene1_frame_alignment_config", "位姿转换配置生成", _run_scene1_frame_alignment_check),
+    ("scene1_common_pose_transform", "位姿转换", _scene1_runner("scene1_common_pose_transform", run_scene1_common_pose_transform)),
+    ("scene1_gripper_width_extract", "夹爪开合提取", _scene1_runner("scene1_gripper_width_extract", run_scene1_gripper_width_extract)),
+    ("scene1_gripper_calibration_config", "夹爪开合配置生成", _scene1_runner("scene1_gripper_calibration_config", run_scene1_gripper_calibration_config)),
+    ("scene1_output_contract_validate", "检查配置报告是否完整", _scene1_runner("scene1_output_contract_validate", run_scene1_output_contract_validate)),
+    ("scene1_smoke_test", "全场景测试", _scene1_runner("scene1_smoke_test", run_scene1_smoke_test)),
 ]
 
 SCENE2_CHECKS: list[tuple[str, str, MenuRunner]] = [
@@ -224,7 +274,7 @@ def run_dev_menu(args: argparse.Namespace) -> int:
     if scene_index is None:
         return 0
 
-    scene_id, scene_label, checks = SCENE_MENUS[scene_index]
+    _scene_id, scene_label, checks = SCENE_MENUS[scene_index]
     if not checks:
         print(f"{scene_label} 暂无功能检验项。")
         return 1

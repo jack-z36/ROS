@@ -7,7 +7,7 @@ from functools import lru_cache
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from repo.config.mcap_process_config import TransformConfig
+from repo.config.mcap_process_config import FrameAlignmentConfig, TransformConfig
 
 
 def _pose_to_matrix(
@@ -23,6 +23,15 @@ def _pose_to_matrix(
     transform[:3, :3] = R.from_quat([qx, qy, qz, qw]).as_matrix()
     transform[:3, 3] = [x, y, z]
     return transform
+
+
+def _extrinsic_to_matrix(
+    translation_m: tuple[float, float, float],
+    rotation_quat_xyzw: tuple[float, float, float, float],
+) -> np.ndarray:
+    tx, ty, tz = translation_m
+    qx, qy, qz, qw = rotation_quat_xyzw
+    return _pose_to_matrix(tx, ty, tz, qx, qy, qz, qw)
 
 
 @lru_cache(maxsize=32)
@@ -78,3 +87,79 @@ def transform_pose_to_common_camera(
     tx, ty, tz = common_from_camera[:3, 3].tolist()
     qx_common, qy_common, qz_common, qw_common = R.from_matrix(common_from_camera[:3, :3]).as_quat()
     return tx, ty, tz, qx_common, qy_common, qz_common, qw_common
+
+
+def transform_pose_to_common_camera_frame(
+    x: float,
+    y: float,
+    z: float,
+    qx: float,
+    qy: float,
+    qz: float,
+    qw: float,
+    frame_alignment: FrameAlignmentConfig,
+    hand: str,
+) -> tuple[float, float, float, float, float, float, float]:
+    """Transform raw pose to common frame camera pose using FrameAlignmentConfig.
+
+    When common_anchor is 'left':
+      - left: T_common_camera = T_raw (common_from_left_start is identity)
+      - right: T_common_camera = T_common_right_start @ T_raw
+    """
+    start_from_camera = _pose_to_matrix(x, y, z, qx, qy, qz, qw)
+
+    if hand == "left":
+        common_from_start = _extrinsic_to_matrix(
+            frame_alignment.common_from_left_start.translation_m,
+            frame_alignment.common_from_left_start.rotation_quat_xyzw,
+        )
+    elif hand == "right":
+        common_from_start = _extrinsic_to_matrix(
+            frame_alignment.common_from_right_start.translation_m,
+            frame_alignment.common_from_right_start.rotation_quat_xyzw,
+        )
+    else:
+        raise ValueError(f'unknown hand "{hand}", expected "left" or "right"')
+
+    common_from_camera = common_from_start @ start_from_camera
+
+    tx, ty, tz = common_from_camera[:3, 3].tolist()
+    qx_out, qy_out, qz_out, qw_out = R.from_matrix(common_from_camera[:3, :3]).as_quat()
+    return tx, ty, tz, qx_out, qy_out, qz_out, qw_out
+
+
+def transform_camera_to_common_tcp(
+    camera_x: float,
+    camera_y: float,
+    camera_z: float,
+    camera_qx: float,
+    camera_qy: float,
+    camera_qz: float,
+    camera_qw: float,
+    frame_alignment: FrameAlignmentConfig,
+    hand: str,
+) -> tuple[float, float, float, float, float, float, float]:
+    """Transform common frame camera pose to common frame TCP pose.
+
+    T_common_tcp = T_common_camera @ T_camera_tcp
+    """
+    common_from_camera = _pose_to_matrix(camera_x, camera_y, camera_z, camera_qx, camera_qy, camera_qz, camera_qw)
+
+    if hand == "left":
+        camera_from_tcp = _extrinsic_to_matrix(
+            frame_alignment.camera_from_left_tcp.translation_m,
+            frame_alignment.camera_from_left_tcp.rotation_quat_xyzw,
+        )
+    elif hand == "right":
+        camera_from_tcp = _extrinsic_to_matrix(
+            frame_alignment.camera_from_right_tcp.translation_m,
+            frame_alignment.camera_from_right_tcp.rotation_quat_xyzw,
+        )
+    else:
+        raise ValueError(f'unknown hand "{hand}", expected "left" or "right"')
+
+    common_from_tcp = common_from_camera @ camera_from_tcp
+
+    tx, ty, tz = common_from_tcp[:3, 3].tolist()
+    qx_out, qy_out, qz_out, qw_out = R.from_matrix(common_from_tcp[:3, :3]).as_quat()
+    return tx, ty, tz, qx_out, qy_out, qz_out, qw_out

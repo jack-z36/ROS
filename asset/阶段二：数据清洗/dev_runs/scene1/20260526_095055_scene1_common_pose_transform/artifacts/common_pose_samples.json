@@ -1,0 +1,68 @@
+{
+  "generated_by": "scene1_common_pose_transform",
+  "source_config": "/home/hit/ROS/config/data_clean/data_clean_calibrated.yaml",
+  "samples": [
+    {
+      "hand": "left",
+      "raw_pose": [
+        0.1,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "camera_pose_common": [
+        0.1,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "tcp_pose_common": [
+        0.1,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "raw_pose_retained": true
+    },
+    {
+      "hand": "right",
+      "raw_pose": [
+        0.2,
+        0.1,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "camera_pose_common": [
+        0.2,
+        0.1,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "tcp_pose_common": [
+        0.2,
+        0.1,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "raw_pose_retained": true
+    }
+  ]
+}

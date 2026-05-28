@@ -103,7 +103,6 @@ if has_arg "--help" "$@" || has_arg "-h" "$@"; then
   exec "${PYTHON_BIN}" -m runtime.mcap_clean_launcher --help
 fi
 
-
 if has_arg "--dev" "$@"; then
   DEV_ARGS=()
   for arg in "$@"; do
