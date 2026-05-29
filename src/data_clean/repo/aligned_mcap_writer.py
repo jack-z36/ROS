@@ -12,12 +12,17 @@ from __future__ import annotations
 
 import os
 import re
+from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any
 
 from mcap.reader import make_reader
+from mcap.records import Schema
 from mcap.writer import CompressionType, Writer
+from mcap_ros2.writer import serialize_dynamic
 
 from schemas.field_alignment import FieldAlignmentResult
+from schemas.ros2_schemas import SENSOR_MSGS_JOINT_STATE, STD_MSGS_FLOAT32
 from schemas.step_timeline import StepTimeline
 
 # ---------------------------------------------------------------------------
@@ -32,6 +37,16 @@ VALID_WRITE_STATUSES: set[str] = {
 }
 
 MESSAGE_REF_PATTERN = re.compile(r"mcap://(.+)/msg_(\d+)$")
+
+
+@dataclass(frozen=True)
+class SourcePayload:
+    publish_time: int
+    payload: bytes
+    schema_name: str | None
+    schema_encoding: str | None
+    schema_data: bytes | None
+    message_encoding: str
 
 
 # ---------------------------------------------------------------------------
@@ -61,18 +76,27 @@ def _parse_message_ref(message_ref: str) -> tuple[str, int] | None:
 
 def _build_source_payload_index(
     source_mcap_path: str,
-) -> dict[str, list[tuple[int, bytes]]]:
+) -> dict[str, list[SourcePayload]]:
     """Read source MCAP and index payloads by topic.
 
-    Returns ``{topic: [(publish_time, payload), ...]}``.
+    Returns ``{topic: [SourcePayload, ...]}``.
     """
-    index: dict[str, list[tuple[int, bytes]]] = {}
+    index: dict[str, list[SourcePayload]] = {}
     with open(source_mcap_path, "rb") as f:
         reader = make_reader(f)
-        for _, channel, message in reader.iter_messages(log_time_order=False):
+        for schema, channel, message in reader.iter_messages(log_time_order=False):
             if channel.topic not in index:
                 index[channel.topic] = []
-            index[channel.topic].append((message.publish_time, message.data))
+            index[channel.topic].append(
+                SourcePayload(
+                    publish_time=message.publish_time,
+                    payload=message.data,
+                    schema_name=schema.name if schema is not None else None,
+                    schema_encoding=schema.encoding if schema is not None else None,
+                    schema_data=schema.data if schema is not None else None,
+                    message_encoding=channel.message_encoding,
+                )
+            )
     return index
 
 
@@ -132,7 +156,7 @@ def write_aligned_mcap(
         writer = Writer(f, compression=CompressionType.NONE)
         writer.start()
 
-        # Registry: topic -> (schema_id, channel_id)
+        # Registry: schema key -> schema_id, topic -> channel_id
         schema_registry: dict[str, int] = {}
         channel_registry: dict[str, int] = {}
 
@@ -154,7 +178,7 @@ def write_aligned_mcap(
             # Step 4 — register schema/channel if first use of this topic
             if topic not in channel_registry:
                 schema_id = _register_topic_schema(
-                    writer, topic, source_payloads, schema_registry
+                    writer, topic, result, source_payloads, schema_registry
                 )
                 channel_id = writer.register_channel(
                     topic,
@@ -182,7 +206,7 @@ def write_aligned_mcap(
 
 def _resolve_payload(
     result: FieldAlignmentResult,
-    source_payloads: dict[str, list[tuple[int, bytes]]],
+    source_payloads: dict[str, list[SourcePayload]],
 ) -> bytes | None:
     """Resolve the payload for a FieldAlignmentResult.
 
@@ -205,7 +229,7 @@ def _resolve_payload(
 
 def _resolve_message_ref_payload(
     message_ref: str,
-    source_payloads: dict[str, list[tuple[int, bytes]]],
+    source_payloads: dict[str, list[SourcePayload]],
 ) -> bytes | None:
     """Copy a payload from source MCAP using the message_ref URI.
 
@@ -218,35 +242,107 @@ def _resolve_message_ref_payload(
     entries = source_payloads.get(topic)
     if entries is None or msg_idx >= len(entries):
         return None
-    return entries[msg_idx][1]
+    return entries[msg_idx].payload
 
 
 def _register_topic_schema(
     writer: Writer,
     topic: str,
-    source_payloads: dict[str, list[tuple[int, bytes]]],
+    result: FieldAlignmentResult,
+    source_payloads: dict[str, list[SourcePayload]],
     schema_registry: dict[str, int],
 ) -> int:
     """Register a schema for *topic* in the output writer.
 
-    Uses a generic ROS2 schema placeholder since the aligned MCAP does not
-    need to replicate the exact source schema; it only needs a compatible
-    encoding so downstream readers can decode the message.
+    For message_ref-backed fields, preserve the source schema so downstream
+    readers can decode standard Image / Float32 topics. For derived pose
+    fields, emit JointState because Forge can map JointState.position to
+    observation.state and action.
 
     Returns the registered schema id.
     """
+    if result.derived_value is not None and _is_pose_derived_value(result.derived_value):
+        key = _schema_key(
+            "sensor_msgs/msg/JointState",
+            "ros2msg",
+            SENSOR_MSGS_JOINT_STATE.encode("utf-8"),
+        )
+        if key not in schema_registry:
+            schema_registry[key] = writer.register_schema(
+                "sensor_msgs/msg/JointState",
+                "ros2msg",
+                SENSOR_MSGS_JOINT_STATE.encode("utf-8"),
+            )
+        return schema_registry[key]
+
+    source_schema = _source_schema_for_result(result, source_payloads)
+    if source_schema is not None:
+        key = _schema_key(
+            source_schema.name,
+            source_schema.encoding,
+            source_schema.data,
+        )
+        if key not in schema_registry:
+            schema_registry[key] = writer.register_schema(
+                source_schema.name,
+                source_schema.encoding,
+                source_schema.data,
+            )
+        return schema_registry[key]
+
+    if result.derived_value is not None and "gripper_width" in result.derived_value:
+        key = _schema_key(
+            "std_msgs/msg/Float32",
+            "ros2msg",
+            STD_MSGS_FLOAT32.encode("utf-8"),
+        )
+        if key not in schema_registry:
+            schema_registry[key] = writer.register_schema(
+                "std_msgs/msg/Float32",
+                "ros2msg",
+                STD_MSGS_FLOAT32.encode("utf-8"),
+            )
+        return schema_registry[key]
+
     generic_schema_name = "example/msg/Bytes"
     generic_schema_text = b"uint8[] data"
-
-    if generic_schema_name not in schema_registry:
-        sid = writer.register_schema(
+    key = _schema_key(generic_schema_name, "ros2msg", generic_schema_text)
+    if key not in schema_registry:
+        schema_registry[key] = writer.register_schema(
             generic_schema_name,
             "ros2msg",
             generic_schema_text,
         )
-        schema_registry[generic_schema_name] = sid
 
-    return schema_registry[generic_schema_name]
+    return schema_registry[key]
+
+
+def _schema_key(name: str, encoding: str, data: bytes) -> str:
+    return f"{name}\0{encoding}\0{data.decode('utf-8', errors='replace')}"
+
+
+def _source_schema_for_result(
+    result: FieldAlignmentResult,
+    source_payloads: dict[str, list[SourcePayload]],
+) -> Schema | None:
+    if result.message_ref is None:
+        return None
+    parsed = _parse_message_ref(result.message_ref)
+    if parsed is None:
+        return None
+    source_topic, msg_idx = parsed
+    entries = source_payloads.get(source_topic)
+    if entries is None or msg_idx >= len(entries):
+        return None
+    entry = entries[msg_idx]
+    if entry.schema_name is None or entry.schema_encoding is None or entry.schema_data is None:
+        return None
+    return Schema(
+        id=0,
+        name=entry.schema_name,
+        encoding=entry.schema_encoding,
+        data=entry.schema_data,
+    )
 
 
 def _encode_derived_value(
@@ -265,18 +361,44 @@ def _encode_derived_value(
     """
     # Gripper width
     if "gripper_width" in derived_value:
-        from mcap_ros2.writer import serialize_dynamic
-
         width = float(derived_value["gripper_width"])
         encoder = serialize_dynamic(
             "std_msgs/msg/Float32",
-            "float32 data",
+            STD_MSGS_FLOAT32,
         )
-        from types import SimpleNamespace
 
         ros_msg = SimpleNamespace(data=width)
         return encoder[list(encoder.keys())[0]](ros_msg)
 
-    # Pose — not yet implemented (returns None so message is skipped)
+    # Pose: expose xyz as JointState.position so Forge can infer
+    # observation.state / action without custom topic config.
+    if _is_pose_derived_value(derived_value):
+        encoder = serialize_dynamic(
+            "sensor_msgs/msg/JointState",
+            SENSOR_MSGS_JOINT_STATE,
+        )
+        ros_msg = SimpleNamespace(
+            header=SimpleNamespace(
+                stamp=SimpleNamespace(sec=0, nanosec=0),
+                frame_id="",
+            ),
+            name=["x", "y", "z"],
+            position=[
+                float(derived_value["position_x"]),
+                float(derived_value["position_y"]),
+                float(derived_value["position_z"]),
+            ],
+            velocity=[],
+            effort=[],
+        )
+        return encoder["sensor_msgs/msg/JointState"](ros_msg)
+
     # Tactile — not yet implemented
     return None
+
+
+def _is_pose_derived_value(derived_value: dict[str, Any]) -> bool:
+    return all(
+        key in derived_value
+        for key in ("position_x", "position_y", "position_z")
+    )

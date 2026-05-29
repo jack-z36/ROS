@@ -47,7 +47,7 @@
 | `repo/ros2_codec.py` | Repo | ROS2 CDR 动态编解码、图像转 ndarray、位姿字段提取/注入。依赖 types。 |
 | `repo/mcap_topic_catalog.py` | Repo | 场景三 MCAP_A topic 只读元数据提取器 (TopicFact, extract_topic_facts)。依赖 schemas。 |
 | `repo/alignment_sidecar_writer.py` | Repo | 场景三 alignment index Parquet 写出和 report JSON sidecar 写出 (write_alignment_index, write_alignment_report)。依赖 schemas、pyarrow。 |
-| `repo/aligned_mcap_writer.py` | Repo | 场景三 aligned MCAP 最小写出 (write_aligned_mcap)。按 FieldAlignmentResult 状态过滤，只写 aligned/interpolated/aggregated/fallback_nearest 消息，跳过 missing_time/timeout/unavailable。支持 message_ref 源消息拷贝和 derived_value 编码。依赖 schemas、mcap、mcap_ros2。 |
+| `repo/aligned_mcap_writer.py` | Repo | 场景三 aligned MCAP 最小写出 (write_aligned_mcap)。按 FieldAlignmentResult 状态过滤，只写 aligned/interpolated/aggregated/fallback_nearest 消息，跳过 missing_time/timeout/unavailable。message_ref 源消息会保留原始 schema；pose derived_value 会编码为 Forge 可识别的 `sensor_msgs/msg/JointState`，用于 `/forge/observation/state` 和 `/forge/action`。依赖 schemas、mcap、mcap_ros2。 |
 | `service/aligned_mcap_writer.py` | Service | 场景三 aligned MCAP 写出编排器 (run_aligned_mcap_write_staging)。实现临时目录（staging）整体提交策略：全部写入 staging 后统一提交到 outputs/；任一写失败时不留下误导性完整产物，保留失败摘要和运行日志。依赖 schemas、repo。 |
 | `service/__init__.py` | Service | Python 包标记。 |
 | `service/detectors.py` | Service | 场景二位姿和夹爪样本级异常、缺失区间检测。依赖 schemas。 |
@@ -290,6 +290,7 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 - 选择场景一后按 L2 功能模块显示 6 个检验项：位姿转换配置生成、位姿转换、夹爪开合提取、夹爪开合配置生成、检查配置报告是否完整、全场景测试。
 - 场景三当前包含 `scene3_mcap_a_input_check`（检查 MCAP_A 输入是否可消费）、`scene3_step_timeline_check`（检查 Step 时间轴生成）、`scene3_field_alignment_check`（检查多策略字段对齐）、`scene3_alignment_report_check`（检查对齐索引与报告生成）、`scene3_aligned_mcap_write_check`（检查 aligned MCAP 与 sidecar 写出）和 `scene3_full_flow_check`（顺序运行场景三全部功能），分别调用 `runtime/` 对应模块的 `run_*` 函数。
 - 场景三 aligned MCAP 与 sidecar 默认写入 `asset/阶段二：数据清洗/dev/03_aligned_mcap/MM-DD-HH:MM/`（例如 `05-29-15:00/`），一次运行的 `aligned.mcap`、`alignment_index.parquet`、`alignment_report.json`、`aligned_mcap_write_summary.json` 都集中在同一个子目录；菜单提示处可输入其他目录临时覆盖。
+- `scene3_full_flow_check` 的默认字段不仅包含左右图像，还会从 `/baton_mini_left/tcp_common_pose` 生成 Forge 约定 topic：`/forge/observation/state` 与 `/forge/action`。首版二者都使用 TCP 位置 `[x, y, z]`，用于打通 LeRobot v3 导出与 quality 轨迹评估；后续若存在真实 commanded action，应将 `/forge/action` 映射到真实动作 topic。
 - 每个检验项由 `scene1_dev_checks.py` 创建独立 `asset/阶段二：数据清洗/dev_runs/scene1/<run_id>/`，并写入 `artifacts/`、`logs/run_log.json` 和必要的 `config/effective_config.yaml`。
 - `scene1_smoke_test` 优先在隔离输出目录运行真实最小清洗；当配置输入目录没有匹配 MCAP 时，写出 skipped smoke summary，不写正式 cleaned/canonical 输出。
 

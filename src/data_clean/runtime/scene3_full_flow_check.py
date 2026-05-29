@@ -11,6 +11,7 @@ from typing import Any
 
 from mcap.reader import make_reader
 
+from repo.ros2_codec import Ros2DynamicCodec, extract_pose_fields
 from schemas.alignment_config import (
     AlignmentModality,
     AlignmentSide,
@@ -96,6 +97,33 @@ def _ensure_default_target_fields(
             )
         )
 
+    default_fields.extend(
+        [
+            TargetFieldMapping(
+                field_name="observation_state",
+                source_topic="/baton_mini_left/tcp_common_pose",
+                output_topic="/forge/observation/state",
+                message_type="nav_msgs/msg/Odometry",
+                modality=AlignmentModality.POSE,
+                side=AlignmentSide.LEFT,
+                required_for_timeline=False,
+                strategy=config.pose_strategy,
+                max_dt_ms=config.image_max_dt_ms,
+            ),
+            TargetFieldMapping(
+                field_name="action",
+                source_topic="/baton_mini_left/tcp_common_pose",
+                output_topic="/forge/action",
+                message_type="nav_msgs/msg/Odometry",
+                modality=AlignmentModality.POSE,
+                side=AlignmentSide.LEFT,
+                required_for_timeline=False,
+                strategy=config.pose_strategy,
+                max_dt_ms=config.image_max_dt_ms,
+            ),
+        ]
+    )
+
     return replace(config, target_fields=default_fields)
 
 
@@ -103,35 +131,53 @@ def _extract_mcap_a_field_samples(
     *,
     mcap_a_path: str | Path,
     field_mappings: list[TargetFieldMapping],
-) -> dict[str, list[tuple[int, str, None]]]:
-    """Extract MCAP_A message refs for image field alignment samples."""
+) -> dict[str, list]:
+    """Extract MCAP_A samples for configured field alignment.
+
+    Image fields use message refs so the aligned writer can copy the original
+    payload and schema. Pose fields are decoded into xyz/quaternion tuples for
+    interpolation and later re-encoded as Forge-friendly JointState messages.
+    """
     topic_to_fields: dict[str, list[str]] = {}
-    samples: dict[str, list[tuple[int, str, None]]] = {}
+    pose_topic_to_fields: dict[str, list[TargetFieldMapping]] = {}
+    samples: dict[str, list] = {}
 
     for mapping in field_mappings:
-        if mapping.modality != AlignmentModality.IMAGE:
-            continue
-        topic_to_fields.setdefault(mapping.source_topic, []).append(
-            mapping.field_name
-        )
-        samples.setdefault(mapping.field_name, [])
+        if mapping.modality == AlignmentModality.IMAGE:
+            topic_to_fields.setdefault(mapping.source_topic, []).append(
+                mapping.field_name
+            )
+            samples.setdefault(mapping.field_name, [])
+        elif mapping.modality == AlignmentModality.POSE:
+            pose_topic_to_fields.setdefault(mapping.source_topic, []).append(mapping)
+            samples.setdefault(mapping.field_name, [])
 
-    if not topic_to_fields:
+    if not topic_to_fields and not pose_topic_to_fields:
         return samples
 
     topic_message_indexes: dict[str, int] = {}
+    codec = Ros2DynamicCodec()
     with Path(mcap_a_path).open("rb") as fh:
         reader = make_reader(fh)
-        for _schema, channel, message in reader.iter_messages(log_time_order=False):
+        for schema, channel, message in reader.iter_messages(log_time_order=False):
             topic = channel.topic
-            if topic not in topic_to_fields:
-                continue
-            message_index = topic_message_indexes.get(topic, 0)
-            topic_message_indexes[topic] = message_index + 1
-            message_ref = f"mcap://{topic}/msg_{message_index}"
-            sample = (message.log_time, message_ref, None)
-            for field_name in topic_to_fields[topic]:
-                samples[field_name].append(sample)
+            if topic in topic_to_fields:
+                message_index = topic_message_indexes.get(topic, 0)
+                topic_message_indexes[topic] = message_index + 1
+                message_ref = f"mcap://{topic}/msg_{message_index}"
+                sample = (message.log_time, message_ref, None)
+                for field_name in topic_to_fields[topic]:
+                    samples[field_name].append(sample)
+            if topic in pose_topic_to_fields and schema is not None:
+                decoded = codec.decode(schema, message)
+                for mapping in pose_topic_to_fields[topic]:
+                    pose = extract_pose_fields(decoded, mapping.message_type)
+                    sample = (
+                        message.log_time,
+                        (pose[0], pose[1], pose[2]),
+                        (pose[3], pose[4], pose[5], pose[6]),
+                    )
+                    samples[mapping.field_name].append(sample)
 
     return samples
 

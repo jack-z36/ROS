@@ -5,6 +5,34 @@ from __future__ import annotations
 STD_MSGS_FLOAT32 = """float32 data
 """
 
+STD_MSGS_FLOAT32_MULTI_ARRAY = """std_msgs/MultiArrayLayout layout
+float32[] data
+================================================================================
+MSG: std_msgs/msg/MultiArrayLayout
+std_msgs/MultiArrayDimension[] dim
+uint32 data_offset
+================================================================================
+MSG: std_msgs/msg/MultiArrayDimension
+string label
+uint32 size
+uint32 stride
+"""
+
+SENSOR_MSGS_JOINT_STATE = """std_msgs/Header header
+string[] name
+float64[] position
+float64[] velocity
+float64[] effort
+================================================================================
+MSG: std_msgs/msg/Header
+builtin_interfaces/Time stamp
+string frame_id
+================================================================================
+MSG: builtin_interfaces/msg/Time
+int32 sec
+uint32 nanosec
+"""
+
 STD_MSGS_HEADER = """builtin_interfaces/Time stamp
 string frame_id
 ================================================================================
@@ -177,9 +205,10 @@ uint32 nanosec
 
 STANDARD_SCHEMA_TEXTS = {
     "std_msgs/msg/Float32": STD_MSGS_FLOAT32,
+    "std_msgs/msg/Float32MultiArray": STD_MSGS_FLOAT32_MULTI_ARRAY,
     "std_msgs/msg/Header": STD_MSGS_HEADER,
     "geometry_msgs/msg/PoseStamped": GEOMETRY_MSGS_POSE_STAMPED,
     "nav_msgs/msg/Odometry": NAV_MSGS_ODOMETRY,
+    "sensor_msgs/msg/JointState": SENSOR_MSGS_JOINT_STATE,
     "sensor_msgs/msg/Image": SENSOR_MSGS_IMAGE,
 }
-
