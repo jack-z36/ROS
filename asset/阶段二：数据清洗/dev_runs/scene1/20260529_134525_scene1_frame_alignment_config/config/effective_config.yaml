@@ -1,0 +1,52 @@
+frame_alignment:
+  common_anchor: left
+  pose_streams:
+    left:
+      input_topic: /baton_mini_left/fast_odom
+      output_camera_pose_common: /baton_mini_left/camera_pose_common
+      output_tcp_pose_common: /baton_mini_left/tcp_pose_common
+    right:
+      input_topic: /baton_mini_right/fast_odom
+      output_camera_pose_common: /baton_mini_right/camera_pose_common
+      output_tcp_pose_common: /baton_mini_right/tcp_pose_common
+  extrinsics:
+    common_from_left_start:
+      translation_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      rotation_quat_xyzw:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    common_from_right_start:
+      translation_m:
+      - 0.5
+      - 0.3
+      - 0.1
+      rotation_quat_xyzw:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    camera_from_left_tcp:
+      translation_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      rotation_quat_xyzw:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    camera_from_right_tcp:
+      translation_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      rotation_quat_xyzw:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0

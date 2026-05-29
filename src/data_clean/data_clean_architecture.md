@@ -21,6 +21,11 @@
 | 路径 | 层级 | 职责 |
 | --- | --- | --- |
 | `schemas/__init__.py` | Schemas | Python 包标记；导出公共类型。 |
+| `schemas/alignment_config.py` | Schemas | 场景三对齐配置、目标字段映射、模态和侧枚举 (Scene3AlignmentConfig, TargetFieldMapping, AlignmentModality, AlignmentSide)。零依赖。 |
+| `schemas/step_timeline.py` | Schemas | 场景三 step 时间轴、字段对齐状态枚举和对齐索引类型 (StepTimeline, StepTimelineEntry, StepTimelineSummary, FieldAlignmentStatus, AlignmentIndexRecord, AlignmentIndexSchema)。零依赖。 |
+| `schemas/alignment_input.py` | Schemas | 场景三 MCAP_A 输入盘点与校验类型 (SourceTopicCatalog, McapAInputValidationSummary, TopicTimestampOrder, FieldAvailability, InputValidationStatus, SummaryConsistencyStatus, SourceTopicEntry, SourceFieldEntry)。零依赖。 |
+| `schemas/aligned_mcap_report.py` | Schemas | 场景三 aligned MCAP 产物契约、对齐统计报告、写出摘要和 final report 补齐类型 (AlignedMcap, AlignmentReport, AlignedMcapWriteSummary, AlignmentReportFinalization)。零依赖。 |
+| `schemas/field_alignment.py` | Schemas | 场景三字段对齐结果、策略契约和轻量派生值类型 (FieldAlignmentResult, FieldAlignmentStrategy, FieldAlignmentStrategyMethod, DerivedAlignmentValue)。零依赖。 |
 | `schemas/ros2_schemas.py` | Schemas | 清洗流程需要写出的 ROS2 schema 文本。零依赖。 |
 | `schemas/runtime_enums.py` | Schemas | Runtime 枚举（RunStatus、RunMode、SceneName、ServiceMode）。零依赖。 |
 | `schemas/reliability.py` | Schemas | 场景二可靠性检测结果类型（样本级问题、缺失区间、问题组和聚合结果）。零依赖。 |
@@ -40,6 +45,10 @@
 | `config/mcap_process_config.py` | Config | YAML 配置解析与校验；定义 batch、transform、pose_streams、gripper_streams。零内部依赖。 |
 | `repo/__init__.py` | Repo | Python 包标记。 |
 | `repo/ros2_codec.py` | Repo | ROS2 CDR 动态编解码、图像转 ndarray、位姿字段提取/注入。依赖 types。 |
+| `repo/mcap_topic_catalog.py` | Repo | 场景三 MCAP_A topic 只读元数据提取器 (TopicFact, extract_topic_facts)。依赖 schemas。 |
+| `repo/alignment_sidecar_writer.py` | Repo | 场景三 alignment index Parquet 写出和 report JSON sidecar 写出 (write_alignment_index, write_alignment_report)。依赖 schemas、pyarrow。 |
+| `repo/aligned_mcap_writer.py` | Repo | 场景三 aligned MCAP 最小写出 (write_aligned_mcap)。按 FieldAlignmentResult 状态过滤，只写 aligned/interpolated/aggregated/fallback_nearest 消息，跳过 missing_time/timeout/unavailable。支持 message_ref 源消息拷贝和 derived_value 编码。依赖 schemas、mcap、mcap_ros2。 |
+| `service/aligned_mcap_writer.py` | Service | 场景三 aligned MCAP 写出编排器 (run_aligned_mcap_write_staging)。实现临时目录（staging）整体提交策略：全部写入 staging 后统一提交到 outputs/；任一写失败时不留下误导性完整产物，保留失败摘要和运行日志。依赖 schemas、repo。 |
 | `service/__init__.py` | Service | Python 包标记。 |
 | `service/detectors.py` | Service | 场景二位姿和夹爪样本级异常、缺失区间检测。依赖 schemas。 |
 | `service/repair_run.py` | Service | 场景二数据补全器样本问题聚合、repair run 构建和合法邻居查找。依赖 schemas。 |
@@ -50,6 +59,11 @@
 | `service/tcp_transform.py` | Service | Baton Mini start frame 到 common frame 的标准 SE(3) 位姿转换。依赖 config。 |
 | `service/gripper_width.py` | Service | 基于 OpenCV ArUco 的夹爪宽度提取、缺失帧插值和归一化。依赖 config。 |
 | `service/mcap_io.py` | Service | 单文件清洗核心；读取原始 MCAP、生成 common-frame 相机位姿 payload、新增夹爪宽度 topic、写出 MCAP。依赖 config、repo、service 内部模块、types。 |
+| `service/mcap_a_input_validator.py` | Service | 场景三 MCAP_A 输入盘点与校验服务 (validate_mcap_a_input)。读取 MCAP_A 和写出摘要，生成 SourceTopicCatalog 与 McapAInputValidationSummary。依赖 schemas, repo。 |
+| `service/step_timeline_generator.py` | Service | 场景三统一 Step 时间轴生成服务 (generate_step_timeline)。消费验证结论和 baseline intersection，使用有理数累计生成 StepTimeline。依赖 schemas。 |
+| `service/tactile_field_aligner.py` | Service | 场景三触觉字段半 step 窗口聚合对齐器 (align_tactile_field)。对 StepTimeline 中每个 step 计算 [step_time_ns - half_period, step_time_ns + half_period) 窗口，聚合窗口内触觉样本的均值/标准差/极值和覆盖率，输出 FieldAlignmentResult。依赖 schemas。 |
+| `service/field_aligner.py` | Service | 场景三图像与夹爪最近邻字段对齐器 (align_nearest_fields)。对 StepTimeline 中每个 step，按 field_name 查找 catalog 判断 availability，按 step_time_ns 最近邻找 source message，产出 FieldAlignmentResult。仅 image/gripper modality，不涉及 pose/tactile。依赖 schemas。 |
+| `service/pose_field_aligner.py` | Service | 场景三 pose 字段插值+slerp 对齐器 (align_pose_field)。对 StepTimeline 中每个 step，查找前后 pose 样本，position 线性插值、orientation 四元数 slerp；邻居不足或超阈值时 fallback 到最近邻。依赖 schemas、numpy。 |
 | `runtime/__init__.py` | Runtime | Python 包标记。 |
 | `runtime/mcap_clean_batch.py` | Runtime | 非交互批处理入口；读取配置、遍历输入目录、并行处理文件、输出 JSON 报告。依赖 config、service。 |
 | `runtime/mcap_clean_launcher.py` | Runtime | 面向用户的交互式入口；选择 MCAP 文件、预览计划、校验首个文件、调度清洗。依赖 config、service。 |
@@ -60,6 +74,9 @@
 | `runtime/scene_dispatcher.py` | Runtime | 单场景调度器；按 SceneDispatchPlan 调度单个场景，预检查失败时不调用 Service。依赖 schemas、runtime/service_registry。 |
 | `runtime/pipeline_dispatcher.py` | Runtime | 全流程调度器；按 SceneDispatchPlan 顺序执行多个场景，任一场景失败时停止后续场景并汇总 PipelineResult。依赖 schemas、runtime/scene_dispatcher。 |
 | `runtime/structured_log_writer.py` | Runtime | 结构化日志写入器；将 RunLogFile 写入 run_log.json 并返回 RuntimeLogWriteResult。依赖 schemas。 |
+| `runtime/scene3_mcap_a_input_check.py` | Runtime | 场景三 MCAP_A 输入检验开发者入口 runtime wrapper。创建隔离 run 目录，调用 ``validate_mcap_a_input()`` 服务，写出 ``source_topic_catalog.json``、``mcap_a_input_validation_summary.json`` 和运行日志。依赖 schemas、service。 |
+| `runtime/scene3_aligned_mcap_write_check.py` | Runtime | 场景三 aligned MCAP 写出检验开发者入口 runtime wrapper。创建隔离 run 目录，调用 ``run_aligned_mcap_write_staging()`` 写出服务，写出 aligned MCAP、alignment_index.parquet、alignment_report.json、aligned_mcap_write_summary.json 和运行日志；无可写对齐结果或 aligned MCAP 消息数为 0 时返回失败。依赖 schemas、service。 |
+| `runtime/scene3_full_flow_check.py` | Runtime | 场景三全流程开发者入口 runtime wrapper。顺序调用 MCAP_A 输入检验、Step 时间轴、字段对齐、对齐报告和 aligned MCAP 写出五个检验项；默认从 MCAP_A 抽取左右 baseline image 样本生成 message_ref，任一步失败或最终 aligned MCAP 消息数为 0 即停止/失败并写出总 run log。依赖 schemas、runtime。 |
 | `ui/__init__.py` | UI | Python 包标记。 |
 | `ui/dev_menu.py` | UI | `./start_data_clean.sh --dev` 开发者功能检验菜单；按场景和功能项分发到具体 dev check。依赖 ui/scene1_dev_checks。 |
 | `ui/scene1_dev_checks.py` | UI | 场景一开发者检验项；为位姿配置生成、common pose 转换、夹爪提取、夹爪配置生成、输出契约检查和 smoke test 创建隔离运行目录、测试产物和 run log。依赖 config、service、runtime。 |
@@ -269,8 +286,9 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 
 `dev_menu.py` 是开发者验收入口：
 
-- `./start_data_clean.sh --dev` 进入一级场景菜单，目前暴露场景一。
+- `./start_data_clean.sh --dev` 进入一级场景菜单，目前暴露场景一、场景二和场景三。
 - 选择场景一后按 L2 功能模块显示 6 个检验项：位姿转换配置生成、位姿转换、夹爪开合提取、夹爪开合配置生成、检查配置报告是否完整、全场景测试。
+- 场景三当前包含 `scene3_mcap_a_input_check`（检查 MCAP_A 输入是否可消费）、`scene3_step_timeline_check`（检查 Step 时间轴生成）、`scene3_field_alignment_check`（检查多策略字段对齐）、`scene3_alignment_report_check`（检查对齐索引与报告生成）、`scene3_aligned_mcap_write_check`（检查 aligned MCAP 与 sidecar 写出）和 `scene3_full_flow_check`（顺序运行场景三全部功能），分别调用 `runtime/` 对应模块的 `run_*` 函数。
 - 每个检验项由 `scene1_dev_checks.py` 创建独立 `asset/阶段二：数据清洗/dev_runs/scene1/<run_id>/`，并写入 `artifacts/`、`logs/run_log.json` 和必要的 `config/effective_config.yaml`。
 - `scene1_smoke_test` 优先在隔离输出目录运行真实最小清洗；当配置输入目录没有匹配 MCAP 时，写出 skipped smoke summary，不写正式 cleaned/canonical 输出。
 

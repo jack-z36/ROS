@@ -12,6 +12,12 @@ from runtime.scene2_pose_filter import run_scene2_pose_filter
 from runtime.scene2_signal_reliability import run_scene2_signal_reliability_detection
 from runtime.scene2_signal_repair import run_scene2_signal_repair
 from runtime.scene2_tactile_filter import run_scene2_tactile_filter
+from runtime.scene3_mcap_a_input_check import run_scene3_mcap_a_input_check
+from runtime.scene3_alignment_report_check import run_scene3_alignment_report_check
+from runtime.scene3_field_alignment_check import run_scene3_field_alignment_check
+from runtime.scene3_aligned_mcap_write_check import run_scene3_aligned_mcap_write_check
+from runtime.scene3_full_flow_check import run_scene3_full_flow_check
+from runtime.scene3_step_timeline_check import run_scene3_step_timeline_check
 from ui.scene1_dev_checks import (
     run_scene1_arm_base_pose_transform,
     run_scene1_common_pose_transform,
@@ -238,6 +244,71 @@ def run_scene2_mcap_a_writer_check(args: argparse.Namespace) -> int:
     return 0 if result["status"] == "success" else 1
 
 
+def run_scene3_mcap_a_input_check_check(args: argparse.Namespace) -> int:
+    """Interactive runner for scene3_mcap_a_input_check developer entry."""
+    import json
+
+    from schemas.alignment_config import Scene3AlignmentConfig
+
+    default_mcap_a = None
+    if args.cleaned_mcap_dir:
+        import glob
+        mcap_dir = Path(args.cleaned_mcap_dir)
+        if mcap_dir.is_dir():
+            mcap_files = sorted(mcap_dir.glob("*mcap_a*.mcap"))
+            if mcap_files:
+                default_mcap_a = mcap_files[-1]
+
+    prompt_mcap = "请输入 MCAP_A 路径"
+    if default_mcap_a is not None:
+        prompt_mcap += f" [默认: {default_mcap_a}]"
+    prompt_mcap += ": "
+    selected_mcap = input(prompt_mcap).strip()
+    if selected_mcap:
+        mcap_a_path = Path(selected_mcap)
+    elif default_mcap_a is not None:
+        mcap_a_path = default_mcap_a
+    else:
+        print("未找到 MCAP_A 小样本，请输入有效路径后重试。")
+        return 1
+
+    default_summary = mcap_a_path.parent / "mcap_a_write_summary.json"
+    prompt_summary = f"请输入 mcap_a_write_summary.json 路径 [默认: {default_summary}]: "
+    selected_summary = input(prompt_summary).strip()
+    if selected_summary:
+        summary_path = Path(selected_summary)
+    elif default_summary.exists():
+        summary_path = default_summary
+    else:
+        summary_path = default_summary.parent / "mcap_a_write_summary.json"
+
+    config = Scene3AlignmentConfig()
+
+    result = run_scene3_mcap_a_input_check(
+        mcap_a_path=mcap_a_path,
+        summary_path=summary_path,
+        config=config,
+        run_root=Path(args.run_root),
+    )
+
+    status_text = "完成" if result["status"] == "success" else "失败"
+    print(f"场景三 MCAP_A 输入检验{status_text}")
+    print(f"  run_dir: {result['outputs']['run_dir']}")
+    print(f"  catalog: {result['outputs']['source_topic_catalog_json']}")
+    print(f"  validation_summary: {result['outputs']['mcap_a_input_validation_summary_json']}")
+    print(f"  run_log: {result['run_log_path']}")
+
+    v = result.get("validation", {})
+    if v.get("hard_fail_reasons"):
+        print(f"  hard_fail: {', '.join(v['hard_fail_reasons'])}")
+    if v.get("warnings"):
+        print(f"  warnings: {', '.join(v['warnings'])}")
+    if v.get("optional_field_warnings"):
+        print(f"  optional_field_warnings: {', '.join(v['optional_field_warnings'])}")
+
+    return 0 if result["status"] == "success" else 1
+
+
 SCENE1_CHECKS: list[tuple[str, str, MenuRunner]] = [
     ("scene1_frame_alignment_config", "[已废弃] 位姿转换配置生成", _run_scene1_frame_alignment_check),
     ("scene1_arm_base_pose_transform", "arm-base 位姿转换（新链路，不再依赖 common_frame）", _scene1_runner("scene1_arm_base_pose_transform", run_scene1_arm_base_pose_transform)),
@@ -256,10 +327,464 @@ SCENE2_CHECKS: list[tuple[str, str, MenuRunner]] = [
     ("scene2_mcap_a_writer", "MCAP_A 写出：完整场景二验证链路", run_scene2_mcap_a_writer_check),
 ]
 
+def run_scene3_step_timeline_check_check(args: argparse.Namespace) -> int:
+    """Interactive runner for scene3_step_timeline_check developer entry."""
+    import json
+
+    from schemas.alignment_config import Scene3AlignmentConfig
+
+    default_catalog = None
+    default_validation = None
+    if args.cleaned_mcap_dir:
+        mcap_dir = Path(args.cleaned_mcap_dir)
+        if mcap_dir.is_dir():
+            catalog_files = sorted(mcap_dir.glob("*catalog*.json"))
+            if catalog_files:
+                default_catalog = catalog_files[-1]
+            val_files = sorted(mcap_dir.glob("*validation_summary*.json"))
+            if val_files:
+                default_validation = val_files[-1]
+
+    prompt_catalog = "请输入 source_topic_catalog.json 路径"
+    if default_catalog is not None:
+        prompt_catalog += f" [默认: {default_catalog}]"
+    prompt_catalog += ": "
+    selected_catalog = input(prompt_catalog).strip()
+    if selected_catalog:
+        catalog_path = Path(selected_catalog)
+    elif default_catalog is not None:
+        catalog_path = default_catalog
+    else:
+        print("未找到 source_topic_catalog.json 小样本，请输入有效路径后重试。")
+        return 1
+
+    prompt_val = "请输入 mcap_a_input_validation_summary.json 路径"
+    if default_validation is not None:
+        prompt_val += f" [默认: {default_validation}]"
+    prompt_val += ": "
+    selected_val = input(prompt_val).strip()
+    if selected_val:
+        validation_path = Path(selected_val)
+    elif default_validation is not None:
+        validation_path = default_validation
+    else:
+        validation_path = catalog_path.parent / "mcap_a_input_validation_summary.json"
+
+    config = Scene3AlignmentConfig()
+
+    hz_input = input(f"请输入 target_step_hz [默认: {config.target_step_hz}]: ").strip()
+    if hz_input:
+        try:
+            config.target_step_hz = int(hz_input)
+        except ValueError:
+            print(f"无效频率: {hz_input}，使用默认 {config.target_step_hz}")
+
+    result = run_scene3_step_timeline_check(
+        catalog_path=catalog_path,
+        validation_summary_path=validation_path,
+        config=config,
+        run_root=Path(args.run_root),
+    )
+
+    status_text = "完成" if result["status"] == "success" else "失败"
+    print(f"场景三 Step 时间轴检验{status_text}")
+    print(f"  run_dir: {result['outputs']['run_dir']}")
+    if result["outputs"].get("step_timeline_json"):
+        print(f"  step_timeline: {result['outputs']['step_timeline_json']}")
+    if result["outputs"].get("step_timeline_generation_summary_json"):
+        print(f"  generation_summary: {result['outputs']['step_timeline_generation_summary_json']}")
+    print(f"  run_log: {result['run_log_path']}")
+
+    if result.get("step_count") is not None:
+        print(f"  step_count: {result['step_count']}")
+        if result.get("first_step_time_ns") is not None:
+            print(f"  first_step_time_ns: {result['first_step_time_ns']}")
+        if result.get("last_step_time_ns") is not None:
+            print(f"  last_step_time_ns: {result['last_step_time_ns']}")
+
+    if result.get("failure_reasons"):
+        print(f"  失败原因: {', '.join(result['failure_reasons'])}")
+
+    return 0 if result["status"] == "success" else 1
+
+
+def run_scene3_field_alignment_check_check(args: argparse.Namespace) -> int:
+    """Interactive runner for scene3_field_alignment_check developer entry."""
+    import json
+
+    from schemas.alignment_config import Scene3AlignmentConfig
+
+    default_catalog = None
+    default_validation = None
+    default_timeline = None
+    if args.cleaned_mcap_dir:
+        mcap_dir = Path(args.cleaned_mcap_dir)
+        if mcap_dir.is_dir():
+            catalog_files = sorted(mcap_dir.glob("*catalog*.json"))
+            if catalog_files:
+                default_catalog = catalog_files[-1]
+            val_files = sorted(mcap_dir.glob("*validation_summary*.json"))
+            if val_files:
+                default_validation = val_files[-1]
+            tl_files = sorted(mcap_dir.glob("*step_timeline*.json"))
+            if tl_files:
+                default_timeline = tl_files[-1]
+
+    prompt_catalog = "请输入 source_topic_catalog.json 路径"
+    if default_catalog is not None:
+        prompt_catalog += f" [默认: {default_catalog}]"
+    prompt_catalog += ": "
+    selected_catalog = input(prompt_catalog).strip()
+    if selected_catalog:
+        catalog_path = Path(selected_catalog)
+    elif default_catalog is not None:
+        catalog_path = default_catalog
+    else:
+        print("未找到 source_topic_catalog.json 小样本，请输入有效路径后重试。")
+        return 1
+
+    prompt_val = "请输入 mcap_a_input_validation_summary.json 路径"
+    if default_validation is not None:
+        prompt_val += f" [默认: {default_validation}]"
+    prompt_val += ": "
+    selected_val = input(prompt_val).strip()
+    if selected_val:
+        validation_path = Path(selected_val)
+    elif default_validation is not None:
+        validation_path = default_validation
+    else:
+        validation_path = catalog_path.parent / "mcap_a_input_validation_summary.json"
+
+    prompt_tl = "请输入 step_timeline.json 路径"
+    if default_timeline is not None:
+        prompt_tl += f" [默认: {default_timeline}]"
+    prompt_tl += ": "
+    selected_tl = input(prompt_tl).strip()
+    if selected_tl:
+        timeline_path = Path(selected_tl)
+    elif default_timeline is not None:
+        timeline_path = default_timeline
+    else:
+        timeline_path = catalog_path.parent / "step_timeline.json"
+
+    config = Scene3AlignmentConfig()
+
+    hz_input = input(f"请输入 target_step_hz [默认: {config.target_step_hz}]: ").strip()
+    if hz_input:
+        try:
+            config.target_step_hz = int(hz_input)
+        except ValueError:
+            print(f"无效频率: {hz_input}，使用默认 {config.target_step_hz}")
+
+    result = run_scene3_field_alignment_check(
+        catalog_path=catalog_path,
+        validation_summary_path=validation_path,
+        timeline_path=timeline_path,
+        config=config,
+        field_samples={},
+        run_root=Path(args.run_root),
+    )
+
+    status_text = "完成" if result["status"] == "success" else "失败"
+    print(f"场景三字段对齐检验{status_text}")
+    print(f"  run_dir: {result['outputs']['run_dir']}")
+    if result["outputs"].get("field_alignment_results_json"):
+        print(f"  field_alignment_results: {result['outputs']['field_alignment_results_json']}")
+    print(f"  run_log: {result['run_log_path']}")
+
+    sc = result.get("status_counts", {})
+    if sc:
+        print(f"  字段对齐状态计数: {sc}")
+    if result.get("field_count") is not None:
+        print(f"  目标字段数: {result['field_count']}")
+
+    if result.get("failure_reasons"):
+        print(f"  失败原因: {', '.join(result['failure_reasons'])}")
+
+    return 0 if result["status"] == "success" else 1
+
+
+def run_scene3_alignment_report_check_check(args: argparse.Namespace) -> int:
+    """Interactive runner for scene3_alignment_report_check developer entry."""
+    import json
+
+    from schemas.alignment_config import Scene3AlignmentConfig
+
+    default_results = None
+    default_catalog = None
+    default_validation = None
+    default_timeline = None
+    if args.cleaned_mcap_dir:
+        mcap_dir = Path(args.cleaned_mcap_dir)
+        if mcap_dir.is_dir():
+            results_files = sorted(mcap_dir.glob("*alignment_results*.json"))
+            if results_files:
+                default_results = results_files[-1]
+            catalog_files = sorted(mcap_dir.glob("*catalog*.json"))
+            if catalog_files:
+                default_catalog = catalog_files[-1]
+            val_files = sorted(mcap_dir.glob("*validation_summary*.json"))
+            if val_files:
+                default_validation = val_files[-1]
+            tl_files = sorted(mcap_dir.glob("*step_timeline*.json"))
+            if tl_files:
+                default_timeline = tl_files[-1]
+
+    prompt_results = "请输入 field_alignment_results.json 路径"
+    if default_results is not None:
+        prompt_results += f" [默认: {default_results}]"
+    prompt_results += ": "
+    selected_results = input(prompt_results).strip()
+    if selected_results:
+        results_path = Path(selected_results)
+    elif default_results is not None:
+        results_path = default_results
+    else:
+        print("未找到 field_alignment_results.json 小样本，请输入有效路径后重试。")
+        return 1
+
+    prompt_catalog = "请输入 source_topic_catalog.json 路径"
+    if default_catalog is not None:
+        prompt_catalog += f" [默认: {default_catalog}]"
+    prompt_catalog += ": "
+    selected_catalog = input(prompt_catalog).strip()
+    if selected_catalog:
+        catalog_path = Path(selected_catalog)
+    elif default_catalog is not None:
+        catalog_path = default_catalog
+    else:
+        print("未找到 source_topic_catalog.json 小样本，请输入有效路径后重试。")
+        return 1
+
+    prompt_val = "请输入 mcap_a_input_validation_summary.json 路径"
+    if default_validation is not None:
+        prompt_val += f" [默认: {default_validation}]"
+    prompt_val += ": "
+    selected_val = input(prompt_val).strip()
+    if selected_val:
+        validation_path = Path(selected_val)
+    elif default_validation is not None:
+        validation_path = default_validation
+    else:
+        validation_path = catalog_path.parent / "mcap_a_input_validation_summary.json"
+
+    prompt_tl = "请输入 step_timeline.json 路径"
+    if default_timeline is not None:
+        prompt_tl += f" [默认: {default_timeline}]"
+    prompt_tl += ": "
+    selected_tl = input(prompt_tl).strip()
+    if selected_tl:
+        timeline_path = Path(selected_tl)
+    elif default_timeline is not None:
+        timeline_path = default_timeline
+    else:
+        timeline_path = catalog_path.parent / "step_timeline.json"
+
+    config = Scene3AlignmentConfig()
+
+    hz_input = input(f"请输入 target_step_hz [默认: {config.target_step_hz}]: ").strip()
+    if hz_input:
+        try:
+            config.target_step_hz = int(hz_input)
+        except ValueError:
+            print(f"无效频率: {hz_input}，使用默认 {config.target_step_hz}")
+
+    result = run_scene3_alignment_report_check(
+        field_alignment_results_path=results_path,
+        timeline_path=timeline_path,
+        catalog_path=catalog_path,
+        validation_summary_path=validation_path,
+        config=config,
+        run_root=Path(args.run_root),
+    )
+
+    status_text = "完成" if result["status"] == "success" else "失败"
+    print(f"场景三对齐报告检验{status_text}")
+    print(f"  run_dir: {result['outputs']['run_dir']}")
+    if result["outputs"].get("alignment_index_preview_json"):
+        print(f"  alignment_index_preview: {result['outputs']['alignment_index_preview_json']}")
+    if result["outputs"].get("alignment_report_draft_json"):
+        print(f"  alignment_report_draft: {result['outputs']['alignment_report_draft_json']}")
+    print(f"  run_log: {result['run_log_path']}")
+
+    if result.get("record_count") is not None:
+        print(f"  index record_count: {result['record_count']}")
+    if result.get("report_status"):
+        print(f"  report_status: {result['report_status']}")
+
+    return 0 if result["status"] == "success" else 1
+
+
+def run_scene3_aligned_mcap_write_check_check(args: argparse.Namespace) -> int:
+    """Interactive runner for scene3_aligned_mcap_write_check developer entry."""
+    from pathlib import Path
+
+    default_mcap = None
+    if args.cleaned_mcap_dir:
+        mcap_dir = Path(args.cleaned_mcap_dir)
+        if mcap_dir.is_dir():
+            mcap_files = sorted(mcap_dir.glob("*mcap_a*.mcap"))
+            if mcap_files:
+                default_mcap = mcap_files[-1]
+
+    prompt_mcap = "请输入 MCAP_A 路径"
+    if default_mcap is not None:
+        prompt_mcap += f" [默认: {default_mcap}]"
+    prompt_mcap += ": "
+    selected_mcap = input(prompt_mcap).strip()
+    if selected_mcap:
+        mcap_a_path = Path(selected_mcap)
+    elif default_mcap is not None:
+        mcap_a_path = default_mcap
+    else:
+        print("未找到 MCAP_A 小样本，请输入有效路径后重试。")
+        return 1
+
+    default_output = mcap_a_path.parent / "aligned_mcap_write_check"
+    prompt_output = f"请输入调试输出目录 [默认: {default_output}]: "
+    selected_output = input(prompt_output).strip()
+    if selected_output:
+        output_dir = Path(selected_output)
+    else:
+        output_dir = default_output
+
+    print()
+    print(f"MCAP_A: {mcap_a_path}")
+    print(f"输出目录: {output_dir}")
+    print()
+
+    result = run_scene3_aligned_mcap_write_check(
+        source_mcap_path=mcap_a_path,
+        output_dir=output_dir,
+        run_root=Path(args.run_root),
+    )
+
+    status_text = "完成" if result["status"] == "success" else "失败"
+    print(f"场景三 aligned MCAP 写出检验{status_text}")
+    print(f"  run_dir: {result['outputs'].get('run_dir', 'N/A')}")
+    outputs = result.get("outputs", {})
+    if outputs.get("aligned_mcap"):
+        print(f"  aligned_mcap: {outputs['aligned_mcap']}")
+    if outputs.get("alignment_index"):
+        print(f"  alignment_index: {outputs['alignment_index']}")
+    if outputs.get("alignment_report"):
+        print(f"  alignment_report: {outputs['alignment_report']}")
+    if outputs.get("write_summary"):
+        print(f"  write_summary: {outputs['write_summary']}")
+    print(f"  run_log: {result.get('run_log_path', 'N/A')}")
+
+    summary = result.get("summary", {})
+    if summary:
+        print(f"  write_status: {summary.get('status', 'N/A')}")
+        if summary.get("failure_reason"):
+            print(f"  failure_reason: {summary['failure_reason']}")
+
+    if outputs.get("aligned_mcap") or outputs.get("alignment_index"):
+        print()
+        print("  已写出 aligned MCAP 相关产物，请检查上述产物完整性。")
+
+    return 0 if result["status"] == "success" else 1
+
+
+def run_scene3_full_flow_check_check(args: argparse.Namespace) -> int:
+    """Interactive runner for the Scene 3 full-flow developer entry."""
+    from schemas.alignment_config import Scene3AlignmentConfig
+
+    default_mcap_a = None
+    if args.cleaned_mcap_dir:
+        mcap_dir = Path(args.cleaned_mcap_dir)
+        if mcap_dir.is_dir():
+            mcap_files = sorted(mcap_dir.glob("*mcap_a*.mcap"))
+            if mcap_files:
+                default_mcap_a = mcap_files[-1]
+
+    prompt_mcap = "请输入 MCAP_A 路径"
+    if default_mcap_a is not None:
+        prompt_mcap += f" [默认: {default_mcap_a}]"
+    prompt_mcap += ": "
+    selected_mcap = input(prompt_mcap).strip()
+    if selected_mcap:
+        mcap_a_path = Path(selected_mcap)
+    elif default_mcap_a is not None:
+        mcap_a_path = default_mcap_a
+    else:
+        print("未找到 MCAP_A 小样本，请输入有效路径后重试。")
+        return 1
+
+    default_summary = mcap_a_path.parent / "mcap_a_write_summary.json"
+    prompt_summary = f"请输入 mcap_a_write_summary.json 路径 [默认: {default_summary}]: "
+    selected_summary = input(prompt_summary).strip()
+    if selected_summary:
+        summary_path = Path(selected_summary)
+    else:
+        summary_path = default_summary
+
+    default_output = mcap_a_path.parent / "scene3_full_flow_aligned"
+    prompt_output = f"请输入 aligned 输出目录 [默认: {default_output}]: "
+    selected_output = input(prompt_output).strip()
+    if selected_output:
+        output_dir = Path(selected_output)
+    else:
+        output_dir = default_output
+
+    config = Scene3AlignmentConfig()
+    hz_input = input(f"请输入 target_step_hz [默认: {config.target_step_hz}]: ").strip()
+    if hz_input:
+        try:
+            config.target_step_hz = int(hz_input)
+        except ValueError:
+            print(f"无效频率: {hz_input}，使用默认 {config.target_step_hz}")
+
+    print()
+    print("开始运行场景三全流程验证 ...")
+    print(f"  MCAP_A: {mcap_a_path}")
+    print(f"  summary: {summary_path}")
+    print(f"  aligned 输出目录: {output_dir}")
+    print()
+
+    result = run_scene3_full_flow_check(
+        mcap_a_path=mcap_a_path,
+        summary_path=summary_path,
+        output_dir=output_dir,
+        config=config,
+        run_root=Path(args.run_root),
+    )
+
+    status_text = "完成" if result["status"] == "success" else "失败"
+    print(f"场景三全流程验证{status_text}")
+    print(f"  run_dir: {result['outputs']['run_dir']}")
+    for stage_id, stage_status in result.get("stage_statuses", {}).items():
+        stage_run_dir = result["outputs"].get("stage_run_dirs", {}).get(stage_id)
+        print(f"  {stage_id}: {stage_status} ({stage_run_dir})")
+    outputs = result.get("outputs", {})
+    if outputs.get("aligned_mcap"):
+        print(f"  aligned_mcap: {outputs['aligned_mcap']}")
+    if outputs.get("alignment_index"):
+        print(f"  alignment_index: {outputs['alignment_index']}")
+    if outputs.get("alignment_report"):
+        print(f"  alignment_report: {outputs['alignment_report']}")
+    print(f"  run_log: {result['run_log_path']}")
+
+    if result.get("errors"):
+        for error in result["errors"]:
+            print(f"  error: {error.get('type')}: {error.get('message')}")
+
+    return 0 if result["status"] == "success" else 1
+
+
+SCENE3_CHECKS: list[tuple[str, str, MenuRunner]] = [
+    ("scene3_mcap_a_input_check", "检查 MCAP_A 输入是否可消费", run_scene3_mcap_a_input_check_check),
+    ("scene3_step_timeline_check", "检查 Step 时间轴生成", run_scene3_step_timeline_check_check),
+    ("scene3_field_alignment_check", "检查多策略字段对齐", run_scene3_field_alignment_check_check),
+    ("scene3_alignment_report_check", "检查对齐索引与报告生成", run_scene3_alignment_report_check_check),
+    ("scene3_aligned_mcap_write_check", "检查 aligned MCAP 与 sidecar 写出", run_scene3_aligned_mcap_write_check_check),
+    ("scene3_full_flow_check", "全流程验证：顺序运行场景三全部功能", run_scene3_full_flow_check_check),
+]
+
 SCENE_MENUS: list[tuple[str, str, list[tuple[str, str, MenuRunner]]]] = [
     ("scene1", "场景一：提取夹爪开合以及位姿转换", SCENE1_CHECKS),
     ("scene2", "场景二：硬件数据可靠性验证", SCENE2_CHECKS),
-    ("scene3", "场景三：MCAP 多 topic 时间轴对齐", []),
+    ("scene3", "场景三：MCAP 多 topic 时间轴对齐", SCENE3_CHECKS),
     ("scene4", "场景四：构建标准 canonical dataset", []),
     ("scene5", "场景五：模型训练格式导出器", []),
 ]
