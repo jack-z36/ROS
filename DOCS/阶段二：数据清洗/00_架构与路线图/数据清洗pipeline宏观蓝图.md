@@ -1,40 +1,70 @@
+# 数据清洗 pipeline 宏观蓝图
 
 ## 文档定位
 
-本文用于描述阶段二数据清洗 pipeline 的全局图景。它基于 `阶段二实现路线图.md`，但粒度更高，重点回答三个问题：
+本文是阶段二数据清洗 pipeline 的最高层蓝图。它只固定目标、数据主链路、产物边界、交互闭环和验收方式；不提前冻结源码文件名、类名、函数名或内部模块拆分。
 
-1. 用户如何与 pipeline 交互，包括开发期测试检验和完成后的正式使用。
-2. 数据如何从输入逐级流向输出，每一级产物承担什么职责。
-3. pipeline 最终完成时应呈现什么样的整体能力。
+旧版 canonical dataset 路线图已归档到：
 
-本文不提前冻结源码文件名、配置文件名、命令名称、类名或内部模块拆分。具体实现开始后，这些细节应写入对应场景的 `输出程序与文件.md`、阶段二的 `阶段产出.md` 和程序包内架构文档。
+```text
+DOCS/归档/2026-05-28_阶段二旧宏观路线图_五场景canonical方案/
+```
 
-本文的使用方式是：
+## 一、最终目标
 
-- 作为后续从零开发 pipeline 时的全局蓝图，帮助判断每个新程序、配置和报告应该服务哪一段数据流。
-- 作为和用户继续讨论需求时的约束底稿，后续交互中确定的新事实、边界和默认策略应沉淀回本文或对应场景文档。
-- 作为阶段二五个场景之间的数据交付契约，而不是某个具体模块的详细设计文档。
+阶段二最终目标是：
 
-本文刻意保持较高粒度。真正进入某个场景编码时，应继续下钻到该场景的 `目标描述.md`、`背景信息.md`、`执行约束.md`、`当前进度.md`、`执行记录.md` 和 `输出程序与文件.md`。
+```text
+把阶段一采集得到的 raw MCAP，处理成 LeRobotDataset v3 数据集，
+用于 LeRobot 框架执行 ACT 模型训练。
+```
 
-## 总体目标
+阶段二的交付结果必须满足：
 
-数据清洗 pipeline 的目标是把阶段一采集得到的 raw MCAP，从多个硬件 topic 的原始日志，转换成可追溯、可校验、可导出训练格式的 canonical dataset。
+1. 能从真实 MCAP 小样本跑通端到端数据处理链路。
+2. 输出的数据集能被 LeRobot 的数据读取与 ACT 训练前检查流程消费。
+3. 每次处理都有独立 run 目录、配置快照、输入样本清单、运行日志和输出产物。
+4. 用户不需要记忆内部脚本路径，只通过统一入口进入开发调试或生产处理。
 
-最终使用者不应只得到一个“清洗后的文件”，而应得到一套完整的数据资产：
+## 二、主数据流
 
-- 数据本体：cleaned、validated、aligned 和 canonical dataset 中的 MCAP 或派生数据。
-- 数据契约：schema、topic 映射、坐标系定义、action 定义和质量字段解释。
-- 训练可用性标记：step 级和字段级 masks、invalid reason、质量评分。
-- 追溯材料：alignment report、quality report、robot constraint report、processing manifest。
-- 可选导出结果：面向 LeRobot、HDF5、Zarr 或后续确定训练框架的 exports。
+新版主链路为：
 
-## 一、用户交互逻辑
+```text
+raw MCAP
+  -> [场景一] cleaned MCAP
+  -> [场景二] MCAP_A / validated MCAP
+  -> [场景三] aligned MCAP
+  -> [场景四] LeRobotDataset v3
+  -> [阶段三] LeRobot ACT training
+```
+
+与旧路线相比，关键变化是：
+
+| 旧路线 | 新路线 |
+|---|---|
+| `cleaned -> validated -> aligned -> canonical_dataset_mcap -> exports` | `cleaned -> MCAP_A / validated -> aligned -> LeRobotDataset v3` |
+| 场景一中间路径强调 common frame | 场景一主路径直接服务机械臂 base 坐标系位姿表达 |
+| `validated MCAP` 包含 IK、关节限位、MuJoCo 仿真标注 | `MCAP_A / validated MCAP` 只输出主数据清洗、滤波、补全后的 MCAP，不做仿真与关节限位标注 |
+| 场景四构建自定义 canonical dataset | 场景四构建 LeRobotDataset v3 |
+| 场景五负责通用训练格式导出 | 阶段二主线不再维护通用 exporter；只保证 LeRobotDataset v3 可用于 ACT |
+
+## 三、五个场景的新定位
+
+| 场景 | 新定位 | 输出 |
+|---|---|---|
+| 场景一：提取夹爪开合以及位姿转换 | 从 raw MCAP 生成 cleaned MCAP，补齐夹爪开合语义，并把位姿转换到后续机械臂 base 坐标系链路所需表达。 | cleaned MCAP、清洗报告、位姿转换/标定配置。 |
+| 场景二：硬件数据可靠性验证 | 从 cleaned MCAP 生成 MCAP_A / validated MCAP。P0 只做主数据滤波、补全、异常标记和可追溯写出，不做 IK、关节限位和 MuJoCo 仿真标注。 | MCAP_A、异常/修复/滤波报告、写出摘要。 |
+| 场景三：MCAP 多 topic 时间轴对齐 | 从 MCAP_A / validated MCAP 生成 aligned MCAP，统一图像、触觉、位姿、夹爪等 topic 到 step 时间轴。 | aligned MCAP、alignment report、对齐索引或 sidecar。 |
+| 场景四：构建 LeRobotDataset v3 | 从 aligned MCAP 直接构建 LeRobotDataset v3，形成阶段三 ACT 训练输入。 | LeRobotDataset v3 数据集、dataset meta、转换报告、读取校验结果。 |
+| 场景五：训练入口验证与数据集交付 | 验证 LeRobotDataset v3 能进入 LeRobot ACT 数据读取和训练前检查。若后续需要多格式导出，再作为扩展，不作为当前主线。 | ACT 训练前检查结果、数据集交付报告。 |
+
+## 四、交互闭环
 
 本文中的用户交互逻辑分为两类：
 
 - **开发者端交互逻辑**：程序开发完成后，开发者如何使用入口程序检验某个场景或功能模块是否正确。它服务于功能检验，不以生产整批数据集为目标。
-- **用户端生产交互逻辑**：最终使用者如何使用已经开发好的 pipeline 完成全流程或单场景数据清洗。它服务于稳定生产 cleaned、validated、aligned、canonical dataset 和 exports。
+- **用户端生产交互逻辑**：最终使用者如何使用已经开发好的 pipeline 完成全流程或单场景数据清洗。它服务于稳定生产 cleaned、MCAP_A / validated、aligned 和 LeRobotDataset v3。
 
 交互组织粒度统一以阶段二五个场景为主，不以底层脚本文件为主。具体功能检验项由每个场景真正开发时再定义并写入对应场景文档；本文只规定统一交互规范。
 
@@ -53,18 +83,18 @@
   1. 场景一：提取夹爪开合以及位姿转换
   2. 场景二：硬件数据可靠性验证
   3. 场景三：MCAP 多 topic 时间轴对齐
-  4. 场景四：构建标准 canonical dataset
-  5. 场景五：模型训练格式导出器
+  4. 场景四：构建 LeRobotDataset v3
+  5. 场景五：训练入口验证与数据集交付
 ```
 
 选择某个场景后，进入该场景的功能检验菜单。该菜单按功能组织，不按脚本文件组织。具体有哪些功能检验项，在该场景实际编码时再确定；但每个场景至少必须保留一个“场景完整 smoke test”选项，用于按该场景内部主要处理链路跑通一次最小样本。
 
 开发者端每个功能检验或场景 smoke test 的输出只要求两类：
 
-- **测试产物**：用于判断该功能是否按预期运行的调试输出、中间结果或小样本结果。
+- **测试产物**：用于判断该功能是否按预期运行的调试输出、中间结果、小样本结果。
 - **运行日志**：记录输入、配置、执行步骤、关键状态、错误信息和输出位置。
 
-开发者端输出必须与正式生产输出隔离。每次功能检验应保留独立运行目录，目录内至少包含测试产物和运行日志。调试产物不写入正式 canonical dataset 目录，也不污染正式生产输出。
+开发者端输出必须与正式生产输出隔离。每次功能检验应保留独立运行目录，目录内至少包含测试产物和运行日志。调试产物不写入正式 LeRobotDataset v3 目录，也不污染正式生产输出。
 
 开发者端默认读取用户端生产配置，以保证功能检验接近真实生产契约；同时允许在引导界面临时覆盖部分参数。临时覆盖只对本次开发调试运行生效。只有开发者明确选择“保存到配置文件”时，才允许把覆盖结果写回正式配置。
 
@@ -119,16 +149,16 @@ $ ./start_data_clean.sh --dev
   1. 场景一：提取夹爪开合以及位姿转换
   2. 场景二：硬件数据可靠性验证
   3. 场景三：MCAP 多 topic 时间轴对齐
-  4. 场景四：构建标准 canonical dataset
-  5. 场景五：模型训练格式导出器
+  4. 场景四：构建 LeRobotDataset v3
+  5. 场景五：训练入口验证与数据集交付
 
 请选择要检验的场景：1
 
 场景一功能检验菜单
   1. 检验提取夹爪开合
-  2. 检验实现左右位姿统一
+  2. 检验实现左右位姿转换到机械臂 base 坐标系链路
   3. 填写/校验夹爪开合配置文件参数
-  4. 填写/校验左右位姿统一配置文件参数
+  4. 填写/校验位姿转换配置文件参数
   5. 运行场景一完整 smoke test
   0. 返回上一级
 ```
@@ -190,7 +220,7 @@ $ ./start_data_clean.sh --dev
   -> 检查场景一必需配置
   -> 读取小样本 raw MCAP
   -> 提取夹爪开合
-  -> 执行左右位姿统一
+  -> 执行位姿转换到机械臂 base 坐标系链路
   -> 写出场景一测试产物
   -> 写出运行日志
   -> 返回测试产物路径和运行日志路径
@@ -245,7 +275,7 @@ $ ./start_data_clean.sh --dev
 
 #### 运行全流程
 
-“运行全流程”是用户端默认选项，目标是从 raw MCAP 依次执行阶段二五个场景，最终得到 canonical dataset，并按需要生成 exports。
+“运行全流程”是用户端默认选项，目标是从 raw MCAP 依次执行阶段二五个场景，最终得到 LeRobotDataset v3，并完成 ACT 训练前检查。
 
 用户选择运行全流程后，系统必须先自动检查：
 
@@ -291,7 +321,7 @@ $ ./start_data_clean.sh --dev
 生产模式运行完成后，结束页保持简洁，只显示：
 
 - 运行状态：成功、失败或部分成功。
-- 输出路径：本次生成的 cleaned、validated、aligned、canonical dataset 或 exports 路径。
+- 输出路径：本次生成的 cleaned、MCAP_A / validated、aligned、LeRobotDataset v3 或 ACT 训练前检查结果路径。
 - 运行日志路径。
 - 下一步可选动作：查看输出目录、重新运行单个流程、配置配置文件、返回首页或退出。
 
@@ -301,321 +331,33 @@ $ ./start_data_clean.sh --dev
 - 一行失败原因摘要。
 - 运行日志路径。
 - 下一步选择：重新配置、重新运行当前流程、返回首页或退出。
-## 二、数据流蓝图
 
-### 数据流设计原则
-
-阶段二的数据流不是简单的文件格式转换，而是语义逐级增强：
-
-- raw MCAP 只代表硬件 topic 日志。
-- cleaned MCAP 补齐基础语义，例如夹爪宽度和 common frame 位姿。
-- validated MCAP 代表通过可靠性和物理约束检查后的信号。
-- aligned MCAP 代表被统一到 step 时间轴的多模态信号。
-- canonical dataset 代表 episode/step/observation/action 世界。
-- exports 代表面向特定训练框架的可再生产物。
-
-每一级产物都应满足两条要求：
-
-- 能被下一级明确消费，不依赖人工记忆补充隐含语义。
-- 能通过报告解释自己如何生成、哪些字段可信、哪些片段不可训练。
-
-### 主数据流
-
-```text
-raw MCAP
-  -> cleaned MCAP
-  -> validated MCAP
-  -> aligned MCAP + alignment_report
-  -> canonical_dataset_mcap/
-  -> exports/
-```
-
-### 产物职责总表
-
-| 产物 | 输入来源 | 核心新增语义 | 主要消费者 | 是否应长期保留 |
-| --- | --- | --- | --- | --- |
-| raw MCAP | 阶段一采集结果 | 原始 topic 日志。 | 场景一、回放和问题追溯。 | 必须保留。 |
-| cleaned MCAP | raw MCAP + 基础标定/转换配置 | 夹爪宽度、common frame 相机 pose、基础清洗报告。 | 场景二。 | 第一版建议保留，便于追溯。 |
-| validated MCAP | cleaned MCAP + 质量/机器人约束配置 | 滤波、异常处理、可执行性判断、修复记录。 | 场景三、质量分析。 | 第一版建议保留，便于定位可靠性问题。 |
-| aligned MCAP | validated MCAP + step 时间轴配置 | 多 topic step 对齐、插值/聚合来源、对齐误差。 | 场景四。 | 第一版建议保留，便于调试对齐。 |
-| canonical dataset | aligned MCAP + schema/action/mask 契约 | episode、step、observation、action、schema、masks、reports、manifest。 | 场景五和阶段三。 | 必须保留。 |
-| exports | canonical dataset + 目标训练格式配置 | 训练框架专用目录结构和字段格式。 | 阶段三训练程序。 | 可再生成，可按需保留。 |
-
-第一版实现建议默认保留 cleaned、validated、aligned 三类中间产物。等 pipeline 稳定后，再提供只保留 canonical dataset 和报告的轻量模式。
-
-### 场景一：raw MCAP 到 cleaned MCAP
-
-输入：
-
-- 阶段一输出的 raw MCAP。
-- topic 映射、左右 Baton Mini 位姿转换参数、夹爪标定结果。
-
-处理：
-
-- 读取 raw MCAP 中的图像、位姿和触觉 topic。
-- 补齐左右夹爪宽度语义。
-- 把左右 Baton Mini raw pose 转换到 common frame 下的相机 pose。
-- 执行基础 topic 和配置校验。
-
-输出：
-
-- cleaned MCAP。
-- 清洗报告。
-- 可复用的标定结果和位姿转换参数。
-
-下游意义：
-
-- cleaned MCAP 是可靠性验证的输入。
-- 它解决“原始 topic 缺少统一语义”的问题，但不负责滤波、IK 或时间对齐。
-
-### 场景二：cleaned MCAP 到 validated MCAP
-
-输入：
-
-- cleaned MCAP。
-- 质量阈值、滤波参数、机器人约束参数、仿真检查配置。
-
-处理：
-
-- 对位姿、触觉和夹爪宽度序列进行滤波。
-- 检测缺失、跳变、非法值、速度和加速度异常。
-- 对可修复异常进行补全，对不可修复片段保留标记。
-- 通过 IK、关节限制、workspace 限制和仿真检查判断轨迹可执行性。
-
-输出：
-
-- validated MCAP。
-- 异常报告。
-- 修复记录。
-- robot constraint report。
-- 仿真验证摘要。
-
-下游意义：
-
-- validated MCAP 是时间对齐的输入。
-- 该阶段负责决定哪些片段可靠，哪些片段后续必须被 mask 掉。
-
-### 场景三：validated MCAP 到 aligned MCAP
-
-输入：
-
-- validated MCAP。
-- 目标 step 频率、起止策略、插值和聚合策略。
-
-处理：
-
-- 生成统一 step 时间轴。
-- 为每个 step 对齐图像、位姿、触觉、夹爪宽度等字段。
-- 对位姿执行适合位置和四元数的插值。
-- 对高频触觉数据做窗口聚合或降采样。
-- 标记缺失、超时、复用和插值情况。
-
-输出：
-
-- aligned MCAP。
-- alignment report。
-- 可选的对齐索引中间产物。
-
-下游意义：
-
-- aligned MCAP 是 canonical dataset 构建的输入。
-- alignment report 是 masks 和 quality report 的依据之一。
-
-### 场景四：aligned MCAP 到 canonical dataset
-
-输入：
-
-- aligned MCAP。
-- alignment report。
-- 上游异常报告、修复记录和 robot constraint report。
-- schema、action、frame、topic 和 quality 契约。
-
-处理：
-
-- 初始化 canonical dataset 结构。
-- 为每个示教构建 episode。
-- 生成 dataset meta 和 dataset index。
-- 生成 observation、action、frame、topic 和 quality schema。
-- 生成 step_index，将 topic 世界映射到 step 世界。
-- 生成 UMI 风格 relative trajectory action chunk。
-- 生成 masks 和 invalid reason。
-- 汇总上游报告，并生成 processing manifest。
-- 执行 dataset 完整性校验。
-
-输出：
-
-```text
-canonical_dataset_mcap/
-├── dataset_meta.json
-├── dataset_index.parquet
-├── schema/
-├── episodes/
-│   └── episode_xxxxxx/
-│       ├── episode_meta.json
-│       ├── data.mcap
-│       ├── step_index.parquet
-│       ├── masks.parquet
-│       ├── alignment_report.json
-│       ├── quality_report.json
-│       ├── robot_constraint_report.json
-│       └── processing_manifest.json
-└── exports/
-```
-
-下游意义：
-
-- canonical dataset 是训练格式导出器唯一可信输入。
-- 后续 exporter 不应回头读取 raw、cleaned、validated 或 aligned 中间过程来修复数据。
-
-### 场景五：canonical dataset 到 exports
-
-输入：
-
-- canonical dataset。
-- 目标训练格式说明。
-- 字段映射规则、样本过滤规则和导出配置。
-
-处理：
-
-- 读取 schema、dataset index、episode、step index 和 masks。
-- 排除不可训练 step。
-- 将 canonical observation/action 映射为目标训练格式。
-- 写出训练数据。
-- 运行最小读取或训练侧校验。
-
-输出：
-
-- `exports/` 下的目标训练格式数据。
-- 导出报告。
-- 导出校验结果。
-
-下游意义：
-
-- exports 是阶段三模型训练的输入。
-- exports 是可再生产物，删除后应能从 canonical dataset 重新导出。
-
-## 三、控制流与配置参数获取机制
-
-本章描述主数据流之外的辅助机制。这里的配置参数不是一开始全量设计出来的，也不是和主数据流并列的一条独立数据流；它们是各场景程序在实现主数据流时逐步发现的依赖。
-
-例如，场景一在实现夹爪开合提取时，需要夹爪开合的 0-1 像素映射配置参数；在实现左右位姿统一时，需要 `common frame` 在各个 Baton Mini 相机坐标系下的坐标。这些参数不是凭空先验设计出来的，而是由具体功能在开发和验证时提出的。后续场景二的滤波、异常处理、IK、仿真，场景三的时间对齐，场景四的 action 和 masks，也可能继续产生新的配置参数需求。
-
-因此，阶段二不要求一开始设计出完整的大配置文件。配置文件应随场景开发逐步增长：
-
-```text
-场景程序发现参数需求
-  -> 定义参数语义
-  -> 确定参数获取方式
-  -> 写入所属场景配置
-  -> 配置校验进入开发者端和用户端引导流程
-  -> 下游场景按依赖关系复用
-```
-
-### 配置参数归属原则
-
-每个配置参数归属到“定义语义并首次获取它的场景”。其他场景如果需要使用该参数，只声明依赖和复用，不重复定义、不重复解释。
-
-例如：
-
-- 夹爪开合 0-1 像素映射参数由场景一定义和首次获取，后续场景如果需要夹爪宽度语义，只依赖场景一产物或配置。
-- `common frame` 在各 Baton Mini 相机坐标系下的坐标由场景一定义和首次获取，后续场景如果需要统一位姿语义，只复用该配置。
-
-这样可以避免一个参数在多个场景中被重复命名、重复填写或产生互相冲突的解释。
-
-### 配置参数获取程序
-
-如果某个配置参数不适合直接手写，或者人工直接填写容易出错，可以为它开发专门的人机交互式获取程序。该程序可能是终端向导、浏览器页面、可视化标定界面或其他交互工具，具体形式由对应场景开发时决定。
-
-配置参数获取程序本身属于该场景的软件产物：
-
-- 必须记录到对应场景的 `输出程序与文件.md`。
-- 如果是独立程序或独立模块，应配套架构文档。
-- 它生成或修改的配置文件，应说明参数语义、写入位置、校验规则和复用边界。
-
-场景一中的夹爪开合配置参数获取、左右位姿统一配置参数获取，属于这种机制的典型例子。后续其他场景如果出现类似需求，也按同样规则沉淀为该场景的软件产物。
-
-### 后续新增配置参数时必须明确的内容
-
-后续每发现一个新的配置参数需求，都应在对应场景文档中补齐以下信息：
-
-- 该参数服务哪个场景和哪个功能。
-- 参数语义是什么，单位、坐标系、时间语义或取值范围是什么。
-- 参数从哪里获得，是否需要专门的人机交互程序辅助获取。
-- 参数写入哪个配置文件或哪类配置产物。
-- 参数如何校验，缺失、为空或非法时如何提示。
-- 参数被哪些下游流程复用。
-- 参数是否进入运行日志、测试产物或 `processing_manifest`。
-
-本文不提前分类所有参数的获取方式，也不提前规定完整配置文件结构。具体获取方式和配置结构，留给对应场景的实际需求和实现来决定。
-
-### 控制流在本章中的位置
-
-控制流只负责把用户带到正确的配置获取或处理运行位置，不在本章重新展开复杂交互。交互细节以第一章为准。
-
-当前控制流的全局入口原则是：
-
-- `./start_data_clean.sh --dev` 进入开发者端调试模式，用于选择场景和功能检验。
-- `./start_data_clean.sh` 无参数进入用户端生产模式，用于配置配置文件、运行全流程或运行单个流程。
-- 当运行流程发现必需配置缺失或为空时，控制流应跳转到对应场景的配置获取流程。
-- 当配置获取完成并校验通过后，控制流再回到原本要执行的开发者检验或用户端生产流程。
-
-配置、运行日志和 manifest 的关系也应随场景逐步固化。原则上，凡是会影响数据语义、处理结果或训练可用性的配置，都应能在运行日志或后续 manifest 中追溯。
-
-## 四、最终完成图景
-
-pipeline 完成时，应达到以下状态：
-
-1. 用户能从一批 raw MCAP 启动全流程处理，并得到 canonical dataset。
-2. 用户能只运行任意一个阶段片段，例如 cleaned 到 validated，或 canonical dataset 到 exports。
-3. 每个主要阶段都有机器可读报告，失败时能定位到文件、episode、step、字段和原因。
-4. canonical dataset 能独立解释自身，不依赖开发者记忆或外部口头说明。
-5. schema、step index、masks 和 manifest 足以让后续训练导出器稳定消费数据。
-6. 不可训练或机器人不可执行的数据不会静默进入训练集。
-7. exports 可重复生成，模型训练格式变化时不需要重跑上游清洗链路。
-8. 每个新增程序都有对应架构文档，每个场景的输出程序与文件清单保持同步。
-
-### 完成定义
-
-从工程交付角度看，pipeline 的“完成”不是指所有算法都不可再优化，而是指下面这些闭环已经成立：
-
-- 输入闭环：用户能把阶段一 raw MCAP 交给 pipeline，pipeline 能判断能否处理。
-- 处理闭环：五个场景的主路径都能在小样本上跑通，并能扩展到批处理。
-- 报告闭环：每个主要异常都能落到机器可读报告，并能影响 masks 或质量评分。
-- 追溯闭环：任意 episode 能追溯到原始输入、配置、处理步骤和软件版本。
-- 导出闭环：canonical dataset 能导出至少一种训练格式，并通过最小读取校验。
-- 文档闭环：全局蓝图、路线图、场景文档、输出清单和架构文档能互相索引。
-
-第一版完成图景可以按“最小可用 pipeline”理解：
-
-```text
-raw MCAP
-  -> cleaned MCAP
-  -> validated MCAP
-  -> aligned MCAP
-  -> 单 episode 或少量 episode canonical dataset
-  -> 至少一种可读取的 exports
-```
-
-后续增强图景再逐步加入更复杂的批量数据管理、多格式导出、质量评分优化、交互式报告页面和大规模数据集验收。
-
-从用户视角看，最终体验应是：
-
-```text
-选择 raw MCAP 和配置
-  -> 预检查输入与配置
-  -> 执行清洗、验证、对齐、dataset 构建
-  -> 检查报告和 masks
-  -> 得到 canonical dataset
-  -> 按目标模型导出训练格式
-```
-
-从数据资产视角看，最终结果应是：
-
-```text
-raw topic logs
-  -> semantic cleaned data
-  -> reliable and physically validated data
-  -> step-aligned multimodal data
-  -> episode/step/observation/action canonical dataset
-  -> model-specific training data
-```
+## 五、产物职责
+
+| 产物 | 语义 | 是否主线保留 |
+|---|---|---|
+| raw MCAP | 阶段一采集原始数据，外部只读输入源。 | 是，作为输入。 |
+| cleaned MCAP | 场景一输出，补齐夹爪与位姿语义。 | 是。 |
+| MCAP_A / validated MCAP | 场景二输出，滤波、补全、主数据整理后的 MCAP。 | 是。 |
+| aligned MCAP | 场景三输出，统一 step 时间轴后的 MCAP。 | 是。 |
+| LeRobotDataset v3 | 阶段二目标产物，供 LeRobot ACT 训练。 | 是，最终产物。 |
+| canonical_dataset_mcap | 旧方案中间标准产物。 | 否，仅归档复盘。 |
+| exports | 旧方案通用导出层。 | 否，当前主线只面向 LeRobotDataset v3。 |
+
+## 六、配置与追溯原则
+
+1. 配置从生产配置读取，开发者模式允许临时覆盖。
+2. 临时覆盖只对本次 run 生效，只有用户明确选择保存时才写回配置。
+3. 影响坐标系、step 对齐、action 生成、LeRobot 字段映射的配置必须进入 manifest。
+4. 真实 MCAP 不进 Git，L3 开发验证默认从本机外部 raw MCAP 目录读取。
+5. 调试输出、中间产物和日志必须进入独立 run 目录。
+
+## 七、完成定义
+
+阶段二完成不是“文档写完”或“脚本能启动”，而是满足以下闭环：
+
+1. 能用至少一个真实 raw MCAP 小样本，从场景一跑到 LeRobotDataset v3。
+2. LeRobotDataset v3 能被 LeRobot 数据读取流程加载。
+3. ACT 训练前检查能识别 observation、action、episode、时间步和必要 metadata。
+4. 每个中间产物都有来源、配置、处理步骤和失败原因记录。
+5. 用户能通过 `./start_data_clean.sh --dev` 对每个场景进行人工最终验收。
