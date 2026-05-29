@@ -27,7 +27,7 @@
 | `pose_fallback_strategy` | enum string | 默认 `nearest_neighbor` |
 | `tactile_strategy` | enum string | 默认 `window_aggregate` |
 | `gripper_strategy` | enum string | 默认 `follow_image_nearest` |
-| `output_dir` | string | 默认 `asset/阶段二：数据清洗/dev/mcap_aligned/` |
+| `output_dir` | string | 默认 `asset/阶段二：数据清洗/dev/03_aligned_mcap/` |
 | `allow_cli_override` | bool | 开发者入口是否允许本次运行临时覆盖配置 |
 
 ## 有效性规则

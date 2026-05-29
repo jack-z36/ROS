@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,18 @@ from ui.scene1_dev_checks import (
 
 MenuRunner = Callable[[argparse.Namespace], int]
 Scene1Runner = Callable[[str | Path], Any]
+SCENE3_DEFAULT_ALIGNED_OUTPUT_ROOT = Path("/home/hit/ROS/asset/阶段二：数据清洗/dev/03_aligned_mcap")
+
+
+def scene3_default_aligned_output_dir(
+    check_id: str | None = None,
+    *,
+    now: datetime | None = None,
+) -> Path:
+    """Return a per-run default Scene 3 aligned MCAP output directory."""
+    _ = check_id
+    timestamp = (now or datetime.now()).strftime("%m-%d-%H:%M")
+    return SCENE3_DEFAULT_ALIGNED_OUTPUT_ROOT / timestamp
 
 
 def _latest_mcap(input_dir: Path) -> Path | None:
@@ -640,7 +653,9 @@ def run_scene3_aligned_mcap_write_check_check(args: argparse.Namespace) -> int:
         print("未找到 MCAP_A 小样本，请输入有效路径后重试。")
         return 1
 
-    default_output = mcap_a_path.parent / "aligned_mcap_write_check"
+    default_output = scene3_default_aligned_output_dir(
+        "scene3_aligned_mcap_write_check"
+    )
     prompt_output = f"请输入调试输出目录 [默认: {default_output}]: "
     selected_output = input(prompt_output).strip()
     if selected_output:
@@ -719,7 +734,7 @@ def run_scene3_full_flow_check_check(args: argparse.Namespace) -> int:
     else:
         summary_path = default_summary
 
-    default_output = mcap_a_path.parent / "scene3_full_flow_aligned"
+    default_output = scene3_default_aligned_output_dir("scene3_full_flow_check")
     prompt_output = f"请输入 aligned 输出目录 [默认: {default_output}]: "
     selected_output = input(prompt_output).strip()
     if selected_output:

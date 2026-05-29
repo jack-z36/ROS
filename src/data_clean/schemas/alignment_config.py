@@ -58,7 +58,7 @@ class Scene3AlignmentConfig:
     pose_fallback_strategy: str = "nearest_neighbor"
     tactile_strategy: str = "window_aggregate"
     gripper_strategy: str = "follow_image_nearest"
-    output_dir: str = "asset/阶段二：数据清洗/dev/mcap_aligned/"
+    output_dir: str = "asset/阶段二：数据清洗/dev/03_aligned_mcap"
 
     def __post_init__(self) -> None:
         """Validate config and compute derived defaults."""

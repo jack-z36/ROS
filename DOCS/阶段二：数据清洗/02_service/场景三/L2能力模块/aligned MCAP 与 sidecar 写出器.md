@@ -83,7 +83,7 @@ L1：service_s3
 
 | 文件 / 目录 | 路径来源 | 命名规则 | 是否允许覆盖 | 创建时机 |
 |---|---|---|---|---|
-| aligned MCAP 输出目录 | [[Scene3AlignmentConfig]].`output_dir`，默认 `asset/阶段二：数据清洗/dev/mcap_aligned/` | 按配置和 run 上下文确定 | 不覆盖上游 MCAP_A；同 run 内由写出策略控制 | 写出前创建 |
+| aligned MCAP 输出目录 | [[Scene3AlignmentConfig]].`output_dir`，开发者菜单默认 `asset/阶段二：数据清洗/dev/03_aligned_mcap/MM-DD-HH:MM/` | 按配置和 run 上下文确定；一次运行的 MCAP 与 sidecar 集中在同一子目录 | 不覆盖上游 MCAP_A；同 run 内由写出策略控制 | 写出前创建 |
 | [[AlignedMcap]] | [[AlignedMcap]] 契约 | `<mcap_a_stem>_aligned.mcap` 或 run 唯一路径 | 不直接覆盖既有完整产物 | 临时目录写成功后提交 |
 | `alignment_index.parquet` | 同 aligned 输出目录或 run outputs | 固定文件名或带 run id 变体 | 不直接覆盖既有完整产物 | 临时目录写成功后提交 |
 | `alignment_report.json` | 同 aligned 输出目录或 run outputs | 固定文件名或带 run id 变体 | 不直接覆盖既有完整产物 | final report 补齐后写出 |

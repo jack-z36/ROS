@@ -17,7 +17,7 @@
 | 内容 | 契约 |
 |---|---|
 | 输入来源 | [[McapA]]，只读不改 |
-| 默认落点 | `asset/阶段二：数据清洗/dev/mcap_aligned/` |
+| 默认落点 | `asset/阶段二：数据清洗/dev/03_aligned_mcap/` |
 | 默认命名 | `<mcap_a_stem>_aligned.mcap` |
 | topic 命名 | 首版保留原语义 topic 名 |
 | 时间戳 | 使用 [[StepTimeline]] 的 `step_time_ns` |
