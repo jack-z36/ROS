@@ -54,6 +54,7 @@ class PoseStreamConfig:
     transform_file: str = ""
     output_camera_pose_common: str = ""
     output_tcp_pose_common: str = ""
+    output_arm_base_tcp_pose: str = ""
 
 
 @dataclass(frozen=True)
@@ -166,6 +167,42 @@ class FrameAlignmentConfig:
 
 
 @dataclass(frozen=True)
+class WorkFrameInBaseConfig:
+    """User-defined work frame pose in the corresponding arm base coordinate frame.
+
+    This config feeds WorkFrameInArmBasePose from schemas.arm_base_pose.
+    It is the second input to the official Algo.rm_algo_workframe2base() call.
+    """
+
+    hand: str
+    base_frame_id: str
+    position_m: dict[str, float]
+    orientation: dict[str, float]
+    work_frame_id: str = "work"
+    source: str = "user_input"
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "WorkFrameInBaseConfig":
+        return cls(
+            hand=str(data.get("hand", "")),
+            base_frame_id=str(data.get("base_frame_id", "")),
+            position_m={
+                "x": float(data.get("position_m", {}).get("x", 0.0)),
+                "y": float(data.get("position_m", {}).get("y", 0.0)),
+                "z": float(data.get("position_m", {}).get("z", 0.0)),
+            },
+            orientation={
+                "x": float(data.get("orientation", {}).get("x", 0.0)),
+                "y": float(data.get("orientation", {}).get("y", 0.0)),
+                "z": float(data.get("orientation", {}).get("z", 0.0)),
+                "w": float(data.get("orientation", {}).get("w", 1.0)),
+            },
+            work_frame_id=str(data.get("work_frame_id", "work")),
+            source=str(data.get("source", "user_input")),
+        )
+
+
+@dataclass(frozen=True)
 class AppConfig:
     batch: BatchConfig
     transform: TransformConfig
@@ -173,6 +210,7 @@ class AppConfig:
     gripper_streams: tuple[GripperStreamConfig, ...]
     calibration: dict[str, Any]
     frame_alignment: FrameAlignmentConfig | None = None
+    work_frames: dict[str, WorkFrameInBaseConfig] | None = None
 
     def pose_by_topic(self) -> dict[str, PoseStreamConfig]:
         return {stream.input_topic: stream for stream in self.pose_streams}
@@ -313,9 +351,15 @@ def _build_pose_stream(
 
     output_camera_pose_common = ""
     output_tcp_pose_common = ""
+    output_arm_base_tcp_pose = ""
     if fa_pose_stream is not None:
         output_camera_pose_common = str(fa_pose_stream.get("output_camera_pose_common", ""))
         output_tcp_pose_common = str(fa_pose_stream.get("output_tcp_pose_common", ""))
+        output_arm_base_tcp_pose = str(fa_pose_stream.get("output_arm_base_tcp_pose", ""))
+
+    # Also allow output_arm_base_tcp_pose to be set at top-level pose_stream item
+    if not output_arm_base_tcp_pose:
+        output_arm_base_tcp_pose = str(item.get("output_arm_base_tcp_pose", ""))
 
     return PoseStreamConfig(
         input_topic=str(item["input_topic"]),
@@ -325,6 +369,7 @@ def _build_pose_stream(
         transform_file=transform_file,
         output_camera_pose_common=output_camera_pose_common,
         output_tcp_pose_common=output_tcp_pose_common,
+        output_arm_base_tcp_pose=output_arm_base_tcp_pose,
     )
 
 
@@ -375,17 +420,31 @@ def calibration_item_status(config: AppConfig) -> dict[str, bool]:
     }
 
 
-def config_is_calibrated(config: AppConfig) -> bool:
-    return all(calibration_item_status(config).values())
+def config_is_calibrated(config: AppConfig, *, require_common_frame: bool = False) -> bool:
+    """Check if config is calibrated.
+
+    By default (require_common_frame=False), only gripper calibration is required.
+    Pass require_common_frame=True for legacy behavior requiring all 4 items.
+    """
+    status = calibration_item_status(config)
+    if not require_common_frame:
+        return status["gripper_left"] and status["gripper_right"]
+    return all(status.values())
 
 
-def calibration_missing_items(config: AppConfig) -> list[str]:
+def calibration_missing_items(config: AppConfig, *, include_common_frame: bool = False) -> list[str]:
+    """List missing calibration items.
+
+    By default (include_common_frame=False), only gripper items are listed.
+    Pass include_common_frame=True for legacy listing of common_frame items.
+    """
     labels = {
         "gripper_left": "左手夹爪",
         "gripper_right": "右手夹爪",
-        "common_frame_left": "左手 common frame",
-        "common_frame_right": "右手 common frame",
     }
+    if include_common_frame:
+        labels["common_frame_left"] = "左手 common frame"
+        labels["common_frame_right"] = "右手 common frame"
     status = calibration_item_status(config)
     return [label for key, label in labels.items() if not status.get(key, False)]
 
@@ -506,6 +565,15 @@ def load_app_config(
         frame_alignment = load_frame_alignment(raw_data)
         validate_frame_alignment(frame_alignment)
 
+    work_frames_data = raw_data.get("work_frames")
+    work_frames = None
+    if isinstance(work_frames_data, dict):
+        work_frames = {}
+        for hand_key, wf_data in work_frames_data.items():
+            if isinstance(wf_data, dict):
+                wf_data["hand"] = wf_data.get("hand", hand_key)
+                work_frames[hand_key] = WorkFrameInBaseConfig.from_dict(wf_data)
+
     app_config = AppConfig(
         batch=batch,
         transform=_build_transform_config(raw_data),
@@ -513,6 +581,7 @@ def load_app_config(
         gripper_streams=_build_gripper_streams(raw_data),
         calibration=_build_calibration(raw_data),
         frame_alignment=frame_alignment,
+        work_frames=work_frames,
     )
     _validate_cross_field_rules(app_config)
     return app_config

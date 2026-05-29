@@ -13,6 +13,7 @@ from runtime.scene2_signal_reliability import run_scene2_signal_reliability_dete
 from runtime.scene2_signal_repair import run_scene2_signal_repair
 from runtime.scene2_tactile_filter import run_scene2_tactile_filter
 from ui.scene1_dev_checks import (
+    run_scene1_arm_base_pose_transform,
     run_scene1_common_pose_transform,
     run_scene1_frame_alignment_config,
     run_scene1_gripper_calibration_config,
@@ -33,26 +34,28 @@ def _latest_mcap(input_dir: Path) -> Path | None:
 
 def _run_scene1_frame_alignment_check(args: argparse.Namespace) -> int:
     print()
-    print("运行 scene1_frame_alignment_config ...")
+    print("*** [已废弃] scene1_frame_alignment_config ***")
     print()
-    print("提示: 此检验项生成 frame_alignment 配置模板。")
-    print("如需从右手 Baton Mini 标定采样生成 common_from_right_start，")
-    print("请使用实时标定中心: ./start_data_clean.sh --calibrate")
+    print("此检验项已废弃。common_frame / FrameAlignmentConfig 配置生成")
+    print("路线已从主路线移除。新路线改为由用户直接输入 work_frame_")
+    print("in_arm_base_pose，不再需要生成 common_from_left/right_start。")
+    print()
+    print("此功能保留仅用于检查既有配置的历史兼容性。")
     print()
 
-    answer = input("继续生成默认配置？[Y/n]: ").strip().lower()
-    if answer in {"n", "no"}:
+    answer = input("继续检查旧配置？[y/N]: ").strip().lower()
+    if answer not in {"y", "yes"}:
         print("已取消。")
         return 0
 
     try:
         dev_run = run_scene1_frame_alignment_config(Path(args.config))
     except Exception as exc:
-        print(f"配置生成失败: {exc}")
+        print(f"配置检查失败: {exc}")
         return 1
 
     print()
-    save_answer = input("是否保存到正式配置？[y/N]: ").strip().lower()
+    save_answer = input("是否保存检查结果到正式配置？[y/N]: ").strip().lower()
     if save_answer in {"y", "yes"}:
         try:
             save_frame_alignment_to_production(dev_run, Path(args.config))
@@ -162,6 +165,11 @@ def run_scene2_pose_filter_check(args: argparse.Namespace) -> int:
     print(f"  diff_summary: {result['outputs']['pose_filter_diff_summary_json']}")
     print(f"  filtered_pose_sequences: {result['outputs']['filtered_pose_sequences_dir']}")
     print(f"  run_log: {result['run_log_path']}")
+    print()
+    print("  坐标语义:")
+    print("    input_pose_frame: left_arm_base/right_arm_base")
+    print("    output_pose_frame: left_arm_base/right_arm_base")
+    print("    common_frame_to_robot_base: not required")
     return 0 if result["status"] == "success" else 1
 
 
@@ -221,12 +229,19 @@ def run_scene2_mcap_a_writer_check(args: argparse.Namespace) -> int:
     print(f"  mcap_a: {result['outputs']['mcap_a']}")
     print(f"  summary: {result['outputs']['mcap_a_write_summary_json']}")
     print(f"  run_log: {result['run_log_path']}")
+    print()
+    print("  当前路线:")
+    print("    IK: not in current route")
+    print("    MCAP_B: not in current route")
+    print("    joint_limit_check: not in current route")
+    print("    arm_base_input: arm-base TCP pose topics consumed from cleaned MCAP")
     return 0 if result["status"] == "success" else 1
 
 
 SCENE1_CHECKS: list[tuple[str, str, MenuRunner]] = [
-    ("scene1_frame_alignment_config", "位姿转换配置生成", _run_scene1_frame_alignment_check),
-    ("scene1_common_pose_transform", "位姿转换", _scene1_runner("scene1_common_pose_transform", run_scene1_common_pose_transform)),
+    ("scene1_frame_alignment_config", "[已废弃] 位姿转换配置生成", _run_scene1_frame_alignment_check),
+    ("scene1_arm_base_pose_transform", "arm-base 位姿转换（新链路，不再依赖 common_frame）", _scene1_runner("scene1_arm_base_pose_transform", run_scene1_arm_base_pose_transform)),
+    ("scene1_common_pose_transform", "位姿转换（旧链路，common_frame 兼容）", _scene1_runner("scene1_common_pose_transform", run_scene1_common_pose_transform)),
     ("scene1_gripper_width_extract", "夹爪开合提取", _scene1_runner("scene1_gripper_width_extract", run_scene1_gripper_width_extract)),
     ("scene1_gripper_calibration_config", "夹爪开合配置生成", _scene1_runner("scene1_gripper_calibration_config", run_scene1_gripper_calibration_config)),
     ("scene1_output_contract_validate", "检查配置报告是否完整", _scene1_runner("scene1_output_contract_validate", run_scene1_output_contract_validate)),

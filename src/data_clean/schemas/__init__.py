@@ -1,5 +1,12 @@
 """Type definitions and schema constants for MCAP cleaning pipeline."""
 
+from .arm_base_pose import (
+    ArmBaseTcpPose,
+    FrameIdType,
+    HandType,
+    McapAArmBasePoseChannel,
+    WorkFrameInArmBasePose,
+)
 from .fake_service_types import (
     FakeServicePlan,
     FakeServiceResult,
@@ -114,7 +121,9 @@ from .structured_log_types import (
 )
 
 __all__ = [
+    "ArmBaseTcpPose",
     "AnomalySource",
+    "FrameIdType",
     "IssueSeverity",
     "IssueType",
     "MissingIntervalIssue",
@@ -147,10 +156,13 @@ __all__ = [
     "FakeServiceBehavior",
     "FakeServicePlan",
     "FakeServiceResult",
+    "FrameIdType",
+    "HandType",
     "InputArtifactCheckResult",
     "InputArtifactPrecheckSummary",
     "InputArtifactRequirement",
     "MANIFEST_SCHEMA_VERSION",
+    "McapAArmBasePoseChannel",
     "PipelineResult",
     "PRECHECK_RULES",
     "PrecheckRuleId",
@@ -180,6 +192,7 @@ __all__ = [
     "ServiceMode",
     "ServiceRegistry",
     "TactileFilterAlgorithm",
+    "WorkFrameInArmBasePose",
     "TactileFilterConfig",
     "TactileFilterInputSequence",
     "TactileFilterResult",

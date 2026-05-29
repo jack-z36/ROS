@@ -21,8 +21,14 @@ from repo.ros2_codec import (
 )
 from service.gripper_width import GripperDetectionError, GripperWidthAccumulator
 from service.tcp_transform import (
+    compute_tcp_in_camera,
     transform_camera_to_common_tcp,
     transform_pose_to_common_camera_frame,
+)
+from schemas.arm_base_pose import (
+    FrameIdType,
+    HandType,
+    WorkFrameInArmBasePose,
 )
 from service.validator import (
     FileProcessingReport,
@@ -45,6 +51,7 @@ class _StreamArtifacts:
     raw_pose_payloads_by_topic: dict[str, list[bytes]]
     camera_common_pose_payloads_by_topic: dict[str, list[bytes]]
     tcp_common_pose_payloads_by_topic: dict[str, list[bytes]]
+    arm_base_tcp_pose_payloads_by_topic: dict[str, list[bytes]]
     gripper_payloads_by_image_topic: dict[str, list[bytes]]
     gripper_stats: dict[str, GripperTopicStats]
 
@@ -127,22 +134,63 @@ class _McapOutputBuilder:
         return channel_id
 
 
+def _ensure_algo():
+    """Lazy-init shared Algo instance for arm-base transform."""
+    import importlib
+
+    try:
+        mod = importlib.import_module("Robotic_Arm.rm_robot_interface")
+        arm_model = mod.rm_robot_arm_model_e.RM_MODEL_RM_65_E
+        force_type = mod.rm_force_type_e.RM_MODEL_RM_B_E
+        return mod.Algo(arm_model, force_type)
+    except Exception:
+        return None
+
+
+_ALGO_CACHE: dict[bool, object] = {}
+
+
+def _get_algo() -> object | None:
+    """Return cached Algo instance or None if unavailable."""
+    if True not in _ALGO_CACHE:
+        _ALGO_CACHE[True] = _ensure_algo()
+    return _ALGO_CACHE[True]
+
+
+def _build_work_frame(work_frame_config, hand: str) -> WorkFrameInArmBasePose:
+    """Build WorkFrameInArmBasePose from config."""
+    h = HandType.LEFT if hand == "left" else HandType.RIGHT
+    fid = FrameIdType.LEFT_ARM_BASE if hand == "left" else FrameIdType.RIGHT_ARM_BASE
+    return WorkFrameInArmBasePose(
+        hand=h,
+        frame_id=fid,
+        position_m=dict(work_frame_config.position_m),
+        orientation=dict(work_frame_config.orientation),
+    )
+
+
 def _collect_stream_artifacts(input_path: Path, config: AppConfig) -> _StreamArtifacts:
     pose_streams = config.pose_by_topic()
     gripper_streams = config.gripper_by_image_topic()
     raw_pose_payloads: dict[str, list[bytes]] = {topic: [] for topic in pose_streams}
     camera_common_pose_payloads: dict[str, list[bytes]] = {topic: [] for topic in pose_streams}
     tcp_common_pose_payloads: dict[str, list[bytes]] = {topic: [] for topic in pose_streams}
+    arm_base_tcp_pose_payloads: dict[str, list[bytes]] = {topic: [] for topic in pose_streams}
     gripper_accumulators = {
         stream.image_topic: GripperWidthAccumulator(stream) for stream in config.gripper_streams
     }
 
     topic_to_hand: dict[str, str] = {}
+    has_arm_base_output = False
     for stream in config.pose_streams:
         if "_left" in stream.input_topic:
             topic_to_hand[stream.input_topic] = "left"
         elif "_right" in stream.input_topic:
             topic_to_hand[stream.input_topic] = "right"
+        if stream.output_arm_base_tcp_pose:
+            has_arm_base_output = True
+
+    algo = _get_algo() if has_arm_base_output and config.work_frames else None
 
     codec = Ros2DynamicCodec()
     with input_path.open("rb") as fh:
@@ -187,6 +235,66 @@ def _collect_stream_artifacts(input_path: Path, config: AppConfig) -> _StreamArt
                         inject_pose_fields(decoded_pose, pose_stream.msg_type, tcp_common_pose),
                     )
                     tcp_common_pose_payloads[topic].append(encoded_tcp_common)
+
+                # Arm-base TCP pose: compute if output topic is configured and SDK available
+                if pose_stream.output_arm_base_tcp_pose and algo is not None and config.work_frames:
+                    hand = topic_to_hand.get(topic, "left")
+                    work_frame_config = config.work_frames.get(hand)
+                    if work_frame_config is not None:
+                        from service.arm_base_transform import compute_arm_base_tcp_pose
+
+                        # Step 1: TCP-in-camera from extrinsic
+                        if config.frame_alignment is not None:
+                            extrinsic_t = (
+                                config.frame_alignment.camera_from_left_tcp.translation_m
+                                if hand == "left"
+                                else config.frame_alignment.camera_from_right_tcp.translation_m
+                            )
+                            extrinsic_q = (
+                                config.frame_alignment.camera_from_left_tcp.rotation_quat_xyzw
+                                if hand == "left"
+                                else config.frame_alignment.camera_from_right_tcp.rotation_quat_xyzw
+                            )
+                        else:
+                            extrinsic_t = (0.0, 0.0, 0.0)
+                            extrinsic_q = (0.0, 0.0, 0.0, 1.0)
+
+                        tcp_in_camera = compute_tcp_in_camera(
+                            *pose_tuple, extrinsic_t, extrinsic_q,
+                        )
+
+                        # Step 2: Build work frame
+                        wf = _build_work_frame(work_frame_config, hand)
+
+                        # Step 3: Compute arm-base TCP pose
+                        arm_base_result = compute_arm_base_tcp_pose(
+                            tcp_x=tcp_in_camera[0],
+                            tcp_y=tcp_in_camera[1],
+                            tcp_z=tcp_in_camera[2],
+                            tcp_qx=tcp_in_camera[3],
+                            tcp_qy=tcp_in_camera[4],
+                            tcp_qz=tcp_in_camera[5],
+                            tcp_qw=tcp_in_camera[6],
+                            work_frame=wf,
+                            algo=algo,
+                        )
+
+                        # Step 4: Encode as ROS2 message payload
+                        arm_base_pose_tuple = (
+                            arm_base_result.position_m["x"],
+                            arm_base_result.position_m["y"],
+                            arm_base_result.position_m["z"],
+                            arm_base_result.orientation["x"],
+                            arm_base_result.orientation["y"],
+                            arm_base_result.orientation["z"],
+                            arm_base_result.orientation["w"],
+                        )
+                        encoded_arm_base = codec.encode(
+                            schema,
+                            inject_pose_fields(decoded_pose, pose_stream.msg_type, arm_base_pose_tuple),
+                        )
+                        arm_base_tcp_pose_payloads[topic].append(encoded_arm_base)
+
             elif topic in gripper_streams:
                 if schema is None:
                     raise ProcessingError(f'image topic "{topic}" has no schema record')
@@ -213,6 +321,7 @@ def _collect_stream_artifacts(input_path: Path, config: AppConfig) -> _StreamArt
         raw_pose_payloads_by_topic=raw_pose_payloads,
         camera_common_pose_payloads_by_topic=camera_common_pose_payloads,
         tcp_common_pose_payloads_by_topic=tcp_common_pose_payloads,
+        arm_base_tcp_pose_payloads_by_topic=arm_base_tcp_pose_payloads,
         gripper_payloads_by_image_topic=gripper_payloads,
         gripper_stats=gripper_stats,
     )
@@ -237,11 +346,17 @@ def _write_output_file(
         for topic, payloads in artifacts.tcp_common_pose_payloads_by_topic.items()
         if payloads
     }
+    arm_base_iterators = {
+        topic: iter(payloads)
+        for topic, payloads in artifacts.arm_base_tcp_pose_payloads_by_topic.items()
+        if payloads
+    }
     gripper_iterators = {topic: iter(payloads) for topic, payloads in artifacts.gripper_payloads_by_image_topic.items()}
 
     pose_output_counts = {topic: 0 for topic in pose_streams}
     camera_common_output_counts: dict[str, int] = {topic: 0 for topic in camera_common_iterators}
     tcp_common_output_counts: dict[str, int] = {topic: 0 for topic in tcp_common_iterators}
+    arm_base_output_counts: dict[str, int] = {topic: 0 for topic in arm_base_iterators}
     input_topic_count = 0
     output_topic_count = 0
 
@@ -313,6 +428,24 @@ def _write_output_file(
                         )
                         tcp_common_output_counts[channel.topic] += 1
 
+                if channel.topic in arm_base_iterators:
+                    cached_schema, cached_channel = pose_schema_cache.get(channel.topic, (schema, channel))
+                    stream = pose_streams[channel.topic]
+                    if stream.output_arm_base_tcp_pose:
+                        arm_base_channel_id = output_builder.register_pose_output_channel(
+                            stream.output_arm_base_tcp_pose,
+                            cached_schema,
+                            cached_channel,
+                        )
+                        writer.add_message(
+                            channel_id=arm_base_channel_id,
+                            log_time=message.log_time,
+                            publish_time=message.publish_time,
+                            sequence=message.sequence,
+                            data=next(arm_base_iterators[channel.topic]),
+                        )
+                        arm_base_output_counts[channel.topic] += 1
+
                 if channel.topic in gripper_iterators:
                     output_topic = gripper_streams[channel.topic].output_topic
                     gripper_channel_id = output_builder.gripper_channel_id(output_topic)
@@ -335,6 +468,9 @@ def _write_output_file(
     for topic, iterator in tcp_common_iterators.items():
         if next(iterator, None) is not None:
             raise ProcessingError(f'tcp common pose topic "{topic}" left unread payloads')
+    for topic, iterator in arm_base_iterators.items():
+        if next(iterator, None) is not None:
+            raise ProcessingError(f'arm base tcp pose topic "{topic}" left unread payloads')
     for topic, iterator in gripper_iterators.items():
         if next(iterator, None) is not None:
             raise ProcessingError(f'image topic "{topic}" left unread gripper payloads')
@@ -346,6 +482,7 @@ def _write_output_file(
         ) + sum(
             1 for s in config.pose_streams if s.output_tcp_pose_common
         )
+    extra_topics += sum(1 for s in config.pose_streams if s.output_arm_base_tcp_pose)
     output_topic_count = input_topic_count + extra_topics
     pose_topic_stats = tuple(
         PoseTopicStats(
@@ -355,13 +492,32 @@ def _write_output_file(
         )
         for stream in config.pose_streams
     )
+    arm_base_topic_stats = tuple(
+        PoseTopicStats(
+            topic=stream.output_arm_base_tcp_pose,
+            input_count=inventory[stream.input_topic].message_count,
+            output_count=arm_base_output_counts.get(stream.input_topic, 0),
+            hand=(
+                "left" if "_left" in stream.input_topic
+                else "right" if "_right" in stream.input_topic
+                else None
+            ),
+            frame_id=(
+                "left_arm_base" if "_left" in stream.input_topic
+                else "right_arm_base" if "_right" in stream.input_topic
+                else None
+            ),
+        )
+        for stream in config.pose_streams
+        if stream.output_arm_base_tcp_pose
+    )
     report = FileProcessingReport(
         input_file=str(input_path),
         output_file=str(output_path),
         status="success",
         input_topic_count=input_topic_count,
         output_topic_count=output_topic_count,
-        pose_topics=pose_topic_stats,
+        pose_topics=pose_topic_stats + arm_base_topic_stats,
         gripper_topics=tuple(artifacts.gripper_stats[stream.image_topic] for stream in config.gripper_streams),
     )
     validate_output_contract(report, expected_added_topics=extra_topics)

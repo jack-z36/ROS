@@ -881,15 +881,17 @@ def _write_yaml_with_backup(path: Path, data: dict[str, Any]) -> None:
 def _print_status(config: AppConfig) -> None:
     status = calibration_item_status(config)
     print()
-    print("当前标定状态")
+    print("当前标定状态（common_frame 仅作历史兼容参考，不再作为主路线必需项）")
     for key, label in (
         ("gripper_left", "左手夹爪"),
         ("gripper_right", "右手夹爪"),
-        ("common_frame_left", "左手 common frame"),
-        ("common_frame_right", "右手 common frame"),
     ):
         print(f"  {label}: {'已完成' if status[key] else '未完成'}")
-    print(f"  总体: {'完整已标定' if config_is_calibrated(config) else '未完整标定'}")
+    print("  [注] 左右 common frame 标定已废弃，不再作为主路线必需项。")
+    has_common = status.get("common_frame_left", False) or status.get("common_frame_right", False)
+    if has_common:
+        print("  [注] 旧 common frame 配置仍保留，但不会被主路线使用。")
+    print(f"  总体: {'基本标定完成（gripper 就绪）' if config_is_calibrated(config) else '未完整标定（需完成夹爪标定）'}")
 
 
 def _reload_config(output_path: Path, fallback_path: Path) -> AppConfig:
@@ -1168,7 +1170,11 @@ class BrowserCalibrationSession:
                 self.common_hand = hand
                 self.common_status = "ready"
                 stream = _pose_for_hand(self.config.pose_streams, hand)
-                self.message = f"请将 {HAND_LABELS[hand]} Baton Mini 放到 common frame 原点/标准姿态，然后点击开始采样。位姿 topic: {stream.input_topic}"
+                self.message = (
+                    f"【已废弃】common frame 标定已不再作为主路线必需项。\n"
+                    f"请将 {HAND_LABELS[hand]} Baton Mini 放到 common frame 原点/标准姿态，\n"
+                    f"然后点击开始采样。位姿 topic: {stream.input_topic}"
+                )
             elif mode == "home":
                 self.mode = "home"
             else:
@@ -1358,9 +1364,10 @@ class BrowserCalibrationSession:
                     self.common_status = "sampled"
                     self.error = ""
                     self.message = (
-                        f"{HAND_LABELS[hand]} common frame 外参已生成："
+                        f"【已废弃】{HAND_LABELS[hand]} common frame 外参已生成："
                         f"{result.sample_frames} 帧，位置标准差 {result.position_std:.6g}。"
-                        f"common_from_right_start 由 inverse(T_right_start_common) 计算。"
+                        f"common_from_right_start 由 inverse(T_right_start_common) 计算。\n"
+                        f"注意：此配置不再作为主路线必需项。"
                     )
             else:
                 result = self._sample_common_frame_pose(hand, stream)
@@ -1548,8 +1555,8 @@ def _html_page() -> str:
       <h3>操作</h3>
       <div id="homeControls">
         <button class="primary" onclick="setMode('gripper')">夹爪宽度实时标定</button>
-        <button onclick="setMode('common','left')">左手 common frame 标定</button>
-        <button onclick="setMode('common','right')">右手 common frame 标定</button>
+        <button onclick="setMode('common','left')">左手 common frame 标定（已废弃）</button>
+        <button onclick="setMode('common','right')">右手 common frame 标定（已废弃）</button>
         <button onclick="setMode('home')">查看状态</button>
         <button class="danger" onclick="exitWizard()">退出标定中心</button>
       </div>
@@ -1563,7 +1570,7 @@ def _html_page() -> str:
       </div>
       <div id="commonControls" class="hidden">
         <h4 id="commonTitle"></h4>
-        <p class="muted">将对应 Baton Mini 放到 common frame 原点/标准姿态，并保持静止。程序会读取实时 odometry，保存 start_from_common。</p>
+        <p class="muted">【已废弃】common frame 标定不再作为主路线必需项。新路线改为用户直接输入 work_frame_in_arm_base_pose。此功能保留仅用于历史兼容。</p>
         <button class="primary" id="commonSampleBtn" onclick="sampleCommon()">开始采样并保存</button>
         <button onclick="setMode('home')">返回中心</button>
       </div>
@@ -1598,8 +1605,8 @@ function refreshImages() {
 }
 function render() {
   if (!state) return;
-  document.getElementById('overall').textContent = state.is_calibrated ? '完整已标定' : '未完整标定';
-  const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪', common_frame_left:'左手 common frame', common_frame_right:'右手 common frame'};
+  document.getElementById('overall').textContent = state.is_calibrated ? '夹爪已标定' : '未完整标定';
+  const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪', common_frame_left:'左手 common frame（已废弃）', common_frame_right:'右手 common frame（已废弃）'};
   document.getElementById('status').innerHTML = Object.keys(labels).map(k => `<div class="badge ${state.status[k] ? 'done' : 'todo'}">${labels[k]}：${state.status[k] ? '已完成' : '未完成'}</div>`).join('');
   const msg = document.getElementById('message');
   msg.textContent = state.message || '';
@@ -1758,7 +1765,7 @@ def _calibration_center_menu() -> str:
     print()
     print("标定中心")
     print("  1  夹爪宽度实时标定")
-    print("  2  common frame 位姿标定")
+    print("  2  [已废弃] common frame 位姿标定")
     print("  3  查看当前标定状态")
     print("  q  返回/退出")
     return input("选择: ").strip().lower()
@@ -1796,6 +1803,7 @@ def run_calibration_wizard(
     print(f"  标定配置输出: {_short_path(output_path)}")
     print("  夹爪标定订阅: /gopro_left/image_raw, /gopro_right/image_raw")
     print("  common frame 标定订阅: pose_streams 中的左右 Baton Mini odometry topic")
+    print("  [注] common frame 标定已废弃，新路线使用 work_frame_in_arm_base_pose")
     print("  交互方式: 浏览器向导，OpenCV 仅做后台 ArUco 检测。")
 
     process = ManagedGoProProcess(None)

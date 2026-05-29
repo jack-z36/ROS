@@ -163,3 +163,55 @@ def transform_camera_to_common_tcp(
     tx, ty, tz = common_from_tcp[:3, 3].tolist()
     qx_out, qy_out, qz_out, qw_out = R.from_matrix(common_from_tcp[:3, :3]).as_quat()
     return tx, ty, tz, qx_out, qy_out, qz_out, qw_out
+
+
+def compute_tcp_in_camera(
+    camera_x: float,
+    camera_y: float,
+    camera_z: float,
+    camera_qx: float,
+    camera_qy: float,
+    camera_qz: float,
+    camera_qw: float,
+    translation_m: tuple[float, float, float],
+    rotation_quat_xyzw: tuple[float, float, float, float],
+) -> tuple[float, float, float, float, float, float, float]:
+    """Compute TCP pose in camera frame from camera pose and fixed extrinsic.
+
+    The TCP-in-camera pose represents the end-effector (TCP) position and
+    orientation relative to the Baton Mini camera coordinate frame.  When
+    the TCP is rigidly attached to the camera, this is the constant
+    extrinsic T_camera_tcp.
+
+    The output can be used as ``pose_in_work`` input to
+    ``Algo.rm_algo_workframe2base()``, where the work frame is the
+    camera frame.
+
+    The camera pose parameters are accepted for pipeline continuity but
+    do *not* affect the result — TCP-in-camera depends only on the
+    fixed extrinsic.
+
+    Args:
+        camera_x/y/z: Camera position in the source reference frame.
+        camera_qx/y/z/w: Camera orientation quaternion (xyzw order).
+        translation_m: Extrinsic translation (tx, ty, tz) in metres.
+        rotation_quat_xyzw: Extrinsic rotation quaternion (xyzw order).
+
+    Returns:
+        Tuple of (x, y, z, qx, qy, qz, qw) representing the TCP pose
+        expressed in the camera coordinate frame.
+
+    Raises:
+        ValueError: If the extrinsic rotation quaternion is not a unit
+            quaternion (norm² deviates from 1 by more than 1e-6).
+    """
+    qx, qy, qz, qw = rotation_quat_xyzw
+    norm_sq = qx * qx + qy * qy + qz * qz + qw * qw
+    if abs(norm_sq - 1.0) > 1e-6:
+        raise ValueError(
+            f"invalid_quaternion: extrinsic rotation is not a unit quaternion "
+            f"(norm^2={norm_sq:.10f})"
+        )
+
+    tx, ty, tz = translation_m
+    return (tx, ty, tz, qx, qy, qz, qw)

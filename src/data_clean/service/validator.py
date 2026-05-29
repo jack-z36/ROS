@@ -40,6 +40,8 @@ class PoseTopicStats:
     topic: str
     input_count: int
     output_count: int
+    hand: str | None = None
+    frame_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -213,6 +215,9 @@ def scene1_output_contract_validate(
         ) + sum(
             1 for s in config.pose_streams if s.output_tcp_pose_common
         )
+    expected_added += sum(
+        1 for s in config.pose_streams if s.output_arm_base_tcp_pose
+    )
     expected_output = report.input_topic_count + expected_added
     if report.output_topic_count != expected_output:
         failure_reasons.append(

@@ -16,6 +16,37 @@ from schemas.pose_filter import (
 )
 from schemas.reliability import SignalSampleRef
 
+# Known common-frame topic patterns that must be rejected when
+# arm-base semantic is enforced. These indicate the old pipeline is
+# still being used.
+_COMMON_FRAME_TOPIC_PATTERNS = (
+    "common_frame_tcp_pose",
+    "common_frame",
+    "robot_base",
+)
+
+
+def validate_arm_base_data(samples: Iterable[Any]) -> bool:
+    """Validate that all pose samples use arm-base topic names.
+
+    Checks each sample's topic field for known common-frame or robot_base
+    patterns.  Raises ValueError with 'invalid_pose_frame_for_current_route'
+    if any sample still uses the old pipeline topic naming.
+
+    Returns True if all samples pass validation.
+    """
+    for sample in samples:
+        topic = _field(_sample_ref(sample), "topic", "")
+        for pattern in _COMMON_FRAME_TOPIC_PATTERNS:
+            if pattern in topic.lower():
+                raise ValueError(
+                    f"invalid_pose_frame_for_current_route: "
+                    f"topic={topic!r} contains legacy pattern {pattern!r}. "
+                    f"Arm-base pipeline requires left/right arm_base topic names "
+                    f"(e.g. /left_arm_base_tcp_pose, /right_arm_base_tcp_pose)."
+                )
+    return True
+
 
 def filter_pose_segments(
     pose_sequence: Iterable[Any],
@@ -24,8 +55,12 @@ def filter_pose_segments(
     *,
     input_repair_result_ref: Any = "in_memory_pose_sequence",
     input_sequence_refs: list[PoseFilterInputSequence | str] | None = None,
+    validate_arm_base: bool = False,
 ) -> PoseFilterResult:
     active_config = config or PoseFilterConfig()
+
+    if validate_arm_base:
+        validate_arm_base_data(pose_sequence)
     samples = list(pose_sequence)
     segments = list(segment_summaries)
     segment_by_key = _segment_samples_by_key(samples, segments)

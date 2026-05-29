@@ -86,6 +86,9 @@ case "${CURRENT_BRANCH}" in
   runtime-mvp|service-s1|service-s2|service-s3|service-s4|service-s5)
     info "Git branch OK: ${CURRENT_BRANCH}"
     ;;
+  debug-common_frame|debug：common_frame)
+    info "Git branch OK (debug): ${CURRENT_BRANCH}"
+    ;;
   main)
     fail "Do not execute Stage 2 L3 tasks on main"
     ;;
