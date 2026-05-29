@@ -214,27 +214,33 @@ def _collect_stream_artifacts(input_path: Path, config: AppConfig) -> _StreamArt
 
                 if config.frame_alignment is not None:
                     hand = topic_to_hand.get(topic, "left")
-                    camera_common_pose = transform_pose_to_common_camera_frame(
-                        *pose_tuple,
-                        config.frame_alignment,
-                        hand,
-                    )
-                    encoded_camera_common = codec.encode(
-                        schema,
-                        inject_pose_fields(decoded_pose, pose_stream.msg_type, camera_common_pose),
-                    )
-                    camera_common_pose_payloads[topic].append(encoded_camera_common)
+                    need_camera_common = bool(pose_stream.output_camera_pose_common)
+                    need_tcp_common = bool(pose_stream.output_tcp_pose_common)
 
-                    tcp_common_pose = transform_camera_to_common_tcp(
-                        *camera_common_pose,
-                        config.frame_alignment,
-                        hand,
-                    )
-                    encoded_tcp_common = codec.encode(
-                        schema,
-                        inject_pose_fields(decoded_pose, pose_stream.msg_type, tcp_common_pose),
-                    )
-                    tcp_common_pose_payloads[topic].append(encoded_tcp_common)
+                    if need_camera_common or need_tcp_common:
+                        camera_common_pose = transform_pose_to_common_camera_frame(
+                            *pose_tuple,
+                            config.frame_alignment,
+                            hand,
+                        )
+                        if need_camera_common:
+                            encoded_camera_common = codec.encode(
+                                schema,
+                                inject_pose_fields(decoded_pose, pose_stream.msg_type, camera_common_pose),
+                            )
+                            camera_common_pose_payloads[topic].append(encoded_camera_common)
+
+                        if need_tcp_common:
+                            tcp_common_pose = transform_camera_to_common_tcp(
+                                *camera_common_pose,
+                                config.frame_alignment,
+                                hand,
+                            )
+                            encoded_tcp_common = codec.encode(
+                                schema,
+                                inject_pose_fields(decoded_pose, pose_stream.msg_type, tcp_common_pose),
+                            )
+                            tcp_common_pose_payloads[topic].append(encoded_tcp_common)
 
                 # Arm-base TCP pose: compute if output topic is configured and SDK available
                 if pose_stream.output_arm_base_tcp_pose and algo is not None and config.work_frames:

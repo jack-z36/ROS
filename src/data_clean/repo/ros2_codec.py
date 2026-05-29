@@ -135,6 +135,21 @@ def inject_pose_fields(
     return ros_message
 
 
+def inject_tactile_fields(
+    ros_message: Any,
+    filtered_matrix: list[list[float]],
+) -> Any:
+    """Replace tactile pressure data with filtered values.
+
+    Works with ``hwk_pressure_interfaces/msg/PressureFrame`` which has a
+    mutable ``data`` flat list field.  The ``rows`` / ``cols`` fields are
+    preserved as-is.
+    """
+    flat_data = [float(cell) for row in filtered_matrix for cell in row]
+    ros_message.data = flat_data
+    return ros_message
+
+
 def image_message_to_ndarray(ros_message: Any, msg_type: str) -> np.ndarray:
     if msg_type not in SUPPORTED_IMAGE_TYPES:
         raise Ros2CodecError(f'unsupported image message type "{msg_type}"')

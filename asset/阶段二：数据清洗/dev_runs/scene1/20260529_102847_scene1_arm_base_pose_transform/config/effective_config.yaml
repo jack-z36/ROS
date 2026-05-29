@@ -1,0 +1,31 @@
+arm_base_config:
+  common_frame_used: false
+  left_arm_base:
+    frame_id: left_arm_base
+    output_topic: /left_arm_base_tcp_pose
+    work_frame_orientation:
+      w: 1.0
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    work_frame_position_m:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+  mcap_a_consumption: arm-base TCP pose topics are consumed by Scene 2 MCAP_A writer
+  official_api: Algo.rm_algo_workframe2base
+  right_arm_base:
+    frame_id: right_arm_base
+    output_topic: /right_arm_base_tcp_pose
+    work_frame_orientation:
+      w: 1.0
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    work_frame_position_m:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+  sdk_available: true
+  sdk_error: null
+  sdk_used_for_samples: true

@@ -66,12 +66,10 @@ transform:
 pose_streams:
 - input_topic: /baton_mini_left/fast_odom
   msg_type: nav_msgs/msg/Odometry
-  output_topic: /baton_mini_left/camera_common_pose
-  transform_file: /home/hit/ROS/config/data_clean/data_clean_left_transform.yaml
+  output_topic: /baton_mini_left/fast_odom
 - input_topic: /baton_mini_right/fast_odom
   msg_type: nav_msgs/msg/Odometry
-  output_topic: /baton_mini_right/camera_common_pose
-  transform_file: /home/hit/ROS/config/data_clean/data_clean_right_transform.yaml
+  output_topic: /baton_mini_right/fast_odom
 gripper_streams:
 - image_topic: /gopro_left/image_raw
   image_msg_type: sensor_msgs/msg/Image
@@ -112,3 +110,12 @@ frame_alignment:
     camera_from_right_tcp:
       translation_m: [0.0, 0.0, 0.0]
       rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+  pose_streams:
+    left:
+      input_topic: /baton_mini_left/fast_odom
+      output_camera_pose_common: /baton_mini_left/camera_common_pose
+      output_tcp_pose_common: /baton_mini_left/tcp_common_pose
+    right:
+      input_topic: /baton_mini_right/fast_odom
+      output_camera_pose_common: /baton_mini_right/camera_common_pose
+      output_tcp_pose_common: /baton_mini_right/tcp_common_pose

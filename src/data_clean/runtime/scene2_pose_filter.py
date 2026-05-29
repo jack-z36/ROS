@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from dataclasses import asdict, is_dataclass
 from datetime import date, datetime
 from enum import Enum
@@ -119,7 +120,7 @@ def run_scene2_pose_filter(
 
         pose_sequence = _repaired_pose_sequence(samples.pose, repair_result)
         unrepaired_pose_refs = _unrepaired_pose_refs(repair_result)
-        segments = split_reliable_segments(
+        segments = _split_segments_by_topic(
             pose_sequence,
             missing_intervals=detection_result.missing_interval_issues,
             unrepaired_refs=unrepaired_pose_refs,
@@ -186,6 +187,32 @@ def run_scene2_pose_filter(
     }
     run_log_path.write_text(json.dumps(_jsonable(run_log), ensure_ascii=False, indent=2), encoding="utf-8")
     return {**run_log, "run_log_path": str(run_log_path)}
+
+
+def _split_segments_by_topic(
+    pose_sequence: list[dict[str, Any]],
+    missing_intervals: list[Any],
+    unrepaired_refs: list[SignalSampleRef],
+) -> list[PoseFilterSegmentSummary]:
+    """Group pose samples by topic and create reliable segments per topic."""
+    by_topic: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for sample in pose_sequence:
+        by_topic[sample["sample_ref"].topic].append(sample)
+
+    unrepaired_by_topic: dict[str, list[SignalSampleRef]] = defaultdict(list)
+    for ref in unrepaired_refs:
+        unrepaired_by_topic[ref.topic].append(ref)
+
+    all_segments: list[PoseFilterSegmentSummary] = []
+    for topic, topic_samples in by_topic.items():
+        topic_unrepaired = unrepaired_by_topic.get(topic, [])
+        topic_segments = split_reliable_segments(
+            topic_samples,
+            missing_intervals=missing_intervals,
+            unrepaired_refs=topic_unrepaired,
+        )
+        all_segments.extend(topic_segments)
+    return all_segments
 
 
 def _repaired_pose_sequence(samples: list[PoseSample], repair_result: SignalRepairResult) -> list[dict[str, Any]]:
