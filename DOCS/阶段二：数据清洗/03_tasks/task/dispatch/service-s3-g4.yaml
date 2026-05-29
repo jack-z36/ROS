@@ -1,0 +1,95 @@
+dispatch_index:
+  group: service-s3-g4
+  branch: service-s3
+  source_l2: DOCS/阶段二：数据清洗/02_service/场景三/L2能力模块/多策略字段对齐器.md
+  max_parallel_agents: 3
+  waves:
+    - wave: 1
+      parallel_group: service-s3-g4-p1
+      depends_on: [service_s3_002, service_s3_007]
+      tasks: [service_s3_010]
+    - wave: 2
+      parallel_group: service-s3-g4-p2
+      depends_on: [service_s3_008, service_s3_010]
+      tasks: [service_s3_011, service_s3_012, service_s3_013]
+    - wave: 3
+      parallel_group: service-s3-g4-p3
+      depends_on: [service_s3_011, service_s3_012, service_s3_013]
+      tasks: [service_s3_014]
+  tasks:
+    service_s3_010:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s3-g4/service_s3_010_定义FieldAlignmentResult类型与策略契约.md
+      title: 定义 FieldAlignmentResult 类型与策略契约
+      depends_on: [service_s3_002, service_s3_007]
+      blocks: [service_s3_011, service_s3_012, service_s3_013]
+      conflict_scope:
+        files:
+          - src/data_clean/schemas/alignment_index.py
+          - src/data_clean/schemas/__init__.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.schemas
+        config_keys: []
+    service_s3_011:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s3-g4/service_s3_011_实现图像与夹爪最近邻对齐.md
+      title: 实现图像与夹爪最近邻对齐
+      depends_on: [service_s3_008, service_s3_010]
+      blocks: [service_s3_014]
+      conflict_scope:
+        files:
+          - src/data_clean/service/field_aligner.py
+          - src/data_clean/service/__init__.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.service
+        config_keys:
+          - scene3_alignment
+    service_s3_012:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s3-g4/service_s3_012_实现pose插值slerp与fallback.md
+      title: 实现 pose 插值、slerp 与 fallback
+      depends_on: [service_s3_008, service_s3_010]
+      blocks: [service_s3_014]
+      conflict_scope:
+        files:
+          - src/data_clean/service/pose_field_aligner.py
+          - src/data_clean/service/__init__.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.service.pose
+        config_keys:
+          - scene3_alignment.pose_strategy
+    service_s3_013:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s3-g4/service_s3_013_实现触觉半step窗口聚合.md
+      title: 实现触觉半 step 窗口聚合
+      depends_on: [service_s3_008, service_s3_010]
+      blocks: [service_s3_014]
+      conflict_scope:
+        files:
+          - src/data_clean/service/tactile_field_aligner.py
+          - src/data_clean/service/__init__.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.service.tactile
+        config_keys:
+          - scene3_alignment.tactile_strategy
+    service_s3_014:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s3-g4/service_s3_014_接入场景三字段对齐开发者检验项.md
+      title: 接入场景三字段对齐开发者检验项
+      depends_on: [service_s3_011, service_s3_012, service_s3_013]
+      blocks: []
+      conflict_scope:
+        files:
+          - start_data_clean.sh
+          - src/data_clean/runtime/scene3_field_alignment_check.py
+          - src/data_clean/ui/dev_menu.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.runtime
+          - data_clean.ui
+        config_keys:
+          - scene3_alignment
