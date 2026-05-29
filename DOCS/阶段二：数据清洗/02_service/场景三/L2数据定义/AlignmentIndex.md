@@ -10,7 +10,7 @@
 
 ## 现实语义
 
-它记录每个 step 上每个字段来自哪个 source topic、原始时间戳是什么、采用什么对齐方法、时间误差多少，以及是否发生 missing、timeout 或 fallback。
+它记录每个 step 上每个字段来自哪个 source topic、原始时间戳是什么、采用什么对齐方法、时间误差多少，以及是否发生 missing、timeout 或 fallback。它是由 [[FieldAlignmentResult]] 规范化和持久化得到的最终 sidecar 表。
 
 ## 字段或取值
 
@@ -39,13 +39,15 @@
 - 每个 `step_index + field_name` 最多一条主记录。
 - 图像、位姿、触觉、夹爪字段都必须能用 `status` 表达结果。
 - `AlignmentIndex` 是场景四构建 step index 和 masks 的主要输入之一。
-- `AlignmentIndex` 不嵌入完整图像、完整位姿序列或触觉矩阵。
+- `AlignmentIndex` 不嵌入完整图像、完整位姿序列、触觉矩阵或其他主 payload。
+- [[FieldAlignmentResult]] 中的轻量派生值只供写出器生成 aligned MCAP；进入 `AlignmentIndex` 时只保留引用、时间、状态、误差、邻居、窗口和统计事实。
 
 ## 上游来源
 
 - [[StepTimeline]]。
 - [[TargetFieldMapping]]。
-- 多策略字段对齐器。
+- [[FieldAlignmentResult]]。
+- 对齐索引与报告数据生成器。
 
 ## 下游消费者
 
@@ -56,6 +58,7 @@
 ## 不负责
 
 - 不保存主数据 payload。
+- 不替代 [[FieldAlignmentResult]] 的内存态算法输出。
 - 不替代 [[AlignmentReport]] 汇总统计。
 - 不决定训练样本是否可用。
 

@@ -19,15 +19,17 @@
 | `nearest_neighbor` | image | 图像只做最近邻匹配，不插值 |
 | `interpolation_slerp` | pose | position 线性插值，orientation 四元数 slerp |
 | `window_aggregate` | tactile | 以 step 时间戳为中心按配置窗口聚合 |
-| `follow_image_nearest` | gripper | 夹爪宽度跟随同侧图像最近邻来源 |
+| `nearest_neighbor` | gripper | 夹爪宽度直接对统一 step 时间戳做最近邻匹配 |
+| `follow_image_nearest` | gripper | 预留策略：夹爪宽度跟随同侧图像最近邻来源，首版不默认使用 |
 
 ## 有效性规则
 
 - 图像字段默认 `nearest_neighbor`，默认阈值 `1000 / target_step_hz / 2` ms。
 - 位姿字段默认 `interpolation_slerp`；若只有单侧邻居或插值窗口不足，按配置 fallback 到 `nearest_neighbor`。
 - 位姿 fallback 必须在 [[AlignmentIndex]] 中记录 `fallback_reason`。
-- 触觉字段默认 `window_aggregate`，必须记录窗口范围、样本数和覆盖率。
-- 夹爪字段默认 `follow_image_nearest`，保持与来源图像的追溯关系。
+- 触觉字段默认 `window_aggregate`，窗口以 step 时间戳为中心，半宽为半个 step 周期，必须记录窗口范围、样本数和覆盖率。
+- 夹爪字段首版默认 `nearest_neighbor`，直接对 `step_time_ns` 找最近样本，不依赖同侧图像对齐结果。
+- `follow_image_nearest` 仅作为未来可选策略保留；若启用，必须在 L2/L3 中重新明确图像-夹爪追溯边界。
 
 ## 上游来源
 
@@ -50,5 +52,6 @@
 ## 相关链接
 
 - [[FieldAlignmentStatus]]
+- [[FieldAlignmentResult]]
 - [[AlignmentIndex]]
 - [[Scene3AlignmentConfig]]

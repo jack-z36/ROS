@@ -31,6 +31,8 @@
 - 不修改、覆盖或回写 [[McapA]]。
 - 不把逐字段来源、原始时间戳、对齐方法、误差、missing、timeout 或 fallback 只写进 MCAP；这些事实必须写入 [[AlignmentIndex]]。
 - 不提前改成 canonical observation/action topic，避免侵入场景四 schema。
+- 对 `missing_time`、`timeout` 或 `unavailable` 的 step-field 不写空占位消息，也不复用上一有效值；缺失事实只通过 [[AlignmentIndex]] 表达。
+- 只有 `aligned`、`interpolated`、`aggregated` 或 `fallback_nearest` 等有可写值 / 可写引用的字段结果才进入 aligned MCAP。
 
 ## 上游来源
 
@@ -38,6 +40,7 @@
 - [[StepTimeline]]。
 - 多策略字段对齐器。
 - [[Scene3AlignmentConfig]]。
+- [[FieldAlignmentResult]]。
 
 ## 下游消费者
 
@@ -50,6 +53,7 @@
 - 不保存原始异步 MCAP_A 全量数据流。
 - 不定义 canonical dataset schema。
 - 不决定训练 mask。
+- 不表达缺失字段的空值语义。
 
 ## 相关链接
 
