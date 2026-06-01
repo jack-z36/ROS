@@ -20,6 +20,8 @@ fi
 DATA_CLEAN_SOURCE="${WORKSPACE_DIR}/src/data_clean"
 MCAP_PYTHON_SOURCE="${WORKSPACE_DIR}/src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap"
 MCAP_ROS2_SOURCE="${WORKSPACE_DIR}/src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support"
+FORGE_SOURCE="${DATA_CLEAN_FORGE_SOURCE:-/home/hit/forge}"
+FORGE_VENV="${DATA_CLEAN_FORGE_VENV:-${FORGE_SOURCE}/.venv}"
 
 if [[ -f /opt/ros/jazzy/setup.bash ]]; then
   # shellcheck source=/opt/ros/jazzy/setup.bash
@@ -42,17 +44,20 @@ Usage:
 
 Examples:
   ./start_data_clean.sh
-  ./start_data_clean.sh --calibrate
+  ./start_data_clean.sh --cli
+  ./start_data_clean.sh --cli --calibrate
   ./start_data_clean.sh --dev
-  ./start_data_clean.sh --latest 5
-  ./start_data_clean.sh --all --workers auto
-  ./start_data_clean.sh --dry-run --latest 5
-  ./start_data_clean.sh --input-dir /home/hit/ROS/mcap --output-dir /home/hit/ROS/mcap_cleaned
+  ./start_data_clean.sh --cli --latest 5
+  ./start_data_clean.sh --cli --all --workers auto
+  ./start_data_clean.sh --cli --dry-run --latest 5
+  ./start_data_clean.sh --cli --input-dir /home/hit/ROS/mcap --output-dir /home/hit/ROS/mcap_cleaned
 
 Environment overrides:
   DATA_CLEAN_CONFIG       Default config file path.
   DATA_CLEAN_CONDA_ENV    Conda environment directory.
   DATA_CLEAN_PYTHON       Python executable path.
+  DATA_CLEAN_FORGE_SOURCE Forge source checkout. Defaults to /home/hit/forge.
+  DATA_CLEAN_FORGE_VENV   Forge virtualenv. Defaults to DATA_CLEAN_FORGE_SOURCE/.venv.
 
 Default config:
   ${DEFAULT_CONFIG} (${DEFAULT_CONFIG_KIND})
@@ -61,7 +66,10 @@ Config priority:
   --config / DATA_CLEAN_CONFIG > config/data_clean/data_clean_calibrated.yaml > config/data_clean/data_clean_smoke_test.yaml
 
 Notes:
-  The script prints a human-readable summary. Set DATA_CLEAN_RAW_JSON=1 to print raw JSON lines.
+  No arguments starts the local web UI at 127.0.0.1 and opens a browser.
+  Use --cli for the legacy terminal cleaning launcher.
+  Use --dev for the developer terminal menu.
+  The CLI launcher prints a human-readable summary. Set DATA_CLEAN_RAW_JSON=1 to print raw JSON lines.
 EOF
 }
 
@@ -88,7 +96,13 @@ if [[ ! -d "${DATA_CLEAN_SOURCE}" ]]; then
   exit 1
 fi
 
+export DATA_CLEAN_FORGE_SOURCE="${FORGE_SOURCE}"
+export DATA_CLEAN_FORGE_VENV="${FORGE_VENV}"
+
 PYTHONPATH_ENTRIES=("${DATA_CLEAN_SOURCE}")
+if [[ -d "${FORGE_SOURCE}/forge" ]]; then
+  PYTHONPATH_ENTRIES+=("${FORGE_SOURCE}")
+fi
 if [[ -d "${MCAP_PYTHON_SOURCE}" ]]; then
   PYTHONPATH_ENTRIES+=("${MCAP_PYTHON_SOURCE}")
 fi
@@ -100,7 +114,9 @@ export PYTHONPATH="$(IFS=:; echo "${PYTHONPATH_ENTRIES[*]}"):${PYTHONPATH:-}"
 if has_arg "--help" "$@" || has_arg "-h" "$@"; then
   usage
   echo
-  exec "${PYTHON_BIN}" -m runtime.mcap_clean_launcher --help
+  echo "Legacy CLI help:"
+  "${PYTHON_BIN}" -m runtime.mcap_clean_launcher --help
+  exit 0
 fi
 
 if has_arg "--dev" "$@"; then
@@ -128,14 +144,42 @@ if has_arg "--dev" "$@"; then
   exec "${PYTHON_BIN}" -m ui.dev_menu "${DEV_ARGS[@]}"
 fi
 
+if ! has_arg "--cli" "$@" && [[ "$#" -gt 0 ]]; then
+  echo "Normal mode now starts the local web UI with no extra arguments." >&2
+  echo "Use --cli for legacy terminal options, for example: ./start_data_clean.sh --cli --latest 1" >&2
+  echo "Use --dev for the developer terminal menu." >&2
+  exit 2
+fi
+
 ARGS=("$@")
+if has_arg "--cli" "${ARGS[@]}"; then
+  CLI_ARGS=()
+  for arg in "${ARGS[@]}"; do
+    if [[ "${arg}" != "--cli" ]]; then
+      CLI_ARGS+=("${arg}")
+    fi
+  done
+  ARGS=("${CLI_ARGS[@]}")
+fi
+
 if ! has_arg "--config" "${ARGS[@]}"; then
   if [[ ! -f "${DEFAULT_CONFIG}" ]]; then
     echo "Default config file not found: ${DEFAULT_CONFIG}" >&2
-    echo "Pass a config explicitly: ./start_data_clean.sh --config /path/to/config.yaml" >&2
+    echo "Pass a config explicitly: ./start_data_clean.sh --cli --config /path/to/config.yaml" >&2
     exit 1
   fi
   ARGS=(--config "${DEFAULT_CONFIG}" "${ARGS[@]}")
+fi
+
+if [[ "$#" -eq 0 ]]; then
+  if [[ "${DATA_CLEAN_RAW_JSON:-0}" != "1" ]]; then
+    echo "Data clean web UI"
+    echo "Workspace: ${WORKSPACE_DIR}"
+    echo "Python: ${PYTHON_BIN}"
+    echo "Default config: ${DEFAULT_CONFIG} (${DEFAULT_CONFIG_KIND})"
+    echo
+  fi
+  exec "${PYTHON_BIN}" -m ui.web_launcher --config "${DEFAULT_CONFIG}"
 fi
 
 if [[ "${DATA_CLEAN_RAW_JSON:-0}" != "1" ]]; then

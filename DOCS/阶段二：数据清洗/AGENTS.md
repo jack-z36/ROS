@@ -1,6 +1,49 @@
 # 阶段二 AGENTS 入口
 
-本文件只负责阶段二的模式分流和目录索引。不要把它当作完整上下文包；具体任务需要什么上下文，由工作流或 L3 文件显式列出。
+本文件只负责阶段二的模式分流、接手读文档顺序和目录索引。不要把它当作完整上下文包；具体任务需要什么上下文，由工作流、场景文档或 L3 文件显式列出。
+
+## 无上下文接手建议读取顺序
+
+后续 Codex 如果完全没有上下文，先按以下顺序读取：
+
+1. `DOCS/阶段二：数据清洗/阶段目标描述.md`
+2. `DOCS/阶段二：数据清洗/背景信息.md`
+3. `DOCS/阶段二：数据清洗/阶段产出.md`
+4. `src/data_clean/data_clean_architecture.md`
+5. 当前任务对应的场景目录，例如 `DOCS/阶段二：数据清洗/02_service/场景三/`
+
+当前真实主链路为：
+
+```text
+raw MCAP -> cleaned MCAP -> MCAP_A -> aligned MCAP -> 04_forge_bridge -> 05_lerobot_v3_bimanual
+```
+
+已验证样例产物位于：
+
+```text
+asset/阶段二：数据清洗/dev/full_flow_random_bimanual/
+```
+
+正常用户网页已经接入全链路批次构建：
+
+```text
+勾选 raw MCAP
+  -> cleaned MCAP
+  -> MCAP_A
+  -> aligned MCAP
+  -> Forge bridge
+  -> 聚合为单个 LeRobot v3 dataset
+  -> Forge inspect / quality
+```
+
+接手网页任务时注意：
+
+- 最终 dataset 父目录允许用户自由选择任意本机目录，不做路径限制或风险提示。
+- 该自由输出规则是 `约束文件/文件存放规范.md` 中的受控例外，不得重新加回 `asset/prod` 路径拦截。
+- 中间产物、报告和日志仍固定写入 `asset/阶段二：数据清洗/dev/debug/web_jobs/<dataset_name>_data_clean_sidecar/`。
+- 结果页包含评测报告、TCP 3D 轨迹和逐文件状态。
+- TCP 3D 轨迹使用固定右手工程视角；显示局部原点是当前 bounds 的最小值，不是物理坐标 `(0, 0, 0)`。
+- `format-only` 的旧 `common_frame` 轨迹可叠加；`formal` 的左右 `arm_base` 轨迹必须分屏同步播放。
 
 ## 双机协作原则
 
@@ -15,6 +58,23 @@
 - `约束文件/功能分支接力流程.md`
 
 阶段二默认不在 `main` 上工作；Runtime MVP 使用 `runtime-mvp` 分支；Service 场景一到五分别使用 `service-s1`、`service-s2`、`service-s3`、`service-s4`、`service-s5` 分支。Ubuntu 禁止在 `main` 上执行 L3 或推送阶段二代码。
+
+## 当前入口
+
+用户和开发者入口：
+
+```bash
+./start_data_clean.sh          # 正常网页入口
+./start_data_clean.sh --cli    # legacy 终端清洗入口
+./start_data_clean.sh --dev    # 开发者功能检验菜单
+```
+
+关键代码入口：
+
+- `start_data_clean.sh`
+- `src/data_clean/ui/web_launcher.py`
+- `src/data_clean/ui/dev_menu.py`
+- `src/data_clean/data_clean_architecture.md`
 
 ## 模式入口
 
@@ -85,6 +145,15 @@ Service 场景 L3 的自动化验收只证明局部实现正确；完成一个�
 - 约束文件：`约束文件/`
 - Win 端规划记录与历史执行记录：`执行记录/`
 - 真实数据产物：`asset/阶段二：数据清洗/`
+
+## 当前重点代码模块
+
+- 场景一清洗与标定：`src/data_clean/service/mcap_io.py`、`src/data_clean/service/gripper_width.py`、`src/data_clean/ui/mcap_calibration_wizard.py`
+- 场景二 MCAP_A：`src/data_clean/runtime/scene2_*`
+- 场景三 aligned MCAP：`src/data_clean/runtime/scene3_full_flow_check.py`
+- 临时 Forge bridge：`src/data_clean/service/forge_bridge.py`
+- LeRobot v3 转换：`src/data_clean/runtime/forge_bridge_to_lerobot.py`
+- 正常用户网页与批次编排：`src/data_clean/ui/web_launcher.py`
 
 ## L3 任务池
 

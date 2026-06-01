@@ -9,7 +9,32 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
+import sys
+from typing import Iterable
+
+
+def _ensure_forge_runtime_paths() -> None:
+    """Expose Forge fallback dependencies without shadowing data-clean packages."""
+
+    forge_source = Path(os.environ.get("DATA_CLEAN_FORGE_SOURCE", "/home/hit/forge"))
+    if (forge_source / "forge").is_dir() and str(forge_source) not in sys.path:
+        sys.path.insert(0, str(forge_source))
+
+    forge_venv = Path(os.environ.get("DATA_CLEAN_FORGE_VENV", str(forge_source / ".venv")))
+    candidates: list[Path] = []
+    for pattern in (
+        "lib/python*/site-packages",
+        "local/lib/python*/dist-packages",
+        "lib/python*/dist-packages",
+        "lib/python3/dist-packages",
+    ):
+        candidates.extend(sorted(forge_venv.glob(pattern)))
+    for path in candidates:
+        value = str(path)
+        if path.is_dir() and value not in sys.path:
+            sys.path.append(value)
 
 
 def convert_forge_bridge_to_lerobot(
@@ -20,53 +45,110 @@ def convert_forge_bridge_to_lerobot(
 ) -> dict:
     """Convert a bridge directory into LeRobot v3 with explicit MCAP mapping."""
 
+    result = convert_forge_bridges_to_lerobot(
+        bridge_dirs=[bridge_dir],
+        output_dir=output_dir,
+        fps=fps,
+    )
+    first_bridge = result["bridges"][0]
+    return {
+        "status": result["status"],
+        "input_forge_ready_mcap": first_bridge["input_forge_ready_mcap"],
+        "input_topic_config": first_bridge["input_topic_config"],
+        "output_lerobot_v3": result["output_lerobot_v3"],
+        "episodes": result["episodes"],
+        "frames": result["frames"],
+        "cameras": result["cameras"],
+        "state_dim": result["state_dim"],
+        "action_dim": result["action_dim"],
+        "fps": result["fps"],
+    }
+
+
+def convert_forge_bridges_to_lerobot(
+    *,
+    bridge_dirs: Iterable[str | Path],
+    output_dir: str | Path,
+    fps: float = 15.0,
+) -> dict:
+    """Convert multiple bridge directories into one LeRobot v3 dataset."""
+
+    _ensure_forge_runtime_paths()
+
     from forge.core.models import DatasetInfo
     from forge.formats.lerobot_v3 import LeRobotV3Writer, LeRobotV3WriterConfig
     from forge.formats.mcap import MCAPReader, load_config
 
-    bridge_path = Path(bridge_dir).expanduser().resolve()
+    bridge_paths = [Path(path).expanduser().resolve() for path in bridge_dirs]
+    if not bridge_paths:
+        raise ValueError("bridge_dirs must not be empty")
+
     output_path = Path(output_dir).expanduser().resolve()
-    mcap_path = bridge_path / "forge_ready.mcap"
-    topic_config_path = bridge_path / "forge_topic_config.yaml"
-    if not mcap_path.is_file():
-        raise FileNotFoundError(f"forge_ready.mcap not found: {mcap_path}")
-    if not topic_config_path.is_file():
-        raise FileNotFoundError(
-            f"forge_topic_config.yaml not found: {topic_config_path}"
-        )
     if output_path.exists() and any(output_path.iterdir()):
         raise FileExistsError(f"output directory is not empty: {output_path}")
 
-    topic_config = load_config(topic_config_path)
-    episodes = list(MCAPReader().read_episodes(mcap_path, config=topic_config))
-    if not episodes:
+    all_episodes = []
+    cameras = {}
+    total_frames = 0
+    bridge_summaries = []
+    first_mcap_path: Path | None = None
+
+    for bridge_path in bridge_paths:
+        mcap_path = bridge_path / "forge_ready.mcap"
+        topic_config_path = bridge_path / "forge_topic_config.yaml"
+        if not mcap_path.is_file():
+            raise FileNotFoundError(f"forge_ready.mcap not found: {mcap_path}")
+        if not topic_config_path.is_file():
+            raise FileNotFoundError(
+                f"forge_topic_config.yaml not found: {topic_config_path}"
+            )
+        first_mcap_path = first_mcap_path or mcap_path
+        topic_config = load_config(topic_config_path)
+        episodes = list(MCAPReader().read_episodes(mcap_path, config=topic_config))
+        if not episodes:
+            raise ValueError(f"Forge MCAP reader produced no episodes: {bridge_path}")
+
+        bridge_frames = 0
+        for episode in episodes:
+            frame_count = len(episode.load_frames())
+            bridge_frames += frame_count
+            total_frames += frame_count
+            cameras.update(episode.cameras)
+        all_episodes.extend(episodes)
+        bridge_summaries.append(
+            {
+                "bridge_dir": str(bridge_path),
+                "input_forge_ready_mcap": str(mcap_path),
+                "input_topic_config": str(topic_config_path),
+                "episodes": len(episodes),
+                "frames": bridge_frames,
+            }
+        )
+
+    if not all_episodes:
         raise ValueError("Forge MCAP reader produced no episodes")
 
-    total_frames = sum(len(episode.load_frames()) for episode in episodes)
-    cameras = {}
-    for episode in episodes:
-        cameras.update(episode.cameras)
     dataset_info = DatasetInfo(
-        path=mcap_path,
+        path=first_mcap_path,
         format="mcap",
-        num_episodes=len(episodes),
+        num_episodes=len(all_episodes),
         total_frames=total_frames,
         inferred_fps=fps,
         cameras=cameras,
     )
     writer = LeRobotV3Writer(LeRobotV3WriterConfig(fps=fps))
-    writer.write_dataset(iter(episodes), output_path, dataset_info=dataset_info)
+    writer.write_dataset(iter(all_episodes), output_path, dataset_info=dataset_info)
     return {
         "status": "success",
-        "input_forge_ready_mcap": str(mcap_path),
-        "input_topic_config": str(topic_config_path),
         "output_lerobot_v3": str(output_path),
-        "episodes": len(episodes),
+        "bridge_count": len(bridge_summaries),
+        "episodes": len(all_episodes),
         "frames": total_frames,
         "cameras": sorted(cameras),
-        "state_dim": episodes[0].state_dim,
-        "action_dim": episodes[0].action_dim,
+        "state_dim": all_episodes[0].state_dim,
+        "action_dim": all_episodes[0].action_dim,
         "fps": fps,
+        "bridges": bridge_summaries,
     }
 
 
@@ -87,4 +169,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
