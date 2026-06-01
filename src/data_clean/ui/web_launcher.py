@@ -38,6 +38,15 @@ from runtime.forge_bridge_check import run_forge_bridge_check
 from runtime.forge_bridge_to_lerobot import convert_forge_bridges_to_lerobot
 from runtime.scene2_mcap_a_writer import run_scene2_mcap_a_writer
 from runtime.scene3_full_flow_check import run_scene3_full_flow_check
+from runtime.web_pipeline_config import (
+    build_web_job_effective_config,
+    delete_preset,
+    list_presets,
+    load_preset,
+    load_web_job_effective_config,
+    preview_web_pipeline_config,
+    save_preset,
+)
 from schemas.alignment_config import Scene3AlignmentConfig
 from service.mcap_io import process_mcap_file
 
@@ -47,6 +56,7 @@ DEFAULT_RUN_ROOT = WORKSPACE_DIR / "src/data_clean/runs/web_jobs"
 STAGE2_ASSET_ROOT = WORKSPACE_DIR / "asset/阶段二：数据清洗"
 DEFAULT_OUTPUT_PARENT = STAGE2_ASSET_ROOT / "prod/exports/lerobot"
 SIDECAR_ROOT = STAGE2_ASSET_ROOT / "dev/debug/web_jobs"
+PRESETS_DIR = WORKSPACE_DIR / "config/data_clean/presets"
 DEFAULT_GLOBAL_WORKERS = 6
 STAGE_NAMES = [
     "夹爪提取",
@@ -342,6 +352,44 @@ class DataCleanWebApp:
             "calibration": _calibration_info(config),
         }
 
+    def config_default(self) -> dict[str, Any]:
+        return self.config_preview({})
+
+    def config_presets(self) -> dict[str, Any]:
+        return {"presets": list_presets(PRESETS_DIR)}
+
+    def config_preset(self, name: str) -> dict[str, Any]:
+        return load_preset(PRESETS_DIR, name)
+
+    def save_config_preset(self, payload: dict[str, Any]) -> dict[str, Any]:
+        preview = self.config_preview(
+            {
+                "overrides": payload.get("overrides", {}),
+                "bridge_mode": str(payload.get("bridge_mode", "format-only")),
+            }
+        )
+        if not preview["valid"]:
+            raise ValueError("; ".join(preview["errors"]))
+        return save_preset(
+            PRESETS_DIR,
+            str(payload.get("name", "")),
+            payload.get("overrides", {}),
+        )
+
+    def delete_config_preset(self, name: str) -> dict[str, Any]:
+        delete_preset(PRESETS_DIR, name)
+        return {"deleted": True, "name": name}
+
+    def config_preview(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return preview_web_pipeline_config(
+            default_config_path=self.config_path,
+            presets_dir=PRESETS_DIR,
+            preset_name=str(payload.get("preset_name", "")),
+            overrides=payload.get("overrides", {}),
+            bridge_mode=str(payload.get("bridge_mode", "format-only")),
+            formal_manual_override_confirmed=bool(payload.get("formal_manual_override_confirmed", False)),
+        )
+
     def history(self) -> dict[str, Any]:
         with self.lock:
             jobs = sorted(self.jobs.values(), key=lambda item: item.get("created_at", ""), reverse=True)
@@ -431,6 +479,7 @@ class DataCleanWebApp:
         if bridge_mode not in {"format-only", "formal"}:
             bridge_mode = "format-only"
         config = self.load_config(input_dir=str(input_dir), output_dir=str(output_parent))
+        config_preview = self.config_preview(payload)
         return {
             "input_dir": str(input_dir),
             "output_dir": str(output_parent),
@@ -454,6 +503,7 @@ class DataCleanWebApp:
                 if path.exists()
             ],
             "calibration": _calibration_info(config),
+            "config_preview": config_preview,
             "global_workers": self.global_workers,
         }
 
@@ -482,6 +532,15 @@ class DataCleanWebApp:
             raise ValueError("dataset or sidecar already exists; choose overwrite or use a new dataset name")
 
         job_id = _job_id()
+        effective = build_web_job_effective_config(
+            default_config_path=self.config_path,
+            presets_dir=PRESETS_DIR,
+            run_dir=self.run_root / "runs" / job_id,
+            preset_name=str(payload.get("preset_name", "")),
+            overrides=payload.get("overrides", {}),
+            bridge_mode=bridge_mode,
+            formal_manual_override_confirmed=bool(payload.get("formal_manual_override_confirmed", False)),
+        )
         files = []
         for input_path in selected:
             files.append(
@@ -520,6 +579,14 @@ class DataCleanWebApp:
             "sidecar_dir": str(sidecar_dir),
             "bridge_mode": bridge_mode,
             "calibration_ready": bool(payload.get("calibration_ready", False)),
+            "preset_name": str(payload.get("preset_name", "")),
+            "config_overrides": payload.get("overrides", {}),
+            "config_snapshot_path": str(effective.snapshot_path),
+            "scene1_config_path": str(effective.scene1_config_path),
+            "effective_config_summary": effective.effective_summary,
+            "config_diff": effective.diff,
+            "manual_calibration_override": effective.manual_calibration_override,
+            "formal_manual_override_confirmed": bool(payload.get("formal_manual_override_confirmed", False)),
             "run_endpoint": str(payload.get("run_endpoint", "full")),
             "workers": workers,
             "conflict_policy": conflict_policy,
@@ -597,6 +664,7 @@ class DataCleanWebApp:
                     dataset_result = self.convert_successful_bridges_to_dataset(
                         bridge_dirs=successful_bridge_dirs,
                         output_dir=dataset_staging,
+                        fps=float(job["effective_config_summary"]["lerobot"]["fps"]),
                     )
                     job["dataset_summary"] = dataset_result
                     for item in job["files"]:
@@ -640,8 +708,11 @@ class DataCleanWebApp:
                         json.dumps(dataset_result, ensure_ascii=False, indent=2),
                         encoding="utf-8",
                     )
+                    sidecar_job_summary = dict(job)
+                    sidecar_job_summary.pop("effective_config_summary", None)
+                    sidecar_job_summary.pop("config_overrides", None)
                     (sidecar_staging / "job_summary.json").write_text(
-                        json.dumps(job, ensure_ascii=False, indent=2, default=_json_default),
+                        json.dumps(sidecar_job_summary, ensure_ascii=False, indent=2, default=_json_default),
                         encoding="utf-8",
                     )
                     if cancel_event.is_set():
@@ -753,10 +824,11 @@ class DataCleanWebApp:
     def run_scene1_cleaning_for_file(self, job: dict[str, Any], item: dict[str, Any], paths: dict[str, Path]) -> Path:
         self._mark_file_stage(job, item, "scene1", "running", "夹爪提取 / 位姿转换")
         output_path = paths["cleaned_dir"] / f"{Path(item['input_path']).stem}_cleaned.mcap"
-        config = self.load_config(
-            input_dir=job["input_dir"],
-            output_dir=str(paths["cleaned_dir"]),
-            workers=1,
+        config = load_app_config(
+            job["scene1_config_path"],
+            input_dir_override=job["input_dir"],
+            output_dir_override=str(paths["cleaned_dir"]),
+            workers_override=1,
         )
         report = process_mcap_file(item["input_path"], str(output_path), config)
         item["report"] = report.to_dict()
@@ -775,10 +847,14 @@ class DataCleanWebApp:
         paths: dict[str, Path],
     ) -> dict[str, Any]:
         self._mark_file_stage(job, item, "scene2", "running", "滤波")
+        effective = load_web_job_effective_config(Path(job["config_snapshot_path"]))
         result = run_scene2_mcap_a_writer(
             cleaned_mcap_path=cleaned_mcap,
-            config_path=self.config_path,
+            config_path=job["scene1_config_path"],
             run_root=paths["mcap_a_run_root"],
+            detection_config=effective.detection_config(),
+            pose_filter_config=effective.pose_filter_config(),
+            tactile_filter_config=effective.tactile_filter_config(),
         )
         item.setdefault("stage_outputs", {}).update(
             {
@@ -802,10 +878,8 @@ class DataCleanWebApp:
     ) -> dict[str, Any]:
         self._mark_file_stage(job, item, "scene3", "running", "对齐")
         outputs = mcap_a_result.get("outputs", {})
-        config = Scene3AlignmentConfig(
-            pose_source_profile=job.get("bridge_mode", "format-only"),
-            output_dir=str(paths["aligned_dir"]),
-        )
+        effective = load_web_job_effective_config(Path(job["config_snapshot_path"]))
+        config = effective.alignment_config(output_dir=str(paths["aligned_dir"]))
         result = run_scene3_full_flow_check(
             mcap_a_path=outputs["mcap_a"],
             summary_path=outputs["mcap_a_write_summary_json"],
@@ -836,12 +910,14 @@ class DataCleanWebApp:
     ) -> dict[str, Any]:
         self._mark_file_stage(job, item, "bridge", "running", "数据格式转换")
         aligned_mcap = aligned_result.get("outputs", {}).get("aligned_mcap")
+        bridge_config = job["effective_config_summary"]["bridge"]
         result = run_forge_bridge_check(
             aligned_mcap_path=aligned_mcap,
             output_dir=paths["bridge_dir"],
             mode=job.get("bridge_mode", "format-only"),
             pose_source_profile=job.get("bridge_mode", "format-only"),
             calibration_ready=bool(job.get("calibration_ready")),
+            max_pose_abs_m=float(bridge_config["max_pose_abs_m"]),
         )
         outputs = result.get("outputs", {})
         item.setdefault("stage_outputs", {}).update(
@@ -859,11 +935,11 @@ class DataCleanWebApp:
         self._mark_file_stage(job, item, "bridge", "success", "数据格式转换")
         return result
 
-    def convert_successful_bridges_to_dataset(self, *, bridge_dirs: list[str], output_dir: Path) -> dict[str, Any]:
+    def convert_successful_bridges_to_dataset(self, *, bridge_dirs: list[str], output_dir: Path, fps: float) -> dict[str, Any]:
         return convert_forge_bridges_to_lerobot(
             bridge_dirs=bridge_dirs,
             output_dir=output_dir,
-            fps=15.0,
+            fps=fps,
         )
 
     def run_dataset_quality_checks(self, *, dataset_dir: Path, reports_dir: Path, fps: float) -> dict[str, Any]:
@@ -1236,6 +1312,8 @@ class DataCleanWebApp:
                         f"{job.get('dataset_name', _default_dataset_name())}_retry",
                     ),
                     "bridge_mode": job.get("bridge_mode", "format-only"),
+                    "preset_name": job.get("preset_name", ""),
+                    "config_overrides": job.get("config_overrides", {}),
                     "files": [{"path": item["input_path"], "name": item["name"]} for item in failed],
                 }
             }
@@ -1296,6 +1374,13 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(self.app_state.dashboard())
             elif parsed.path == "/api/history":
                 self._send_json(self.app_state.history())
+            elif parsed.path == "/api/config/default":
+                self._send_json(self.app_state.config_default())
+            elif parsed.path == "/api/config/presets":
+                self._send_json(self.app_state.config_presets())
+            elif parsed.path.startswith("/api/config/presets/"):
+                name = parsed.path.split("/")[4]
+                self._send_json(self.app_state.config_preset(name))
             elif parsed.path == "/api/filesystem":
                 query = parse_qs(parsed.query)
                 self._send_json(self.app_state.filesystem(query.get("path", ["/"])[0]))
@@ -1316,6 +1401,10 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
             payload = self._read_payload()
             if parsed.path == "/api/filesystem/create-directory":
                 self._send_json(self.app_state.create_directory(payload))
+            elif parsed.path == "/api/config/presets":
+                self._send_json(self.app_state.save_config_preset(payload))
+            elif parsed.path == "/api/config/preview":
+                self._send_json(self.app_state.config_preview(payload))
             elif parsed.path == "/api/input-files/scan":
                 self._send_json(self.app_state.scan_input_files(payload))
             elif parsed.path == "/api/jobs/preview":
@@ -1342,6 +1431,9 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
             if parsed.path.startswith("/api/history/"):
                 job_id = parsed.path.split("/")[3]
                 self._send_json(self.app_state.delete_history(job_id))
+            elif parsed.path.startswith("/api/config/presets/"):
+                name = parsed.path.split("/")[4]
+                self._send_json(self.app_state.delete_config_preset(name))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not_found")
         except Exception as exc:  # noqa: BLE001
@@ -1419,6 +1511,12 @@ INDEX_HTML = r"""<!doctype html>
     .muted { color:var(--muted); }
     .notice { padding:12px 14px; border-radius:12px; background:#eff8ff; border:1px solid #b2ddff; margin-bottom:14px; }
     .warnbox { padding:12px; border-radius:12px; background:#fffaeb; border:1px solid #fedf89; color:#93370d; }
+    .config-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; margin-top:10px; }
+    .config-section { border:1px solid var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    .config-section label { font-size:13px; }
+    .config-section .enable { display:flex; gap:8px; align-items:center; margin:0 0 8px; }
+    .config-section .enable input { width:auto; }
+    .config-errors { color:var(--bad); }
     .grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
     .stage { border:1px solid var(--line); border-radius:12px; padding:12px; background:#fff; }
     .progress { height:10px; background:#eaecf0; border-radius:999px; overflow:hidden; }
@@ -1474,7 +1572,7 @@ INDEX_HTML = r"""<!doctype html>
 </div></div>
 <div id="confirm-modal" class="modal"><div class="modal-card" id="confirm-body"></div></div>
 <script>
-let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), currentJob:null, jobTab:'quality', trajectory:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null}, dirTarget:null, dirPath:'/', preview:null, retryDraft:null};
+let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), currentJob:null, jobTab:'quality', trajectory:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null}, dirTarget:null, dirPath:'/', preview:null, retryDraft:null, configPresets:[], configPreview:null, presetName:'', configOverrides:{}};
 const statusText = {running:'运行中', succeeded:'成功', partial_failed:'部分失败', failed:'失败', cancelled:'已取消', cancelling:'取消中', waiting:'等待', success:'成功', warning:'成功但有警告', skipped:'跳过'};
 async function api(path, opts={}) {
   const res = await fetch(path, {headers:{'Content-Type':'application/json'}, ...opts});
@@ -1532,10 +1630,11 @@ function renderCreate() {
         <div id="calibration-box"></div>
         <details><summary>高级设置</summary>
           <label>运行终点</label><select id="run-endpoint"><option value="full">完整批次数据集构建</option></select>
-          <label>Bridge 模式</label><select id="bridge-mode" onchange="previewJob()"><option value="format-only">format-only（格式验证，默认）</option><option value="formal">formal（正式训练候选）</option></select>
+          <label>Bridge 模式</label><select id="bridge-mode" onchange="configChanged()"><option value="format-only">format-only（格式验证，默认）</option><option value="formal">formal（正式训练候选）</option></select>
           <label><input id="calibration-ready" type="checkbox" style="width:auto"> 本批次配置已完成正式标定</label>
           <label>当前批次 worker</label><input id="workers" value="auto" placeholder="auto 或正整数">
         </details>
+        <details open style="margin-top:14px"><summary><b>配置工作台</b></summary><div id="config-workbench"><p class="muted">正在加载配置...</p></div></details>
         <div class="row" style="margin-top:14px"><button onclick="scanFiles()" class="primary">扫描 MCAP</button></div>
       </div>
       <div class="card">
@@ -1546,6 +1645,8 @@ function renderCreate() {
       </div>
     </div>`;
   document.getElementById('bridge-mode').value = bridgeMode;
+  state.presetName = state.retryDraft?.preset_name || '';
+  state.configOverrides = state.retryDraft?.config_overrides || {};
   if (state.dashboard?.calibration && !state.dashboard.calibration.calibrated) {
     document.getElementById('calibration-box').innerHTML = `<div class="warnbox" style="margin-top:14px">配置未完整标定：${state.dashboard.calibration.missing_items.join('、') || '存在测试/占位参数'}。允许继续运行。</div>`;
   }
@@ -1555,6 +1656,145 @@ function renderCreate() {
     state.retryDraft = null;
     renderFileTable();
   }
+  loadConfigWorkspace();
+}
+function getNested(obj, path, fallback='') {
+  const value = path.split('.').reduce((current, key) => current == null ? undefined : current[key], obj);
+  return value == null ? fallback : value;
+}
+function setNested(obj, path, value) {
+  const keys = path.split('.');
+  let current = obj;
+  keys.slice(0, -1).forEach(key => current = current[key] ||= {});
+  current[keys[keys.length - 1]] = value;
+}
+function hasNested(obj, path) { return getNested(obj, path, undefined) !== undefined; }
+function parseConfigValue(input) {
+  if (input.dataset.kind === 'number') return input.value === '' ? null : Number(input.value);
+  if (input.dataset.kind === 'int') return input.value === '' ? null : Number.parseInt(input.value, 10);
+  if (input.dataset.kind === 'csv-number') return input.value.split(',').map(value => Number(value.trim()));
+  if (input.dataset.kind === 'csv') return input.value.split(',').map(value => value.trim()).filter(Boolean);
+  return input.value;
+}
+function collectConfigOverrides() {
+  const result = {};
+  document.querySelectorAll('.config-section').forEach(section => {
+    if (!section.querySelector('.config-enable')?.checked) return;
+    section.querySelectorAll('[data-config-path]').forEach(input => setNested(result, input.dataset.configPath, parseConfigValue(input)));
+  });
+  return result;
+}
+function configRequest() {
+  return {
+    preset_name: state.presetName || '',
+    overrides: collectConfigOverrides(),
+    bridge_mode: document.getElementById('bridge-mode')?.value || 'format-only',
+    formal_manual_override_confirmed: document.getElementById('formal-manual-confirm')?.checked || false,
+  };
+}
+function cfg(path, fallback='') { return getNested(state.configPreview?.effective_summary || {}, path, fallback); }
+function configField(label, path, kind='text') {
+  const value = cfg(path, '');
+  const display = Array.isArray(value) ? value.join(', ') : value;
+  return `<label>${label}</label><input data-config-path="${path}" data-kind="${kind}" value="${escapeHtml(String(display ?? ''))}" onchange="configChanged()">`;
+}
+function configSection(title, block, body) {
+  return `<div class="config-section" data-config-block="${block}"><label class="enable"><input class="config-enable" type="checkbox" ${hasNested(state.configOverrides, block)?'checked':''} onchange="configChanged()"> 覆盖 ${title}</label>${body}</div>`;
+}
+async function loadConfigWorkspace() {
+  try {
+    state.configPresets = (await api('/api/config/presets')).presets || [];
+    await refreshConfigPreview();
+  } catch (error) {
+    document.getElementById('config-workbench').innerHTML = `<div class="config-errors">${escapeHtml(error.message)}</div>`;
+  }
+}
+async function refreshConfigPreview() {
+  state.configPreview = await api('/api/config/preview', {method:'POST', body:JSON.stringify(configRequest())});
+  renderConfigWorkbench();
+}
+async function configChanged() {
+  state.configOverrides = collectConfigOverrides();
+  await refreshConfigPreview();
+  await previewJob();
+}
+async function choosePreset(name) {
+  state.presetName = name;
+  state.configOverrides = {};
+  await refreshConfigPreview();
+  await previewJob();
+}
+async function saveCurrentPreset() {
+  const name = prompt('Preset 名称（字母、数字、下划线或连字符）');
+  if (!name) return;
+  state.configOverrides = collectConfigOverrides();
+  await api('/api/config/presets', {method:'POST', body:JSON.stringify({name, overrides:state.configOverrides, bridge_mode:document.getElementById('bridge-mode')?.value || 'format-only'})});
+  state.presetName = name;
+  await loadConfigWorkspace();
+}
+async function deleteCurrentPreset() {
+  if (!state.presetName || !confirm(`删除 preset ${state.presetName}？正式配置不会被修改。`)) return;
+  await api(`/api/config/presets/${encodeURIComponent(state.presetName)}`, {method:'DELETE'});
+  state.presetName = '';
+  state.configOverrides = {};
+  await loadConfigWorkspace();
+}
+function renderConfigWorkbench() {
+  const host = document.getElementById('config-workbench');
+  if (!host || !state.configPreview) return;
+  const presetOptions = [`<option value="">不使用 preset</option>`, ...state.configPresets.map(item => `<option value="${escapeHtml(item.name)}" ${item.name===state.presetName?'selected':''}>${escapeHtml(item.name)}</option>`)].join('');
+  const gripper = hand => configSection(`场景一：${hand === 'left' ? '左手' : '右手'}夹爪`, `scene1.gripper.${hand}`,
+    configField('图像 topic', `scene1.gripper.${hand}.image_topic`) +
+    configField('输出 topic', `scene1.gripper.${hand}.output_topic`) +
+    configField('ArUco 字典', `scene1.gripper.${hand}.aruco_dict`) +
+    configField('marker id 0', `scene1.gripper.${hand}.marker_id_0`, 'int') +
+    configField('marker id 1', `scene1.gripper.${hand}.marker_id_1`, 'int') +
+    configField('marker min', `scene1.gripper.${hand}.marker_min`, 'number') +
+    configField('marker max', `scene1.gripper.${hand}.marker_max`, 'number') +
+    configField('gripper max', `scene1.gripper.${hand}.gripper_max`, 'number'));
+  const extrinsic = name =>
+    configField(`${name} translation_m`, `scene1.frame_alignment.extrinsics.${name}.translation_m`, 'csv-number') +
+    configField(`${name} quaternion xyzw`, `scene1.frame_alignment.extrinsics.${name}.rotation_quat_xyzw`, 'csv-number');
+  const frame = configSection('场景一：坐标系转换', 'scene1.frame_alignment',
+    `<label>公共锚点</label><select data-config-path="scene1.frame_alignment.common_anchor" onchange="configChanged()"><option value="left" ${cfg('scene1.frame_alignment.common_anchor')==='left'?'selected':''}>left</option><option value="right" ${cfg('scene1.frame_alignment.common_anchor')==='right'?'selected':''}>right</option></select>` +
+    extrinsic('common_from_left_start') + extrinsic('common_from_right_start') +
+    extrinsic('camera_from_left_tcp') + extrinsic('camera_from_right_tcp') +
+    configField('左手 pose 输入 topic', 'scene1.frame_alignment.pose_streams.left.input_topic') +
+    configField('左手 camera pose 输出 topic', 'scene1.frame_alignment.pose_streams.left.output_camera_pose_common') +
+    configField('左手 TCP pose 输出 topic', 'scene1.frame_alignment.pose_streams.left.output_tcp_pose_common') +
+    configField('右手 pose 输入 topic', 'scene1.frame_alignment.pose_streams.right.input_topic') +
+    configField('右手 camera pose 输出 topic', 'scene1.frame_alignment.pose_streams.right.output_camera_pose_common') +
+    configField('右手 TCP pose 输出 topic', 'scene1.frame_alignment.pose_streams.right.output_tcp_pose_common'));
+  const detection = configSection('场景二：可靠性检测', 'scene2.detection',
+    configField('最大 gap 时长 ms', 'scene2.detection.max_gap_duration_ms', 'number') +
+    configField('Quaternion norm 容差', 'scene2.detection.quaternion_norm_tolerance', 'number') +
+    configField('Pose 跳变阈值', 'scene2.detection.pose_position_jump_threshold', 'number') +
+    configField('夹爪跳变阈值', 'scene2.detection.gripper_jump_threshold', 'number') +
+    configField('触觉 spike 均值差阈值', 'scene2.detection.tactile_spike_mean_delta_threshold', 'number') +
+    configField('触觉 zero ratio 阈值', 'scene2.detection.tactile_zero_ratio_threshold', 'number') +
+    configField('触觉 saturation ratio 阈值', 'scene2.detection.tactile_saturation_ratio_threshold', 'number'));
+  const pose = configSection('场景二：Pose filter', 'scene2.pose_filter',
+    configField('窗口时长 ms', 'scene2.pose_filter.window_duration_ms', 'int') +
+    configField('Polyorder', 'scene2.pose_filter.polyorder', 'int') +
+    configField('位置 guard 最大差 m', 'scene2.pose_filter.position_guard_max_delta_m', 'number') +
+    configField('方向 guard 最大差 deg', 'scene2.pose_filter.orientation_guard_max_delta_deg', 'number'));
+  const tactile = configSection('场景二：Tactile filter', 'scene2.tactile_filter',
+    configField('Median window', 'scene2.tactile_filter.median_window', 'int') +
+    configField('EMA alpha', 'scene2.tactile_filter.ema_alpha', 'number') +
+    configField('接触 reset 阈值', 'scene2.tactile_filter.contact_reset_threshold', 'number'));
+  const align = configSection('场景三：时间轴对齐', 'scene3',
+    configField('目标 step Hz', 'scene3.target_step_hz', 'int') +
+    configField('图像最大偏差 ms', 'scene3.image_max_dt_ms', 'int') +
+    configField('左右 baseline 图像 topic', 'scene3.baseline_image_topics', 'csv') +
+    `<p class="muted">固定策略：pose interpolation_slerp；fallback nearest_neighbor；tactile window_aggregate；gripper follow_image_nearest。</p>`);
+  const bridge = configSection('Forge bridge 与 LeRobot', 'bridge',
+    configField('Pose 绝对值上限 m', 'bridge.max_pose_abs_m', 'number'));
+  const lerobot = configSection('LeRobot', 'lerobot',
+    configField('LeRobot fps', 'lerobot.fps', 'number'));
+  const errors = (state.configPreview.errors || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  const warnings = (state.configPreview.warnings || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  const diff = (state.configPreview.diff || []).map(item => `<li><code>${escapeHtml(item.path)}</code></li>`).join('');
+  host.innerHTML = `<div class="row"><div style="flex:1"><label>默认配置</label><div class="path">${escapeHtml(state.configPreview.default_config_path || '')}</div></div><div style="min-width:220px"><label>Preset</label><select onchange="choosePreset(this.value)">${presetOptions}</select></div><button onclick="saveCurrentPreset()">保存当前覆盖为 preset</button><button onclick="deleteCurrentPreset()" ${state.presetName?'':'disabled'}>删除 preset</button></div><div class="config-grid">${gripper('left')}${gripper('right')}${frame}${detection}${pose}${tactile}${align}${bridge}${lerobot}</div><div style="margin-top:12px"><label><input id="formal-manual-confirm" type="checkbox" style="width:auto" ${state.configPreview.manual_calibration_override && configRequest().formal_manual_override_confirmed?'checked':''} onchange="configChanged()"> 我已确认本次手工标定覆盖可用于 formal 导出</label><p class="muted">仅在 formal 且修改夹爪标定或坐标系外参时需要确认。</p>${errors?`<div class="config-errors"><b>配置错误</b><ul>${errors}</ul></div>`:''}${warnings?`<div class="warnbox"><b>配置警告</b><ul>${warnings}</ul></div>`:''}<details><summary>本次覆盖摘要（${state.configPreview.diff?.length || 0} 项）</summary><ul>${diff || '<li>无覆盖</li>'}</ul></details></div>`;
 }
 async function scanFiles() {
   const inputDir = document.getElementById('input-dir').value;
@@ -1575,7 +1815,7 @@ function selectAll(on) { state.files.forEach(f => on ? state.selected.add(f.path
 function invertSelection() { state.files.forEach(f => state.selected.has(f.path) ? state.selected.delete(f.path) : state.selected.add(f.path)); renderFileTable(); previewJob(); }
 async function previewJob() {
   const files = [...state.selected].map(path => ({path}));
-  const payload = {input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, dataset_name:document.getElementById('dataset-name')?.value || '', bridge_mode:document.getElementById('bridge-mode')?.value || 'format-only', files};
+  const payload = {input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, dataset_name:document.getElementById('dataset-name')?.value || '', files, ...configRequest()};
   if (!files.length || !payload.output_dir) { document.getElementById('preview-box').innerHTML = '<p class="muted">请选择文件和输出目录。</p>'; return; }
   state.preview = await api('/api/jobs/preview', {method:'POST', body:JSON.stringify(payload)});
   const p = state.preview;
@@ -1583,20 +1823,21 @@ async function previewJob() {
     document.getElementById('dataset-name').value = p.dataset_name;
   }
   const conflictText = p.conflicts.map(c => `<li class="path">${escapeHtml(c.type)}: ${escapeHtml(c.path)}</li>`).join('');
-  document.getElementById('preview-box').innerHTML = `<hr><p><b>已选择：</b>${p.file_count} 个，${p.total_size_text}</p><p><b>最终 dataset：</b><span class="path">${escapeHtml(p.dataset_dir)}</span></p><p><b>sidecar：</b><span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p><b>Bridge 模式：</b>${escapeHtml(p.mode)} ${p.mode === 'format-only' ? '（格式验证数据集，不代表正式训练可用）' : '（正式训练候选）'}</p><p><b>冲突：</b>${p.conflicts.length} 个目录</p>${conflictText ? `<ul>${conflictText}</ul>` : ''}<button class="primary" onclick="openConfirm()">开始清洗</button>`;
+  const configErrors = (p.config_preview.errors || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  document.getElementById('preview-box').innerHTML = `<hr><p><b>已选择：</b>${p.file_count} 个，${p.total_size_text}</p><p><b>最终 dataset：</b><span class="path">${escapeHtml(p.dataset_dir)}</span></p><p><b>sidecar：</b><span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p><b>Bridge 模式：</b>${escapeHtml(p.mode)} ${p.mode === 'format-only' ? '（格式验证数据集，不代表正式训练可用）' : '（正式训练候选）'}</p><p><b>配置 preset：</b>${escapeHtml(p.config_preview.preset_name || '默认配置')}</p><p><b>本次覆盖：</b>${p.config_preview.diff.length} 项</p><p><b>冲突：</b>${p.conflicts.length} 个目录</p>${conflictText ? `<ul>${conflictText}</ul>` : ''}${configErrors?`<div class="config-errors"><ul>${configErrors}</ul></div>`:''}<button class="primary" onclick="openConfirm()" ${p.config_preview.valid?'':'disabled'}>开始清洗</button>`;
 }
 function openConfirm() {
   const p = state.preview;
   if (!p) return;
   const conflicts = p.conflicts.map(c => `<li class="path">${escapeHtml(c.type)}: ${escapeHtml(c.path)}</li>`).join('');
-  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>模式：${escapeHtml(p.mode)}</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')}</p>${p.calibration.calibrated ? '' : `<div class="warnbox">配置未完整标定，允许继续，但结果需要人工复核。</div>`}${p.mode === 'format-only' ? `<div class="warnbox">format-only：只验证 LeRobot v3 格式可写，不代表正式训练可用。</div>` : ''}${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div class="row"><button class="primary" onclick="submitJob()">确认启动</button><button onclick="closeConfirm()">取消</button></div>`;
+  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>模式：${escapeHtml(p.mode)}</p><p>配置 preset：${escapeHtml(p.config_preview.preset_name || '默认配置')}；覆盖 ${p.config_preview.diff.length} 项</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')}</p>${p.config_preview.manual_calibration_override ? `<div class="warnbox">本次含手工标定覆盖；formal 导出需明确确认。</div>` : ''}${p.calibration.calibrated ? '' : `<div class="warnbox">配置未完整标定，允许继续，但结果需要人工复核。</div>`}${p.mode === 'format-only' ? `<div class="warnbox">format-only：只验证 LeRobot v3 格式可写，不代表正式训练可用。</div>` : ''}${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div class="row"><button class="primary" onclick="submitJob()">确认启动</button><button onclick="closeConfirm()">取消</button></div>`;
   document.getElementById('confirm-modal').classList.add('open');
 }
 function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); }
 async function submitJob() {
   const policy = document.getElementById('conflict-policy').value;
   if (policy === 'skip') { closeConfirm(); return; }
-  const payload = {remark:document.getElementById('remark').value, dataset_name:document.getElementById('dataset-name').value, bridge_mode:document.getElementById('bridge-mode').value, calibration_ready:document.getElementById('calibration-ready').checked, input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, run_endpoint:document.getElementById('run-endpoint').value, workers:document.getElementById('workers').value || 'auto', conflict_policy:policy, files:[...state.selected].map(path=>({path}))};
+  const payload = {remark:document.getElementById('remark').value, dataset_name:document.getElementById('dataset-name').value, calibration_ready:document.getElementById('calibration-ready').checked, input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, run_endpoint:document.getElementById('run-endpoint').value, workers:document.getElementById('workers').value || 'auto', conflict_policy:policy, files:[...state.selected].map(path=>({path})), ...configRequest()};
   const data = await api('/api/jobs', {method:'POST', body:JSON.stringify(payload)});
   closeConfirm();
   openJob(data.job.job_id);
@@ -1623,7 +1864,7 @@ function renderJob() {
   const visualizer = j.dataset_dir ? `<button onclick="openVisualizer('${j.job_id}')">打开可视化</button>` : '';
   const tab = state.jobTab || 'quality';
   const body = tab === 'trajectory' ? renderTrajectoryTab() : tab === 'files' ? renderFilesTab(j) : renderQualityTab(j);
-  document.getElementById('page-job').innerHTML = `<div class="card"><div class="row"><h2>${escapeHtml(j.remark || j.dataset_name || j.job_id)}</h2>${badge(j.status)}<button class="right" onclick="showPage('dashboard')">返回看板</button>${cancelBtn}</div><div class="progress"><div style="width:${j.progress}%"></div></div><p><b>Dataset：</b><span class="path">${escapeHtml(j.dataset_dir || '')}</span></p><p><b>Sidecar：</b><span class="path">${escapeHtml(j.sidecar_dir || '')}</span></p><p class="muted">${j.input_dir} -> ${j.output_parent || j.output_dir}</p><p>${j.notification || ''}</p><div class="row"><b>纳入 ${included}</b><b>失败 ${j.counts.failed}</b><b>episode ${summary.episodes || 0}</b><b>frame ${summary.frames || 0}</b><b>耗时 ${fmtMs(j.duration_ms)}</b>${visualizer}${failedBtn}</div>${j.bridge_mode === 'format-only' ? '<div class="warnbox">format-only：格式验证数据集，不代表正式训练可用。</div>' : '<div class="notice">formal：正式训练候选数据集。</div>'}</div><div class="grid">${stages}</div><div class="tabs"><button class="${tab==='quality'?'active':''}" onclick="switchJobTab('quality')">评测报告</button><button class="${tab==='trajectory'?'active':''}" onclick="switchJobTab('trajectory')">3D轨迹</button><button class="${tab==='files'?'active':''}" onclick="switchJobTab('files')">逐文件状态</button></div>${body}`;
+  document.getElementById('page-job').innerHTML = `<div class="card"><div class="row"><h2>${escapeHtml(j.remark || j.dataset_name || j.job_id)}</h2>${badge(j.status)}<button class="right" onclick="showPage('dashboard')">返回看板</button>${cancelBtn}</div><div class="progress"><div style="width:${j.progress}%"></div></div><p><b>Dataset：</b><span class="path">${escapeHtml(j.dataset_dir || '')}</span></p><p><b>Sidecar：</b><span class="path">${escapeHtml(j.sidecar_dir || '')}</span></p><p><b>配置快照：</b><span class="path">${escapeHtml(j.config_snapshot_path || '历史任务无快照')}</span></p><p><b>配置 preset：</b>${escapeHtml(j.preset_name || '默认配置')}；覆盖 ${(j.config_diff || []).length} 项${j.manual_calibration_override ? '；含手工标定覆盖' : ''}</p><p class="muted">${j.input_dir} -> ${j.output_parent || j.output_dir}</p><p>${j.notification || ''}</p><div class="row"><b>纳入 ${included}</b><b>失败 ${j.counts.failed}</b><b>episode ${summary.episodes || 0}</b><b>frame ${summary.frames || 0}</b><b>耗时 ${fmtMs(j.duration_ms)}</b>${visualizer}${failedBtn}</div>${j.bridge_mode === 'format-only' ? '<div class="warnbox">format-only：格式验证数据集，不代表正式训练可用。</div>' : '<div class="notice">formal：正式训练候选数据集。</div>'}</div><div class="grid">${stages}</div><div class="tabs"><button class="${tab==='quality'?'active':''}" onclick="switchJobTab('quality')">评测报告</button><button class="${tab==='trajectory'?'active':''}" onclick="switchJobTab('trajectory')">3D轨迹</button><button class="${tab==='files'?'active':''}" onclick="switchJobTab('files')">逐文件状态</button></div>${body}`;
   if (tab === 'trajectory') initTrajectoryCanvas();
 }
 function switchJobTab(tab) {

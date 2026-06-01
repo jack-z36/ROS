@@ -21,6 +21,7 @@ def run_forge_bridge_check(
     mode: str = "format-only",
     pose_source_profile: str | None = None,
     calibration_ready: bool = False,
+    max_pose_abs_m: float = 10.0,
 ) -> dict:
     """Run the bridge and return a JSON-friendly developer-check result."""
 
@@ -33,6 +34,7 @@ def run_forge_bridge_check(
                 mode=mode,
                 pose_source_profile=active_profile,
                 calibration_ready=calibration_ready,
+                max_pose_abs_m=max_pose_abs_m,
             ),
         )
         return {"status": "success", "outputs": asdict(result), "errors": []}
@@ -63,6 +65,7 @@ def main() -> int:
         choices=("format-only", "formal"),
     )
     parser.add_argument("--calibration-ready", action="store_true")
+    parser.add_argument("--max-pose-abs-m", type=float, default=10.0)
     args = parser.parse_args()
     result = run_forge_bridge_check(
         aligned_mcap_path=args.aligned_mcap,
@@ -70,6 +73,7 @@ def main() -> int:
         mode=args.mode,
         pose_source_profile=args.pose_source_profile,
         calibration_ready=args.calibration_ready,
+        max_pose_abs_m=args.max_pose_abs_m,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["status"] == "success" else 1
@@ -77,4 +81,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

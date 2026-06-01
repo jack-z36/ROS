@@ -33,6 +33,7 @@ src/gopro_camera_launch/.idea/
 # 阶段二运行记录和缓存
 src/data_clean/runs/
 src/data_clean/.cache/
+config/data_clean/presets/*.yaml
 
 # 阶段二测试（代码 + 结果 + fixture）
 src/data_clean/tests/

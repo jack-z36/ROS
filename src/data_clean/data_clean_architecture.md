@@ -58,13 +58,14 @@ Schemas -> Config/Repo -> Service -> Runtime -> UI
 
 ## 3. 入口
 
-| 入口 | 路径 | 用途 |
-| --- | --- | --- |
-| 统一脚本 | `start_data_clean.sh` | 推荐入口，设置环境并分流到网页、CLI 或 dev menu。 |
-| 正常网页 UI | `ui/web_launcher.py` | 本地 Web UI，看板、新建任务、目录浏览、运行进度和历史记录。 |
-| legacy CLI | `runtime/mcap_clean_launcher.py` | 终端交互/脚本化清洗入口，支持 latest/all/dry-run/workers/calibrate。 |
-| dev menu | `ui/dev_menu.py` | `./start_data_clean.sh --dev` 的开发者功能检验菜单。 |
-| 标定向导 | `ui/mcap_calibration_wizard.py` | 辅助生成 `config/data_clean/data_clean_calibrated.yaml`。 |
+| 入口                   | 路径                               | 用途                                                                                 |
+| ---------------------- | ---------------------------------- | ------------------------------------------------------------------------------------ |
+| 统一脚本               | `start_data_clean.sh`            | 推荐入口，设置环境并分流到网页、CLI 或 dev menu。                                    |
+| 正常网页 UI            | `ui/web_launcher.py`             | 本地 Web UI，看板、新建任务、目录浏览、运行进度和历史记录。                          |
+| legacy CLI             | `runtime/mcap_clean_launcher.py` | 终端交互/脚本化清洗入口，支持 latest/all/dry-run/workers/calibrate。                 |
+| dev menu               | `ui/dev_menu.py`                 | `./start_data_clean.sh --dev` 的开发者功能检验菜单。                               |
+| 标定向导               | `ui/mcap_calibration_wizard.py`  | 辅助生成 `config/data_clean/data_clean_calibrated.yaml`。                          |
+| Web 配置工作台 Runtime | `runtime/web_pipeline_config.py` | 合并默认配置、Web preset 和任务覆盖，校验语义字段，生成各阶段适配器与 job snapshot。 |
 
 常用命令：
 
@@ -85,6 +86,17 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --cli --latest 1
   > config/data_clean/data_clean_smoke_test.yaml
 ```
 
+正常网页任务在上述正式配置之上应用任务级覆盖：
+
+```text
+data_clean_calibrated.yaml
+  + config/data_clean/presets/<name>.yaml（可选，仅覆盖值）
+  + 当前 Web job overrides（可选）
+  -> src/data_clean/runs/web_jobs/runs/<job_id>/config_snapshot.yaml
+```
+
+Web preset 不修改正式配置，默认不进 Git。手工覆盖夹爪标定或 frame alignment 外参时，任务记录 `manual_calibration_override=true`；`formal` 导出还要求用户再次确认。
+
 ## 4. 场景一：raw MCAP -> cleaned MCAP
 
 场景一负责从 raw MCAP 生成 cleaned MCAP，核心能力包括：
@@ -97,15 +109,15 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --cli --latest 1
 
 关键模块：
 
-| 模块 | 职责 |
-| --- | --- |
+| 模块                              | 职责                                                                    |
+| --------------------------------- | ----------------------------------------------------------------------- |
 | `config/mcap_process_config.py` | 解析 batch、pose streams、gripper streams、transform/calibration 配置。 |
-| `service/mcap_io.py` | 单文件清洗核心；两遍读取 MCAP，第一遍生成中间 payload，第二遍写出结果。 |
-| `service/validator.py` | 输入 topic/schema 与输出契约校验。 |
-| `service/gripper_width.py` | ArUco 夹爪宽度提取、缺失帧插值和归一化。 |
-| `service/tcp_transform.py` | 旧 common-frame SE(3) 位姿转换。 |
-| `service/arm_base_transform.py` | arm-base pose 相关转换与契约支持。 |
-| `ui/scene1_dev_checks.py` | 场景一开发者检验项。 |
+| `service/mcap_io.py`            | 单文件清洗核心；两遍读取 MCAP，第一遍生成中间 payload，第二遍写出结果。 |
+| `service/validator.py`          | 输入 topic/schema 与输出契约校验。                                      |
+| `service/gripper_width.py`      | ArUco 夹爪宽度提取、缺失帧插值和归一化。                                |
+| `service/tcp_transform.py`      | 旧 common-frame SE(3) 位姿转换。                                        |
+| `service/arm_base_transform.py` | arm-base pose 相关转换与契约支持。                                      |
+| `ui/scene1_dev_checks.py`       | 场景一开发者检验项。                                                    |
 
 典型输出：
 
@@ -125,17 +137,17 @@ asset/阶段二：数据清洗/dev/mcap_cleaned/*.mcap
 
 已实现的 dev check 链路：
 
-| 模块 | 职责 |
-| --- | --- |
-| `runtime/scene2_signal_reliability.py` | 加载样本并检测位姿、夹爪、触觉的缺失、非法值、跳变和异常变化。 |
-| `runtime/scene2_signal_repair.py` | 构建 repair run，对可修复异常做插值、copy/hold 等补全。 |
-| `runtime/scene2_pose_filter.py` | 对 pose 序列做平滑和 guard 审计。 |
-| `runtime/scene2_tactile_filter.py` | 对 tactile 序列做滤波和差异审计。 |
-| `runtime/scene2_mcap_a_writer.py` | 串联场景二检验链路并写出 MCAP_A。 |
-| `service/detectors.py` | 位姿/夹爪/触觉样本级异常检测。 |
-| `service/repair_run.py`、`service/repair_compute.py` | repair run 构建与修复值计算。 |
-| `service/pose_filter.py`、`service/tactile_filter.py` | 可靠片段滤波与审计。 |
-| `repo/mcap_a_writer.py` | MCAP_A 写出。 |
+| 模块                                                      | 职责                                                           |
+| --------------------------------------------------------- | -------------------------------------------------------------- |
+| `runtime/scene2_signal_reliability.py`                  | 加载样本并检测位姿、夹爪、触觉的缺失、非法值、跳变和异常变化。 |
+| `runtime/scene2_signal_repair.py`                       | 构建 repair run，对可修复异常做插值、copy/hold 等补全。        |
+| `runtime/scene2_pose_filter.py`                         | 对 pose 序列做平滑和 guard 审计。                              |
+| `runtime/scene2_tactile_filter.py`                      | 对 tactile 序列做滤波和差异审计。                              |
+| `runtime/scene2_mcap_a_writer.py`                       | 串联场景二检验链路并写出 MCAP_A。                              |
+| `service/detectors.py`                                  | 位姿/夹爪/触觉样本级异常检测。                                 |
+| `service/repair_run.py`、`service/repair_compute.py`  | repair run 构建与修复值计算。                                  |
+| `service/pose_filter.py`、`service/tactile_filter.py` | 可靠片段滤波与审计。                                           |
+| `repo/mcap_a_writer.py`                                 | MCAP_A 写出。                                                  |
 
 尚未完成：
 
@@ -150,28 +162,28 @@ asset/阶段二：数据清洗/dev/mcap_cleaned/*.mcap
 
 关键 runtime：
 
-| 模块 | 职责 |
-| --- | --- |
-| `runtime/scene3_mcap_a_input_check.py` | 盘点 MCAP_A topic、schema、时间范围和字段可用性。 |
-| `runtime/scene3_step_timeline_check.py` | 生成统一 step timeline。 |
-| `runtime/scene3_field_alignment_check.py` | 运行多策略字段对齐检验。 |
-| `runtime/scene3_alignment_report_check.py` | 生成对齐索引和报告。 |
-| `runtime/scene3_aligned_mcap_write_check.py` | 写出 aligned MCAP 与 sidecar。 |
-| `runtime/scene3_full_flow_check.py` | 顺序运行场景三全流程。 |
+| 模块                                           | 职责                                              |
+| ---------------------------------------------- | ------------------------------------------------- |
+| `runtime/scene3_mcap_a_input_check.py`       | 盘点 MCAP_A topic、schema、时间范围和字段可用性。 |
+| `runtime/scene3_step_timeline_check.py`      | 生成统一 step timeline。                          |
+| `runtime/scene3_field_alignment_check.py`    | 运行多策略字段对齐检验。                          |
+| `runtime/scene3_alignment_report_check.py`   | 生成对齐索引和报告。                              |
+| `runtime/scene3_aligned_mcap_write_check.py` | 写出 aligned MCAP 与 sidecar。                    |
+| `runtime/scene3_full_flow_check.py`          | 顺序运行场景三全流程。                            |
 
 关键 service/repo：
 
-| 模块 | 职责 |
-| --- | --- |
-| `service/mcap_a_input_validator.py` | MCAP_A 输入盘点与校验。 |
-| `service/step_timeline_generator.py` | 基于目标频率和 baseline intersection 生成 step 时间轴。 |
-| `service/field_aligner.py` | 图像和夹爪最近邻对齐。 |
-| `service/pose_field_aligner.py` | pose position 插值、quaternion slerp 和 fallback nearest。 |
-| `service/tactile_field_aligner.py` | half-step 窗口聚合 tactile 矩阵为 mean/std/min/max。 |
-| `service/alignment_report.py` | 对齐报告数据生成。 |
-| `service/aligned_mcap_writer.py` | aligned MCAP 写出 staging 编排。 |
-| `repo/aligned_mcap_writer.py` | aligned MCAP 底层写出。 |
-| `repo/alignment_sidecar_writer.py` | `alignment_index.parquet` 与 `alignment_report.json` 写出。 |
+| 模块                                   | 职责                                                            |
+| -------------------------------------- | --------------------------------------------------------------- |
+| `service/mcap_a_input_validator.py`  | MCAP_A 输入盘点与校验。                                         |
+| `service/step_timeline_generator.py` | 基于目标频率和 baseline intersection 生成 step 时间轴。         |
+| `service/field_aligner.py`           | 图像和夹爪最近邻对齐。                                          |
+| `service/pose_field_aligner.py`      | pose position 插值、quaternion slerp 和 fallback nearest。      |
+| `service/tactile_field_aligner.py`   | half-step 窗口聚合 tactile 矩阵为 mean/std/min/max。            |
+| `service/alignment_report.py`        | 对齐报告数据生成。                                              |
+| `service/aligned_mcap_writer.py`     | aligned MCAP 写出 staging 编排。                                |
+| `repo/aligned_mcap_writer.py`        | aligned MCAP 底层写出。                                         |
+| `repo/alignment_sidecar_writer.py`   | `alignment_index.parquet` 与 `alignment_report.json` 写出。 |
 
 ### 6.1 时间域规则
 
@@ -233,10 +245,10 @@ mean, std, min, max
 
 关键模块：
 
-| 模块 | 职责 |
-| --- | --- |
-| `service/forge_bridge.py` | 消费 aligned MCAP，拼接 32 维 state 和 16 维 `t+1 action`，写出 Forge-ready MCAP 与 sidecar。 |
-| `runtime/forge_bridge_check.py` | bridge dev check，支持 `format-only` 与 `formal`。 |
+| 模块                                   | 职责                                                                                                                            |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `service/forge_bridge.py`            | 消费 aligned MCAP，拼接 32 维 state 和 16 维 `t+1 action`，写出 Forge-ready MCAP 与 sidecar。                                 |
+| `runtime/forge_bridge_check.py`      | bridge dev check，支持 `format-only` 与 `formal`。                                                                          |
 | `runtime/forge_bridge_to_lerobot.py` | Forge Python fallback，显式把 topic config 传给 `MCAPReader`；支持单 bridge 转换和多 bridge 聚合写出一个 LeRobot v3 dataset。 |
 
 ### 7.1 LeRobot 临时 step 语义
@@ -289,6 +301,7 @@ mean, std, min, max
 - 默认 bridge 模式是 `format-only`，网页明确提示“格式验证数据集，不代表正式训练可用”；高级选项可切到 `formal`。
 - 单个 MCAP 失败不会阻止其他成功 bridge episodes 进入最终 dataset；至少一个 MCAP 成功时批次可发布为 `partial_failed`。
 - 用户主动取消时，Runtime staging、最终 dataset 和 sidecar 均回滚；历史删除只删除网页摘要，不删除真实产物。
+- 新建任务页提供配置工作台：按场景卡片编辑稳定语义字段，支持读取、保存和删除用户 preset；每个 job 必须写出可复现 snapshot。
 
 Web UI 的批次处理模型：
 
@@ -313,31 +326,37 @@ Web UI 的批次处理模型：
 
 Web JSON API：
 
-| 方法 | 路径 | 用途 |
-| --- | --- | --- |
-| `GET` | `/api/dashboard` | 看板、最近任务、默认设置和标定状态。 |
-| `GET` | `/api/history` | 历史任务摘要。 |
-| `GET` | `/api/filesystem?path=...` | 浏览本机目录。 |
-| `POST` | `/api/filesystem/create-directory` | 创建用户指定目录。 |
-| `POST` | `/api/input-files/scan` | 扫描输入目录当前层 `.mcap` 文件，不递归。 |
-| `POST` | `/api/jobs/preview` | 预览 dataset、sidecar、文件数、大小和同名冲突。 |
-| `POST` | `/api/jobs` | 创建批次数据集构建任务。 |
-| `GET` | `/api/jobs/{job_id}` | 获取任务、阶段和逐文件状态。 |
-| `GET` | `/api/jobs/{job_id}/trajectory` | 读取或生成轨迹摘要。 |
-| `POST` | `/api/jobs/{job_id}/cancel` | 取消批次并回滚。 |
-| `POST` | `/api/jobs/{job_id}/retry-failed` | 以失败 MCAP 创建新任务草稿。 |
-| `POST` | `/api/jobs/{job_id}/open-visualizer` | 按需启动 Forge Web Viewer。 |
-| `DELETE` | `/api/history/{job_id}` | 只删除网页历史摘要。 |
+| 方法       | 路径                                   | 用途                                            |
+| ---------- | -------------------------------------- | ----------------------------------------------- |
+| `GET`    | `/api/dashboard`                     | 看板、最近任务、默认设置和标定状态。            |
+| `GET`    | `/api/history`                       | 历史任务摘要。                                  |
+| `GET`    | `/api/config/default`                | 读取默认 Web pipeline 配置摘要。                |
+| `GET`    | `/api/config/presets`                | 列出本机用户 preset。                           |
+| `GET`    | `/api/config/presets/{name}`         | 读取指定 preset。                               |
+| `POST`   | `/api/config/presets`                | 保存仅包含覆盖值的用户 preset。                 |
+| `DELETE` | `/api/config/presets/{name}`         | 删除用户 preset，不修改正式配置。               |
+| `POST`   | `/api/config/preview`                | 合并并校验默认配置、preset 与本次覆盖。         |
+| `GET`    | `/api/filesystem?path=...`           | 浏览本机目录。                                  |
+| `POST`   | `/api/filesystem/create-directory`   | 创建用户指定目录。                              |
+| `POST`   | `/api/input-files/scan`              | 扫描输入目录当前层 `.mcap` 文件，不递归。     |
+| `POST`   | `/api/jobs/preview`                  | 预览 dataset、sidecar、文件数、大小和同名冲突。 |
+| `POST`   | `/api/jobs`                          | 创建批次数据集构建任务。                        |
+| `GET`    | `/api/jobs/{job_id}`                 | 获取任务、阶段和逐文件状态。                    |
+| `GET`    | `/api/jobs/{job_id}/trajectory`      | 读取或生成轨迹摘要。                            |
+| `POST`   | `/api/jobs/{job_id}/cancel`          | 取消批次并回滚。                                |
+| `POST`   | `/api/jobs/{job_id}/retry-failed`    | 以失败 MCAP 创建新任务草稿。                    |
+| `POST`   | `/api/jobs/{job_id}/open-visualizer` | 按需启动 Forge Web Viewer。                     |
+| `DELETE` | `/api/history/{job_id}`              | 只删除网页历史摘要。                            |
 
 结果页 sidecar 缓存：
 
-| 文件 | 用途 |
-| --- | --- |
-| `reports/forge_inspect.json` | Forge inspect 原始报告。 |
-| `reports/forge_quality.json` | Forge quality 原始报告。 |
-| `reports/forge_quality_flagged.json` | flagged episode 列表。 |
-| `reports/quality_visual_summary.json` | 评测页总分、维度分、逐 episode 分数和 flags 缓存。 |
-| `reports/trajectory_summary.json` | 轨迹页 episode、时间戳、左右 TCP pose、bounds 和坐标系 profile 缓存。 |
+| 文件                                    | 用途                                                                  |
+| --------------------------------------- | --------------------------------------------------------------------- |
+| `reports/forge_inspect.json`          | Forge inspect 原始报告。                                              |
+| `reports/forge_quality.json`          | Forge quality 原始报告。                                              |
+| `reports/forge_quality_flagged.json`  | flagged episode 列表。                                                |
+| `reports/quality_visual_summary.json` | 评测页总分、维度分、逐 episode 分数和 flags 缓存。                    |
+| `reports/trajectory_summary.json`     | 轨迹页 episode、时间戳、左右 TCP pose、bounds 和坐标系 profile 缓存。 |
 
 轨迹 API 从最终 dataset 的 `data/chunk-*/file-*.parquet` 读取 `episode_index`、`frame_index`、`timestamp` 和 `observation.state`。响应除原始轨迹样本外，还包含：
 
@@ -372,21 +391,18 @@ asset/阶段二：数据清洗/
 
 常见 dev 产物：
 
-| 目录/文件 | 含义 |
-| --- | --- |
-| `dev/mcap_cleaned/` | 场景一 cleaned MCAP。 |
-| `dev/full_flow_random_bimanual/03_aligned/` | 已验证 aligned MCAP 样例。 |
-| `dev/full_flow_random_bimanual/04_forge_bridge/` | 已验证 Forge bridge 样例。 |
-| `dev/full_flow_random_bimanual/05_lerobot_v3_bimanual/` | 已验证双目 LeRobot v3 样例。 |
-| `dev/full_flow_random_bimanual/reports/05_quality_report_bimanual.json` | Forge quality 报告。 |
-| `dev/debug/web_jobs/<dataset_name>_data_clean_sidecar/` | Web UI 批次 sidecar：`01_cleaned/`、`02_mcap_a/`、`03_aligned/`、`04_forge_bridge/`、`logs/`、`reports/`。 |
+| 目录/文件                                                                 | 含义                                                                                                                   |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `dev/mcap_cleaned/`                                                     | 场景一 cleaned MCAP。                                                                                                  |
+| `dev/full_flow_random_bimanual/03_aligned/`                             | 已验证 aligned MCAP 样例。                                                                                             |
+| `dev/full_flow_random_bimanual/04_forge_bridge/`                        | 已验证 Forge bridge 样例。                                                                                             |
+| `dev/full_flow_random_bimanual/05_lerobot_v3_bimanual/`                 | 已验证双目 LeRobot v3 样例。                                                                                           |
+| `dev/full_flow_random_bimanual/reports/05_quality_report_bimanual.json` | Forge quality 报告。                                                                                                   |
+| `dev/debug/web_jobs/<dataset_name>_data_clean_sidecar/`                 | Web UI 批次 sidecar：`01_cleaned/`、`02_mcap_a/`、`03_aligned/`、`04_forge_bridge/`、`logs/`、`reports/`。 |
 
 常见最终产物：
 
-| 目录/文件 | 含义 |
-| --- | --- |
-| `prod/exports/lerobot/<dataset_name>/` | 默认目录下的单个标准 LeRobot v3 dataset，不混入中间产物。 |
-| `<用户选择的本机父目录>/<dataset_name>/` | 正常网页入口允许的最终 LeRobot dataset 受控例外。 |
+* [ ] 目录/文件含义`prod/exports/lerobot/<dataset_name>/`默认目录下的单个标准 LeRobot v3 dataset，不混入中间产物。`<用户选择的本机父目录>/<dataset_name>/`正常网页入口允许的最终 LeRobot dataset 受控例外。
 
 网页批次 sidecar 始终留在：
 

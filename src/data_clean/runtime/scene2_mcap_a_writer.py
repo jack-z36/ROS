@@ -12,6 +12,8 @@ from mcap.reader import make_reader
 from repo.mcap_a_writer import MCAP_A_Writer
 from repo.ros2_codec import Ros2DynamicCodec, inject_pose_fields, inject_tactile_fields
 from schemas.mcap_a_writer import MCAP_A_WritePlan, MCAP_A_WriterConfig
+from schemas.pose_filter import PoseFilterConfig
+from schemas.tactile_filter import TactileFilterConfig
 from service.detectors import ReliabilityDetectionConfig
 
 from .run_directory_creator import create_run_directory
@@ -27,6 +29,8 @@ def run_scene2_mcap_a_writer(
     config_path: str | Path,
     run_root: str | Path = Path("src/data_clean/runs"),
     detection_config: ReliabilityDetectionConfig | None = None,
+    pose_filter_config: PoseFilterConfig | None = None,
+    tactile_filter_config: TactileFilterConfig | None = None,
     sample_loader: SampleLoader | None = None,
     compression: str = "none",
 ) -> dict[str, Any]:
@@ -79,6 +83,7 @@ def run_scene2_mcap_a_writer(
             config_path=config_path,
             run_root=run_root,
             detection_config=detection_config,
+            pose_filter_config=pose_filter_config,
             sample_loader=sample_loader,
         )
         steps.append("run_pose_filter")
@@ -89,6 +94,7 @@ def run_scene2_mcap_a_writer(
             config_path=config_path,
             run_root=run_root,
             detection_config=detection_config,
+            tactile_filter_config=tactile_filter_config,
             sample_loader=sample_loader,
         )
         steps.append("run_tactile_filter")
