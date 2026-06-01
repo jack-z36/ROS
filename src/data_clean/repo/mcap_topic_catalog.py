@@ -13,6 +13,8 @@ from pathlib import Path
 
 from mcap.reader import make_reader
 
+from repo.ros2_codec import Ros2DynamicCodec, select_alignment_timestamp
+
 
 @dataclass
 class TopicFact:
@@ -46,6 +48,7 @@ def extract_topic_facts(mcap_path: str | Path) -> list[TopicFact]:
         raise FileNotFoundError(f"MCAP file not found: {path}")
 
     topic_data: dict[str, dict] = {}
+    codec = Ros2DynamicCodec()
 
     try:
         with path.open("rb") as fh:
@@ -56,7 +59,14 @@ def extract_topic_facts(mcap_path: str | Path) -> list[TopicFact]:
                         "message_type": schema.name if schema else "unknown",
                         "timestamps": [],
                     }
-                topic_data[channel.topic]["timestamps"].append(message.log_time)
+                selected_timestamp = select_alignment_timestamp(
+                    schema,
+                    message,
+                    codec=codec,
+                )
+                topic_data[channel.topic]["timestamps"].append(
+                    selected_timestamp.timestamp_ns
+                )
     except Exception as exc:
         raise ValueError(f"Failed to read MCAP file {path}: {exc}") from exc
 

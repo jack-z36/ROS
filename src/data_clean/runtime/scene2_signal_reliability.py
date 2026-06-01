@@ -12,7 +12,11 @@ from typing import Callable, Iterable, Any
 from mcap.reader import make_reader
 
 from repo.config.mcap_process_config import AppConfig, load_app_config
-from repo.ros2_codec import Ros2DynamicCodec, extract_pose_fields
+from repo.ros2_codec import (
+    Ros2DynamicCodec,
+    extract_pose_fields,
+    select_alignment_timestamp,
+)
 from service.detectors import (
     GripperSample,
     PoseSample,
@@ -163,34 +167,61 @@ def load_scene2_signal_samples(cleaned_mcap_path: str | Path, config: AppConfig)
             topic = channel.topic
             index = message_indexes.get(topic, 0)
             message_indexes[topic] = index + 1
-            timestamp_ns = int(message.log_time)
             if schema is None:
                 continue
             if topic in pose_topics:
                 decoded = codec.decode(schema, message)
+                selected_timestamp = select_alignment_timestamp(
+                    schema,
+                    message,
+                    codec=codec,
+                    decoded_message=decoded,
+                )
                 x, y, z, qx, qy, qz, qw = extract_pose_fields(decoded, pose_topics[topic])
                 pose_samples.append(
                     PoseSample(
                         topic=topic,
-                        timestamp_ns=timestamp_ns,
+                        timestamp_ns=selected_timestamp.timestamp_ns,
                         message_index=index,
                         position=(x, y, z),
                         orientation_xyzw=(qx, qy, qz, qw),
+                        time_domain=selected_timestamp.time_domain,
                     )
                 )
             elif topic in gripper_topics:
                 decoded = codec.decode(schema, message)
+                selected_timestamp = select_alignment_timestamp(
+                    schema,
+                    message,
+                    codec=codec,
+                    decoded_message=decoded,
+                )
                 gripper_samples.append(
                     GripperSample(
                         topic=topic,
-                        timestamp_ns=timestamp_ns,
+                        timestamp_ns=selected_timestamp.timestamp_ns,
                         message_index=index,
                         value=float(decoded.data),
+                        time_domain=selected_timestamp.time_domain,
                     )
                 )
             elif _is_tactile_topic(topic):
                 decoded = codec.decode(schema, message)
-                tactile_frames.append(_tactile_frame_from_message(topic, timestamp_ns, index, decoded))
+                selected_timestamp = select_alignment_timestamp(
+                    schema,
+                    message,
+                    codec=codec,
+                    decoded_message=decoded,
+                )
+                tactile_frames.append(
+                    _tactile_frame_from_message(
+                        topic,
+                        selected_timestamp.timestamp_ns,
+                        index,
+                        decoded,
+                        selected_timestamp.time_domain,
+                    )
+                )
 
     return Scene2SignalSamples(pose=pose_samples, gripper=gripper_samples, tactile=tactile_frames)
 
@@ -225,7 +256,13 @@ def _is_tactile_topic(topic: str) -> bool:
     return "pressure" in lowered or "tactile" in lowered
 
 
-def _tactile_frame_from_message(topic: str, timestamp_ns: int, index: int, message: Any) -> TactilePressureFrame:
+def _tactile_frame_from_message(
+    topic: str,
+    timestamp_ns: int,
+    index: int,
+    message: Any,
+    time_domain: str = "log_time",
+) -> TactilePressureFrame:
     rows = int(getattr(message, "rows", getattr(message, "height", 0)))
     cols = int(getattr(message, "cols", getattr(message, "width", 0)))
     data = [int(value) for value in list(getattr(message, "data", []))]
@@ -239,6 +276,7 @@ def _tactile_frame_from_message(topic: str, timestamp_ns: int, index: int, messa
         rows=rows,
         cols=cols,
         data=data,
+        time_domain=time_domain,
     )
 
 

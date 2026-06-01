@@ -44,10 +44,10 @@
 | `config/__init__.py` | Config | Python 包标记。 |
 | `config/mcap_process_config.py` | Config | YAML 配置解析与校验；定义 batch、transform、pose_streams、gripper_streams。零内部依赖。 |
 | `repo/__init__.py` | Repo | Python 包标记。 |
-| `repo/ros2_codec.py` | Repo | ROS2 CDR 动态编解码、图像转 ndarray、位姿字段提取/注入。依赖 types。 |
-| `repo/mcap_topic_catalog.py` | Repo | 场景三 MCAP_A topic 只读元数据提取器 (TopicFact, extract_topic_facts)。依赖 schemas。 |
+| `repo/ros2_codec.py` | Repo | ROS2 CDR 动态编解码、图像转 ndarray、位姿字段提取/注入，以及跨 topic 时间域选择：图像和触觉优先 `header.stamp`，位姿和无 header 消息优先 `publish_time`，最后回退 `log_time`。依赖 types。 |
+| `repo/mcap_topic_catalog.py` | Repo | 场景三 MCAP_A topic 只读元数据提取器 (TopicFact, extract_topic_facts)。盘点时间戳与场景三样本抽取共用 ROS2 时间域选择规则。依赖 schemas、repo.ros2_codec。 |
 | `repo/alignment_sidecar_writer.py` | Repo | 场景三 alignment index Parquet 写出和 report JSON sidecar 写出 (write_alignment_index, write_alignment_report)。依赖 schemas、pyarrow。 |
-| `repo/aligned_mcap_writer.py` | Repo | 场景三 aligned MCAP 最小写出 (write_aligned_mcap)。按 FieldAlignmentResult 状态过滤，只写 aligned/interpolated/aggregated/fallback_nearest 消息，跳过 missing_time/timeout/unavailable。message_ref 源消息会保留原始 schema；pose derived_value 会编码为 Forge 可识别的 `sensor_msgs/msg/JointState`，用于 `/forge/observation/state` 和 `/forge/action`。依赖 schemas、mcap、mcap_ros2。 |
+| `repo/aligned_mcap_writer.py` | Repo | 场景三 aligned MCAP 最小写出 (write_aligned_mcap)。按 FieldAlignmentResult 状态过滤，只写 aligned/interpolated/aggregated/fallback_nearest 消息，跳过 missing_time/timeout/unavailable。message_ref 源消息保留原始 schema；pose 派生值写为 7 维 xyz+quaternion，触觉派生值写为 4 维统计向量。依赖 schemas、mcap、mcap_ros2。 |
 | `service/aligned_mcap_writer.py` | Service | 场景三 aligned MCAP 写出编排器 (run_aligned_mcap_write_staging)。实现临时目录（staging）整体提交策略：全部写入 staging 后统一提交到 outputs/；任一写失败时不留下误导性完整产物，保留失败摘要和运行日志。依赖 schemas、repo。 |
 | `service/__init__.py` | Service | Python 包标记。 |
 | `service/detectors.py` | Service | 场景二位姿和夹爪样本级异常、缺失区间检测。依赖 schemas。 |
@@ -62,6 +62,7 @@
 | `service/mcap_a_input_validator.py` | Service | 场景三 MCAP_A 输入盘点与校验服务 (validate_mcap_a_input)。读取 MCAP_A 和写出摘要，生成 SourceTopicCatalog 与 McapAInputValidationSummary。依赖 schemas, repo。 |
 | `service/step_timeline_generator.py` | Service | 场景三统一 Step 时间轴生成服务 (generate_step_timeline)。消费验证结论和 baseline intersection，使用有理数累计生成 StepTimeline。依赖 schemas。 |
 | `service/tactile_field_aligner.py` | Service | 场景三触觉字段半 step 窗口聚合对齐器 (align_tactile_field)。对 StepTimeline 中每个 step 计算 [step_time_ns - half_period, step_time_ns + half_period) 窗口，聚合窗口内触觉样本的均值/标准差/极值和覆盖率，输出 FieldAlignmentResult。依赖 schemas。 |
+| `service/forge_bridge.py` | Service | 临时双臂 Forge bridge。消费语义 aligned MCAP，生成独立 `forge_ready.mcap`、topic config、schema 和 report；拼接 32 维 state 与 `t+1` 的 16 维绝对位姿 action，并区分 `format-only` / `formal` 门禁。依赖 repo、schemas、mcap。 |
 | `service/field_aligner.py` | Service | 场景三图像与夹爪最近邻字段对齐器 (align_nearest_fields)。对 StepTimeline 中每个 step，按 field_name 查找 catalog 判断 availability，按 step_time_ns 最近邻找 source message，产出 FieldAlignmentResult。仅 image/gripper modality，不涉及 pose/tactile。依赖 schemas。 |
 | `service/pose_field_aligner.py` | Service | 场景三 pose 字段插值+slerp 对齐器 (align_pose_field)。对 StepTimeline 中每个 step，查找前后 pose 样本，position 线性插值、orientation 四元数 slerp；邻居不足或超阈值时 fallback 到最近邻。依赖 schemas、numpy。 |
 | `runtime/__init__.py` | Runtime | Python 包标记。 |
@@ -76,7 +77,9 @@
 | `runtime/structured_log_writer.py` | Runtime | 结构化日志写入器；将 RunLogFile 写入 run_log.json 并返回 RuntimeLogWriteResult。依赖 schemas。 |
 | `runtime/scene3_mcap_a_input_check.py` | Runtime | 场景三 MCAP_A 输入检验开发者入口 runtime wrapper。创建隔离 run 目录，调用 ``validate_mcap_a_input()`` 服务，写出 ``source_topic_catalog.json``、``mcap_a_input_validation_summary.json`` 和运行日志。依赖 schemas、service。 |
 | `runtime/scene3_aligned_mcap_write_check.py` | Runtime | 场景三 aligned MCAP 写出检验开发者入口 runtime wrapper。创建隔离 run 目录，调用 ``run_aligned_mcap_write_staging()`` 写出服务，写出 aligned MCAP、alignment_index.parquet、alignment_report.json、aligned_mcap_write_summary.json 和运行日志；无可写对齐结果或 aligned MCAP 消息数为 0 时返回失败。开发者菜单默认输出目录为 `asset/阶段二：数据清洗/dev/03_aligned_mcap/MM-DD-HH:MM/`。依赖 schemas、service。 |
-| `runtime/scene3_full_flow_check.py` | Runtime | 场景三全流程开发者入口 runtime wrapper。顺序调用 MCAP_A 输入检验、Step 时间轴、字段对齐、对齐报告和 aligned MCAP 写出五个检验项；默认从 MCAP_A 抽取左右 baseline image 样本生成 message_ref，任一步失败或最终 aligned MCAP 消息数为 0 即停止/失败并写出总 run log。开发者菜单默认输出目录为 `asset/阶段二：数据清洗/dev/03_aligned_mcap/MM-DD-HH:MM/`。依赖 schemas、runtime。 |
+| `runtime/scene3_full_flow_check.py` | Runtime | 场景三全流程开发者入口 runtime wrapper。顺序调用 MCAP_A 输入检验、Step 时间轴、字段对齐、对齐报告和 aligned MCAP 写出五个检验项；默认从 MCAP_A 抽取左右 baseline image 样本生成 message_ref，任一步失败或最终 aligned MCAP 消息数为 0 即停止/失败并写出总 run log。图像与触觉优先使用 ROS `header.stamp`，位姿因设备时钟可能未同步而使用 MCAP `publish_time`，缺失时再回退 `log_time`。开发者菜单默认输出目录为 `asset/阶段二：数据清洗/dev/03_aligned_mcap/MM-DD-HH:MM/`。依赖 schemas、runtime。 |
+| `runtime/forge_bridge_check.py` | Runtime | 临时双臂 Forge bridge 开发者入口。默认使用 `format-only` 做格式烟测；`formal` 模式要求 arm-base 位姿来源与标定就绪。依赖 service。 |
+| `runtime/forge_bridge_to_lerobot.py` | Runtime | Forge Python fallback 入口。显式将 bridge 生成的 MCAP topic config 传给 `MCAPReader`，避免 Forge CLI `--config` 被解释为通用 conversion config 后退回自动推断。依赖外部 Forge。 |
 | `ui/__init__.py` | UI | Python 包标记。 |
 | `ui/dev_menu.py` | UI | `./start_data_clean.sh --dev` 开发者功能检验菜单；按场景和功能项分发到具体 dev check。依赖 ui/scene1_dev_checks。 |
 | `ui/scene1_dev_checks.py` | UI | 场景一开发者检验项；为位姿配置生成、common pose 转换、夹爪提取、夹爪配置生成、输出契约检查和 smoke test 创建隔离运行目录、测试产物和 run log。依赖 config、service、runtime。 |
@@ -286,11 +289,12 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --latest 1
 
 `dev_menu.py` 是开发者验收入口：
 
-- `./start_data_clean.sh --dev` 进入一级场景菜单，目前暴露场景一、场景二和场景三。
+- `./start_data_clean.sh --dev` 进入一级场景菜单，目前暴露场景一、场景二、场景三和临时场景四 Forge bridge。
 - 选择场景一后按 L2 功能模块显示 6 个检验项：位姿转换配置生成、位姿转换、夹爪开合提取、夹爪开合配置生成、检查配置报告是否完整、全场景测试。
 - 场景三当前包含 `scene3_mcap_a_input_check`（检查 MCAP_A 输入是否可消费）、`scene3_step_timeline_check`（检查 Step 时间轴生成）、`scene3_field_alignment_check`（检查多策略字段对齐）、`scene3_alignment_report_check`（检查对齐索引与报告生成）、`scene3_aligned_mcap_write_check`（检查 aligned MCAP 与 sidecar 写出）和 `scene3_full_flow_check`（顺序运行场景三全部功能），分别调用 `runtime/` 对应模块的 `run_*` 函数。
 - 场景三 aligned MCAP 与 sidecar 默认写入 `asset/阶段二：数据清洗/dev/03_aligned_mcap/MM-DD-HH:MM/`（例如 `05-29-15:00/`），一次运行的 `aligned.mcap`、`alignment_index.parquet`、`alignment_report.json`、`aligned_mcap_write_summary.json` 都集中在同一个子目录；菜单提示处可输入其他目录临时覆盖。
-- `scene3_full_flow_check` 的默认字段不仅包含左右图像，还会从 `/baton_mini_left/tcp_common_pose` 生成 Forge 约定 topic：`/forge/observation/state` 与 `/forge/action`。首版二者都使用 TCP 位置 `[x, y, z]`，用于打通 LeRobot v3 导出与 quality 轨迹评估；后续若存在真实 commanded action，应将 `/forge/action` 映射到真实动作 topic。
+- `scene3_full_flow_check` 默认按正式链路消费 `/left_arm_base_tcp_pose` 与 `/right_arm_base_tcp_pose`，并输出左右 pose、夹爪和四个触觉传感器的语义 aligned topic。未完成标定时可显式使用 `pose_source_profile=format-only` 消费旧 common pose 做结构烟测。
+- 临时 `forge_bridge` 不修改正式 aligned MCAP。它生成单独的 `forge_ready.mcap`：`observation.state` 为 32 维双臂观测，`action` 为下一 step 的 16 维双臂绝对位姿与夹爪宽度。该 action 只用于 Forge/LeRobot 格式验证，不替代场景四正式 UMI relative action chunk。
 - 每个检验项由 `scene1_dev_checks.py` 创建独立 `asset/阶段二：数据清洗/dev_runs/scene1/<run_id>/`，并写入 `artifacts/`、`logs/run_log.json` 和必要的 `config/effective_config.yaml`。
 - `scene1_smoke_test` 优先在隔离输出目录运行真实最小清洗；当配置输入目录没有匹配 MCAP 时，写出 skipped smoke summary，不写正式 cleaned/canonical 输出。
 

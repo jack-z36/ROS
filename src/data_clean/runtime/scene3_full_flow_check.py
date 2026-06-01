@@ -11,7 +11,11 @@ from typing import Any
 
 from mcap.reader import make_reader
 
-from repo.ros2_codec import Ros2DynamicCodec, extract_pose_fields
+from repo.ros2_codec import (
+    Ros2DynamicCodec,
+    extract_pose_fields,
+    select_alignment_timestamp,
+)
 from schemas.alignment_config import (
     AlignmentModality,
     AlignmentSide,
@@ -97,12 +101,19 @@ def _ensure_default_target_fields(
             )
         )
 
+    if config.pose_source_profile == "formal":
+        left_pose_topic = "/left_arm_base_tcp_pose"
+        right_pose_topic = "/right_arm_base_tcp_pose"
+    else:
+        left_pose_topic = "/baton_mini_left/tcp_common_pose"
+        right_pose_topic = "/baton_mini_right/tcp_common_pose"
+
     default_fields.extend(
         [
             TargetFieldMapping(
-                field_name="observation_state",
-                source_topic="/baton_mini_left/tcp_common_pose",
-                output_topic="/forge/observation/state",
+                field_name="left_tcp_pose",
+                source_topic=left_pose_topic,
+                output_topic="/aligned/left_tcp_pose",
                 message_type="nav_msgs/msg/Odometry",
                 modality=AlignmentModality.POSE,
                 side=AlignmentSide.LEFT,
@@ -111,20 +122,67 @@ def _ensure_default_target_fields(
                 max_dt_ms=config.image_max_dt_ms,
             ),
             TargetFieldMapping(
-                field_name="action",
-                source_topic="/baton_mini_left/tcp_common_pose",
-                output_topic="/forge/action",
+                field_name="right_tcp_pose",
+                source_topic=right_pose_topic,
+                output_topic="/aligned/right_tcp_pose",
                 message_type="nav_msgs/msg/Odometry",
                 modality=AlignmentModality.POSE,
-                side=AlignmentSide.LEFT,
+                side=AlignmentSide.RIGHT,
                 required_for_timeline=False,
                 strategy=config.pose_strategy,
                 max_dt_ms=config.image_max_dt_ms,
             ),
+            TargetFieldMapping(
+                field_name="left_gripper_width",
+                source_topic="/gopro_left/gripper_width",
+                output_topic="/aligned/left_gripper_width",
+                message_type="std_msgs/msg/Float32",
+                modality=AlignmentModality.GRIPPER,
+                side=AlignmentSide.LEFT,
+                required_for_timeline=False,
+                strategy=config.gripper_strategy,
+                max_dt_ms=config.image_max_dt_ms,
+            ),
+            TargetFieldMapping(
+                field_name="right_gripper_width",
+                source_topic="/gopro_right/gripper_width",
+                output_topic="/aligned/right_gripper_width",
+                message_type="std_msgs/msg/Float32",
+                modality=AlignmentModality.GRIPPER,
+                side=AlignmentSide.RIGHT,
+                required_for_timeline=False,
+                strategy=config.gripper_strategy,
+                max_dt_ms=config.image_max_dt_ms,
+            ),
+            *_default_tactile_fields(config),
         ]
     )
 
     return replace(config, target_fields=default_fields)
+
+
+def _default_tactile_fields(
+    config: Scene3AlignmentConfig,
+) -> list[TargetFieldMapping]:
+    topics = [
+        ("tactile_left_gripper_1", "/pressure/left_hand/gripper_1", AlignmentSide.LEFT),
+        ("tactile_left_gripper_2", "/pressure/left_hand/gripper_2", AlignmentSide.LEFT),
+        ("tactile_right_gripper_1", "/pressure/right_hand/gripper_1", AlignmentSide.RIGHT),
+        ("tactile_right_gripper_2", "/pressure/right_hand/gripper_2", AlignmentSide.RIGHT),
+    ]
+    return [
+        TargetFieldMapping(
+            field_name=field_name,
+            source_topic=source_topic,
+            output_topic=f"/aligned/{field_name}",
+            message_type="hwk_pressure_interfaces/msg/PressureFrame",
+            modality=AlignmentModality.TACTILE,
+            side=side,
+            required_for_timeline=False,
+            strategy=config.tactile_strategy,
+        )
+        for field_name, source_topic, side in topics
+    ]
 
 
 def _extract_mcap_a_field_samples(
@@ -138,21 +196,40 @@ def _extract_mcap_a_field_samples(
     payload and schema. Pose fields are decoded into xyz/quaternion tuples for
     interpolation and later re-encoded as Forge-friendly JointState messages.
     """
-    topic_to_fields: dict[str, list[str]] = {}
+    image_topic_to_fields: dict[str, list[str]] = {}
     pose_topic_to_fields: dict[str, list[TargetFieldMapping]] = {}
+    gripper_topic_to_fields: dict[str, list[str]] = {}
+    tactile_topic_to_fields: dict[str, list[str]] = {}
     samples: dict[str, list] = {}
 
     for mapping in field_mappings:
         if mapping.modality == AlignmentModality.IMAGE:
-            topic_to_fields.setdefault(mapping.source_topic, []).append(
+            image_topic_to_fields.setdefault(mapping.source_topic, []).append(
                 mapping.field_name
             )
             samples.setdefault(mapping.field_name, [])
         elif mapping.modality == AlignmentModality.POSE:
             pose_topic_to_fields.setdefault(mapping.source_topic, []).append(mapping)
             samples.setdefault(mapping.field_name, [])
+        elif mapping.modality == AlignmentModality.GRIPPER:
+            gripper_topic_to_fields.setdefault(mapping.source_topic, []).append(
+                mapping.field_name
+            )
+            samples.setdefault(mapping.field_name, [])
+        elif mapping.modality == AlignmentModality.TACTILE:
+            tactile_topic_to_fields.setdefault(mapping.source_topic, []).append(
+                mapping.field_name
+            )
+            samples.setdefault(mapping.field_name, [])
 
-    if not topic_to_fields and not pose_topic_to_fields:
+    if not any(
+        (
+            image_topic_to_fields,
+            pose_topic_to_fields,
+            gripper_topic_to_fields,
+            tactile_topic_to_fields,
+        )
+    ):
         return samples
 
     topic_message_indexes: dict[str, int] = {}
@@ -161,23 +238,66 @@ def _extract_mcap_a_field_samples(
         reader = make_reader(fh)
         for schema, channel, message in reader.iter_messages(log_time_order=False):
             topic = channel.topic
-            if topic in topic_to_fields:
+            if topic in image_topic_to_fields:
                 message_index = topic_message_indexes.get(topic, 0)
                 topic_message_indexes[topic] = message_index + 1
                 message_ref = f"mcap://{topic}/msg_{message_index}"
-                sample = (message.log_time, message_ref, None)
-                for field_name in topic_to_fields[topic]:
+                selected_timestamp = select_alignment_timestamp(
+                    schema,
+                    message,
+                    codec=codec,
+                )
+                sample = (selected_timestamp.timestamp_ns, message_ref, None)
+                for field_name in image_topic_to_fields[topic]:
                     samples[field_name].append(sample)
             if topic in pose_topic_to_fields and schema is not None:
                 decoded = codec.decode(schema, message)
+                selected_timestamp = select_alignment_timestamp(
+                    schema,
+                    message,
+                    codec=codec,
+                    decoded_message=decoded,
+                )
                 for mapping in pose_topic_to_fields[topic]:
                     pose = extract_pose_fields(decoded, mapping.message_type)
                     sample = (
-                        message.log_time,
+                        selected_timestamp.timestamp_ns,
                         (pose[0], pose[1], pose[2]),
                         (pose[3], pose[4], pose[5], pose[6]),
                     )
                     samples[mapping.field_name].append(sample)
+            if topic in gripper_topic_to_fields and schema is not None:
+                decoded = codec.decode(schema, message)
+                selected_timestamp = select_alignment_timestamp(
+                    schema,
+                    message,
+                    codec=codec,
+                    decoded_message=decoded,
+                )
+                message_index = topic_message_indexes.get(topic, 0)
+                topic_message_indexes[topic] = message_index + 1
+                message_ref = f"mcap://{topic}/msg_{message_index}"
+                sample = (
+                    selected_timestamp.timestamp_ns,
+                    message_ref,
+                    {"gripper_width": float(decoded.data)},
+                )
+                for field_name in gripper_topic_to_fields[topic]:
+                    samples[field_name].append(sample)
+            if topic in tactile_topic_to_fields and schema is not None:
+                decoded = codec.decode(schema, message)
+                selected_timestamp = select_alignment_timestamp(
+                    schema,
+                    message,
+                    codec=codec,
+                    decoded_message=decoded,
+                )
+                sample = (
+                    selected_timestamp.timestamp_ns,
+                    [float(value) for value in decoded.data],
+                )
+                for field_name in tactile_topic_to_fields[topic]:
+                    samples[field_name].append(sample)
 
     return samples
 
@@ -363,6 +483,7 @@ def run_scene3_full_flow_check(
         "config": {
             "target_step_hz": config.target_step_hz,
             "target_field_count": len(config.target_fields),
+            "pose_source_profile": config.pose_source_profile,
             "source_config": "cli_override",
             "temporary_override_saved": False,
         },

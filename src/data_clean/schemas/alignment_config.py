@@ -58,6 +58,7 @@ class Scene3AlignmentConfig:
     pose_fallback_strategy: str = "nearest_neighbor"
     tactile_strategy: str = "window_aggregate"
     gripper_strategy: str = "follow_image_nearest"
+    pose_source_profile: str = "formal"
     output_dir: str = "asset/阶段二：数据清洗/dev/03_aligned_mcap"
 
     def __post_init__(self) -> None:
@@ -74,6 +75,11 @@ class Scene3AlignmentConfig:
             raise ValueError(
                 f"image_max_dt_ms must be positive when explicitly set, "
                 f"got {self.image_max_dt_ms}"
+            )
+        if self.pose_source_profile not in {"formal", "format-only"}:
+            raise ValueError(
+                "pose_source_profile must be 'formal' or 'format-only', "
+                f"got {self.pose_source_profile!r}"
             )
         # Compute default image_max_dt_ms when not explicitly configured
         if self.image_max_dt_ms is None:

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import math
 import statistics
+from collections.abc import Sequence
 from typing import Any
 
 from schemas.field_alignment import FieldAlignmentResult
@@ -25,8 +26,9 @@ from schemas.step_timeline import (
     StepTimeline,
 )
 
-# Tactile sample type: (timestamp_ns, value)
-TactileSample = tuple[int, float]
+# Tactile sample type: (timestamp_ns, scalar or flattened matrix values)
+TactileValue = float | int | Sequence[float | int]
+TactileSample = tuple[int, TactileValue]
 
 
 def _compute_half_period_ns(target_step_hz: float) -> int:
@@ -83,7 +85,16 @@ def _compute_aggregate_stats(
         Dict with keys: tactile_mean, tactile_std, tactile_min,
         tactile_max, sample_count.
     """
-    values = [v for _, v in window_samples]
+    values = [
+        float(value)
+        for _, sample_value in window_samples
+        for value in (
+            sample_value
+            if isinstance(sample_value, Sequence)
+            and not isinstance(sample_value, (str, bytes))
+            else [sample_value]
+        )
+    ]
     count = len(values)
     mean_v = sum(values) / count
     if count == 1:

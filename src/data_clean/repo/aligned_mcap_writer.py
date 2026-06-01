@@ -261,7 +261,7 @@ def _register_topic_schema(
 
     Returns the registered schema id.
     """
-    if result.derived_value is not None and _is_pose_derived_value(result.derived_value):
+    if result.derived_value is not None and _is_joint_state_derived_value(result.derived_value):
         key = _schema_key(
             "sensor_msgs/msg/JointState",
             "ros2msg",
@@ -353,8 +353,8 @@ def _encode_derived_value(
 
     Currently supports:
     - Gripper: ``{"gripper_width": float}`` → ``std_msgs/msg/Float32``
-    - Pose: ``{"position_x/y/z", "orientation_qx/qy/qz/qw"}`` → not yet
-      implemented (returns ``None`` for now).
+    - Pose: position + quaternion → ``sensor_msgs/msg/JointState``
+    - Tactile: mean/std/min/max → ``sensor_msgs/msg/JointState``
 
     Per L3 constraints: image fields do NOT use *derived_value* (they use
     *message_ref*), so only lightweight derived values are handled here.
@@ -370,8 +370,7 @@ def _encode_derived_value(
         ros_msg = SimpleNamespace(data=width)
         return encoder[list(encoder.keys())[0]](ros_msg)
 
-    # Pose: expose xyz as JointState.position so Forge can infer
-    # observation.state / action without custom topic config.
+    # Pose: preserve xyz + ROS-ordered quaternion in a fixed vector.
     if _is_pose_derived_value(derived_value):
         encoder = serialize_dynamic(
             "sensor_msgs/msg/JointState",
@@ -382,23 +381,69 @@ def _encode_derived_value(
                 stamp=SimpleNamespace(sec=0, nanosec=0),
                 frame_id="",
             ),
-            name=["x", "y", "z"],
+            name=["x", "y", "z", "qx", "qy", "qz", "qw"],
             position=[
                 float(derived_value["position_x"]),
                 float(derived_value["position_y"]),
                 float(derived_value["position_z"]),
+                float(derived_value["orientation_qx"]),
+                float(derived_value["orientation_qy"]),
+                float(derived_value["orientation_qz"]),
+                float(derived_value["orientation_qw"]),
             ],
             velocity=[],
             effort=[],
         )
         return encoder["sensor_msgs/msg/JointState"](ros_msg)
 
-    # Tactile — not yet implemented
+    if _is_tactile_derived_value(derived_value):
+        encoder = serialize_dynamic(
+            "sensor_msgs/msg/JointState",
+            SENSOR_MSGS_JOINT_STATE,
+        )
+        ros_msg = SimpleNamespace(
+            header=SimpleNamespace(
+                stamp=SimpleNamespace(sec=0, nanosec=0),
+                frame_id="",
+            ),
+            name=["mean", "std", "min", "max"],
+            position=[
+                float(derived_value["tactile_mean"]),
+                float(derived_value["tactile_std"]),
+                float(derived_value["tactile_min"]),
+                float(derived_value["tactile_max"]),
+            ],
+            velocity=[],
+            effort=[],
+        )
+        return encoder["sensor_msgs/msg/JointState"](ros_msg)
+
     return None
 
 
 def _is_pose_derived_value(derived_value: dict[str, Any]) -> bool:
     return all(
         key in derived_value
-        for key in ("position_x", "position_y", "position_z")
+        for key in (
+            "position_x",
+            "position_y",
+            "position_z",
+            "orientation_qx",
+            "orientation_qy",
+            "orientation_qz",
+            "orientation_qw",
+        )
+    )
+
+
+def _is_tactile_derived_value(derived_value: dict[str, Any]) -> bool:
+    return all(
+        key in derived_value
+        for key in ("tactile_mean", "tactile_std", "tactile_min", "tactile_max")
+    )
+
+
+def _is_joint_state_derived_value(derived_value: dict[str, Any]) -> bool:
+    return _is_pose_derived_value(derived_value) or _is_tactile_derived_value(
+        derived_value
     )

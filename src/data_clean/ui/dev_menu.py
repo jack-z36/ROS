@@ -391,6 +391,13 @@ def run_scene3_step_timeline_check_check(args: argparse.Namespace) -> int:
             config.target_step_hz = int(hz_input)
         except ValueError:
             print(f"无效频率: {hz_input}，使用默认 {config.target_step_hz}")
+    pose_profile = input(
+        "请输入 pose_source_profile [formal/format-only，默认: formal]: "
+    ).strip()
+    if pose_profile in {"formal", "format-only"}:
+        config.pose_source_profile = pose_profile
+    elif pose_profile:
+        print(f"无效 profile: {pose_profile}，使用默认 {config.pose_source_profile}")
 
     result = run_scene3_step_timeline_check(
         catalog_path=catalog_path,
@@ -787,6 +794,38 @@ def run_scene3_full_flow_check_check(args: argparse.Namespace) -> int:
     return 0 if result["status"] == "success" else 1
 
 
+def run_forge_bridge_check_check(args: argparse.Namespace) -> int:
+    """Interactive runner for the temporary bimanual Forge bridge."""
+    from runtime.forge_bridge_check import run_forge_bridge_check
+
+    aligned_mcap = Path(input("请输入 aligned.mcap 路径: ").strip()).expanduser()
+    default_output = aligned_mcap.parent.parent / "04_forge_bridge"
+    output_text = input(
+        f"请输入 Forge bridge 输出目录 [默认: {default_output}]: "
+    ).strip()
+    output_dir = Path(output_text).expanduser() if output_text else default_output
+    mode = input("请输入 bridge mode [formal/format-only，默认: format-only]: ").strip()
+    if mode not in {"formal", "format-only"}:
+        mode = "format-only"
+    calibration_ready = False
+    if mode == "formal":
+        calibration_ready = input("是否已完成位姿标定 [y/N]: ").strip().lower() == "y"
+
+    result = run_forge_bridge_check(
+        aligned_mcap_path=aligned_mcap,
+        output_dir=output_dir,
+        mode=mode,
+        pose_source_profile=mode,
+        calibration_ready=calibration_ready,
+    )
+    print(f"Forge bridge: {result['status']}")
+    for key, value in result.get("outputs", {}).items():
+        print(f"  {key}: {value}")
+    for error in result.get("errors", []):
+        print(f"  error: {error['type']}: {error['message']}")
+    return 0 if result["status"] == "success" else 1
+
+
 SCENE3_CHECKS: list[tuple[str, str, MenuRunner]] = [
     ("scene3_mcap_a_input_check", "检查 MCAP_A 输入是否可消费", run_scene3_mcap_a_input_check_check),
     ("scene3_step_timeline_check", "检查 Step 时间轴生成", run_scene3_step_timeline_check_check),
@@ -796,11 +835,15 @@ SCENE3_CHECKS: list[tuple[str, str, MenuRunner]] = [
     ("scene3_full_flow_check", "全流程验证：顺序运行场景三全部功能", run_scene3_full_flow_check_check),
 ]
 
+SCENE4_CHECKS: list[tuple[str, str, MenuRunner]] = [
+    ("forge_bridge_check", "临时双臂 Forge bridge：生成 32 维 state 与 16 维 action", run_forge_bridge_check_check),
+]
+
 SCENE_MENUS: list[tuple[str, str, list[tuple[str, str, MenuRunner]]]] = [
     ("scene1", "场景一：提取夹爪开合以及位姿转换", SCENE1_CHECKS),
     ("scene2", "场景二：硬件数据可靠性验证", SCENE2_CHECKS),
     ("scene3", "场景三：MCAP 多 topic 时间轴对齐", SCENE3_CHECKS),
-    ("scene4", "场景四：构建标准 canonical dataset", []),
+    ("scene4", "场景四：构建标准 canonical dataset", SCENE4_CHECKS),
     ("scene5", "场景五：模型训练格式导出器", []),
 ]
 
