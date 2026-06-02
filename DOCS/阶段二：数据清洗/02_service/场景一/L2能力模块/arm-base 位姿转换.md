@@ -47,7 +47,7 @@ L1：service_s1
 ### 6.2 处理
 
 ```text
-1. WorkFrameInBaseConfig.position_m + orientation → SDK euler
+1. WorkFrameInBaseConfig.position_mm / 1000 + rotation_euler_rad → SDK euler pose
 2. euler → rm_algo_pos2matrix → work_matrix（4×4，表示 base→work 映射）
 3. TCP quaternion (xyzw) → SDK euler → rm_pose_t
 4. rm_algo_workframe2base(work_matrix, pose_in_work) → TCP in arm base (euler)

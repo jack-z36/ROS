@@ -1,0 +1,21 @@
+episodes:
+  strategy: single
+fields:
+  observation.state:
+    topic: /forge/observation/state
+    field: position
+    target_shape:
+    - 32
+  action:
+    topic: /forge/action
+    field: position
+    target_shape:
+    - 16
+  observation.images.left:
+    topic: /forge/observation/images/left
+  observation.images.right:
+    topic: /forge/observation/images/right
+sync:
+  primary: observation.state
+  method: nearest
+  max_skew_ms: 1.0

@@ -1,0 +1,40 @@
+{
+  "run_id": "2026-06-01_s3_005",
+  "check_id": "scene3_alignment_report_check",
+  "status": "success",
+  "input": {
+    "field_alignment_results_path": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/logs/2026-04-30_06_02_40_281723967/scene3/2026-06-01_s3_004/outputs/field_alignment_results.json",
+    "timeline_path": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/logs/2026-04-30_06_02_40_281723967/scene3/2026-06-01_s3_003/outputs/step_timeline.json",
+    "catalog_path": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/logs/2026-04-30_06_02_40_281723967/scene3/2026-06-01_s3_002/outputs/source_topic_catalog.json",
+    "validation_summary_path": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/logs/2026-04-30_06_02_40_281723967/scene3/2026-06-01_s3_002/outputs/mcap_a_input_validation_summary.json"
+  },
+  "config": {
+    "target_step_hz": 15,
+    "source_config": "cli_override",
+    "temporary_override_saved": false
+  },
+  "alignment": {
+    "record_count": 1550,
+    "report_status": "completed",
+    "failure_reason": null
+  },
+  "steps": [
+    "create_run_directory",
+    "load_field_alignment_results",
+    "build_alignment_index",
+    "load_step_timeline",
+    "load_source_topic_catalog",
+    "load_validation_summary",
+    "build_alignment_report",
+    "write_alignment_index_preview",
+    "write_alignment_report_draft",
+    "write_run_log"
+  ],
+  "errors": [],
+  "outputs": {
+    "run_dir": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/logs/2026-04-30_06_02_40_281723967/scene3/2026-06-01_s3_005",
+    "alignment_index_preview_json": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/logs/2026-04-30_06_02_40_281723967/scene3/2026-06-01_s3_005/outputs/alignment_index_preview.json",
+    "alignment_report_draft_json": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/logs/2026-04-30_06_02_40_281723967/scene3/2026-06-01_s3_005/outputs/alignment_report_draft.json"
+  },
+  "created_at": "2026-06-01T13:49:55.630595"
+}

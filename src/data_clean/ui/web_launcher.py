@@ -36,16 +36,17 @@ from repo.config.mcap_process_config import (
 )
 from runtime.forge_bridge_check import run_forge_bridge_check
 from runtime.forge_bridge_to_lerobot import convert_forge_bridges_to_lerobot
+from runtime.production_config import (
+    production_config_view,
+    production_readiness,
+    save_production_config,
+    validate_production_payload,
+)
 from runtime.scene2_mcap_a_writer import run_scene2_mcap_a_writer
 from runtime.scene3_full_flow_check import run_scene3_full_flow_check
 from runtime.web_pipeline_config import (
     build_web_job_effective_config,
-    delete_preset,
-    list_presets,
-    load_preset,
     load_web_job_effective_config,
-    preview_web_pipeline_config,
-    save_preset,
 )
 from schemas.alignment_config import Scene3AlignmentConfig
 from service.mcap_io import process_mcap_file
@@ -280,6 +281,8 @@ class DataCleanWebApp:
         self.jobs: dict[str, dict[str, Any]] = {}
         self.cancel_events: dict[str, threading.Event] = {}
         self.visualizer_processes: list[subprocess.Popen[str]] = []
+        self.gripper_calibration_process: subprocess.Popen[str] | None = None
+        self.gripper_calibration_url: str | None = None
         self._load_jobs()
 
     def _load_jobs(self) -> None:
@@ -336,6 +339,7 @@ class DataCleanWebApp:
             recent = [self._public_job(job) for job in jobs[:10]]
         config = self.load_config()
         settings = self._settings()
+        readiness = self.production_readiness()
         return {
             "running": running,
             "recent": recent,
@@ -350,45 +354,72 @@ class DataCleanWebApp:
                 "global_workers": self.global_workers,
             },
             "calibration": _calibration_info(config),
+            "production_readiness": readiness,
         }
 
-    def config_default(self) -> dict[str, Any]:
-        return self.config_preview({})
+    def production_config(self) -> dict[str, Any]:
+        return {
+            **production_config_view(self.config_path),
+            "readiness": self.production_readiness(),
+        }
 
-    def config_presets(self) -> dict[str, Any]:
-        return {"presets": list_presets(PRESETS_DIR)}
+    def validate_production_config(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return validate_production_payload(payload)
 
-    def config_preset(self, name: str) -> dict[str, Any]:
-        return load_preset(PRESETS_DIR, name)
+    def save_production_config(self, payload: dict[str, Any]) -> dict[str, Any]:
+        saved = save_production_config(self.config_path, payload)
+        return {**saved, "readiness": self.production_readiness()}
 
-    def save_config_preset(self, payload: dict[str, Any]) -> dict[str, Any]:
-        preview = self.config_preview(
-            {
-                "overrides": payload.get("overrides", {}),
-                "bridge_mode": str(payload.get("bridge_mode", "format-only")),
-            }
+    def production_readiness(self) -> dict[str, Any]:
+        return production_readiness(self.config_path)
+
+    def gripper_calibration_status(self) -> dict[str, Any]:
+        process = self.gripper_calibration_process
+        running = process is not None and process.poll() is None
+        if not running:
+            self.gripper_calibration_process = None
+            self.gripper_calibration_url = None
+        return {
+            "running": running,
+            "url": self.gripper_calibration_url,
+            "readiness": self.production_readiness(),
+        }
+
+    def open_gripper_calibration(self) -> dict[str, Any]:
+        current = self.gripper_calibration_status()
+        if current["running"]:
+            return current
+        port = self._free_port()
+        url = f"http://127.0.0.1:{port}/"
+        self.gripper_calibration_process = subprocess.Popen(
+            [
+                os.environ.get("DATA_CLEAN_PYTHON", os.sys.executable),
+                "-m",
+                "ui.mcap_calibration_wizard",
+                "--config",
+                str(self.config_path),
+                "--output",
+                str(self.config_path),
+                "--port",
+                str(port),
+                "--gripper-only",
+                "--no-browser",
+            ],
+            text=True,
         )
-        if not preview["valid"]:
-            raise ValueError("; ".join(preview["errors"]))
-        return save_preset(
-            PRESETS_DIR,
-            str(payload.get("name", "")),
-            payload.get("overrides", {}),
-        )
+        self.gripper_calibration_url = url
+        return {"running": True, "url": url, "readiness": self.production_readiness()}
 
-    def delete_config_preset(self, name: str) -> dict[str, Any]:
-        delete_preset(PRESETS_DIR, name)
-        return {"deleted": True, "name": name}
-
-    def config_preview(self, payload: dict[str, Any]) -> dict[str, Any]:
-        return preview_web_pipeline_config(
-            default_config_path=self.config_path,
-            presets_dir=PRESETS_DIR,
-            preset_name=str(payload.get("preset_name", "")),
-            overrides=payload.get("overrides", {}),
-            bridge_mode=str(payload.get("bridge_mode", "format-only")),
-            formal_manual_override_confirmed=bool(payload.get("formal_manual_override_confirmed", False)),
-        )
+    def close(self) -> None:
+        process = self.gripper_calibration_process
+        if process is None or process.poll() is not None:
+            return
+        process.terminate()
+        try:
+            process.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=3)
 
     def history(self) -> dict[str, Any]:
         with self.lock:
@@ -475,11 +506,9 @@ class DataCleanWebApp:
         dataset_name = _suggest_dataset_name(output_parent, str(requested_name))
         dataset_dir = output_parent / dataset_name
         sidecar_dir = SIDECAR_ROOT / f"{dataset_name}_data_clean_sidecar"
-        bridge_mode = str(payload.get("bridge_mode", "format-only"))
-        if bridge_mode not in {"format-only", "formal"}:
-            bridge_mode = "format-only"
+        bridge_mode = "formal"
         config = self.load_config(input_dir=str(input_dir), output_dir=str(output_parent))
-        config_preview = self.config_preview(payload)
+        readiness = self.production_readiness()
         return {
             "input_dir": str(input_dir),
             "output_dir": str(output_parent),
@@ -503,11 +532,14 @@ class DataCleanWebApp:
                 if path.exists()
             ],
             "calibration": _calibration_info(config),
-            "config_preview": config_preview,
+            "production_readiness": readiness,
             "global_workers": self.global_workers,
         }
 
     def create_job(self, payload: dict[str, Any]) -> dict[str, Any]:
+        readiness = self.production_readiness()
+        if not readiness["ready"]:
+            raise ValueError("生产配置未就绪：" + "、".join(readiness["missing_items"]))
         input_dir = _safe_path(str(payload.get("input_dir", "")))
         output_parent = _safe_path(str(payload.get("output_dir", "")), DEFAULT_OUTPUT_PARENT)
         selected = self._normalize_selected_files(payload.get("files", []))
@@ -517,9 +549,7 @@ class DataCleanWebApp:
         dataset_name = _safe_name(str(payload.get("dataset_name") or _default_dataset_name()))
         dataset_dir = output_parent / dataset_name
         sidecar_dir = SIDECAR_ROOT / f"{dataset_name}_data_clean_sidecar"
-        bridge_mode = str(payload.get("bridge_mode", "format-only"))
-        if bridge_mode not in {"format-only", "formal"}:
-            raise ValueError("bridge_mode must be format-only or formal")
+        bridge_mode = "formal"
         worker_limit = payload.get("workers", "auto")
         if worker_limit in (None, "", "auto"):
             workers = min(self.global_workers, max(1, len(selected)))
@@ -536,10 +566,10 @@ class DataCleanWebApp:
             default_config_path=self.config_path,
             presets_dir=PRESETS_DIR,
             run_dir=self.run_root / "runs" / job_id,
-            preset_name=str(payload.get("preset_name", "")),
-            overrides=payload.get("overrides", {}),
+            preset_name="",
+            overrides={},
             bridge_mode=bridge_mode,
-            formal_manual_override_confirmed=bool(payload.get("formal_manual_override_confirmed", False)),
+            formal_manual_override_confirmed=True,
         )
         files = []
         for input_path in selected:
@@ -578,15 +608,15 @@ class DataCleanWebApp:
             "dataset_dir": str(dataset_dir),
             "sidecar_dir": str(sidecar_dir),
             "bridge_mode": bridge_mode,
-            "calibration_ready": bool(payload.get("calibration_ready", False)),
-            "preset_name": str(payload.get("preset_name", "")),
-            "config_overrides": payload.get("overrides", {}),
+            "calibration_ready": True,
+            "preset_name": "",
+            "config_overrides": {},
             "config_snapshot_path": str(effective.snapshot_path),
             "scene1_config_path": str(effective.scene1_config_path),
             "effective_config_summary": effective.effective_summary,
             "config_diff": effective.diff,
             "manual_calibration_override": effective.manual_calibration_override,
-            "formal_manual_override_confirmed": bool(payload.get("formal_manual_override_confirmed", False)),
+            "formal_manual_override_confirmed": True,
             "run_endpoint": str(payload.get("run_endpoint", "full")),
             "workers": workers,
             "conflict_policy": conflict_policy,
@@ -1374,13 +1404,12 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(self.app_state.dashboard())
             elif parsed.path == "/api/history":
                 self._send_json(self.app_state.history())
-            elif parsed.path == "/api/config/default":
-                self._send_json(self.app_state.config_default())
-            elif parsed.path == "/api/config/presets":
-                self._send_json(self.app_state.config_presets())
-            elif parsed.path.startswith("/api/config/presets/"):
-                name = parsed.path.split("/")[4]
-                self._send_json(self.app_state.config_preset(name))
+            elif parsed.path == "/api/production-config":
+                self._send_json(self.app_state.production_config())
+            elif parsed.path == "/api/production-readiness":
+                self._send_json(self.app_state.production_readiness())
+            elif parsed.path == "/api/calibration/gripper/status":
+                self._send_json(self.app_state.gripper_calibration_status())
             elif parsed.path == "/api/filesystem":
                 query = parse_qs(parsed.query)
                 self._send_json(self.app_state.filesystem(query.get("path", ["/"])[0]))
@@ -1401,10 +1430,12 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
             payload = self._read_payload()
             if parsed.path == "/api/filesystem/create-directory":
                 self._send_json(self.app_state.create_directory(payload))
-            elif parsed.path == "/api/config/presets":
-                self._send_json(self.app_state.save_config_preset(payload))
-            elif parsed.path == "/api/config/preview":
-                self._send_json(self.app_state.config_preview(payload))
+            elif parsed.path == "/api/production-config/validate":
+                self._send_json(self.app_state.validate_production_config(payload))
+            elif parsed.path == "/api/production-config":
+                self._send_json(self.app_state.save_production_config(payload))
+            elif parsed.path == "/api/calibration/gripper/open":
+                self._send_json(self.app_state.open_gripper_calibration())
             elif parsed.path == "/api/input-files/scan":
                 self._send_json(self.app_state.scan_input_files(payload))
             elif parsed.path == "/api/jobs/preview":
@@ -1431,9 +1462,6 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
             if parsed.path.startswith("/api/history/"):
                 job_id = parsed.path.split("/")[3]
                 self._send_json(self.app_state.delete_history(job_id))
-            elif parsed.path.startswith("/api/config/presets/"):
-                name = parsed.path.split("/")[4]
-                self._send_json(self.app_state.delete_config_preset(name))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not_found")
         except Exception as exc:  # noqa: BLE001
@@ -1553,6 +1581,7 @@ INDEX_HTML = r"""<!doctype html>
   <nav>
     <button id="nav-dashboard" onclick="showPage('dashboard')">看板</button>
     <button id="nav-create" onclick="showPage('create')">新建任务</button>
+    <button id="nav-config" onclick="showPage('config')">配置中心</button>
     <button id="nav-history" onclick="showPage('history')">历史记录</button>
   </nav>
 </header>
@@ -1560,6 +1589,7 @@ INDEX_HTML = r"""<!doctype html>
   <div id="notice"></div>
   <section id="page-dashboard"></section>
   <section id="page-create" class="hidden"></section>
+  <section id="page-config" class="hidden"></section>
   <section id="page-job" class="hidden"></section>
   <section id="page-history" class="hidden"></section>
 </main>
@@ -1572,7 +1602,7 @@ INDEX_HTML = r"""<!doctype html>
 </div></div>
 <div id="confirm-modal" class="modal"><div class="modal-card" id="confirm-body"></div></div>
 <script>
-let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), currentJob:null, jobTab:'quality', trajectory:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null}, dirTarget:null, dirPath:'/', preview:null, retryDraft:null, configPresets:[], configPreview:null, presetName:'', configOverrides:{}};
+let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), currentJob:null, jobTab:'quality', trajectory:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null}, dirTarget:null, dirPath:'/', preview:null, retryDraft:null, productionConfig:null};
 const statusText = {running:'运行中', succeeded:'成功', partial_failed:'部分失败', failed:'失败', cancelled:'已取消', cancelling:'取消中', waiting:'等待', success:'成功', warning:'成功但有警告', skipped:'跳过'};
 async function api(path, opts={}) {
   const res = await fetch(path, {headers:{'Content-Type':'application/json'}, ...opts});
@@ -1586,10 +1616,11 @@ function setNotice(text, kind='notice') { document.getElementById('notice').inne
 function showPage(page) {
   if (page !== 'job') stopTrajectoryPlayback();
   state.page = page;
-  for (const id of ['dashboard','create','job','history']) document.getElementById(`page-${id}`).classList.toggle('hidden', id !== page);
-  for (const id of ['dashboard','create','history']) document.getElementById(`nav-${id}`).classList.toggle('active', id === page);
+  for (const id of ['dashboard','create','config','job','history']) document.getElementById(`page-${id}`).classList.toggle('hidden', id !== page);
+  for (const id of ['dashboard','create','config','history']) document.getElementById(`nav-${id}`).classList.toggle('active', id === page);
   if (page === 'dashboard') loadDashboard();
   if (page === 'create') renderCreate();
+  if (page === 'config') loadProductionConfig();
   if (page === 'history') loadHistory();
 }
 async function loadDashboard() {
@@ -1617,8 +1648,11 @@ function renderCreate() {
   const input = state.retryDraft?.input_dir || s.last_input_dir || '';
   const output = state.retryDraft?.output_dir || s.last_output_dir || '';
   const datasetName = state.retryDraft?.dataset_name || s.default_dataset_name || '';
-  const bridgeMode = state.retryDraft?.bridge_mode || 'format-only';
   const remark = state.retryDraft?.remark || '';
+  const ready = state.dashboard?.production_readiness || {ready:false, missing_items:['正在读取生产配置']};
+  const readinessBox = ready.ready
+    ? '<div class="notice" style="margin-top:14px">生产配置已就绪：任务将使用左右 arm-base TCP 位姿构建训练数据集。</div>'
+    : `<div class="warnbox" style="margin-top:14px">生产配置未就绪：${(ready.missing_items || []).map(escapeHtml).join('、')}。<br><button onclick="showPage('config')">进入配置中心</button></div>`;
   document.getElementById('page-create').innerHTML = `
     <div class="split">
       <div class="card">
@@ -1627,14 +1661,11 @@ function renderCreate() {
         <label>数据集名称</label><input id="dataset-name" value="${escapeHtml(datasetName)}" oninput="previewJob()" placeholder="YYYYMMDD_HH">
         <label>输入目录</label><div class="row"><input id="input-dir" value="${escapeHtml(input)}"><button onclick="openDirModal('input')">浏览</button></div>
         <label>输出父目录（LeRobot export）</label><div class="row"><input id="output-dir" value="${escapeHtml(output)}" oninput="previewJob()"><button onclick="openDirModal('output')">浏览</button></div>
-        <div id="calibration-box"></div>
+        ${readinessBox}
         <details><summary>高级设置</summary>
           <label>运行终点</label><select id="run-endpoint"><option value="full">完整批次数据集构建</option></select>
-          <label>Bridge 模式</label><select id="bridge-mode" onchange="configChanged()"><option value="format-only">format-only（格式验证，默认）</option><option value="formal">formal（正式训练候选）</option></select>
-          <label><input id="calibration-ready" type="checkbox" style="width:auto"> 本批次配置已完成正式标定</label>
           <label>当前批次 worker</label><input id="workers" value="auto" placeholder="auto 或正整数">
         </details>
-        <details open style="margin-top:14px"><summary><b>配置工作台</b></summary><div id="config-workbench"><p class="muted">正在加载配置...</p></div></details>
         <div class="row" style="margin-top:14px"><button onclick="scanFiles()" class="primary">扫描 MCAP</button></div>
       </div>
       <div class="card">
@@ -1644,19 +1675,55 @@ function renderCreate() {
         <div id="preview-box"></div>
       </div>
     </div>`;
-  document.getElementById('bridge-mode').value = bridgeMode;
-  state.presetName = state.retryDraft?.preset_name || '';
-  state.configOverrides = state.retryDraft?.config_overrides || {};
-  if (state.dashboard?.calibration && !state.dashboard.calibration.calibrated) {
-    document.getElementById('calibration-box').innerHTML = `<div class="warnbox" style="margin-top:14px">配置未完整标定：${state.dashboard.calibration.missing_items.join('、') || '存在测试/占位参数'}。允许继续运行。</div>`;
-  }
   if (state.retryDraft) {
     state.files = state.retryDraft.files.map(f => ({name:f.name, path:f.path, size:0, size_text:'-', modified_at:'-', status:'waiting'}));
     state.selected = new Set(state.files.map(f => f.path));
     state.retryDraft = null;
     renderFileTable();
   }
-  loadConfigWorkspace();
+}
+async function loadProductionConfig() {
+  state.productionConfig = await api('/api/production-config');
+  renderProductionConfig();
+}
+function productionPoseFields(prefix, value) {
+  const t = value?.translation_mm || [0,0,0];
+  return `<label>固定平移 translation_mm（mm）</label><div class="row">${['x','y','z'].map((axis,i)=>`<input data-production="${prefix}.translation_mm.${i}" value="${escapeHtml(String(t[i] ?? ''))}" placeholder="${axis} (mm)">`).join('')}</div>
+  <p class="muted">相机到 TCP 的旋转固定为 0，无需填写。</p>`;
+}
+function productionWorkFields(hand, value) {
+  const p = value?.position_mm || {x:0,y:0,z:0}, r = value?.rotation_euler_rad || {rx:0,ry:0,rz:0};
+  return `<label>工作坐标系原点 position_mm（mm）</label><div class="row">${['x','y','z'].map(axis=>`<input data-production="work_frames.${hand}.position_mm.${axis}" value="${escapeHtml(String(p[axis] ?? ''))}" placeholder="${axis} (mm)">`).join('')}</div>
+  <label>工作坐标系旋转 rotation_euler_rad（欧拉角，rad）</label><div class="row">${['rx','ry','rz'].map(axis=>`<input data-production="work_frames.${hand}.rotation_euler_rad.${axis}" value="${escapeHtml(String(r[axis] ?? ''))}" placeholder="${axis} (rad)">`).join('')}</div>`;
+}
+function renderProductionConfig() {
+  const data = state.productionConfig, ready = data.readiness || {};
+  const camera = data.camera_from_tcp || {}, work = data.work_frames || {}, sdk = ready.sdk || {};
+  const handCard = hand => `<div class="config-section"><h3>${hand==='left'?'左臂':'右臂'}</h3><p class="muted">目标 base frame：<b>${hand}_arm_base</b></p><h4>相机到夹爪 TCP 外参</h4>${productionPoseFields(`camera_from_tcp.${hand}`, camera[hand])}<h4>工作坐标系在机械臂 base 下的位姿</h4>${productionWorkFields(hand, work[hand])}</div>`;
+  const gripper = ready.gripper || {};
+  document.getElementById('page-config').innerHTML = `<div class="card"><div class="row"><div><h2>配置中心</h2><p class="path">${escapeHtml(data.config_path || '')}</p></div>${ready.ready?badge('success'):badge('warning')}<span>RealMan SDK：${sdk.ready?'已就绪 '+escapeHtml(sdk.version || ''):'不可用'}</span></div>${ready.ready?'<div class="notice">生产配置已就绪。</div>':`<div class="warnbox">仍需处理：${(ready.missing_items || []).map(escapeHtml).join('、')}</div>`}</div>
+  <div class="card"><div class="row"><div><h3>夹爪开合标定</h3><p class="muted">通过 GoPro 实时画面与 ArUco 自动采样生成，无需手工编辑底层 marker 参数。</p></div><button class="primary right" onclick="openGripperCalibration()">自动生成 / 重新标定</button></div><div class="row">${badge(gripper.left?'success':'warning')} 左手夹爪 ${gripper.left?'已配置':'缺失'} ${badge(gripper.right?'success':'warning')} 右手夹爪 ${gripper.right?'已配置':'缺失'}</div></div>
+  <div class="card"><h3>左右臂 base 位姿转换</h3><p class="muted">人工填写：平移使用 mm，机械臂 base 旋转使用欧拉角 rad。Baton Mini 原始位姿、Runtime 换算结果和最终机械臂 TCP 输出的位置统一使用 m。</p><div class="config-grid">${handCard('left')}${handCard('right')}</div><div id="production-errors"></div><button class="primary" style="margin-top:14px" onclick="saveProductionConfig()">校验并保存正式配置</button></div>`;
+}
+function productionPayload() {
+  const result = {camera_from_tcp:{left:{translation_mm:[]},right:{translation_mm:[]}},work_frames:{left:{hand:'left',base_frame_id:'left_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}},right:{hand:'right',base_frame_id:'right_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}}}};
+  document.querySelectorAll('[data-production]').forEach(input => setNested(result, input.dataset.production, Number(input.value)));
+  return result;
+}
+async function saveProductionConfig() {
+  const payload = productionPayload();
+  const checked = await api('/api/production-config/validate', {method:'POST', body:JSON.stringify(payload)});
+  const host = document.getElementById('production-errors');
+  if (!checked.valid) { host.innerHTML = `<div class="config-errors"><ul>${checked.errors.map(item=>`<li>${escapeHtml(item.path)}：${escapeHtml(item.message)}</li>`).join('')}</ul></div>`; return; }
+  state.productionConfig = await api('/api/production-config', {method:'POST', body:JSON.stringify(payload)});
+  setNotice('正式配置已保存。后续任务会写入独立 config snapshot。');
+  await loadDashboard();
+  renderProductionConfig();
+}
+async function openGripperCalibration() {
+  const result = await api('/api/calibration/gripper/open', {method:'POST', body:'{}'});
+  window.open(result.url, '_blank');
+  setTimeout(loadProductionConfig, 1500);
 }
 function getNested(obj, path, fallback='') {
   const value = path.split('.').reduce((current, key) => current == null ? undefined : current[key], obj);
@@ -1815,7 +1882,7 @@ function selectAll(on) { state.files.forEach(f => on ? state.selected.add(f.path
 function invertSelection() { state.files.forEach(f => state.selected.has(f.path) ? state.selected.delete(f.path) : state.selected.add(f.path)); renderFileTable(); previewJob(); }
 async function previewJob() {
   const files = [...state.selected].map(path => ({path}));
-  const payload = {input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, dataset_name:document.getElementById('dataset-name')?.value || '', files, ...configRequest()};
+  const payload = {input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, dataset_name:document.getElementById('dataset-name')?.value || '', files};
   if (!files.length || !payload.output_dir) { document.getElementById('preview-box').innerHTML = '<p class="muted">请选择文件和输出目录。</p>'; return; }
   state.preview = await api('/api/jobs/preview', {method:'POST', body:JSON.stringify(payload)});
   const p = state.preview;
@@ -1823,21 +1890,21 @@ async function previewJob() {
     document.getElementById('dataset-name').value = p.dataset_name;
   }
   const conflictText = p.conflicts.map(c => `<li class="path">${escapeHtml(c.type)}: ${escapeHtml(c.path)}</li>`).join('');
-  const configErrors = (p.config_preview.errors || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
-  document.getElementById('preview-box').innerHTML = `<hr><p><b>已选择：</b>${p.file_count} 个，${p.total_size_text}</p><p><b>最终 dataset：</b><span class="path">${escapeHtml(p.dataset_dir)}</span></p><p><b>sidecar：</b><span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p><b>Bridge 模式：</b>${escapeHtml(p.mode)} ${p.mode === 'format-only' ? '（格式验证数据集，不代表正式训练可用）' : '（正式训练候选）'}</p><p><b>配置 preset：</b>${escapeHtml(p.config_preview.preset_name || '默认配置')}</p><p><b>本次覆盖：</b>${p.config_preview.diff.length} 项</p><p><b>冲突：</b>${p.conflicts.length} 个目录</p>${conflictText ? `<ul>${conflictText}</ul>` : ''}${configErrors?`<div class="config-errors"><ul>${configErrors}</ul></div>`:''}<button class="primary" onclick="openConfirm()" ${p.config_preview.valid?'':'disabled'}>开始清洗</button>`;
+  const ready = p.production_readiness || {ready:false,missing_items:[]};
+  document.getElementById('preview-box').innerHTML = `<hr><p><b>已选择：</b>${p.file_count} 个，${p.total_size_text}</p><p><b>最终 dataset：</b><span class="path">${escapeHtml(p.dataset_dir)}</span></p><p><b>sidecar：</b><span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p><b>生产链路：</b>左右 arm-base TCP 绝对位姿</p><p><b>冲突：</b>${p.conflicts.length} 个目录</p>${conflictText ? `<ul>${conflictText}</ul>` : ''}${ready.ready?'':`<div class="warnbox">生产配置未就绪：${(ready.missing_items||[]).map(escapeHtml).join('、')}。<button onclick="showPage('config')">进入配置中心</button></div>`}<button class="primary" onclick="openConfirm()" ${ready.ready?'':'disabled'}>开始清洗</button>`;
 }
 function openConfirm() {
   const p = state.preview;
   if (!p) return;
   const conflicts = p.conflicts.map(c => `<li class="path">${escapeHtml(c.type)}: ${escapeHtml(c.path)}</li>`).join('');
-  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>模式：${escapeHtml(p.mode)}</p><p>配置 preset：${escapeHtml(p.config_preview.preset_name || '默认配置')}；覆盖 ${p.config_preview.diff.length} 项</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')}</p>${p.config_preview.manual_calibration_override ? `<div class="warnbox">本次含手工标定覆盖；formal 导出需明确确认。</div>` : ''}${p.calibration.calibrated ? '' : `<div class="warnbox">配置未完整标定，允许继续，但结果需要人工复核。</div>`}${p.mode === 'format-only' ? `<div class="warnbox">format-only：只验证 LeRobot v3 格式可写，不代表正式训练可用。</div>` : ''}${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div class="row"><button class="primary" onclick="submitJob()">确认启动</button><button onclick="closeConfirm()">取消</button></div>`;
+  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>生产链路：左右 arm-base TCP 绝对位姿</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')}</p>${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div class="row"><button class="primary" onclick="submitJob()">确认启动</button><button onclick="closeConfirm()">取消</button></div>`;
   document.getElementById('confirm-modal').classList.add('open');
 }
 function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); }
 async function submitJob() {
   const policy = document.getElementById('conflict-policy').value;
   if (policy === 'skip') { closeConfirm(); return; }
-  const payload = {remark:document.getElementById('remark').value, dataset_name:document.getElementById('dataset-name').value, calibration_ready:document.getElementById('calibration-ready').checked, input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, run_endpoint:document.getElementById('run-endpoint').value, workers:document.getElementById('workers').value || 'auto', conflict_policy:policy, files:[...state.selected].map(path=>({path})), ...configRequest()};
+  const payload = {remark:document.getElementById('remark').value, dataset_name:document.getElementById('dataset-name').value, input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, run_endpoint:document.getElementById('run-endpoint').value, workers:document.getElementById('workers').value || 'auto', conflict_policy:policy, files:[...state.selected].map(path=>({path}))};
   const data = await api('/api/jobs', {method:'POST', body:JSON.stringify(payload)});
   closeConfirm();
   openJob(data.job.job_id);
@@ -1864,7 +1931,7 @@ function renderJob() {
   const visualizer = j.dataset_dir ? `<button onclick="openVisualizer('${j.job_id}')">打开可视化</button>` : '';
   const tab = state.jobTab || 'quality';
   const body = tab === 'trajectory' ? renderTrajectoryTab() : tab === 'files' ? renderFilesTab(j) : renderQualityTab(j);
-  document.getElementById('page-job').innerHTML = `<div class="card"><div class="row"><h2>${escapeHtml(j.remark || j.dataset_name || j.job_id)}</h2>${badge(j.status)}<button class="right" onclick="showPage('dashboard')">返回看板</button>${cancelBtn}</div><div class="progress"><div style="width:${j.progress}%"></div></div><p><b>Dataset：</b><span class="path">${escapeHtml(j.dataset_dir || '')}</span></p><p><b>Sidecar：</b><span class="path">${escapeHtml(j.sidecar_dir || '')}</span></p><p><b>配置快照：</b><span class="path">${escapeHtml(j.config_snapshot_path || '历史任务无快照')}</span></p><p><b>配置 preset：</b>${escapeHtml(j.preset_name || '默认配置')}；覆盖 ${(j.config_diff || []).length} 项${j.manual_calibration_override ? '；含手工标定覆盖' : ''}</p><p class="muted">${j.input_dir} -> ${j.output_parent || j.output_dir}</p><p>${j.notification || ''}</p><div class="row"><b>纳入 ${included}</b><b>失败 ${j.counts.failed}</b><b>episode ${summary.episodes || 0}</b><b>frame ${summary.frames || 0}</b><b>耗时 ${fmtMs(j.duration_ms)}</b>${visualizer}${failedBtn}</div>${j.bridge_mode === 'format-only' ? '<div class="warnbox">format-only：格式验证数据集，不代表正式训练可用。</div>' : '<div class="notice">formal：正式训练候选数据集。</div>'}</div><div class="grid">${stages}</div><div class="tabs"><button class="${tab==='quality'?'active':''}" onclick="switchJobTab('quality')">评测报告</button><button class="${tab==='trajectory'?'active':''}" onclick="switchJobTab('trajectory')">3D轨迹</button><button class="${tab==='files'?'active':''}" onclick="switchJobTab('files')">逐文件状态</button></div>${body}`;
+  document.getElementById('page-job').innerHTML = `<div class="card"><div class="row"><h2>${escapeHtml(j.remark || j.dataset_name || j.job_id)}</h2>${badge(j.status)}<button class="right" onclick="showPage('dashboard')">返回看板</button>${cancelBtn}</div><div class="progress"><div style="width:${j.progress}%"></div></div><p><b>Dataset：</b><span class="path">${escapeHtml(j.dataset_dir || '')}</span></p><p><b>Sidecar：</b><span class="path">${escapeHtml(j.sidecar_dir || '')}</span></p><p><b>配置快照：</b><span class="path">${escapeHtml(j.config_snapshot_path || '历史任务无快照')}</span></p><p class="muted">${j.input_dir} -> ${j.output_parent || j.output_dir}</p><p>${j.notification || ''}</p><div class="row"><b>纳入 ${included}</b><b>失败 ${j.counts.failed}</b><b>episode ${summary.episodes || 0}</b><b>frame ${summary.frames || 0}</b><b>耗时 ${fmtMs(j.duration_ms)}</b>${visualizer}${failedBtn}</div><div class="notice">生产任务：左右 arm-base TCP 绝对位姿，可由训练侧 LeRobot 框架继续转换为相对表示。</div></div><div class="grid">${stages}</div><div class="tabs"><button class="${tab==='quality'?'active':''}" onclick="switchJobTab('quality')">评测报告</button><button class="${tab==='trajectory'?'active':''}" onclick="switchJobTab('trajectory')">3D轨迹</button><button class="${tab==='files'?'active':''}" onclick="switchJobTab('files')">逐文件状态</button></div>${body}`;
   if (tab === 'trajectory') initTrajectoryCanvas();
 }
 function switchJobTab(tab) {
@@ -2185,7 +2252,16 @@ async function createDirFromInput() { const path = document.getElementById('dir-
 function selectCurrentDir() { const id = state.dirTarget === 'input' ? 'input-dir' : 'output-dir'; document.getElementById(id).value = document.getElementById('dir-path').value; closeDirModal(); if (state.dirTarget === 'input') scanFiles(); else previewJob(); }
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function jsEscape(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-setInterval(async () => { if (state.page === 'dashboard') await loadDashboard(); if (state.page === 'job' && state.currentJob) await openJob(state.currentJob.job_id); }, 3000);
+setInterval(async () => {
+  if (state.page === 'dashboard') await loadDashboard();
+  if (state.page === 'job' && state.currentJob) await openJob(state.currentJob.job_id);
+  if (state.page === 'config') {
+    const status = await api('/api/calibration/gripper/status');
+    const before = JSON.stringify(state.productionConfig?.readiness?.gripper || {});
+    const after = JSON.stringify(status.readiness?.gripper || {});
+    if (before !== after) await loadProductionConfig();
+  }
+}, 3000);
 loadDashboard().then(()=>showPage('dashboard'));
 </script>
 </body>
@@ -2232,6 +2308,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\nStopping data clean web UI.")
     finally:
         server.server_close()
+        app.close()
     return 0
 
 

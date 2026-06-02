@@ -312,13 +312,13 @@ def run_scene1_arm_base_pose_transform(config_path: str | Path = DEFAULT_CONFIG)
         hand=HandType.LEFT,
         base_frame_id=FrameIdType.LEFT_ARM_BASE,
         position_m={"x": 0.0, "y": 0.0, "z": 0.0},
-        orientation={"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0},
+        rotation_euler_rad={"rx": 0.0, "ry": 0.0, "rz": 0.0},
     )
     wf_right = WorkFrameInArmBasePose(
         hand=HandType.RIGHT,
         base_frame_id=FrameIdType.RIGHT_ARM_BASE,
         position_m={"x": 0.0, "y": 0.0, "z": 0.0},
-        orientation={"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0},
+        rotation_euler_rad={"rx": 0.0, "ry": 0.0, "rz": 0.0},
     )
     if config.work_frames:
         wf_left_cfg = config.work_frames.get("left")
@@ -328,14 +328,14 @@ def run_scene1_arm_base_pose_transform(config_path: str | Path = DEFAULT_CONFIG)
                 hand=HandType.LEFT,
                 base_frame_id=FrameIdType.LEFT_ARM_BASE,
                 position_m=dict(wf_left_cfg.position_m),
-                orientation=dict(wf_left_cfg.orientation),
+                rotation_euler_rad=dict(wf_left_cfg.rotation_euler_rad),
             )
         if wf_right_cfg:
             wf_right = WorkFrameInArmBasePose(
                 hand=HandType.RIGHT,
                 base_frame_id=FrameIdType.RIGHT_ARM_BASE,
                 position_m=dict(wf_right_cfg.position_m),
-                orientation=dict(wf_right_cfg.orientation),
+                rotation_euler_rad=dict(wf_right_cfg.rotation_euler_rad),
             )
 
     raw_samples = [
@@ -425,13 +425,13 @@ def run_scene1_arm_base_pose_transform(config_path: str | Path = DEFAULT_CONFIG)
             "frame_id": left_frame_id,
             "output_topic": left_output_topic,
             "work_frame_position_m": dict(wf_left.position_m),
-            "work_frame_orientation": dict(wf_left.orientation),
+            "work_frame_rotation_euler_rad": dict(wf_left.rotation_euler_rad),
         },
         "right_arm_base": {
             "frame_id": right_frame_id,
             "output_topic": right_output_topic,
             "work_frame_position_m": dict(wf_right.position_m),
-            "work_frame_orientation": dict(wf_right.orientation),
+            "work_frame_rotation_euler_rad": dict(wf_right.rotation_euler_rad),
         },
         "common_frame_used": False,
         "mcap_a_consumption": "arm-base TCP pose topics are consumed by Scene 2 MCAP_A writer",

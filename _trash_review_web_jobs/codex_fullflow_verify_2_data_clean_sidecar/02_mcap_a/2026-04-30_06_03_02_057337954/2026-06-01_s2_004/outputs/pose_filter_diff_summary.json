@@ -1,0 +1,31 @@
+{
+  "summary_by_topic": {
+    "/baton_mini_right/fast_odom": {
+      "filtered": 523,
+      "kept_original": 0,
+      "filter_rejected_by_guard": 0,
+      "skipped_boundary": 0
+    },
+    "/baton_mini_left/fast_odom": {
+      "filtered": 513,
+      "kept_original": 0,
+      "filter_rejected_by_guard": 0,
+      "skipped_boundary": 0
+    }
+  },
+  "sample_count_before": {
+    "/baton_mini_right/fast_odom": 523,
+    "/baton_mini_left/fast_odom": 513
+  },
+  "sample_count_after": {
+    "/baton_mini_right/fast_odom": 523,
+    "/baton_mini_left/fast_odom": 513
+  },
+  "guard_rejected": 0,
+  "segment_stats": {
+    "segments": 2,
+    "filtered": 1036,
+    "kept": 0,
+    "rejected": 0
+  }
+}

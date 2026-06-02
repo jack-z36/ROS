@@ -35,7 +35,7 @@ asset/阶段二：数据清洗/dev/full_flow_random_bimanual/
 - `5` 个 raw MCAP 聚合为 `5 episodes / 773 frames`，Forge quality 总分 `8.39/10`，`flagged=0`。
 - 用户选择外部父目录后，已成功发布 `/home/hit/下载/lerobot/20260601_15`，包含 `1 episode / 273 frames`。
 
-正式长期目标仍是 MCAP-centric canonical dataset 与 UMI 风格相对 action chunk；当前 LeRobot v3 是临时双臂格式桥接路径，用来验证数据能否进入训练格式生态。
+正式长期目标仍是 MCAP-centric canonical dataset。阶段二输出左右 arm-base 下的绝对 TCP 目标位姿；训练侧 LeRobot 框架按训练策略负责转换为差分或相对表示。当前 LeRobot v3 仍是临时双臂格式桥接路径。
 
 ## 2. 分层原则
 
@@ -65,7 +65,8 @@ Schemas -> Config/Repo -> Service -> Runtime -> UI
 | legacy CLI             | `runtime/mcap_clean_launcher.py` | 终端交互/脚本化清洗入口，支持 latest/all/dry-run/workers/calibrate。                 |
 | dev menu               | `ui/dev_menu.py`                 | `./start_data_clean.sh --dev` 的开发者功能检验菜单。                               |
 | 标定向导               | `ui/mcap_calibration_wizard.py`  | 辅助生成 `config/data_clean/data_clean_calibrated.yaml`。                          |
-| Web 配置工作台 Runtime | `runtime/web_pipeline_config.py` | 合并默认配置、Web preset 和任务覆盖，校验语义字段，生成各阶段适配器与 job snapshot。 |
+| 正常 Web 生产配置 Runtime | `runtime/production_config.py` | 读取、校验、原子保存生产配置，并检查夹爪、arm-base topic 与 RealMan SDK readiness。 |
+| Web job snapshot Runtime | `runtime/web_pipeline_config.py` | 为任务生成各阶段适配器与可复现 job snapshot；旧 preset 逻辑仅保留历史兼容。 |
 
 常用命令：
 
@@ -86,16 +87,14 @@ DATA_CLEAN_RAW_JSON=1 ./start_data_clean.sh --cli --latest 1
   > config/data_clean/data_clean_smoke_test.yaml
 ```
 
-正常网页任务在上述正式配置之上应用任务级覆盖：
+正常网页任务直接读取正式生产配置，并为每次任务写出快照：
 
 ```text
 data_clean_calibrated.yaml
-  + config/data_clean/presets/<name>.yaml（可选，仅覆盖值）
-  + 当前 Web job overrides（可选）
   -> src/data_clean/runs/web_jobs/runs/<job_id>/config_snapshot.yaml
 ```
 
-Web preset 不修改正式配置，默认不进 Git。手工覆盖夹爪标定或 frame alignment 外参时，任务记录 `manual_calibration_override=true`；`formal` 导出还要求用户再次确认。
+普通网页不再显示 preset、任务级算法覆盖或 bridge mode。历史 preset 文件不删除，但只作为兼容资产保留。
 
 ## 4. 场景一：raw MCAP -> cleaned MCAP
 
@@ -104,14 +103,15 @@ Web preset 不修改正式配置，默认不进 Git。手工覆盖夹爪标定�
 - 读取 Octopus 录制的 raw MCAP。
 - 校验输入 topic/schema。
 - 从 GoPro 图像中检测 ArUco marker，生成左右夹爪宽度 `std_msgs/msg/Float32`。
-- 处理 Baton Mini/common/arm-base 位姿转换相关配置和 payload。
+- 处理 Baton Mini 到左右 arm-base TCP pose 的正式转换；旧 common payload 只保留兼容读取。
 - 写出 cleaned MCAP，并保留处理报告。
 
 关键模块：
 
 | 模块                              | 职责                                                                    |
 | --------------------------------- | ----------------------------------------------------------------------- |
-| `config/mcap_process_config.py` | 解析 batch、pose streams、gripper streams、transform/calibration 配置。 |
+| `config/mcap_process_config.py` | 兼容 facade；实际解析位于 `repo/config/mcap_process_config.py`。         |
+| `repo/config/mcap_process_config.py` | 解析 batch、pose streams、gripper、`camera_from_tcp`、`work_frames` 和历史兼容配置。 |
 | `service/mcap_io.py`            | 单文件清洗核心；两遍读取 MCAP，第一遍生成中间 payload，第二遍写出结果。 |
 | `service/validator.py`          | 输入 topic/schema 与输出契约校验。                                      |
 | `service/gripper_width.py`      | ArUco 夹爪宽度提取、缺失帧插值和归一化。                                |
@@ -129,7 +129,7 @@ asset/阶段二：数据清洗/dev/mcap_cleaned/*.mcap
 
 - 旧 common pose 可以服务 `format-only` 格式烟测。
 - 正式训练需要 arm-base TCP pose、相机到 TCP 外参和 work frame 标定。
-- raw pose 保留/可追溯、common camera pose 和 TCP pose 的最终 formal 契约仍需和场景一文档保持同步。
+- raw pose 保留/可追溯；正式主位姿固定为左右 arm-base TCP pose。
 
 ## 5. 场景二：cleaned MCAP -> MCAP_A
 
@@ -298,10 +298,11 @@ mean, std, min, max
 - 当前调度真实主链路：场景一 cleaned MCAP、场景二 MCAP_A、场景三 aligned MCAP、临时 Forge bridge、多 bridge 聚合 LeRobot v3、Forge inspect/quality。
 - 结果页提供三个视图：评测报告分数可视化、从最终 LeRobot v3 `observation.state` 读取的左右 TCP 3D 轨迹、逐文件状态；轨迹 API 为 `GET /api/jobs/{job_id}/trajectory`。
 - 3D 轨迹使用固定右手坐标系工程视角，显示局部原点固定在画布左下角；局部原点取当前视图 `bounds.min`，不是物理坐标 `(0, 0, 0)`，原始坐标值不会被改写。单个 episode 按原始时间戳播放，全部 episode 仅做静态总览。`format-only` 的旧 `common_frame` 数据允许双手叠加，`formal` 的左右 `arm_base` 数据必须分屏同步播放，不能暗示双手位于同一物理坐标系。
-- 默认 bridge 模式是 `format-only`，网页明确提示“格式验证数据集，不代表正式训练可用”；高级选项可切到 `formal`。
+- 普通网页固定使用左右 arm-base pose 的生产链路，不向普通用户暴露 `format-only/formal`；开发 smoke 仍可显式使用 `format-only`。
 - 单个 MCAP 失败不会阻止其他成功 bridge episodes 进入最终 dataset；至少一个 MCAP 成功时批次可发布为 `partial_failed`。
 - 用户主动取消时，Runtime staging、最终 dataset 和 sidecar 均回滚；历史删除只删除网页摘要，不删除真实产物。
-- 新建任务页提供配置工作台：按场景卡片编辑稳定语义字段，支持读取、保存和删除用户 preset；每个 job 必须写出可复现 snapshot。
+- 独立配置中心只展示左右夹爪标定状态、`camera_from_tcp.translation_mm` 和 `work_frames`。夹爪配置由 gripper-only GoPro 向导自动生成；人工平移输入明确标注 `mm`，机械臂 base 旋转使用 Euler `rad`。Parser 在进入 Runtime 前统一换算为位置 `m`，最终 cleaned MCAP 的 arm-base TCP 位置也保持 `m`。
+- 每个 job 必须写出可复现 snapshot；生产配置缺失或 RealMan SDK 不可用时禁止启动。
 
 Web UI 的批次处理模型：
 
@@ -330,12 +331,12 @@ Web JSON API：
 | ---------- | -------------------------------------- | ----------------------------------------------- |
 | `GET`    | `/api/dashboard`                     | 看板、最近任务、默认设置和标定状态。            |
 | `GET`    | `/api/history`                       | 历史任务摘要。                                  |
-| `GET`    | `/api/config/default`                | 读取默认 Web pipeline 配置摘要。                |
-| `GET`    | `/api/config/presets`                | 列出本机用户 preset。                           |
-| `GET`    | `/api/config/presets/{name}`         | 读取指定 preset。                               |
-| `POST`   | `/api/config/presets`                | 保存仅包含覆盖值的用户 preset。                 |
-| `DELETE` | `/api/config/presets/{name}`         | 删除用户 preset，不修改正式配置。               |
-| `POST`   | `/api/config/preview`                | 合并并校验默认配置、preset 与本次覆盖。         |
+| `GET`    | `/api/production-config`             | 读取普通 Web 生产配置。                         |
+| `POST`   | `/api/production-config/validate`    | 校验左右 arm-base 位姿配置并返回字段错误。      |
+| `POST`   | `/api/production-config`             | 原子保存正式生产配置。                          |
+| `GET`    | `/api/production-readiness`          | 检查夹爪、外参、topic 与 RealMan SDK。           |
+| `GET`    | `/api/calibration/gripper/status`    | 获取夹爪向导状态。                              |
+| `POST`   | `/api/calibration/gripper/open`      | 启动或复用 gripper-only GoPro 向导。             |
 | `GET`    | `/api/filesystem?path=...`           | 浏览本机目录。                                  |
 | `POST`   | `/api/filesystem/create-directory`   | 创建用户指定目录。                              |
 | `POST`   | `/api/input-files/scan`              | 扫描输入目录当前层 `.mcap` 文件，不递归。     |
@@ -453,5 +454,5 @@ Forge venv 的 `site-packages` 不应全局前置到 `PYTHONPATH`，否则可能
 - `data_clean` 不启动 Octopus，不负责实时采集。
 - `data_clean` 不修改原始 MCAP；所有处理写入独立产物目录。
 - 临时 Forge bridge 不替代正式 canonical dataset。
-- `format-only` 不代表训练合格。
+- `format-only` 只用于开发 smoke，不是普通网页模式。
 - 修改清洗算法、topic 契约、配置项、运行入口或导出语义时，必须同步更新本文件和阶段二顶层文档。

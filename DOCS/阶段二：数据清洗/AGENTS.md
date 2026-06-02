@@ -47,6 +47,7 @@ asset/阶段二：数据清洗/dev/full_flow_random_bimanual/
 - 该自由输出规则是 `约束文件/文件存放规范.md` 中的受控例外，不得重新加回 `asset/prod` 路径拦截。
 - 中间产物、报告和日志仍固定写入 `asset/阶段二：数据清洗/dev/debug/web_jobs/<dataset_name>_data_clean_sidecar/`。
 - 结果页包含评测报告、TCP 3D 轨迹和逐文件状态。
+- 普通网页顶部提供独立“配置中心”：仅编辑左右 `camera_from_tcp.translation_mm` 与 `work_frames.position_mm / rotation_euler_rad`，夹爪配置通过 gripper-only GoPro 向导自动生成；人工配置使用 `mm/rad`，进入 Runtime 后位置统一换算为 `m`。普通任务固定走 arm-base 生产链路，不暴露 preset 或 `format-only/formal` 切换。
 - TCP 3D 轨迹使用固定右手工程视角；显示局部原点是当前 bounds 的最小值，不是物理坐标 `(0, 0, 0)`。
 - `format-only` 的旧 `common_frame` 轨迹可叠加；`formal` 的左右 `arm_base` 轨迹必须分屏同步播放。
 

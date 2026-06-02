@@ -1,0 +1,19 @@
+{
+  "status": "generated",
+  "failure_reasons": [],
+  "source_topic_catalog_ref": "catalog_ref",
+  "input_validation_summary_ref": "validation_ref",
+  "config_ref": "config_ref",
+  "timeline_ref": "scene3_full_flow",
+  "target_step_hz": 15,
+  "baseline_intersection_start_ns": 1777528905858147424,
+  "baseline_intersection_end_ns": 1777528914782753131,
+  "timestamp_rounding_policy": "rational_accumulation_round_to_ns",
+  "include_start": true,
+  "force_include_end": false,
+  "step_count": 134,
+  "first_step_time_ns": 1777528905858147424,
+  "last_step_time_ns": 1777528914724814091,
+  "created_at": "2026-06-01T05:57:28.377404+00:00",
+  "run_id": null
+}

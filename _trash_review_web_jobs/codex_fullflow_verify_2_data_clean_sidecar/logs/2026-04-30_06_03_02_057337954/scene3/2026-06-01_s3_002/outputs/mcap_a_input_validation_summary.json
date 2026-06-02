@@ -1,0 +1,20 @@
+{
+  "input_mcap_a": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2/outputs/artifacts/mcap_a/2026-04-30_06:03:02.057337954_cleaned_mcap_a.mcap",
+  "mcap_a_write_summary": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2/outputs/artifacts/mcap_a_write_summary.json",
+  "config_ref": "scene3_alignment",
+  "catalog_ref": "source_topic_catalog",
+  "status": "consumable",
+  "summary_consistency_status": "consistent",
+  "hard_fail_reasons": [],
+  "warnings": [],
+  "baseline_topics_present": true,
+  "baseline_topics_ordered": true,
+  "has_baseline_intersection": true,
+  "baseline_intersection_start_ns": 1777528982066440861,
+  "baseline_intersection_end_ns": 1777528992310026116,
+  "required_field_failures": [],
+  "optional_field_warnings": [],
+  "unmapped_topic_count": 4,
+  "created_at": "2026-06-01T05:49:50.197092+00:00",
+  "run_id": null
+}

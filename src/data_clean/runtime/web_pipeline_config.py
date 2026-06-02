@@ -9,6 +9,7 @@ from typing import Any
 
 import yaml
 
+from repo.config.mcap_process_config import load_app_config
 from runtime.config_snapshot import write_config_snapshot
 from schemas.alignment_config import Scene3AlignmentConfig
 from schemas.pose_filter import PoseFilterAlgorithm, PoseFilterConfig
@@ -187,6 +188,7 @@ def build_web_job_effective_config(
         ),
         config_data={
             "web_pipeline": preview["effective_summary"],
+            "production_pose_config": _production_pose_snapshot(default_config_path),
             "scene1_effective": scene1_data,
             "scene1_effective_config": str(scene1_path),
             "preset_name": preset_name,
@@ -201,6 +203,33 @@ def build_web_job_effective_config(
         diff=preview["diff"],
         manual_calibration_override=preview["manual_calibration_override"],
     )
+
+
+def _production_pose_snapshot(path: Path) -> dict[str, Any]:
+    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    config = load_app_config(path)
+    return {
+        "user_input": {
+            "camera_from_tcp": deepcopy(raw.get("camera_from_tcp", {})),
+            "work_frames": deepcopy(raw.get("work_frames", {})),
+        },
+        "runtime_normalized": {
+            "camera_from_tcp": {
+                hand: {
+                    "translation_m": list(extrinsic.translation_m),
+                    "rotation_quat_xyzw": list(extrinsic.rotation_quat_xyzw),
+                }
+                for hand, extrinsic in (config.camera_from_tcp or {}).items()
+            },
+            "work_frames": {
+                hand: {
+                    "position_m": dict(work_frame.position_m),
+                    "rotation_euler_rad": dict(work_frame.rotation_euler_rad),
+                }
+                for hand, work_frame in (config.work_frames or {}).items()
+            },
+        },
+    }
 
 
 def load_web_job_effective_config(snapshot_path: Path) -> WebPipelineEffectiveConfig:
@@ -242,6 +271,19 @@ def _default_summary(path: Path, bridge_mode: str) -> dict[str, Any]:
     frame = raw.get("frame_alignment", {})
     extrinsics = frame.get("extrinsics", {})
     pose_streams = frame.get("pose_streams", {})
+    camera_from_tcp = raw.get("camera_from_tcp", {})
+    identity = {"translation_m": [0.0, 0.0, 0.0], "rotation_quat_xyzw": [0.0, 0.0, 0.0, 1.0]}
+    camera_legacy = {
+        hand: _camera_tcp_legacy_extrinsic(camera_from_tcp.get(hand), identity)
+        for hand in ("left", "right")
+    }
+    if not extrinsics:
+        extrinsics = {
+            "common_from_left_start": deepcopy(identity),
+            "common_from_right_start": deepcopy(identity),
+            "camera_from_left_tcp": camera_legacy["left"],
+            "camera_from_right_tcp": camera_legacy["right"],
+        }
     return {
         "scene1": {
             "gripper": {
@@ -278,13 +320,26 @@ def _default_summary(path: Path, bridge_mode: str) -> dict[str, Any]:
     }
 
 
+def _camera_tcp_legacy_extrinsic(value: Any, identity: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return deepcopy(identity)
+    translation_mm = value.get("translation_mm")
+    if isinstance(translation_mm, list) and len(translation_mm) == 3:
+        return {
+            "translation_m": [float(item) / 1000.0 for item in translation_mm],
+            "rotation_quat_xyzw": [0.0, 0.0, 0.0, 1.0],
+        }
+    return deepcopy(value)
+
+
 def _scene1_yaml(default_config_path: Path, summary: dict[str, Any]) -> dict[str, Any]:
     raw = yaml.safe_load(default_config_path.read_text(encoding="utf-8")) or {}
     raw["gripper_streams"] = [
         deepcopy(summary["scene1"]["gripper"]["left"]),
         deepcopy(summary["scene1"]["gripper"]["right"]),
     ]
-    raw["frame_alignment"] = deepcopy(summary["scene1"]["frame_alignment"])
+    if "frame_alignment" in raw:
+        raw["frame_alignment"] = deepcopy(summary["scene1"]["frame_alignment"])
     return raw
 
 

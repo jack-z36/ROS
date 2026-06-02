@@ -1,0 +1,116 @@
+{
+  "run_id": "2026-06-01_s2_005",
+  "check_id": "scene2_tactile_filter",
+  "status": "success",
+  "input": {
+    "cleaned_mcap": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/codex_fullflow_verify_3_data_clean_sidecar/01_cleaned/2026-04-30_06_03_02_057337954/2026-04-30_06:03:02.057337954_cleaned.mcap",
+    "detection_result": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/codex_fullflow_verify_3_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2_005/outputs/signal_reliability_detection_result.json",
+    "signal_repair_result": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/codex_fullflow_verify_3_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2_005/outputs/signal_repair_result.json"
+  },
+  "config": {
+    "repair_policy_config_ref": "/home/hit/ROS/config/data_clean/data_clean_calibrated.yaml",
+    "tactile_filter_config": {
+      "algorithm": "median_ema",
+      "median_window": 3,
+      "ema_alpha": 0.35,
+      "contact_reset_threshold": null,
+      "timestamp_policy": "preserve_original"
+    },
+    "temporary_override_saved": false
+  },
+  "steps": [
+    "create_run_directory",
+    "load_cleaned_mcap",
+    "detect_pose",
+    "detect_gripper",
+    "detect_tactile",
+    "write_detection_result",
+    "build_repair_runs",
+    "find_legal_neighbors",
+    "run_signal_repair",
+    "write_repair_result",
+    "segment_tactile",
+    "filter_tactile",
+    "write_tactile_filter_result",
+    "write_tactile_filter_diff_summary",
+    "write_filtered_tactile_sequences",
+    "write_run_log"
+  ],
+  "stats": {
+    "sample_issue_count": 135,
+    "missing_interval_issue_count": 4,
+    "repair_runs": 19,
+    "summary_by_modality": {
+      "tactile": {
+        "repaired": 18,
+        "unrepaired": 1,
+        "skipped": 0
+      }
+    },
+    "summary_by_topic": {
+      "/pressure/right_hand/gripper_1": {
+        "filtered": 650,
+        "kept_original": 0,
+        "reset": 0,
+        "skipped": 0,
+        "invalid_shape": 0
+      },
+      "/pressure/left_hand/gripper_2": {
+        "filtered": 649,
+        "kept_original": 0,
+        "reset": 0,
+        "skipped": 0,
+        "invalid_shape": 0
+      },
+      "/pressure/left_hand/gripper_1": {
+        "filtered": 649,
+        "kept_original": 0,
+        "reset": 0,
+        "skipped": 0,
+        "invalid_shape": 0
+      },
+      "/pressure/right_hand/gripper_2": {
+        "filtered": 649,
+        "kept_original": 0,
+        "reset": 0,
+        "skipped": 0,
+        "invalid_shape": 0
+      }
+    },
+    "sample_count_before": {
+      "/pressure/right_hand/gripper_1": 650,
+      "/pressure/left_hand/gripper_2": 649,
+      "/pressure/left_hand/gripper_1": 649,
+      "/pressure/right_hand/gripper_2": 649
+    },
+    "sample_count_after": {
+      "/pressure/right_hand/gripper_1": 650,
+      "/pressure/left_hand/gripper_2": 649,
+      "/pressure/left_hand/gripper_1": 649,
+      "/pressure/right_hand/gripper_2": 649
+    },
+    "segment_stats": {
+      "segments": 1,
+      "filtered": 2597,
+      "kept_original": 0,
+      "reset": 0,
+      "skipped": 0,
+      "invalid_shape": 0
+    },
+    "diff_summary": {
+      "changed_cell_count": 7056,
+      "mean_abs_delta": 2.6102068627275625,
+      "max_abs_delta": 851.9999388916339
+    }
+  },
+  "errors": [],
+  "outputs": {
+    "run_dir": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/codex_fullflow_verify_3_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2_005",
+    "signal_reliability_detection_result_json": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/codex_fullflow_verify_3_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2_005/outputs/signal_reliability_detection_result.json",
+    "signal_repair_result_json": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/codex_fullflow_verify_3_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2_005/outputs/signal_repair_result.json",
+    "tactile_filter_result_json": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/codex_fullflow_verify_3_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2_005/outputs/tactile_filter_result.json",
+    "tactile_filter_diff_summary_json": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/codex_fullflow_verify_3_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2_005/outputs/tactile_filter_diff_summary.json",
+    "filtered_tactile_sequences_dir": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/codex_fullflow_verify_3_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_02_057337954/2026-06-01_s2_005/outputs/filtered_tactile_sequences"
+  },
+  "created_at": "2026-06-01T13:57:12.579544"
+}

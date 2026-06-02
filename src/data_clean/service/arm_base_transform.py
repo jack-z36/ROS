@@ -82,25 +82,33 @@ def compute_arm_base_tcp_pose(
         is used, so any such behaviour is inherited.
     """
     # ====================================================================
-    # 1. WorkFrameInArmBasePose → SDK euler pose list [x,y,z,rx,ry,rz]
-    #    The orientation is stored as ROS quaternion (xyzw).  Convert to
-    #    SDK wxyz order, then to euler via the SDK.
+    # 1. WorkFrameInArmBasePose → SDK euler pose list [x,y,z,rx,ry,rz].
+    #    Web input is stored as Euler radians, matching the SDK contract.
     # ====================================================================
     wf_px = work_frame.position_m["x"]
     wf_py = work_frame.position_m["y"]
     wf_pz = work_frame.position_m["z"]
 
-    wf_qx = work_frame.orientation["x"]
-    wf_qy = work_frame.orientation["y"]
-    wf_qz = work_frame.orientation["z"]
-    wf_qw = work_frame.orientation["w"]
-
-    # ROS (xyzw) → SDK (wxyz)
-    wf_euler: list[float] = algo.rm_algo_quaternion2euler(
-        [wf_qw, wf_qx, wf_qy, wf_qz]
-    )
-
-    work_frame_pose: list[float] = [wf_px, wf_py, wf_pz, wf_euler[0], wf_euler[1], wf_euler[2]]
+    wf_euler = work_frame.rotation_euler_rad
+    if wf_euler is None:
+        orientation = work_frame.orientation or {}
+        wf_euler_values = algo.rm_algo_quaternion2euler(
+            [
+                orientation["w"],
+                orientation["x"],
+                orientation["y"],
+                orientation["z"],
+            ]
+        )
+        wf_euler = {"rx": wf_euler_values[0], "ry": wf_euler_values[1], "rz": wf_euler_values[2]}
+    work_frame_pose: list[float] = [
+        wf_px,
+        wf_py,
+        wf_pz,
+        wf_euler["rx"],
+        wf_euler["ry"],
+        wf_euler["rz"],
+    ]
     work_matrix = algo.rm_algo_pos2matrix(work_frame_pose)
 
     # ====================================================================

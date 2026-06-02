@@ -1,0 +1,116 @@
+{
+  "run_id": "2026-06-01_s2_005",
+  "check_id": "scene2_tactile_filter",
+  "status": "success",
+  "input": {
+    "cleaned_mcap": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/01_cleaned/2026-04-30_06_03_18_669272746/2026-04-30_06:03:18.669272746_cleaned.mcap",
+    "detection_result": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_005/outputs/signal_reliability_detection_result.json",
+    "signal_repair_result": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_005/outputs/signal_repair_result.json"
+  },
+  "config": {
+    "repair_policy_config_ref": "/home/hit/ROS/config/data_clean/data_clean_calibrated.yaml",
+    "tactile_filter_config": {
+      "algorithm": "median_ema",
+      "median_window": 3,
+      "ema_alpha": 0.35,
+      "contact_reset_threshold": null,
+      "timestamp_policy": "preserve_original"
+    },
+    "temporary_override_saved": false
+  },
+  "steps": [
+    "create_run_directory",
+    "load_cleaned_mcap",
+    "detect_pose",
+    "detect_gripper",
+    "detect_tactile",
+    "write_detection_result",
+    "build_repair_runs",
+    "find_legal_neighbors",
+    "run_signal_repair",
+    "write_repair_result",
+    "segment_tactile",
+    "filter_tactile",
+    "write_tactile_filter_result",
+    "write_tactile_filter_diff_summary",
+    "write_filtered_tactile_sequences",
+    "write_run_log"
+  ],
+  "stats": {
+    "sample_issue_count": 274,
+    "missing_interval_issue_count": 6,
+    "repair_runs": 42,
+    "summary_by_modality": {
+      "tactile": {
+        "repaired": 41,
+        "unrepaired": 1,
+        "skipped": 0
+      }
+    },
+    "summary_by_topic": {
+      "/pressure/left_hand/gripper_2": {
+        "filtered": 728,
+        "kept_original": 0,
+        "reset": 0,
+        "skipped": 0,
+        "invalid_shape": 0
+      },
+      "/pressure/left_hand/gripper_1": {
+        "filtered": 728,
+        "kept_original": 0,
+        "reset": 0,
+        "skipped": 0,
+        "invalid_shape": 0
+      },
+      "/pressure/right_hand/gripper_1": {
+        "filtered": 728,
+        "kept_original": 0,
+        "reset": 0,
+        "skipped": 0,
+        "invalid_shape": 0
+      },
+      "/pressure/right_hand/gripper_2": {
+        "filtered": 727,
+        "kept_original": 0,
+        "reset": 0,
+        "skipped": 0,
+        "invalid_shape": 0
+      }
+    },
+    "sample_count_before": {
+      "/pressure/left_hand/gripper_2": 728,
+      "/pressure/left_hand/gripper_1": 728,
+      "/pressure/right_hand/gripper_1": 728,
+      "/pressure/right_hand/gripper_2": 727
+    },
+    "sample_count_after": {
+      "/pressure/left_hand/gripper_2": 728,
+      "/pressure/left_hand/gripper_1": 728,
+      "/pressure/right_hand/gripper_1": 728,
+      "/pressure/right_hand/gripper_2": 727
+    },
+    "segment_stats": {
+      "segments": 1,
+      "filtered": 2911,
+      "kept_original": 0,
+      "reset": 0,
+      "skipped": 0,
+      "invalid_shape": 0
+    },
+    "diff_summary": {
+      "changed_cell_count": 24916,
+      "mean_abs_delta": 4.19440779034879,
+      "max_abs_delta": 691.0
+    }
+  },
+  "errors": [],
+  "outputs": {
+    "run_dir": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_005",
+    "signal_reliability_detection_result_json": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_005/outputs/signal_reliability_detection_result.json",
+    "signal_repair_result_json": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_005/outputs/signal_repair_result.json",
+    "tactile_filter_result_json": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_005/outputs/tactile_filter_result.json",
+    "tactile_filter_diff_summary_json": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_005/outputs/tactile_filter_diff_summary.json",
+    "filtered_tactile_sequences_dir": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_005/outputs/filtered_tactile_sequences"
+  },
+  "created_at": "2026-06-01T13:49:35.271886"
+}

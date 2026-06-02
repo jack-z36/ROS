@@ -1508,8 +1508,8 @@ class BrowserCalibrationSession:
         return self.state()
 
 
-def _html_page() -> str:
-    return r"""<!doctype html>
+def _html_page(*, gripper_only: bool = False) -> str:
+    html = r"""<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -1645,12 +1645,26 @@ heartbeat();
 </script>
 </body>
 </html>"""
+    if not gripper_only:
+        return html
+    return (
+        html.replace(
+            "<button onclick=\"setMode('common','left')\">左手 common frame 标定（已废弃）</button>\n"
+            "        <button onclick=\"setMode('common','right')\">右手 common frame 标定（已废弃）</button>\n",
+            "",
+        )
+        .replace(
+            "const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪', common_frame_left:'左手 common frame（已废弃）', common_frame_right:'右手 common frame（已废弃）'};",
+            "const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪'};",
+        )
+    )
 
 
 class CalibrationHttpServer(ThreadingHTTPServer):
-    def __init__(self, server_address: tuple[str, int], handler_class: type[BaseHTTPRequestHandler], session: BrowserCalibrationSession):
+    def __init__(self, server_address: tuple[str, int], handler_class: type[BaseHTTPRequestHandler], session: BrowserCalibrationSession, *, gripper_only: bool = False):
         super().__init__(server_address, handler_class)
         self.session = session
+        self.gripper_only = gripper_only
 
 
 class CalibrationRequestHandler(BaseHTTPRequestHandler):
@@ -1663,7 +1677,7 @@ class CalibrationRequestHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         try:
             if parsed.path == "/":
-                self._send_bytes(_html_page().encode("utf-8"), "text/html; charset=utf-8")
+                self._send_bytes(_html_page(gripper_only=self.server.gripper_only).encode("utf-8"), "text/html; charset=utf-8")
             elif parsed.path == "/state":
                 self._send_json(self.server.session.state())
             elif parsed.path == "/frame.jpg":
@@ -1793,6 +1807,9 @@ def run_calibration_wizard(
     config_path: str | Path,
     *,
     output_path: str | Path = DEFAULT_OUTPUT_CONFIG,
+    port: int | None = None,
+    gripper_only: bool = False,
+    no_browser: bool = False,
 ) -> int:
     config_path = Path(config_path)
     output_path = Path(output_path)
@@ -1821,19 +1838,22 @@ def run_calibration_wizard(
             print("  可继续使用 common frame 标定；夹爪宽度标定需要 GoPro 图像。")
             process = ManagedGoProProcess(None)
         session = BrowserCalibrationSession(config_path, output_path, config, subscriber, process)
+        if gripper_only:
+            session.set_mode("gripper")
         session.start_background_threads()
-        port = _find_open_port()
-        server = CalibrationHttpServer(("127.0.0.1", port), CalibrationRequestHandler, session)
+        active_port = port or _find_open_port()
+        server = CalibrationHttpServer(("127.0.0.1", active_port), CalibrationRequestHandler, session, gripper_only=gripper_only)
         server_thread = threading.Thread(target=server.serve_forever, daemon=True)
         server_thread.start()
-        url = f"http://127.0.0.1:{port}"
+        url = f"http://127.0.0.1:{active_port}"
         print()
         print("浏览器标定页面已启动")
         print(f"  {url}")
         print("  如果浏览器没有自动打开，请复制上面的地址到浏览器。")
         print("  浏览器不可用时，可在本终端输入 g 回车，进入夹爪标定终端兜底流程。")
         print("  退出页面或按 Ctrl+C 会停止本向导启动的 GoPro 节点。")
-        _open_browser(url)
+        if not no_browser:
+            _open_browser(url)
         while not session.stop_event.is_set():
             if sys.stdin.isatty():
                 readable, _writable, _error = select.select([sys.stdin], [], [], 0)
@@ -1872,12 +1892,21 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="实时 GoPro 数据清洗标定中心。")
     parser.add_argument("--config", default=str(WORKSPACE_DIR / "config/data_clean/data_clean_smoke_test.yaml"))
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT_CONFIG))
+    parser.add_argument("--port", type=int, default=0)
+    parser.add_argument("--gripper-only", action="store_true")
+    parser.add_argument("--no-browser", action="store_true")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
-    return run_calibration_wizard(args.config, output_path=args.output)
+    return run_calibration_wizard(
+        args.config,
+        output_path=args.output,
+        port=args.port or None,
+        gripper_only=args.gripper_only,
+        no_browser=args.no_browser,
+    )
 
 
 if __name__ == "__main__":

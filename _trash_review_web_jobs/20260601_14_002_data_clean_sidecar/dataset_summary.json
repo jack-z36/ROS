@@ -1,0 +1,51 @@
+{
+  "status": "success",
+  "output_lerobot_v3": "/home/hit/ROS/asset/阶段二：数据清洗/prod/exports/lerobot/20260601_14_002",
+  "bridge_count": 5,
+  "episodes": 5,
+  "frames": 773,
+  "cameras": [
+    "left",
+    "right"
+  ],
+  "state_dim": 32,
+  "action_dim": 16,
+  "fps": 15.0,
+  "bridges": [
+    {
+      "bridge_dir": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_03_18_669272746",
+      "input_forge_ready_mcap": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_03_18_669272746/forge_ready.mcap",
+      "input_topic_config": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_03_18_669272746/forge_topic_config.yaml",
+      "episodes": 1,
+      "frames": 175
+    },
+    {
+      "bridge_dir": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_03_02_057337954",
+      "input_forge_ready_mcap": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_03_02_057337954/forge_ready.mcap",
+      "input_topic_config": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_03_02_057337954/forge_topic_config.yaml",
+      "episodes": 1,
+      "frames": 153
+    },
+    {
+      "bridge_dir": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_02_40_281723967",
+      "input_forge_ready_mcap": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_02_40_281723967/forge_ready.mcap",
+      "input_topic_config": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_02_40_281723967/forge_topic_config.yaml",
+      "episodes": 1,
+      "frames": 154
+    },
+    {
+      "bridge_dir": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_02_20_505241192",
+      "input_forge_ready_mcap": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_02_20_505241192/forge_ready.mcap",
+      "input_topic_config": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_02_20_505241192/forge_topic_config.yaml",
+      "episodes": 1,
+      "frames": 158
+    },
+    {
+      "bridge_dir": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_01_45_846252520",
+      "input_forge_ready_mcap": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_01_45_846252520/forge_ready.mcap",
+      "input_topic_config": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/04_forge_bridge/2026-04-30_06_01_45_846252520/forge_topic_config.yaml",
+      "episodes": 1,
+      "frames": 133
+    }
+  ]
+}

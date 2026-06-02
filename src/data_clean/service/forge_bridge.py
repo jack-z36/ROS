@@ -170,7 +170,7 @@ def write_forge_bridge(
             "state_dim": 32,
             "action_dim": 16,
             "action_semantics": "absolute_bimanual_tcp_pose_and_gripper_at_t_plus_1",
-            "formal_action_semantics": "temporary_bridge_only_not_umi_relative_action_chunk",
+            "formal_action_semantics": "absolute_tcp_target_pose_for_training_side_relative_conversion",
             "aligned_topics": ALIGNED_TOPICS,
             "forge_topics": FORGE_TOPICS,
         }

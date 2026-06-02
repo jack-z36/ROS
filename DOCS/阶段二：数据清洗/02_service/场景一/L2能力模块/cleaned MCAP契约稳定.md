@@ -38,7 +38,7 @@ common frame camera pose 和 common frame TCP pose 必须有独立、明确的�
 
 - raw MCAP 来自阶段一采集。
 - [[GripperCalibrationConfig]] 来自已有浏览器 GoPro 标定程序。
-- [[FrameAlignmentConfig]] 来自位姿转换配置生成模块（已废弃，保留历史兼容）。新链路使用 [[WorkFrameInBaseConfig]] + `McapProcessConfig.work_frames_in_base`。
+- [[FrameAlignmentConfig]] 来自位姿转换配置生成模块（已废弃，保留历史兼容）。新链路使用 `camera_from_tcp` + [[WorkFrameInBaseConfig]] + `work_frames`。
 - [[ArmBaseTcpPose]] 由 arm-base 位姿转换模块生成。
 
 ## 7. 下游关系

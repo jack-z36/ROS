@@ -163,9 +163,18 @@ def _build_work_frame(work_frame_config, hand: str) -> WorkFrameInArmBasePose:
     fid = FrameIdType.LEFT_ARM_BASE if hand == "left" else FrameIdType.RIGHT_ARM_BASE
     return WorkFrameInArmBasePose(
         hand=h,
-        frame_id=fid,
+        base_frame_id=fid,
         position_m=dict(work_frame_config.position_m),
-        orientation=dict(work_frame_config.orientation),
+        rotation_euler_rad=(
+            dict(work_frame_config.rotation_euler_rad)
+            if work_frame_config.rotation_euler_rad is not None
+            else None
+        ),
+        orientation=(
+            dict(work_frame_config.orientation)
+            if work_frame_config.orientation is not None
+            else None
+        ),
     )
 
 
@@ -190,7 +199,15 @@ def _collect_stream_artifacts(input_path: Path, config: AppConfig) -> _StreamArt
         if stream.output_arm_base_tcp_pose:
             has_arm_base_output = True
 
-    algo = _get_algo() if has_arm_base_output and config.work_frames else None
+    algo = None
+    if has_arm_base_output:
+        if not config.work_frames:
+            raise ProcessingError("arm-base TCP pose output requires work_frames configuration")
+        if not config.camera_from_tcp:
+            raise ProcessingError("arm-base TCP pose output requires camera_from_tcp configuration")
+        algo = _get_algo()
+        if algo is None:
+            raise ProcessingError("arm-base TCP pose output requires RealMan SDK Algo")
 
     codec = Ros2DynamicCodec()
     with input_path.open("rb") as fh:
@@ -242,28 +259,21 @@ def _collect_stream_artifacts(input_path: Path, config: AppConfig) -> _StreamArt
                             )
                             tcp_common_pose_payloads[topic].append(encoded_tcp_common)
 
-                # Arm-base TCP pose: compute if output topic is configured and SDK available
+                # Arm-base TCP pose is fail-closed: configured output must be generated.
                 if pose_stream.output_arm_base_tcp_pose and algo is not None and config.work_frames:
                     hand = topic_to_hand.get(topic, "left")
                     work_frame_config = config.work_frames.get(hand)
+                    extrinsic = (config.camera_from_tcp or {}).get(hand)
+                    if work_frame_config is None:
+                        raise ProcessingError(f'arm-base TCP pose output requires work_frames.{hand}')
+                    if extrinsic is None:
+                        raise ProcessingError(f'arm-base TCP pose output requires camera_from_tcp.{hand}')
                     if work_frame_config is not None:
                         from service.arm_base_transform import compute_arm_base_tcp_pose
 
                         # Step 1: TCP-in-camera from extrinsic
-                        if config.frame_alignment is not None:
-                            extrinsic_t = (
-                                config.frame_alignment.camera_from_left_tcp.translation_m
-                                if hand == "left"
-                                else config.frame_alignment.camera_from_right_tcp.translation_m
-                            )
-                            extrinsic_q = (
-                                config.frame_alignment.camera_from_left_tcp.rotation_quat_xyzw
-                                if hand == "left"
-                                else config.frame_alignment.camera_from_right_tcp.rotation_quat_xyzw
-                            )
-                        else:
-                            extrinsic_t = (0.0, 0.0, 0.0)
-                            extrinsic_q = (0.0, 0.0, 0.0, 1.0)
+                        extrinsic_t = extrinsic.translation_m
+                        extrinsic_q = extrinsic.rotation_quat_xyzw
 
                         tcp_in_camera = compute_tcp_in_camera(
                             *pose_tuple, extrinsic_t, extrinsic_q,

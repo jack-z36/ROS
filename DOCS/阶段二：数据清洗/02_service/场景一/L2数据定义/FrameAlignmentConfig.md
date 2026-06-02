@@ -1,4 +1,4 @@
-> ⚠️ **Deprecated since 2026-06 debug-common-frames L3 001**。该配置生成路线已废弃；新链路使用 [[WorkFrameInBaseConfig]] + [[McapProcessConfig.work_frames_in_base]]。保留本文档作为历史参考。
+> ⚠️ **Deprecated since 2026-06 debug-common-frames L3 001**。该配置生成路线已废弃；新链路使用 `camera_from_tcp` + [[WorkFrameInBaseConfig]] + `work_frames`。保留本文档作为历史参考。
 
 # FrameAlignmentConfig
 

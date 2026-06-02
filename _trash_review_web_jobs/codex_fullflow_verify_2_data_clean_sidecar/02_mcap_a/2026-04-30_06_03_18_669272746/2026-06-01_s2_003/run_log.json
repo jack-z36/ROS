@@ -1,0 +1,58 @@
+{
+  "run_id": "2026-06-01_s2_003",
+  "check_id": "scene2_signal_repair",
+  "status": "success",
+  "input": {
+    "cleaned_mcap": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/01_cleaned/2026-04-30_06_03_18_669272746/2026-04-30_06:03:18.669272746_cleaned.mcap",
+    "detection_result": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_003/outputs/signal_reliability_detection_result.json"
+  },
+  "config": {
+    "repair_policy_config_ref": "/home/hit/ROS/config/data_clean/data_clean_calibrated.yaml",
+    "temporary_override_saved": false
+  },
+  "steps": [
+    "create_run_directory",
+    "load_cleaned_mcap",
+    "detect_pose",
+    "detect_gripper",
+    "detect_tactile",
+    "write_detection_result",
+    "build_repair_runs",
+    "find_legal_neighbors",
+    "write_repair_result",
+    "write_repaired_sequences",
+    "write_run_log"
+  ],
+  "stats": {
+    "sample_issue_count": 274,
+    "missing_interval_issue_count": 6,
+    "repair_runs": 42,
+    "summary_by_modality": {
+      "tactile": {
+        "repaired": 41,
+        "unrepaired": 1,
+        "skipped": 0
+      }
+    },
+    "sample_count_before": {
+      "/pressure/left_hand/gripper_1": 65,
+      "/pressure/left_hand/gripper_2": 50,
+      "/pressure/right_hand/gripper_1": 64,
+      "/pressure/right_hand/gripper_2": 92
+    },
+    "sample_count_after": {
+      "/pressure/left_hand/gripper_1": 65,
+      "/pressure/left_hand/gripper_2": 50,
+      "/pressure/right_hand/gripper_1": 64,
+      "/pressure/right_hand/gripper_2": 92
+    }
+  },
+  "errors": [],
+  "outputs": {
+    "run_dir": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_003",
+    "signal_reliability_detection_result_json": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_003/outputs/signal_reliability_detection_result.json",
+    "signal_repair_result_json": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_003/outputs/signal_repair_result.json",
+    "repaired_sequences_dir": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/02_mcap_a/2026-04-30_06_03_18_669272746/2026-06-01_s2_003/outputs/repaired_sequences"
+  },
+  "created_at": "2026-06-01T13:49:18.390784"
+}

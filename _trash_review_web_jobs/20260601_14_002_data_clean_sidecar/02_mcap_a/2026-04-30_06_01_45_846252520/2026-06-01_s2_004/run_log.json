@@ -1,0 +1,91 @@
+{
+  "run_id": "2026-06-01_s2_004",
+  "check_id": "scene2_pose_filter",
+  "status": "success",
+  "input": {
+    "cleaned_mcap": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/01_cleaned/2026-04-30_06_01_45_846252520/2026-04-30_06:01:45.846252520_cleaned.mcap",
+    "detection_result": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_01_45_846252520/2026-06-01_s2_004/outputs/signal_reliability_detection_result.json",
+    "signal_repair_result": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_01_45_846252520/2026-06-01_s2_004/outputs/signal_repair_result.json"
+  },
+  "config": {
+    "repair_policy_config_ref": "/home/hit/ROS/config/data_clean/data_clean_calibrated.yaml",
+    "pose_filter_config": {
+      "algorithm": "savgol",
+      "window_duration_ms": 200,
+      "polyorder": 2,
+      "position_guard_max_delta_m": 0.02,
+      "orientation_guard_max_delta_deg": 5,
+      "timestamp_policy": "preserve_original"
+    },
+    "temporary_override_saved": false
+  },
+  "steps": [
+    "create_run_directory",
+    "load_cleaned_mcap",
+    "detect_pose",
+    "detect_gripper",
+    "detect_tactile",
+    "write_detection_result",
+    "build_repair_runs",
+    "find_legal_neighbors",
+    "run_signal_repair",
+    "write_repair_result",
+    "segment_pose",
+    "filter_pose",
+    "write_pose_filter_result",
+    "write_pose_filter_diff_summary",
+    "write_filtered_pose_sequences",
+    "write_run_log"
+  ],
+  "stats": {
+    "sample_issue_count": 212,
+    "missing_interval_issue_count": 0,
+    "repair_runs": 34,
+    "summary_by_modality": {
+      "tactile": {
+        "repaired": 33,
+        "unrepaired": 1,
+        "skipped": 0
+      }
+    },
+    "summary_by_topic": {
+      "/baton_mini_right/fast_odom": {
+        "filtered": 453,
+        "kept_original": 0,
+        "filter_rejected_by_guard": 0,
+        "skipped_boundary": 0
+      },
+      "/baton_mini_left/fast_odom": {
+        "filtered": 444,
+        "kept_original": 0,
+        "filter_rejected_by_guard": 0,
+        "skipped_boundary": 0
+      }
+    },
+    "sample_count_before": {
+      "/baton_mini_right/fast_odom": 453,
+      "/baton_mini_left/fast_odom": 444
+    },
+    "sample_count_after": {
+      "/baton_mini_right/fast_odom": 453,
+      "/baton_mini_left/fast_odom": 444
+    },
+    "segment_stats": {
+      "segments": 2,
+      "filtered": 897,
+      "kept": 0,
+      "rejected": 0
+    },
+    "guard_rejected": 0
+  },
+  "errors": [],
+  "outputs": {
+    "run_dir": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_01_45_846252520/2026-06-01_s2_004",
+    "signal_reliability_detection_result_json": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_01_45_846252520/2026-06-01_s2_004/outputs/signal_reliability_detection_result.json",
+    "signal_repair_result_json": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_01_45_846252520/2026-06-01_s2_004/outputs/signal_repair_result.json",
+    "pose_filter_result_json": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_01_45_846252520/2026-06-01_s2_004/outputs/pose_filter_result.json",
+    "pose_filter_diff_summary_json": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_01_45_846252520/2026-06-01_s2_004/outputs/pose_filter_diff_summary.json",
+    "filtered_pose_sequences_dir": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_01_45_846252520/2026-06-01_s2_004/outputs/filtered_pose_sequences"
+  },
+  "created_at": "2026-06-01T14:23:49.441729"
+}

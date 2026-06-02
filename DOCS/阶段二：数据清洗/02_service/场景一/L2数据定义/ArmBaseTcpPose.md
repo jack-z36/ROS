@@ -26,7 +26,7 @@ T_arm_base_tcp = rm_algo_workframe2base(work_matrix, tcp_in_camera_pose)
 | `hand` | string | `left` 或 `right`，对应 [[HandType]] |
 | `frame_id` | string | `left_arm_base` 或 `right_arm_base`，对应 [[FrameIdType]] |
 | `position_m` | dict | TCP 位置，`{x, y, z}`，单位 m |
-| `orientation` | dict | TCP 姿态四元数，`{x, y, z, w}`，顺序 xyzw，单位弧度 |
+| `orientation` | dict | TCP 姿态四元数，`{x, y, z, w}`，顺序 xyzw，无量纲 |
 | `official_api` | string | `"Algo.rm_algo_workframe2base"` |
 
 可选追溯字段：

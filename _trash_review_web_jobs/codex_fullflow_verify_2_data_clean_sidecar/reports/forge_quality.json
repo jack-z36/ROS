@@ -1,0 +1,90 @@
+{
+  "dataset_path": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/dataset/codex_fullflow_verify_2",
+  "num_episodes": 5,
+  "overall_score": 8.39,
+  "computed_at": "2026-06-01T05:50:14.630031+00:00",
+  "subscores": {
+    "action_diversity": 0.765,
+    "timestamp_regularity": 1.0,
+    "dead_actions": 0.993,
+    "static_detection": 1.0,
+    "gripper_health": 1.0,
+    "smoothness": 0.528,
+    "action_saturation": 0.819
+  },
+  "per_episode": [
+    {
+      "episode_id": "episode_000000",
+      "num_frames": 133,
+      "overall_score": 8.556634717316507,
+      "ldlj": -16.946154332597587,
+      "dead_fraction": 0.007518796992481203,
+      "gripper_chatter_rate": 0.9090909140169128,
+      "joint_path_length": 8107.160308397453,
+      "overall_saturation": 0.1475563909774436,
+      "mean_entropy": 0.7594744540314258,
+      "flags": [],
+      "static_fraction": 0.0,
+      "jitter_ratio": 2.4454359011987563e-06
+    },
+    {
+      "episode_id": "episode_000001",
+      "num_frames": 158,
+      "overall_score": 8.305474957312855,
+      "ldlj": -18.06655613530212,
+      "dead_fraction": 0.006329113924050633,
+      "gripper_chatter_rate": 0.5732484189601909,
+      "joint_path_length": 12769.58732143589,
+      "overall_saturation": 0.2151898734177215,
+      "mean_entropy": 0.7628327026494812,
+      "flags": [],
+      "static_fraction": 0.0,
+      "jitter_ratio": 2.4601153233727057e-06
+    },
+    {
+      "episode_id": "episode_000002",
+      "num_frames": 154,
+      "overall_score": 8.409506331386552,
+      "ldlj": -17.461592957362804,
+      "dead_fraction": 0.006493506493506494,
+      "gripper_chatter_rate": 1.176470610234702,
+      "joint_path_length": 14936.662595220998,
+      "overall_saturation": 0.1359577922077922,
+      "mean_entropy": 0.7836384798852338,
+      "flags": [],
+      "static_fraction": 0.0,
+      "jitter_ratio": 2.445499923967952e-06
+    },
+    {
+      "episode_id": "episode_000003",
+      "num_frames": 153,
+      "overall_score": 8.438139739403772,
+      "ldlj": -17.213686464983084,
+      "dead_fraction": 0.006535947712418301,
+      "gripper_chatter_rate": 0.6907894823524762,
+      "joint_path_length": 8703.900101802225,
+      "overall_saturation": 0.20792483660130717,
+      "mean_entropy": 0.7649796609626283,
+      "flags": [],
+      "static_fraction": 0.0,
+      "jitter_ratio": 2.452351115431056e-06
+    },
+    {
+      "episode_id": "episode_000004",
+      "num_frames": 175,
+      "overall_score": 8.25959589835946,
+      "ldlj": -18.077666078090758,
+      "dead_fraction": 0.005714285714285714,
+      "gripper_chatter_rate": 0.3448275819544844,
+      "joint_path_length": 12577.910542769625,
+      "overall_saturation": 0.19857142857142857,
+      "mean_entropy": 0.7813378903102974,
+      "flags": [],
+      "static_fraction": 0.0,
+      "jitter_ratio": 2.459624289514405e-06
+    }
+  ],
+  "flags": [],
+  "flagged_episodes": {},
+  "recommendations": []
+}

@@ -176,20 +176,15 @@ def compute_tcp_in_camera(
     translation_m: tuple[float, float, float],
     rotation_quat_xyzw: tuple[float, float, float, float],
 ) -> tuple[float, float, float, float, float, float, float]:
-    """Compute TCP pose in camera frame from camera pose and fixed extrinsic.
+    """Compute the dynamic TCP pose in the work frame from a camera pose.
 
-    The TCP-in-camera pose represents the end-effector (TCP) position and
-    orientation relative to the Baton Mini camera coordinate frame.  When
-    the TCP is rigidly attached to the camera, this is the constant
-    extrinsic T_camera_tcp.
+    The Baton Mini camera pose is expressed in the work frame.  The fixed
+    ``T_camera_tcp`` extrinsic is composed with that dynamic pose so the
+    returned TCP pose changes as the Baton Mini moves.
 
     The output can be used as ``pose_in_work`` input to
     ``Algo.rm_algo_workframe2base()``, where the work frame is the
     camera frame.
-
-    The camera pose parameters are accepted for pipeline continuity but
-    do *not* affect the result — TCP-in-camera depends only on the
-    fixed extrinsic.
 
     Args:
         camera_x/y/z: Camera position in the source reference frame.
@@ -213,5 +208,17 @@ def compute_tcp_in_camera(
             f"(norm^2={norm_sq:.10f})"
         )
 
-    tx, ty, tz = translation_m
-    return (tx, ty, tz, qx, qy, qz, qw)
+    work_from_camera = _pose_to_matrix(
+        camera_x,
+        camera_y,
+        camera_z,
+        camera_qx,
+        camera_qy,
+        camera_qz,
+        camera_qw,
+    )
+    camera_from_tcp = _extrinsic_to_matrix(translation_m, rotation_quat_xyzw)
+    work_from_tcp = work_from_camera @ camera_from_tcp
+    tx, ty, tz = work_from_tcp[:3, 3].tolist()
+    qx_out, qy_out, qz_out, qw_out = R.from_matrix(work_from_tcp[:3, :3]).as_quat()
+    return tx, ty, tz, qx_out, qy_out, qz_out, qw_out

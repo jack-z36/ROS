@@ -1,0 +1,5324 @@
+{
+  "input_cleaned_mcap": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/01_cleaned/2026-04-30_06_01_45_846252520/2026-04-30_06:01:45.846252520_cleaned.mcap",
+  "rule_config_ref": "/home/hit/ROS/config/data_clean/data_clean_calibrated.yaml",
+  "sample_issues": [
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-92",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907281933198,
+        "message_index": 92,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 369,
+          "duration_ns": 1427197497
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-93",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907292462256,
+        "message_index": 93,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 4,
+          "duration_ns": 3357910
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-94",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907312981995,
+        "message_index": 94,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 13459750
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-95",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907333547571,
+        "message_index": 95,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 4,
+          "duration_ns": 13530696
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-96",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907354059782,
+        "message_index": 96,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 2816007
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-97",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907364341866,
+        "message_index": 97,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 2589334
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-98",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907384858065,
+        "message_index": 98,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 2188985
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-99",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907395289696,
+        "message_index": 99,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1356809
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-100",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907415837860,
+        "message_index": 100,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1220405
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-101",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907426548969,
+        "message_index": 101,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1365886
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-102",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907447149346,
+        "message_index": 102,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1456334
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-103",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907467614476,
+        "message_index": 103,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1252882
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-104",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907488042886,
+        "message_index": 104,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 876800
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-105",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907499015375,
+        "message_index": 105,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1187576
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-106",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907519577853,
+        "message_index": 106,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 975444
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-108",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907550468081,
+        "message_index": 108,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 5,
+          "duration_ns": 10961370
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-109",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907561209667,
+        "message_index": 109,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 699070
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-110",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907581858148,
+        "message_index": 110,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 11287234
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-111",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907592385244,
+        "message_index": 111,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 4,
+          "duration_ns": 1124238
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-112",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907613630057,
+        "message_index": 112,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1363712
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-114",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907645042995,
+        "message_index": 114,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 6,
+          "duration_ns": 11856620
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-115",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907665830645,
+        "message_index": 115,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1233966
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-116",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907686472005,
+        "message_index": 116,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1347318
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-117",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907706837639,
+        "message_index": 117,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 945658
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-119",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907732492938,
+        "message_index": 119,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 5,
+          "duration_ns": 4676425
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-120",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907742953177,
+        "message_index": 120,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 4323251
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-121",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907763621541,
+        "message_index": 121,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 4,
+          "duration_ns": 14473052
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-122",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907774129771,
+        "message_index": 122,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 3798087
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-123",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907784578054,
+        "message_index": 123,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 3691247
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-123",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907791428009,
+        "message_index": 123,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-124",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907805053911,
+        "message_index": 124,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 3201072
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-125",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907815506416,
+        "message_index": 125,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 3182806
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-126",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907835979587,
+        "message_index": 126,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 3067601
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-127",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907856464894,
+        "message_index": 127,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 2957724
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-128",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907876846272,
+        "message_index": 128,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 2790168
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-129",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907887210110,
+        "message_index": 129,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 2712374
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-130",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907897825217,
+        "message_index": 130,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1277435
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-131",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907918846701,
+        "message_index": 131,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1613255
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-132",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907939690897,
+        "message_index": 132,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1728044
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-133",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907960158748,
+        "message_index": 133,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1458103
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-135",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907970803284,
+        "message_index": 135,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 4,
+          "duration_ns": 1223581
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-135",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528907980457382,
+        "message_index": 135,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9888888888888889,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 287777
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-136",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528907991308923,
+        "message_index": 136,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 613868
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-137",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908011847689,
+        "message_index": 137,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 562323
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-138",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908032205414,
+        "message_index": 138,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 263024
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-139",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908043506246,
+        "message_index": 139,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 4,
+          "duration_ns": 1061631
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-140",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908064397259,
+        "message_index": 140,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 998567
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-141",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908074833848,
+        "message_index": 141,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 937268
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-142",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908096291298,
+        "message_index": 142,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1439694
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-143",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908116888097,
+        "message_index": 143,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1312965
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-144",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908137410134,
+        "message_index": 144,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1283268
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-145",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908147813434,
+        "message_index": 145,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1225347
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-146",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908168264169,
+        "message_index": 146,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1158464
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-147",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908188916913,
+        "message_index": 147,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1062115
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-148",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908209546354,
+        "message_index": 148,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 961883
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-150",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908241080750,
+        "message_index": 150,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 4,
+          "duration_ns": 11088031
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-151",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528908252141223,
+        "message_index": 151,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9888888888888889,
+          "threshold": 0.95,
+          "sample_count": 5,
+          "duration_ns": 1658533
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-152",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528908272568266,
+        "message_index": 152,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9888888888888889,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1144638
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-153",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528908282940484,
+        "message_index": 153,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9888888888888889,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1029384
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-154",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528908293306359,
+        "message_index": 154,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9888888888888889,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 881321
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-155",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528908313972276,
+        "message_index": 155,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9888888888888889,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 804024
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-156",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528908334836453,
+        "message_index": 156,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9888888888888889,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 756893
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-157",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528908345428946,
+        "message_index": 157,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9777777777777777,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 766707
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-158",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528908365881635,
+        "message_index": 158,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9777777777777777,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 800077
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-159",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908386545358,
+        "message_index": 159,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 546938
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-160",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908398076029,
+        "message_index": 160,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1415290
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-161",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908419223935,
+        "message_index": 161,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1994401
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-163",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908439961224,
+        "message_index": 163,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 4,
+          "duration_ns": 2209249
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-163",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528908449128830,
+        "message_index": 163,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9777777777777777,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 827296
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-164",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908470561012,
+        "message_index": 164,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1348283
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-166",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528908501462768,
+        "message_index": 166,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 4,
+          "duration_ns": 11634326
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-297",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528910697187614,
+        "message_index": 297,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 526,
+          "duration_ns": 2186741577
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-302",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_1",
+        "timestamp": 1777528910781535683,
+        "message_index": 302,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 0.9666666666666667,
+          "threshold": 0.95,
+          "sample_count": 17,
+          "duration_ns": 76162079
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-303",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910801650195,
+        "message_index": 303,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 11082252
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-303",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528910811155781,
+        "message_index": 303,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-304",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910822229400,
+        "message_index": 304,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 591568
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-305",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910832765013,
+        "message_index": 305,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 704488
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-306",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910853342871,
+        "message_index": 306,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 834745
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-307",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910863846781,
+        "message_index": 307,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 345335
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-308",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910884378150,
+        "message_index": 308,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 236836
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-309",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910905338794,
+        "message_index": 309,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 438830
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-310",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910915948364,
+        "message_index": 310,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 356305
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-311",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910936976441,
+        "message_index": 311,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-311",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528910938288959,
+        "message_index": 311,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-312",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910947750267,
+        "message_index": 312,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-312",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528910949000323,
+        "message_index": 312,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-313",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910968431158,
+        "message_index": 313,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-313",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528910969969412,
+        "message_index": 313,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-314",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528910989662613,
+        "message_index": 314,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-315",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911000080996,
+        "message_index": 315,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 9553253
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-316",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911011184363,
+        "message_index": 316,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 259042
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-316",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911020574031,
+        "message_index": 316,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-317",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911031799010,
+        "message_index": 317,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-318",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911042168676,
+        "message_index": 318,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 862874
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-319",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911062512070,
+        "message_index": 319,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-319",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911063376771,
+        "message_index": 319,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-320",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911083193218,
+        "message_index": 320,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-320",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911083874092,
+        "message_index": 320,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-321",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911103944040,
+        "message_index": 321,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-321",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911104918539,
+        "message_index": 321,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-322",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911124855852,
+        "message_index": 322,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-322",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911125797174,
+        "message_index": 322,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-323",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911135531619,
+        "message_index": 323,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-323",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911136175792,
+        "message_index": 323,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-324",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911156067909,
+        "message_index": 324,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-324",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911156795245,
+        "message_index": 324,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-325",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911166497019,
+        "message_index": 325,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-325",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911167216037,
+        "message_index": 325,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-326",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911187295982,
+        "message_index": 326,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-326",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911187898461,
+        "message_index": 326,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-327",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911198298394,
+        "message_index": 327,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 378120
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-328",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911208462956,
+        "message_index": 328,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-328",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911209718295,
+        "message_index": 328,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-329",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911219135232,
+        "message_index": 329,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-330",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911239699996,
+        "message_index": 330,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 19616249
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-331",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911250235182,
+        "message_index": 331,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-332",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911260763183,
+        "message_index": 332,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 9680762
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-332",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911272118052,
+        "message_index": 332,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-333",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911282813000,
+        "message_index": 333,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-334",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911302260327,
+        "message_index": 334,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 10594218
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-334",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911303485892,
+        "message_index": 334,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-335",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911322965788,
+        "message_index": 335,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-335",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911323985065,
+        "message_index": 335,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-336",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911333604637,
+        "message_index": 336,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-336",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911334439265,
+        "message_index": 336,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-337",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911354271343,
+        "message_index": 337,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-337",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911355140212,
+        "message_index": 337,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-338",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911364985837,
+        "message_index": 338,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-338",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911366144835,
+        "message_index": 338,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-339",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911385845705,
+        "message_index": 339,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-340",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911396729046,
+        "message_index": 340,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 8671872
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-340",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911400144306,
+        "message_index": 340,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-341",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911407365778,
+        "message_index": 341,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-341",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911410620382,
+        "message_index": 341,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-342",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911418055202,
+        "message_index": 342,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-342",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911421073215,
+        "message_index": 342,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-343",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911431566238,
+        "message_index": 343,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-344",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911452035556,
+        "message_index": 344,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 13055150
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-345",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911460007369,
+        "message_index": 345,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 388507
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-345",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911462420740,
+        "message_index": 345,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-346",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911482878399,
+        "message_index": 346,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-346",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911490573763,
+        "message_index": 346,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-347",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911501015103,
+        "message_index": 347,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-347",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911503422852,
+        "message_index": 347,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-348",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911511500953,
+        "message_index": 348,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-348",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911513891961,
+        "message_index": 348,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-349",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911532077415,
+        "message_index": 349,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-349",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911534531698,
+        "message_index": 349,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-350",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911552583668,
+        "message_index": 350,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-350",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911555036704,
+        "message_index": 350,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-351",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911563072074,
+        "message_index": 351,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-351",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911565506152,
+        "message_index": 351,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-352",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911583830563,
+        "message_index": 352,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-352",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911586057710,
+        "message_index": 352,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-353",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911594538947,
+        "message_index": 353,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-353",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911596584170,
+        "message_index": 353,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-354",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911615538015,
+        "message_index": 354,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-354",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911616998777,
+        "message_index": 354,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-355",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911637618474,
+        "message_index": 355,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 1270920
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-356",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911648166202,
+        "message_index": 356,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 1211331
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-357",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911668948812,
+        "message_index": 357,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 1293457
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-358",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911689482595,
+        "message_index": 358,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 1109900
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-359",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911700036509,
+        "message_index": 359,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-359",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911709011475,
+        "message_index": 359,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-360",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911720682173,
+        "message_index": 360,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 1137281
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-361",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528911740327758,
+        "message_index": 361,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-361",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911751362832,
+        "message_index": 361,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-363",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911762360879,
+        "message_index": 363,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1344956
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-364",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911772725680,
+        "message_index": 364,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 1136766
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-365",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911783230266,
+        "message_index": 365,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 730205
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-366",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911793715503,
+        "message_index": 366,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 605041
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-367",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911814383410,
+        "message_index": 367,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 516044
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-368",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911834964698,
+        "message_index": 368,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 402330
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-369",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911855479481,
+        "message_index": 369,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 359951
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-370",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911866210272,
+        "message_index": 370,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 488485
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-371",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911886621795,
+        "message_index": 371,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 332611
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-372",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911897435722,
+        "message_index": 372,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 650943
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-373",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911918069211,
+        "message_index": 373,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 523979
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-374",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911939013274,
+        "message_index": 374,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 764034
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-375",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911950016976,
+        "message_index": 375,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 950544
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-376",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911960386220,
+        "message_index": 376,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 758006
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-378",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528911981210664,
+        "message_index": 378,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 979299
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-379",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912001736692,
+        "message_index": 379,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 3,
+          "duration_ns": 11009544
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-380",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912012237421,
+        "message_index": 380,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 426721
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-381",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912033076209,
+        "message_index": 381,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 561851
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-382",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912053656283,
+        "message_index": 382,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 423226
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-383",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912064747265,
+        "message_index": 383,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 624482
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-384",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912085350111,
+        "message_index": 384,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 471047
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-385",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912096047680,
+        "message_index": 385,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 507587
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-386",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912116682848,
+        "message_index": 386,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-386",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528912117790769,
+        "message_index": 386,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-387",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912137454024,
+        "message_index": 387,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-387",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528912138266244,
+        "message_index": 387,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-388",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912158060815,
+        "message_index": 388,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-388",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528912159032977,
+        "message_index": 388,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-389",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912178940839,
+        "message_index": 389,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-389",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528912179653187,
+        "message_index": 389,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-390",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912199519801,
+        "message_index": 390,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 2,
+          "duration_ns": 9532916
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-391",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912219986288,
+        "message_index": 391,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-391",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528912220753235,
+        "message_index": 391,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-394",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912262482208,
+        "message_index": 394,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 5,
+          "duration_ns": 29569004
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-394",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528912264271696,
+        "message_index": 394,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-395",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912283243990,
+        "message_index": 395,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-395",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528912284763620,
+        "message_index": 395,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-396",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912303973291,
+        "message_index": 396,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-396",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528912305253761,
+        "message_index": 396,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-397",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528912314731444,
+        "message_index": 397,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-397",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528912315834851,
+        "message_index": 397,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 1,
+          "duration_ns": 0
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_zero_suspicious-550",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528914855105572,
+        "message_index": 550,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_zero_suspicious",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains mostly zero for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_zero_suspicious",
+      "evidence": [
+        {
+          "zero_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 612,
+          "duration_ns": 2519641128
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_saturation-92",
+      "sample_ref": {
+        "topic": "/pressure/left_hand/gripper_2",
+        "timestamp": 1777528907281933198,
+        "message_index": 92,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_saturation",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains saturated for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_saturation",
+      "evidence": [
+        {
+          "saturation_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 369,
+          "duration_ns": 1427197497
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_saturation-297",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_1",
+        "timestamp": 1777528910697187614,
+        "message_index": 297,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_saturation",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains saturated for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_saturation",
+      "evidence": [
+        {
+          "saturation_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 526,
+          "duration_ns": 2186741577
+        }
+      ]
+    },
+    {
+      "issue_id": "tactile-tactile_saturation-550",
+      "sample_ref": {
+        "topic": "/pressure/right_hand/gripper_2",
+        "timestamp": 1777528914855105572,
+        "message_index": 550,
+        "modality": "tactile",
+        "time_domain": "header_stamp"
+      },
+      "issue_type": "tactile_saturation",
+      "severity": "error",
+      "source": "tactile",
+      "field_path": "tactile.frame",
+      "message": "Tactile pressure frame remains saturated for too long",
+      "suggested_action": "inspect_required",
+      "reason": "tactile_saturation",
+      "evidence": [
+        {
+          "saturation_ratio": 1.0,
+          "threshold": 0.95,
+          "sample_count": 612,
+          "duration_ns": 2519641128
+        }
+      ]
+    }
+  ],
+  "missing_interval_issues": [],
+  "issue_groups": [],
+  "summary_by_modality": {
+    "pose": {
+      "sample_issues": 0,
+      "missing_interval_issues": 0
+    },
+    "gripper": {
+      "sample_issues": 0,
+      "missing_interval_issues": 0
+    },
+    "tactile": {
+      "sample_issues": 212,
+      "missing_interval_issues": 0
+    }
+  },
+  "created_at": "2026-06-01T13:49:04.701115",
+  "run_id": "2026-06-01_s2_003"
+}

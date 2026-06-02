@@ -1,0 +1,57 @@
+{
+  "summary_by_topic": {
+    "/pressure/left_hand/gripper_2": {
+      "filtered": 660,
+      "kept_original": 0,
+      "reset": 0,
+      "skipped": 0,
+      "invalid_shape": 0
+    },
+    "/pressure/right_hand/gripper_1": {
+      "filtered": 659,
+      "kept_original": 0,
+      "reset": 0,
+      "skipped": 0,
+      "invalid_shape": 0
+    },
+    "/pressure/left_hand/gripper_1": {
+      "filtered": 660,
+      "kept_original": 0,
+      "reset": 0,
+      "skipped": 0,
+      "invalid_shape": 0
+    },
+    "/pressure/right_hand/gripper_2": {
+      "filtered": 659,
+      "kept_original": 0,
+      "reset": 0,
+      "skipped": 0,
+      "invalid_shape": 0
+    }
+  },
+  "sample_count_before": {
+    "/pressure/left_hand/gripper_2": 660,
+    "/pressure/right_hand/gripper_1": 659,
+    "/pressure/left_hand/gripper_1": 660,
+    "/pressure/right_hand/gripper_2": 659
+  },
+  "sample_count_after": {
+    "/pressure/left_hand/gripper_2": 660,
+    "/pressure/right_hand/gripper_1": 659,
+    "/pressure/left_hand/gripper_1": 660,
+    "/pressure/right_hand/gripper_2": 659
+  },
+  "segment_stats": {
+    "segments": 1,
+    "filtered": 2638,
+    "kept_original": 0,
+    "reset": 0,
+    "skipped": 0,
+    "invalid_shape": 0
+  },
+  "diff_summary": {
+    "changed_cell_count": 19084,
+    "mean_abs_delta": 4.227738619027042,
+    "max_abs_delta": 667.6305249060773
+  }
+}

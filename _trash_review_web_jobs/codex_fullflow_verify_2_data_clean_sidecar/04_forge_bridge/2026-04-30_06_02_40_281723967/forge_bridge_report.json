@@ -1,0 +1,35 @@
+{
+  "status": "completed",
+  "created_at": "2026-06-01T05:49:59.328189+00:00",
+  "input_aligned_mcap": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/03_aligned/2026-04-30_06_02_40_281723967/aligned.mcap",
+  "output_forge_ready_mcap": "/home/hit/ROS/src/data_clean/runs/web_jobs/outputs/staging/20260601_134839_ff45ae91/sidecar/codex_fullflow_verify_2_data_clean_sidecar/04_forge_bridge/2026-04-30_06_02_40_281723967/forge_ready.mcap",
+  "mode": "format-only",
+  "pose_source_profile": "format-only",
+  "calibration_ready": false,
+  "training_eligible": false,
+  "input_complete_step_count": 155,
+  "output_step_count": 154,
+  "dropped_terminal_step_count": 1,
+  "state_dim": 32,
+  "action_dim": 16,
+  "action_semantics": "absolute_bimanual_tcp_pose_and_gripper_at_t_plus_1",
+  "formal_action_semantics": "temporary_bridge_only_not_umi_relative_action_chunk",
+  "aligned_topics": {
+    "image_left": "/gopro_left/image_raw",
+    "image_right": "/gopro_right/image_raw",
+    "left_tcp_pose": "/aligned/left_tcp_pose",
+    "right_tcp_pose": "/aligned/right_tcp_pose",
+    "left_gripper_width": "/aligned/left_gripper_width",
+    "right_gripper_width": "/aligned/right_gripper_width",
+    "tactile_left_gripper_1": "/aligned/tactile_left_gripper_1",
+    "tactile_left_gripper_2": "/aligned/tactile_left_gripper_2",
+    "tactile_right_gripper_1": "/aligned/tactile_right_gripper_1",
+    "tactile_right_gripper_2": "/aligned/tactile_right_gripper_2"
+  },
+  "forge_topics": {
+    "image_left": "/forge/observation/images/left",
+    "image_right": "/forge/observation/images/right",
+    "state": "/forge/observation/state",
+    "action": "/forge/action"
+  }
+}

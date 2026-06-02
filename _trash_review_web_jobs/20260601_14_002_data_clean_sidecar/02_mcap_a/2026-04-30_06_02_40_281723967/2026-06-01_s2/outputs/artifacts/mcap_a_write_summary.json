@@ -1,0 +1,54 @@
+{
+  "input_cleaned_mcap": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/01_cleaned/2026-04-30_06_02_40_281723967/2026-04-30_06:02:40.281723967_cleaned.mcap",
+  "output_mcap_a": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_02_40_281723967/2026-06-01_s2/outputs/artifacts/mcap_a/2026-04-30_06:02:40.281723967_cleaned_mcap_a.mcap",
+  "write_config_ref": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_02_40_281723967/2026-06-01_s2/outputs/artifacts/mcap_a/2026-04-30_06:02:40.281723967_cleaned_mcap_a.mcap",
+  "signal_repair_result_ref": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_02_40_281723967/2026-06-01_s2_003/outputs/signal_repair_result.json",
+  "pose_filter_result_ref": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_02_40_281723967/2026-06-01_s2_004/outputs/pose_filter_result.json",
+  "tactile_filter_result_ref": "/home/hit/ROS/asset/阶段二：数据清洗/dev/debug/web_jobs/20260601_14_002_data_clean_sidecar/02_mcap_a/2026-04-30_06_02_40_281723967/2026-06-01_s2_005/outputs/tactile_filter_result.json",
+  "replaced_topic_stats": {
+    "/baton_mini_left/fast_odom": 519,
+    "/baton_mini_right/fast_odom": 527,
+    "/pressure/left_hand/gripper_1": 641,
+    "/pressure/left_hand/gripper_2": 642,
+    "/pressure/right_hand/gripper_1": 641,
+    "/pressure/right_hand/gripper_2": 642
+  },
+  "copied_topic_stats": {
+    "/baton_mini_right/camera_common_pose": 527,
+    "/baton_mini_right/tcp_common_pose": 527,
+    "/baton_mini_left/camera_common_pose": 519,
+    "/baton_mini_left/tcp_common_pose": 519,
+    "/gopro_left/image_raw": 619,
+    "/gopro_left/gripper_width": 619,
+    "/gopro_right/image_raw": 621,
+    "/gopro_right/gripper_width": 621
+  },
+  "timestamp_policy": "preserve_original",
+  "topic_policy": "preserve_cleaned_topics",
+  "status": "completed",
+  "failure_reason": null,
+  "created_at": "2026-06-01T14:24:29.820616",
+  "run_id": null,
+  "contract": {
+    "topic_list": [
+      "/pressure/left_hand/gripper_2",
+      "/pressure/right_hand/gripper_1",
+      "/pressure/left_hand/gripper_1",
+      "/pressure/right_hand/gripper_2",
+      "/baton_mini_right/fast_odom",
+      "/baton_mini_right/camera_common_pose",
+      "/baton_mini_right/tcp_common_pose",
+      "/baton_mini_left/fast_odom",
+      "/baton_mini_left/camera_common_pose",
+      "/baton_mini_left/tcp_common_pose",
+      "/gopro_left/image_raw",
+      "/gopro_left/gripper_width",
+      "/gopro_right/image_raw",
+      "/gopro_right/gripper_width"
+    ],
+    "message_count": 8184,
+    "start_time": 1777528960283020620,
+    "end_time": 1777528970742199406,
+    "checksum": "sha256:489c8e11579c1d89684a4ba95fe64a7fd6bdbb2397c0fb874e5f3da5dd4a333d"
+  }
+}

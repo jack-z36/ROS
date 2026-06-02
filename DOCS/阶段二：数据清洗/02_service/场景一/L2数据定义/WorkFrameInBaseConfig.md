@@ -26,16 +26,16 @@ work_matrix = rm_algo_pos2matrix(work_frame_euler_pose)
 |------|------|----------|
 | `hand` | string | `left` 或 `right` |
 | `base_frame_id` | string | `left_arm_base` 或 `right_arm_base` |
-| `position_m` | dict | Work frame 原点在基坐标系下的位置，`{x, y, z}`，单位 m |
-| `orientation` | dict | Work frame 姿态四元数，`{x, y, z, w}`，顺序 xyzw |
+| `position_mm` | dict | Work frame 原点在基坐标系下的位置，`{x, y, z}`，人工配置单位 mm |
+| `rotation_euler_rad` | dict | Work frame 姿态欧拉角，`{rx, ry, rz}`，单位 rad |
 | `work_frame_id` | string | 用户指定的 work frame 名称，默认 `"work"` |
 | `source` | string | 来源：`user_input`、`calibration_file`、`external_config` |
 
 ## 有效性规则
 
 - `hand` 必须与 `base_frame_id` 匹配：`left` → `left_arm_base`，`right` → `right_arm_base`。
-- 位置单位固定为 m。
-- 四元数必须是单位四元数。
+- Parser 加载后将 `position_mm / 1000` 换算为 Runtime `position_m`。
+- `rotation_euler_rad` 直接传给 RealMan SDK，不再绕行 quaternion 转换。
 - 左右手必须分别配置各自的 work frame。
 
 ## 上游来源

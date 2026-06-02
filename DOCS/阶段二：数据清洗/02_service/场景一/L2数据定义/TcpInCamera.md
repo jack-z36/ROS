@@ -10,7 +10,7 @@
 
 ## 现实语义
 
-它由 `compute_tcp_in_camera` 从 raw camera pose 和固定外参 [[CameraFromTcpExtrinsic]] 推导得到。TCP in camera 位姿作为 `rm_algo_workframe2base` 的 `pose_in_work` 输入，其中 camera frame 充当 work frame 角色。
+它由 `compute_tcp_in_camera` 将 Baton Mini 每帧动态 camera pose 与固定外参 [[CameraFromTcpExtrinsic]] 组合得到。TCP 动态位姿作为 `rm_algo_workframe2base` 的 `pose_in_work` 输入，其中 camera 所在工作坐标系充当 work frame 角色。
 
 ```text
 T_tcp_in_camera = extrinsic translation + rotation（固定值，不依赖相机运动）
@@ -35,7 +35,8 @@ T_tcp_in_camera = extrinsic translation + rotation（固定值，不依赖相机
 
 ## 有效性规则
 
-- 外参四元数必须是单位四元数（norm² 与 1 偏差 ≤ 1e-6）。
+- Baton Mini raw pose 的位置单位固定为 `m`，不得忽略每帧动态位姿。
+- 相机到 TCP 外参仅提供固定平移，旋转固定为零。
 - `frame_id` 格式为 `<hand>_camera_optical_frame`。
 - 左右手必须使用各自的外参。
 

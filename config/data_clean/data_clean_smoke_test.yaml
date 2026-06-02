@@ -23,10 +23,12 @@ pose_streams:
     msg_type: nav_msgs/msg/Odometry
     output_topic: /baton_mini_left/camera_common_pose
     transform_file: /home/hit/ROS/config/data_clean/data_clean_left_transform.yaml
+    output_arm_base_tcp_pose: /left_arm_base_tcp_pose
   - input_topic: /baton_mini_right/fast_odom
     msg_type: nav_msgs/msg/Odometry
     output_topic: /baton_mini_right/camera_common_pose
     transform_file: /home/hit/ROS/config/data_clean/data_clean_right_transform.yaml
+    output_arm_base_tcp_pose: /right_arm_base_tcp_pose
 
 gripper_streams:
   - image_topic: /gopro_left/image_raw
@@ -49,6 +51,28 @@ gripper_streams:
     marker_min: 20.0
     marker_max: 300.0
     gripper_max: 100.0
+
+camera_from_tcp:
+  left:
+    translation_mm: [0.0, 0.0, 0.0]
+  right:
+    translation_mm: [0.0, 0.0, 0.0]
+
+work_frames:
+  left:
+    hand: left
+    base_frame_id: left_arm_base
+    work_frame_id: camera_work
+    position_mm: {x: 0.0, y: 0.0, z: 0.0}
+    rotation_euler_rad: {rx: 0.0, ry: 0.0, rz: 0.0}
+    source: smoke_test
+  right:
+    hand: right
+    base_frame_id: right_arm_base
+    work_frame_id: camera_work
+    position_mm: {x: 0.0, y: 0.0, z: 0.0}
+    rotation_euler_rad: {rx: 0.0, ry: 0.0, rz: 0.0}
+    source: smoke_test
 
 # frame_alignment: 场景一位姿转换配置契约
 # common_anchor 定义 common_frame 锚点，默认 left（= left_umi_start_frame）

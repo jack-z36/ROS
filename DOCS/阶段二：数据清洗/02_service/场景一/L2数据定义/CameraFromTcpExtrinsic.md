@@ -33,14 +33,13 @@ T_common_tcp(t) = T_common_camera(t) * T_camera_tcp
 
 | 字段 | 类型 | 现实含义 |
 |---|---|---|
-| `translation_m` | float[3] | TCP 原点在 camera frame 下的位置，单位 m |
-| `rotation_quat_xyzw` | float[4] | TCP frame 相对 camera frame 的姿态，xyzw |
+| `translation_mm` | float[3] | TCP 原点在 camera frame 下的位置，人工配置单位 mm |
 | `source` | string | CAD、测量、标定或默认占位 |
 
 ## 有效性规则
 
-- 四元数必须是单位四元数。
-- 单位必须是 m，不允许混入 mm。
+- 相机到 TCP 的旋转固定为零，不允许在普通生产配置中覆盖。
+- Parser 加载后将 `translation_mm / 1000` 换算为 Runtime `translation_m`。
 - 左右 TCP 外参必须分别配置。
 - 若首版没有真实 TCP 外参，可用单位变换占位，但必须在报告中标记 `tcp_extrinsic_source: identity_placeholder`。
 

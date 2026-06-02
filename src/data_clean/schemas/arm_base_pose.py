@@ -109,11 +109,11 @@ class WorkFrameInArmBasePose:
     position_m: dict[str, float]
     """Work frame origin in metres, with keys {'x', 'y', 'z'}."""
 
-    orientation: dict[str, float]
-    """Work frame orientation as quaternion with keys {'x', 'y', 'z', 'w'}.
+    rotation_euler_rad: dict[str, float] | None = None
+    """Work frame Euler rotation in radians, with keys {'rx', 'ry', 'rz'}."""
 
-    Quaternion order: (x, y, z, w) following ROS geometry_msgs convention.
-    """
+    orientation: dict[str, float] | None = None
+    """Deprecated read compatibility for legacy quaternion configuration."""
 
     work_frame_id: str = "work"
     """User-assigned work frame name for traceability."""
@@ -136,8 +136,8 @@ class WorkFrameInArmBasePose:
             )
         if not isinstance(self.position_m, dict):
             raise TypeError("position_m must be a dict")
-        if not isinstance(self.orientation, dict):
-            raise TypeError("orientation must be a dict")
+        if not isinstance(self.rotation_euler_rad, dict) and not isinstance(self.orientation, dict):
+            raise TypeError("rotation_euler_rad must be a dict")
 
 
 @dataclass
