@@ -138,6 +138,12 @@ def _parse_driver_config(params: Mapping[str, Any], config_dir: Path) -> DriverC
         default_poll_rate_hz,
         identity_mode=bool(identity_targets),
     )
+    discovered_sensors = _parse_identity_scan_sensors(
+        params.get("identity_scan_addrs"),
+        default_sensor,
+        default_poll_rate_hz,
+        identity_mode=bool(identity_targets),
+    )
 
     serial_ports_raw = params.get("serial_ports") or []
     if serial_ports_raw and not isinstance(serial_ports_raw, list):
@@ -183,7 +189,7 @@ def _parse_driver_config(params: Mapping[str, Any], config_dir: Path) -> DriverC
                 name=name,
                 port=port,
                 baudrate=default_baudrate,
-                sensors=[default_sensor],
+                sensors=discovered_sensors,
             )
         )
 
@@ -246,6 +252,37 @@ def _parse_sensors(
             )
         used_addrs.add(sensor.device_addr)
         sensors.append(sensor)
+    return sensors
+
+
+def _parse_identity_scan_sensors(
+    raw: Any,
+    default_sensor: SensorConfig,
+    default_poll_rate_hz: float,
+    identity_mode: bool,
+) -> List[SensorConfig]:
+    if raw in (None, "") or not identity_mode:
+        return [default_sensor]
+    if not isinstance(raw, list) or not raw:
+        raise ConfigError("identity_scan_addrs must be a non-empty list when configured")
+
+    sensors: List[SensorConfig] = []
+    used_addrs = set()
+    for index, item in enumerate(raw):
+        device_addr = _as_int(item, f"identity_scan_addrs[{index}]")
+        if not 0 <= device_addr <= 0x0F:
+            raise ConfigError(f"identity_scan_addrs[{index}] must be in range 0..15")
+        if device_addr in used_addrs:
+            raise ConfigError(f"identity_scan_addrs[{index}] duplicates device_addr {device_addr}")
+        used_addrs.add(device_addr)
+        sensors.append(
+            SensorConfig(
+                device_addr=device_addr,
+                rows=default_sensor.rows,
+                cols=default_sensor.cols,
+                poll_rate_hz=default_poll_rate_hz,
+            )
+        )
     return sensors
 
 

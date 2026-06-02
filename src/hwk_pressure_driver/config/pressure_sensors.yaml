@@ -16,6 +16,7 @@ pressure_driver_node:
       device_addr: 6
       rows: 6
       cols: 15
+    identity_scan_addrs: [5, 6]
 
     serial_port_globs:
       - /dev/ttyUSB*

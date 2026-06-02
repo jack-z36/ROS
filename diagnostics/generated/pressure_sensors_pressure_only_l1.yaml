@@ -14,8 +14,8 @@ pressure_driver_node:
       rows: 6
       cols: 15
     serial_ports:
-    - name: pressure_only_l1_ttyUSB0_0
-      port: /dev/ttyUSB0
+    - name: pressure_only_l1_ttyUSB2_0
+      port: /dev/ttyUSB2
       baudrate: 460800
       sensors:
       - device_addr: 6
