@@ -1,5 +1,7 @@
 # L2 能力模块说明：IK 求解与 MCAP_B 生成器
 
+> ⚠️ 当前不在主路径；MCAP_B 不输出。保留以备未来需要 IK 训练数据时回归。
+
 ## 1. 能力名称
 
 ```text
@@ -33,7 +35,7 @@ L1：service_s2
 - TCP pose 语义来自场景一 [[CommonFrameTcpPose]]。
 - `common_frame -> robot_base` 外参由 [[CommonToRobotBaseTransform]] 表达。
 - RM65 SDK、初始关节角和 IK 策略由 [[Rm65IkConfig]] 表达。
-- 本模块的 common-frame 变换逻辑必须参考场景一 [[common frame 位姿转换]]，并优先复用或抽取 `src/data_clean/service/tcp_transform.py` 的 pose 矩阵转换能力。
+- 本模块的 common-frame 变换逻辑必须参考场景一 [[arm-base 位姿转换]]，并优先复用或抽取 `src/data_clean/service/tcp_transform.py` 的 pose 矩阵转换能力。
 
 ## 6. 下游关系
 
@@ -200,7 +202,7 @@ SDK 自检必须验证：
 - [ ] [[CommonToRobotBaseTransform]]、[[RobotBaseTcpPose]]、[[Rm65IkConfig]]、[[Rm65IkSampleResult]]、[[McapB]] 和 [[IkSolveSummary]] 已形成原子数据定义。
 - [ ] 本能力明确拆为 3 个子功能，且每个子功能可独立测试。
 - [ ] SDK 本地部署与 IK 自检步骤能让无上下文 Agent 自动执行。
-- [ ] common->base 转换对齐场景一 common frame 位姿转换语义，并复用或抽取现有 transform helper。
+- [ ] common->base 转换对齐场景一 arm-base 位姿转换语义，并复用或抽取现有 transform helper。
 - [ ] 失败帧不写伪造关节角，所有输入 pose 都进入 [[IkSolveSummary]]。
 - [ ] 开发者入口能通过场景二功能检验项查看 MCAP_B、IK 摘要和运行日志。
 
@@ -243,7 +245,7 @@ SDK 自检必须验证：
 
 1. 每个 L3 只能解决一个核心目标。
 2. 第 6 模块必须拆为 SDK 自检、数据契约、common->base、IK 求解、MCAP_B 写出/入口接入等小任务。
-3. common->base L3 必须先读取场景一 `common frame 位姿转换.md` 和 `src/data_clean/service/tcp_transform.py`。
+3. common->base L3 必须先读取场景一 `arm-base 位姿转换.md` 和 `src/data_clean/service/tcp_transform.py`。
 4. common->base L3 必须复用或抽取通用 pose transform helper，不得复制一套方向不明的四元数代码。
 5. IK L3 必须使用睿尔曼 SDK `Algo`，不得改为自研 MDH IK。
 6. IK 失败帧不得写 NaN 或复制上一帧关节角。

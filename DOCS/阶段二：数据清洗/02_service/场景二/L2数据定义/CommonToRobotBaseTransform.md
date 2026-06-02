@@ -1,5 +1,7 @@
 # CommonToRobotBaseTransform
 
+> ⚠️ **Deprecated since 2026-06 debug-common-frames L3 001**。当前主链路不再使用此转换；替代品：见 [[arm-base 位姿转换]] + [[WorkFrameInArmBasePose]]（由 `Algo.rm_algo_workframe2base` 完成）。
+
 ## 定义
 
 `CommonToRobotBaseTransform` 是场景二第 6 功能模块使用的固定外参，用于把场景一 common frame 下的 TCP 位姿转换到左右 RM65 机械臂 base 坐标系。

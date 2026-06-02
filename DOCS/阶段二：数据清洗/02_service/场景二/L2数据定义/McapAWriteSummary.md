@@ -22,7 +22,7 @@
 | `signal_repair_result_ref` | string / [[SignalRepairResult]] | 补全结果引用 |
 | `pose_filter_result_ref` | string / [[PoseFilterResult]] | 位姿滤波结果引用 |
 | `tactile_filter_result_ref` | string / [[TactileFilterResult]] | 触觉滤波结果引用 |
-| `replaced_topic_stats` | object | pose / tactile / gripper 被替换 topic 的样本统计 |
+| `replaced_topic_stats` | object | arm-base TCP pose / tactile / gripper 被替换 topic 的样本统计 |
 | `copied_topic_stats` | object | 原样复制 topic 的样本统计 |
 | `timestamp_policy` | enum string | 固定 `preserve_original` |
 | `topic_policy` | enum string | 固定 `preserve_cleaned_topics` |

@@ -12,11 +12,16 @@
 4. `src/data_clean/data_clean_architecture.md`
 5. 当前任务对应的场景目录，例如 `DOCS/阶段二：数据清洗/02_service/场景三/`
 
-当前真实主链路为：
+当前阶段真实主链路：
 
 ```text
-raw MCAP -> cleaned MCAP -> MCAP_A -> aligned MCAP -> 04_forge_bridge -> 05_lerobot_v3_bimanual
+raw pose (Baton Mini) → TCP in camera (tcp_transform.compute_tcp_in_camera)
+                      → arm-base TCP pose (arm_base_transform.compute_arm_base_tcp_pose, per RM65 base)
+                      → pose filter (validate_arm_base=True)
+                      → cleaned MCAP (主位姿: arm_base_tcp_pose, frame_id=<hand>_arm_base_link)
 ```
+
+common_frame / 旧 robot_base 转换仅保留为历史兼容，**不再作为主链路**。
 
 已验证样例产物位于：
 

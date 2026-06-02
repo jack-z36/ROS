@@ -22,6 +22,7 @@
 | `topic_policy` | enum string | 固定 `preserve_cleaned_topics` |
 | `strict_required_inputs` | bool | 默认 `true`，缺少必需上游结果则失败 |
 | `write_summary_sidecar` | bool | 默认 `true`，写出 [[McapAWriteSummary]] |
+| `pose_topic` | string | 默认 `arm_base_tcp_pose`，MCAP_A 中位姿 topic 名 |
 | `allow_overwrite` | bool | 默认 `false`，避免覆盖已有 validated 产物 |
 | `temp_file_suffix` | string | 写出半成品临时后缀，例如 `.tmp` |
 

@@ -38,12 +38,13 @@ common frame camera pose 和 common frame TCP pose 必须有独立、明确的�
 
 - raw MCAP 来自阶段一采集。
 - [[GripperCalibrationConfig]] 来自已有浏览器 GoPro 标定程序。
-- [[FrameAlignmentConfig]] 来自位姿转换配置生成模块。
+- [[FrameAlignmentConfig]] 来自位姿转换配置生成模块（已废弃，保留历史兼容）。新链路使用 [[WorkFrameInBaseConfig]] + `McapProcessConfig.work_frames_in_base`。
+- [[ArmBaseTcpPose]] 由 arm-base 位姿转换模块生成。
 
 ## 7. 下游关系
 
 - 场景二读取 [[CleanedMcap]]、[[Scene1Config]]、[[Scene1CleanReport]]。
-- 场景二优先消费 [[CommonFrameTcpPose]]，并可用 [[CommonFrameCameraPose]] 和 raw pose 做追溯。
+- 场景二优先消费 [[ArmBaseTcpPose]]，并可用 raw pose 做追溯。旧 `tcp_common` / `camera_common` 字段保留为历史兼容。
 
 ## 8. 数据定义职责
 
@@ -53,10 +54,13 @@ common frame camera pose 和 common frame TCP pose 必须有独立、明确的�
 | [[Scene1Config]] | 场景一配置总契约 |
 | [[Scene1CleanReport]] | 清洗摘要和失败原因契约 |
 | [[GripperCalibrationConfig]] | 夹爪开合标定配置 |
-| [[FrameAlignmentConfig]] | common frame 和 pose 输出配置 |
+| [[FrameAlignmentConfig]] | common frame 和 pose 输出配置（已废弃，保留历史兼容） |
+| [[ArmBaseTcpPose]] | arm-base TCP pose（主位姿字段） |
+| [[TcpInCamera]] | TCP in camera 中间位姿 |
+| [[WorkFrameInBaseConfig]] | work frame in base 配置 |
 | [[CameraFromTcpExtrinsic]] | camera 到 TCP 外参 |
-| [[CommonFrameCameraPose]] | common frame 下相机位姿 |
-| [[CommonFrameTcpPose]] | common frame 下 TCP 位姿 |
+| [[CommonFrameCameraPose]] | common frame 下相机位姿（已废弃，保留历史兼容） |
+| [[CommonFrameTcpPose]] | common frame 下 TCP 位姿（已废弃，保留历史兼容） |
 | [[GripperWidthSample]] | 归一化夹爪宽度样本 |
 
 ## 9. 契约不变量
@@ -65,9 +69,10 @@ common frame camera pose 和 common frame TCP pose 必须有独立、明确的�
 |---|---|
 | 默认 cleaned 输出目录 | `asset/阶段二：数据清洗/dev/mcap_cleaned` |
 | raw pose | 必须保留或可追溯 |
-| common_anchor | 默认 `left` |
+| 主位姿 topic | 主位姿 = `arm_base_tcp_pose`，frame_id = `<hand>_arm_base_link` |
+| 历史兼容字段 | `tcp_common` / `camera_common` 保留为历史兼容，不推荐消费方依赖 |
 | gripper width | `std_msgs/msg/Float32`，归一化 `[0, 1]` |
-| pose 数量 | raw/camera common/TCP common 数量必须一致 |
+| pose 数量 | raw/arm-base TCP 数量必须一致 |
 | gripper 数量 | gripper 消息数等于对应 image 帧数 |
 
 ## 10. 可拆分的 L3 任务清单
@@ -77,9 +82,9 @@ common frame camera pose 和 common frame TCP pose 必须有独立、明确的�
 | service_s1_001 | 稳定 cleaned MCAP 接口契约 | 数据定义类 | L2 数据定义和场景二契约同步 |
 | service_s1_002 | 对接浏览器夹爪配置生成 | 工具对接类 | [[GripperCalibrationConfig]] 生成 |
 | service_s1_003 | 实现夹爪宽度提取输出契约 | 数据计算类 | [[GripperWidthSample]] 输出 |
-| service_s1_004 | 落地 frame_alignment 配置契约 | 配置类 | [[FrameAlignmentConfig]] 加载 |
-| service_s1_005 | 改造位姿转换配置生成器 | 工具对接类 | `frame_alignment` 配置写出 |
-| service_s1_006 | 实现 common frame 位姿转换输出 | 数据计算类 | [[CommonFrameTcpPose]] 输出 |
+| service_s1_004 | 落地 frame_alignment 配置契约（已废弃） | 配置类 | [[FrameAlignmentConfig]] 加载（历史兼容） |
+| service_s1_005 | 改造位姿转换配置生成器（已废弃） | 工具对接类 | `frame_alignment` 配置写出（历史兼容） |
+| service_s1_006 | 实现 arm-base 位姿转换输出 | 数据计算类 | [[ArmBaseTcpPose]] 输出 |
 | service_s1_007 | 补齐场景一输出契约校验 | 数据计算类 | validator 和 report contract |
 
 ## 11. 给 L3 任务生成的约束

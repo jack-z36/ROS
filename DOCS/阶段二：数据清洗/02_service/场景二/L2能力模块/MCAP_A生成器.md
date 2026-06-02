@@ -37,7 +37,7 @@ L1：service_s2
 
 ## 6. 下游关系
 
-- IK 求解与 MCAP_B 生成器从 [[McapA|MCAP_A]] 读取 TCP / common frame 位姿。
+- IK 求解与 MCAP_B 生成器从 [[McapA|MCAP_A]] 读取 arm-base TCP pose（当前 IK 求解不在主路径，保留以备未来）。
 - 场景三时间轴对齐消费 [[McapA|MCAP_A]] 作为 validated 主 MCAP。
 - Parquet 标注与验证报告生成器消费 [[McapAWriteSummary]] 和上游审计结果。
 - 开发者入口 `scene2_mcap_a_writer` 展示 MCAP_A 写出结果、topic 对齐统计和运行日志。

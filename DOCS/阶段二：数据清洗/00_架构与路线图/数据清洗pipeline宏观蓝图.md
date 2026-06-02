@@ -44,7 +44,7 @@ raw MCAP
 | 旧路线 | 新路线 |
 |---|---|
 | `cleaned -> validated -> aligned -> canonical_dataset_mcap -> exports` | `cleaned -> MCAP_A / validated -> aligned -> LeRobotDataset v3` |
-| 场景一中间路径强调 common frame | 场景一主路径直接服务机械臂 base 坐标系位姿表达 |
+| 场景一中间路径（旧 common frame）已降级为历史兼容 | 场景一主路径直接服务机械臂 base 坐标系位姿表达 |
 | `validated MCAP` 包含 IK、关节限位、MuJoCo 仿真标注 | `MCAP_A / validated MCAP` 只输出主数据清洗、滤波、补全后的 MCAP，不做仿真与关节限位标注 |
 | 场景四构建自定义 canonical dataset | 场景四构建 LeRobotDataset v3 |
 | 场景五负责通用训练格式导出 | 阶段二主线不再维护通用 exporter；只保证 LeRobotDataset v3 可用于 ACT |
@@ -53,7 +53,7 @@ raw MCAP
 
 | 场景 | 新定位 | 输出 |
 |---|---|---|
-| 场景一：提取夹爪开合以及位姿转换 | 从 raw MCAP 生成 cleaned MCAP，补齐夹爪开合语义，并把位姿转换到后续机械臂 base 坐标系链路所需表达。 | cleaned MCAP、清洗报告、位姿转换/标定配置。 |
+| 场景一：提取夹爪开合以及位姿转换 | 从 raw MCAP 生成 cleaned MCAP，补齐夹爪开合语义，并把位姿转换到后续机械臂 base 坐标系链路所需表达。 | cleaned MCAP（含 arm-base TCP pose + raw pose）、清洗报告、位姿转换/标定配置。 |
 | 场景二：硬件数据可靠性验证 | 从 cleaned MCAP 生成 MCAP_A / validated MCAP。P0 只做主数据滤波、补全、异常标记和可追溯写出，不做 IK、关节限位和 MuJoCo 仿真标注。 | MCAP_A、异常/修复/滤波报告、写出摘要。 |
 | 场景三：MCAP 多 topic 时间轴对齐 | 从 MCAP_A / validated MCAP 生成 aligned MCAP，统一图像、触觉、位姿、夹爪等 topic 到 step 时间轴。 | aligned MCAP、alignment report、对齐索引或 sidecar。 |
 | 场景四：构建 LeRobotDataset v3 | 从 aligned MCAP 直接构建 LeRobotDataset v3，形成阶段三 ACT 训练输入。 | LeRobotDataset v3 数据集、dataset meta、转换报告、读取校验结果。 |

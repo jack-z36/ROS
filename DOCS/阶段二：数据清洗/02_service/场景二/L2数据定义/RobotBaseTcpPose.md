@@ -1,5 +1,7 @@
 # RobotBaseTcpPose
 
+> ⚠️ **Deprecated since 2026-06 debug-common-frames L3 001**。替代品：见 [[ArmBaseTcpPose]]。注意：本文件原意指统一 robot base，**与当前 per-arm base 语义不同**；阅读旧文档时需特别小心此区别。
+
 ## 定义
 
 `RobotBaseTcpPose` 是左右 RM65 机械臂 base 坐标系下的 TCP 目标位姿，是睿尔曼 SDK IK 的直接输入。

@@ -1,3 +1,5 @@
+> ⚠️ **Deprecated since 2026-06 debug-common-frames L3 001**。该配置生成路线已废弃；新链路使用 [[WorkFrameInBaseConfig]] + [[McapProcessConfig.work_frames_in_base]]。保留本文档作为历史参考。
+
 # FrameAlignmentConfig
 
 ## 定义
@@ -73,7 +75,7 @@ frame_alignment:
 
 ## 下游消费者
 
-- [[common frame 位姿转换]]
+- [[arm-base 位姿转换]]
 - [[CommonFrameCameraPose]]
 - [[CommonFrameTcpPose]]
 - 场景二位姿滤波和 IK 前置输入。

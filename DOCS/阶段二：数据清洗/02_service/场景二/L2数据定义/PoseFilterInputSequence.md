@@ -19,7 +19,7 @@
 | `source_topic` | string | 来源 pose topic，必须保持与 cleaned MCAP / MCAP_A 对应 |
 | `modality` | enum string | 固定为 `pose` |
 | `time_domain` | enum string | `log_time` / `publish_time` / `header_stamp` |
-| `samples` | list[object] | 按原始顺序排列的 [[CommonFrameTcpPose]] 样本 |
+| `samples` | list[object] | 按原始顺序排列的 [[ArmBaseTcpPose]] 样本 |
 | `sample_refs` | list[[SignalSampleRef]] | 与 `samples` 一一对应的样本定位 |
 | `repair_result_ref` | string / [[SignalRepairResult]] | 来源补全结果引用 |
 | `missing_interval_issues` | list[[MissingIntervalIssue]] | 无样本缺失区间 |
@@ -40,7 +40,7 @@
 - [[SignalRepairRun]]
 - [[SignalRepairSampleRecord]]
 - [[MissingIntervalIssue]]
-- [[CommonFrameTcpPose]]
+- [[ArmBaseTcpPose]]
 
 ## 下游消费者
 

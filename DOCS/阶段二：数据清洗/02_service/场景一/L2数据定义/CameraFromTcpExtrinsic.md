@@ -1,8 +1,10 @@
+> ⚠️ **Intermediate use only** — 当前仅作为 TCP in camera 推导的中间量，不直接暴露给下游。消费方应直接使用 [[TcpInCamera]] 或 [[ArmBaseTcpPose]]。
+
 # CameraFromTcpExtrinsic
 
 ## 定义
 
-`CameraFromTcpExtrinsic` 是 TCP 坐标系在 Baton Mini 相机坐标系下的固定外参，用于把 common frame 下的 camera pose 转换为 common frame 下的 TCP pose。
+`CameraFromTcpExtrinsic` 是 TCP 坐标系在 Baton Mini 相机坐标系下的固定外参，用于 `compute_tcp_in_camera` 推导 TCP in camera 中间位姿。
 
 ## 命名约束
 
