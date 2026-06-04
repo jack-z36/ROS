@@ -60,6 +60,10 @@ from service.baton_pose_audit import (
     move_audit_results,
     summarize_results,
 )
+from service.training_readiness import (
+    build_training_readiness_summary,
+    count_flagged_episodes,
+)
 
 
 WORKSPACE_DIR = Path("/home/hit/ROS")
@@ -1082,6 +1086,7 @@ class DataCleanWebApp:
                         dataset_dir=dataset_staging,
                         reports_dir=sidecar_staging / "reports",
                         fps=float(dataset_result.get("fps", 15.0)),
+                        job=job,
                     )
                     replacements = {
                         str(dataset_staging): str(Path(job["dataset_dir"])),
@@ -1340,7 +1345,7 @@ class DataCleanWebApp:
             fps=fps,
         )
 
-    def run_dataset_quality_checks(self, *, dataset_dir: Path, reports_dir: Path, fps: float) -> dict[str, Any]:
+    def run_dataset_quality_checks(self, *, dataset_dir: Path, reports_dir: Path, fps: float, job: dict[str, Any] | None = None) -> dict[str, Any]:
         reports_dir.mkdir(parents=True, exist_ok=True)
         forge_bin = Path("/home/hit/forge/.venv/bin/forge")
         forge = str(forge_bin) if forge_bin.exists() else "forge"
@@ -1384,8 +1389,9 @@ class DataCleanWebApp:
             if not quality_path.exists():
                 quality_path.write_text(quality_proc.stdout + quality_proc.stderr, encoding="utf-8")
         flagged = _read_json(flagged_path, [])
-        if flagged:
-            warnings.append(f"quality flagged episodes: {len(flagged)}")
+        flagged_count = count_flagged_episodes(flagged)
+        if flagged_count:
+            warnings.append(f"quality flagged episodes: {flagged_count}")
         inspect_data = _read_json(inspect_path, {})
         quality_data = _read_json(quality_path, {})
         summary = {
@@ -1400,21 +1406,32 @@ class DataCleanWebApp:
             "per_episode": quality_data.get("per_episode", []) if isinstance(quality_data, dict) else [],
             "flags": quality_data.get("flags", []) if isinstance(quality_data, dict) else [],
             "recommendations": quality_data.get("recommendations", []) if isinstance(quality_data, dict) else [],
-            "flagged_count": len(flagged) if isinstance(flagged, list) else 0,
+            "flagged_count": flagged_count,
             "warnings": warnings,
         }
+        try:
+            summary["training_readiness"] = build_training_readiness_summary(
+                job=job or {},
+                quality_summary=summary,
+                dataset_dir=dataset_dir,
+                reports_dir=reports_dir,
+            )
+        except Exception as exc:  # noqa: BLE001
+            summary["warnings"].append(f"training readiness summary failed: {type(exc).__name__}: {exc}")
         _write_json_atomic(reports_dir / "quality_visual_summary.json", summary)
         return summary
 
     def _hydrate_quality_summary(self, job: dict[str, Any]) -> None:
         summary = job.get("quality_summary")
         if isinstance(summary, dict) and "per_episode" in summary:
+            self._ensure_training_readiness_summary(job, summary)
             return
         sidecar_dir = Path(job.get("sidecar_dir", ""))
         cache_path = sidecar_dir / "reports" / "quality_visual_summary.json"
         cached = _read_json(cache_path, None)
         if isinstance(cached, dict) and "per_episode" in cached:
             job["quality_summary"] = cached
+            self._ensure_training_readiness_summary(job, cached)
             return
         if isinstance(summary, dict) and summary.get("quality_report"):
             quality_path = Path(summary["quality_report"])
@@ -1445,12 +1462,51 @@ class DataCleanWebApp:
             "per_episode": quality_data.get("per_episode", []),
             "flags": quality_data.get("flags", []),
             "recommendations": quality_data.get("recommendations", []),
-            "flagged_count": len(flagged) if isinstance(flagged, list) else 0,
+            "flagged_count": count_flagged_episodes(flagged),
             "warnings": (summary or {}).get("warnings", []) if isinstance(summary, dict) else [],
         }
         job["quality_summary"] = hydrated
+        self._ensure_training_readiness_summary(job, hydrated)
         if sidecar_dir:
             _write_json_atomic(cache_path, hydrated)
+
+    def _ensure_training_readiness_summary(self, job: dict[str, Any], summary: dict[str, Any]) -> None:
+        sidecar_dir = Path(job.get("sidecar_dir", ""))
+        reports_dir = sidecar_dir / "reports"
+        self._refresh_flagged_count(summary, reports_dir)
+        if isinstance(summary.get("training_readiness"), dict):
+            return
+        readiness_path = reports_dir / "training_readiness_summary.json"
+        cached = _read_json(readiness_path, None)
+        if isinstance(cached, dict):
+            summary["training_readiness"] = cached
+            return
+        dataset_dir_raw = job.get("dataset_dir") or (job.get("dataset_summary") or {}).get("output_lerobot_v3")
+        if not dataset_dir_raw:
+            return
+        dataset_dir = Path(str(dataset_dir_raw))
+        if not dataset_dir.exists() or not reports_dir.exists():
+            return
+        try:
+            summary["training_readiness"] = build_training_readiness_summary(
+                job=job,
+                quality_summary=summary,
+                dataset_dir=dataset_dir,
+                reports_dir=reports_dir,
+            )
+            _write_json_atomic(reports_dir / "quality_visual_summary.json", summary)
+        except Exception as exc:  # noqa: BLE001
+            warnings = summary.setdefault("warnings", [])
+            if isinstance(warnings, list):
+                warning = f"training readiness summary failed: {type(exc).__name__}: {exc}"
+                if warning not in warnings:
+                    warnings.append(warning)
+
+    def _refresh_flagged_count(self, summary: dict[str, Any], reports_dir: Path) -> None:
+        flagged_path_raw = summary.get("flagged_report")
+        flagged_path = Path(str(flagged_path_raw)) if flagged_path_raw else reports_dir / "forge_quality_flagged.json"
+        flagged = _read_json(flagged_path, None)
+        summary["flagged_count"] = count_flagged_episodes(flagged)
 
     def trajectory(self, job_id: str) -> dict[str, Any]:
         with self.lock:
@@ -1947,6 +2003,27 @@ INDEX_HTML = r"""<!doctype html>
     .score-good { background:#12b76a; }
     .score-warn { background:#f79009; }
     .score-bad { background:#f04438; }
+    .readiness-hero { border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:16px; background:#fff; }
+    .readiness-hero.pass { border-color:#abefc6; background:#f6fef9; }
+    .readiness-hero.review { border-color:#fedf89; background:#fffcf5; }
+    .readiness-hero.block { border-color:#fecdca; background:#fffbfa; }
+    .readiness-title { margin:0; font-size:22px; }
+    .readiness-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin:14px 0; }
+    .readiness-module { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fff; min-height:116px; }
+    .readiness-module.pass { border-color:#abefc6; }
+    .readiness-module.review { border-color:#fedf89; }
+    .readiness-module.block { border-color:#fecdca; }
+    .readiness-module.info { border-color:#d0d5dd; background:#f9fafb; }
+    .readiness-module h4 { margin:0 0 8px; }
+    .risk-list, .action-list { margin:8px 0 0; padding-left:18px; }
+    .metric-note { color:var(--muted); font-size:13px; margin-top:8px; }
+    .dim-pill { display:inline-flex; border-radius:999px; padding:3px 8px; margin:2px; background:#f2f4f7; color:#344054; font-size:12px; font-weight:650; }
+    .readiness-status { display:inline-flex; align-items:center; border-radius:999px; padding:5px 10px; font-size:13px; font-weight:750; }
+    .readiness-status.pass { background:#dcfae6; color:var(--ok); }
+    .readiness-status.review { background:#fef0c7; color:var(--warn); }
+    .readiness-status.block { background:#fee4e2; color:var(--bad); }
+    .readiness-status.info { background:#eef2ff; color:#3730a3; }
+    .detail-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
     .trajectory-layout { display:grid; grid-template-columns: minmax(0, 1fr) 300px; gap:16px; align-items:start; }
     .trajectory-canvas { width:100%; height:620px; border:1px solid var(--line); border-radius:14px; background:#0b1020; display:block; }
     .trajectory-dual { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
@@ -2570,15 +2647,66 @@ function fmtScore(value, digits=3) {
 function renderQualityTab(j) {
   const quality = j.quality_summary || {};
   const summary = j.dataset_summary || {};
+  const readiness = quality.training_readiness || fallbackReadiness(quality, summary);
+  const riskItems = (readiness.key_risks || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  const actionItems = (readiness.next_actions || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  const modules = (readiness.modules || []).map(module => readinessModule(module)).join('');
+  const riskByEpisode = new Map((readiness.episode_risks || []).map(item => [item.episode_id, item]));
+  const explanations = readiness.subscore_explanations || {};
   const subscores = Object.entries(quality.subscores || {}).map(([key, value]) => {
     const n = Math.max(0, Math.min(1, Number(value) || 0));
-    return `<div class="score-card"><div class="row"><b>${escapeHtml(key)}</b><b class="right">${fmtScore(value)}</b></div><div class="score-track"><div class="score-fill ${scoreClass(value)}" style="width:${n*100}%"></div></div></div>`;
+    const exp = explanations[key] || {};
+    return `<div class="score-card"><div class="row"><b>${escapeHtml(exp.name || key)}</b><b class="right">${fmtScore(value)}</b></div><div class="score-track"><div class="score-fill ${scoreClass(value)}" style="width:${n*100}%"></div></div><p class="metric-note">${escapeHtml(exp.meaning || '')}</p><p class="metric-note">${escapeHtml(exp.impact || '')}</p><p class="path">${escapeHtml(key)}</p></div>`;
   }).join('');
-  const episodes = (quality.per_episode || []).map(ep => `<tr><td>${escapeHtml(ep.episode_id ?? '-')}</td><td>${ep.num_frames ?? '-'}</td><td>${fmtScore(ep.overall_score)}</td><td>${escapeHtml((ep.flags || []).join('、') || '-')}</td></tr>`).join('');
+  const episodes = (quality.per_episode || []).map(ep => {
+    const risk = riskByEpisode.get(ep.episode_id) || {};
+    const dims = (risk.top_saturated_dimensions || []).slice(0,4).map(dim => `<span class="dim-pill">${escapeHtml(dim.label || dim.key || dim.index)} ${fmtPct(dim.saturation_rate)}</span>`).join('') || '<span class="muted">-</span>';
+    return `<tr><td>${escapeHtml(ep.episode_id ?? '-')}</td><td>${ep.num_frames ?? '-'}</td><td>${fmtScore(ep.overall_score)}</td><td>${escapeHtml((ep.flags || []).join('、') || '-')}</td><td>${fmtPct(ep.overall_saturation)}</td><td>${dims}</td><td>smoothness LDLJ ${fmtScore(ep.ldlj,2)}<br>夹爪 chatter ${fmtScore(ep.gripper_chatter_rate,3)}</td><td>${escapeHtml(risk.review_hint || '无明显复查点')}</td></tr>`;
+  }).join('');
   const flags = (quality.flags || []).map(flag => `<span class="badge failed">${escapeHtml(flag)}</span>`).join('') || '<span class="muted">无</span>';
   const recs = (quality.recommendations || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
   const warnings = (quality.warnings || []).map(w => `<li>${escapeHtml(w)}</li>`).join('');
-  return `<div class="card"><h3>评测报告</h3><div class="row"><b>格式 ${escapeHtml(quality.format || '-')}</b><b>质量分 ${quality.overall_score ?? '-'}</b><b>episode ${quality.num_episodes ?? summary.episodes ?? 0}</b><b>frame ${quality.total_frames ?? summary.frames ?? 0}</b><b>flagged ${quality.flagged_count ?? 0}</b></div>${warnings ? `<div class="warnbox"><b>质量警告</b><ul>${warnings}</ul></div>` : ''}<h4>各维度分数</h4><div class="score-grid">${subscores || '<p class="muted">暂无 subscores。</p>'}</div><h4>逐 episode 分数</h4><table><thead><tr><th>episode</th><th>frames</th><th>overall_score</th><th>flags</th></tr></thead><tbody>${episodes || '<tr><td colspan="4" class="muted">暂无逐 episode 数据。</td></tr>'}</tbody></table><h4>全局 flags</h4><div class="row">${flags}</div>${recs ? `<h4>建议</h4><ul>${recs}</ul>` : ''}<details><summary>报告文件位置</summary><p><b>Inspect：</b><span class="path">${escapeHtml(quality.inspect_report || '')}</span></p><p><b>Quality：</b><span class="path">${escapeHtml(quality.quality_report || '')}</span></p>${quality.flagged_report ? `<p><b>Flagged：</b><span class="path">${escapeHtml(quality.flagged_report)}</span></p>` : ''}</details></div>`;
+  return `<div class="card"><h3>PI0.5 / VLA 训练前技术体检</h3>
+    <div class="readiness-hero ${escapeHtml(readiness.level || 'review')}">
+      <div class="row"><h3 class="readiness-title">${escapeHtml(readiness.conclusion || '需要复查')}</h3><span class="readiness-status ${escapeHtml(readiness.level || 'review')}">${escapeHtml(readiness.conclusion || '需要复查')}</span></div>
+      <p>${escapeHtml(readiness.headline || '')}</p>
+      <div class="row"><b>格式 ${escapeHtml(quality.format || '-')}</b><b>质量分 ${quality.overall_score ?? '-'}</b><b>${readiness.dataset_size?.episodes ?? quality.num_episodes ?? summary.episodes ?? 0} episodes</b><b>${readiness.dataset_size?.frames ?? quality.total_frames ?? summary.frames ?? 0} frames</b><b>${escapeHtml(readiness.dataset_size?.duration_text || '-')}</b><b>${readiness.dataset_size?.fps || '-'} FPS</b></div>
+      <div class="split" style="grid-template-columns:1fr 1fr; margin-top:12px">
+        <div><b>关键风险</b><ul class="risk-list">${riskItems}</ul></div>
+        <div><b>下一步动作</b><ul class="action-list">${actionItems}</ul></div>
+      </div>
+    </div>
+    ${warnings ? `<div class="warnbox"><b>质量警告</b><ul>${warnings}</ul></div>` : ''}
+    <h4>我应该看什么</h4><div class="readiness-grid">${modules}</div>
+    <h4>逐 episode 风险</h4><table><thead><tr><th>episode</th><th>frames</th><th>score</th><th>flags</th><th>动作贴边</th><th>主要贴边维度</th><th>平滑/夹爪</th><th>复查提示</th></tr></thead><tbody>${episodes || '<tr><td colspan="8" class="muted">暂无逐 episode 数据。</td></tr>'}</tbody></table>
+    <details><summary>技术指标详情（Forge 原始分数）</summary><div class="score-grid" style="margin-top:12px">${subscores || '<p class="muted">暂无 subscores。</p>'}</div><h4>全局 flags</h4><div class="row">${flags}</div>${recs ? `<h4>Forge 建议</h4><ul>${recs}</ul>` : ''}</details>
+    <details><summary>报告文件位置</summary><p><b>训练摘要：</b><span class="path">${escapeHtml(readiness.report_path || '')}</span></p><p><b>Inspect：</b><span class="path">${escapeHtml(quality.inspect_report || '')}</span></p><p><b>Quality：</b><span class="path">${escapeHtml(quality.quality_report || '')}</span></p>${quality.flagged_report ? `<p><b>Flagged：</b><span class="path">${escapeHtml(quality.flagged_report)}</span></p>` : ''}</details>
+  </div>`;
+}
+function readinessModule(module) {
+  const status = module.status || 'info';
+  const metrics = moduleMetricsText(module);
+  const risks = (module.risks || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  return `<div class="readiness-module ${escapeHtml(status)}"><div class="row"><h4>${escapeHtml(module.title || '')}</h4><span class="readiness-status ${escapeHtml(status)}">${escapeHtml(module.label || status)}</span></div><p>${escapeHtml(module.summary || '')}</p>${metrics ? `<p class="metric-note">${metrics}</p>` : ''}${risks ? `<ul class="risk-list">${risks}</ul>` : ''}</div>`;
+}
+function moduleMetricsText(module) {
+  const m = module.metrics || {};
+  if (module.id === 'format_input') return `state ${m.state_dim ?? '-'} / action ${m.action_dim ?? '-'} / 双目 ${m.dual_cameras ? '是' : '否'}`;
+  if (module.id === 'action_health') return `总分 ${fmtScore(m.overall_score)} / 全局 flags ${(m.global_flags || []).length}`;
+  if (module.id === 'sync_quality') return `max dt ${fmtScore(m.max_dt_ms,1)} ms / 一帧 ${fmtScore(m.frame_interval_ms,1)} ms / terminal drop ${m.terminal_dropped_steps ?? 0}`;
+  if (module.id === 'gripper_tactile') return `夹爪最高插值 ${fmtPct(m.max_gripper_interpolation_rate)} / 触觉最低覆盖 ${fmtPct(m.min_tactile_coverage_ratio)}`;
+  if (module.id === 'dataset_scale') return m.note || '';
+  return '';
+}
+function fallbackReadiness(quality, summary) {
+  const frames = quality.total_frames ?? summary.frames ?? 0;
+  const fps = summary.fps || 0;
+  const duration = fps ? `约 ${(frames/fps).toFixed(1)} 秒` : '-';
+  return {level:'review', conclusion:'需要复查', headline:'正在使用旧版质量摘要，建议重新打开或重新运行质量检查生成训练前摘要。', key_risks:['暂无训练前解释摘要。'], next_actions:['查看 Forge 原始分数和逐 episode flags。'], modules:[{id:'dataset_scale', title:'数据量', status:'info', label:'仅展示', summary:`${quality.num_episodes ?? summary.episodes ?? 0} episodes / ${frames} frames / ${duration}。`, risks:[], metrics:{note:'数据量只展示，不参与本页训练可用性判定。'}}], dataset_size:{episodes:quality.num_episodes ?? summary.episodes ?? 0, frames, fps, duration_text:duration}, episode_risks:[], subscore_explanations:{}, report_path:''};
+}
+function fmtPct(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? `${(n*100).toFixed(1)}%` : '-';
 }
 function renderFilesTab(j) {
   const rows = j.files.map(f => `<tr><td>${escapeHtml(f.name)}</td><td>${badge(f.status)}</td><td>${f.included_in_dataset ? '是' : '否'}</td><td>${f.episode_count || 0}</td><td>${escapeHtml(f.current_stage || '-')}</td><td class="path">${escapeHtml(f.stage_outputs?.aligned_mcap || f.stage_outputs?.cleaned_mcap || '')}</td><td>${escapeHtml(f.failure_reason || f.warning || (f.quality_warnings || []).join('；'))}</td></tr>`).join('');

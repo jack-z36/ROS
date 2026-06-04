@@ -116,6 +116,7 @@ data_clean_calibrated.yaml
 | `service/validator.py`          | 输入 topic/schema 与输出契约校验。                                      |
 | `service/gripper_width.py`      | ArUco 夹爪宽度提取、缺失帧插值和归一化。                                |
 | `service/baton_pose_audit.py`   | Web 端 Baton Mini 左右位姿 topic 审计、单位量级分类和确认后移动分类。    |
+| `service/training_readiness.py` | 将 Forge quality、LeRobot stats、对齐和夹爪报告合成为面向训练前复查的可读摘要。 |
 | `service/tcp_transform.py`      | 将每帧 Baton Mini 动态 pose 与 `camera_from_tcp.translation_mm` 组合为动态 TCP 中间位姿；旧 common-frame helper 仅保留兼容。 |
 | `service/arm_base_transform.py` | arm-base pose 相关转换与契约支持。                                      |
 | `ui/scene1_dev_checks.py`       | 场景一开发者检验项。                                                    |
