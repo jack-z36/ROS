@@ -166,11 +166,48 @@ def _load_identity_resolved(path):
         return yaml.safe_load(stream) or {}
 
 
+def _identity_ref_parts(value):
+    text = str(value or "")
+    if not text.startswith("identity:"):
+        return None
+    ref = text.split(":", 1)[1]
+    parts = ref.split(".", 1)
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise RuntimeError(f"invalid hardware identity reference: {text}")
+    return parts[0], parts[1]
+
+
+def _resolve_identity_ref(value, resolved):
+    parts = _identity_ref_parts(value)
+    if parts is None:
+        return value
+    group, logical_name = parts
+    device = (
+        (resolved or {})
+        .get(group, {})
+        .get(logical_name, {})
+        .get("device")
+    )
+    if not device:
+        raise RuntimeError(
+            f"{value} did not resolve to a device; run start_all_sensor.sh so "
+            "hardware identity preflight can generate identity_resolved_file."
+        )
+    return device
+
+
 def _apply_identity_resolved(config, resolved):
-    for side, resolved_cfg in (resolved.get("gopro") or {}).items():
+    for side, cfg in (config.get("gopro") or {}).items():
+        if not isinstance(cfg, dict):
+            continue
+        value = cfg.get("video_device")
+        if _identity_ref_parts(value) is not None:
+            cfg["video_device"] = _resolve_identity_ref(value, resolved)
+            continue
+        resolved_cfg = (resolved or {}).get("gopro", {}).get(side, {})
         device = resolved_cfg.get("device")
-        if device and side in (config.get("gopro") or {}):
-            config["gopro"][side]["video_device"] = device
+        if device:
+            cfg["video_device"] = device
 
 
 def _load_nodes(context):

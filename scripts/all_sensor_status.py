@@ -93,14 +93,48 @@ def load_identity_resolved(path):
         return yaml.safe_load(stream) or {}
 
 
+def identity_ref_parts(value):
+    text = str(value or "")
+    if not text.startswith("identity:"):
+        return None
+    ref = text.split(":", 1)[1]
+    parts = ref.split(".", 1)
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise RuntimeError(f"invalid hardware identity reference: {text}")
+    return parts[0], parts[1]
+
+
+def resolve_identity_ref(value, resolved):
+    parts = identity_ref_parts(value)
+    if parts is None:
+        return value
+    group, logical_name = parts
+    device = (
+        (resolved or {})
+        .get(group, {})
+        .get(logical_name, {})
+        .get("device")
+    )
+    if not device:
+        raise RuntimeError(
+            f"{value} 未解析到实际设备；请先运行 hardware identity preflight。"
+        )
+    return device
+
+
 def apply_identity_resolved(config, resolved):
-    if not resolved:
-        return config
     updated = copy.deepcopy(config)
-    for side, resolved_cfg in (resolved.get("gopro") or {}).items():
+    for side, cfg in (updated.get("gopro") or {}).items():
+        if not isinstance(cfg, dict):
+            continue
+        value = cfg.get("video_device")
+        if identity_ref_parts(value) is not None:
+            cfg["video_device"] = resolve_identity_ref(value, resolved)
+            continue
+        resolved_cfg = (resolved or {}).get("gopro", {}).get(side, {})
         device = resolved_cfg.get("device")
-        if device and side in (updated.get("gopro") or {}):
-            updated["gopro"][side]["video_device"] = device
+        if device:
+            cfg["video_device"] = device
     return updated
 
 

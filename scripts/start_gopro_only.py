@@ -16,6 +16,19 @@ import yaml
 
 WORKSPACE_DIR = Path("/home/hit/ROS")
 DEFAULT_CONFIG = WORKSPACE_DIR / "config/all_sensor_nodes.yaml"
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+
+def _as_bool(value: Any, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.lower() in ("1", "true", "yes", "on")
+    return bool(value)
 
 
 def _require(mapping: dict[str, Any], key: str, label: str) -> Any:
@@ -31,11 +44,73 @@ def _topic_setting(topics: dict[str, Any], key: str, default_name: str, default_
     return default_name, default_enabled
 
 
+def _identity_ref_parts(value: Any) -> tuple[str, str] | None:
+    text = str(value or "")
+    if not text.startswith("identity:"):
+        return None
+    ref = text.split(":", 1)[1]
+    parts = ref.split(".", 1)
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise RuntimeError(f"非法硬件身份引用: {text}")
+    return parts[0], parts[1]
+
+
+def _resolve_path(path: Any, base: Path) -> Path:
+    resolved = Path(str(path)).expanduser()
+    if not resolved.is_absolute():
+        resolved = base / resolved
+    return resolved
+
+
+def _load_identity_map(data: dict[str, Any], config_path: Path) -> dict[str, Any]:
+    identity_cfg = data.get("hardware_identity") or {}
+    if not _as_bool(identity_cfg.get("enabled"), True):
+        return {}
+    map_file = identity_cfg.get("map_file") or (WORKSPACE_DIR / "config/hardware_identity_map.yaml")
+    map_path = _resolve_path(map_file, config_path.parent)
+    if not map_path.exists():
+        raise RuntimeError(f"硬件身份映射文件不存在: {map_path}")
+    with map_path.open("r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh) or {}
+
+
+def _resolve_gopro_identity(value: Any, identity_map: dict[str, Any]) -> str:
+    parts = _identity_ref_parts(value)
+    if parts is None:
+        return str(value)
+    group, logical_name = parts
+    if group != "gopro":
+        raise RuntimeError(f"GoPro video_device 只能引用 gopro 身份，当前为 {value}")
+
+    from hardware_identity_scan import collect_devices, device_matches, preferred_path
+
+    entry = (identity_map.get("gopro") or {}).get(logical_name)
+    if not isinstance(entry, dict):
+        raise RuntimeError(f"hardware_identity_map.yaml 缺少 gopro.{logical_name}")
+    match = entry.get("match") or {}
+    if not match:
+        raise RuntimeError(f"hardware_identity_map.yaml 中 gopro.{logical_name} 缺少 match")
+
+    candidates = []
+    for device in collect_devices().get("video", []):
+        if _as_bool(entry.get("require_video_capture"), True) and device.get("video_capture") is False:
+            continue
+        if device_matches(device, match):
+            candidates.append(device)
+    if not candidates:
+        raise RuntimeError(f"{value} 未解析到当前 GoPro 视频设备")
+    if len(candidates) > 1:
+        paths = ", ".join(device["path"] for device in candidates)
+        raise RuntimeError(f"{value} 匹配到多个视频设备: {paths}")
+    return preferred_path(candidates[0], match)
+
+
 def _load_gopro_config(path: Path, sides: list[str]) -> dict[str, dict[str, Any]]:
     with path.open("r", encoding="utf-8") as fh:
         data = yaml.safe_load(fh) or {}
     if not isinstance(data, dict):
         raise RuntimeError("all_sensor_nodes.yaml 顶层必须是 mapping")
+    identity_map = _load_identity_map(data, path)
     gopro = data.get("gopro", {})
     if not isinstance(gopro, dict):
         raise RuntimeError("all_sensor_nodes.yaml 缺少 gopro 配置")
@@ -43,6 +118,11 @@ def _load_gopro_config(path: Path, sides: list[str]) -> dict[str, dict[str, Any]
     for side in sides:
         cfg = gopro.get(side, {})
         if isinstance(cfg, dict) and bool(cfg.get("enabled", True)):
+            cfg = dict(cfg)
+            cfg["video_device"] = _resolve_gopro_identity(
+                _require(cfg, "video_device", f"gopro.{side}"),
+                identity_map,
+            )
             result[side] = cfg
     if not result:
         raise RuntimeError("没有启用的 GoPro 配置")
