@@ -36,6 +36,7 @@ work_matrix = rm_algo_pos2matrix(work_frame_euler_pose)
 - `hand` 必须与 `base_frame_id` 匹配：`left` → `left_arm_base`，`right` → `right_arm_base`。
 - Parser 加载后将 `position_mm / 1000` 换算为 Runtime `position_m`。
 - `rotation_euler_rad` 直接传给 RealMan SDK，不再绕行 quaternion 转换。
+- RealMan SDK 输入姿态向量为 `[x_m, y_m, z_m, rx_rad, ry_rad, rz_rad]`。
 - 左右手必须分别配置各自的 work frame。
 
 ## 上游来源

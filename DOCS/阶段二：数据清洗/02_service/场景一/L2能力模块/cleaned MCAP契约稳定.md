@@ -30,8 +30,8 @@ L1：service_s1
 
 ```text
 raw pose 必须保留或可追溯；
-common frame camera pose 和 common frame TCP pose 必须有独立、明确的输出语义；
-浏览器夹爪配置生成和位姿转换配置生成是场景一正式 L2 功能模块。
+左右 arm-base TCP pose 是正式主位姿 topic；
+gripper-only 浏览器向导和普通 Web 配置中心是场景一正式配置入口。
 ```
 
 ## 6. 上游关系
@@ -69,7 +69,7 @@ common frame camera pose 和 common frame TCP pose 必须有独立、明确的�
 |---|---|
 | 默认 cleaned 输出目录 | `asset/阶段二：数据清洗/dev/mcap_cleaned` |
 | raw pose | 必须保留或可追溯 |
-| 主位姿 topic | 主位姿 = `arm_base_tcp_pose`，frame_id = `<hand>_arm_base_link` |
+| 主位姿 topic | `/left_arm_base_tcp_pose`、`/right_arm_base_tcp_pose`，frame_id = `left_arm_base` / `right_arm_base` |
 | 历史兼容字段 | `tcp_common` / `camera_common` 保留为历史兼容，不推荐消费方依赖 |
 | gripper width | `std_msgs/msg/Float32`，归一化 `[0, 1]` |
 | pose 数量 | raw/arm-base TCP 数量必须一致 |

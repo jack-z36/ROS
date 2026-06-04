@@ -115,7 +115,8 @@ data_clean_calibrated.yaml
 | `service/mcap_io.py`            | 单文件清洗核心；两遍读取 MCAP，第一遍生成中间 payload，第二遍写出结果。 |
 | `service/validator.py`          | 输入 topic/schema 与输出契约校验。                                      |
 | `service/gripper_width.py`      | ArUco 夹爪宽度提取、缺失帧插值和归一化。                                |
-| `service/tcp_transform.py`      | 旧 common-frame SE(3) 位姿转换。                                        |
+| `service/baton_pose_audit.py`   | Web 端 Baton Mini 左右位姿 topic 审计、单位量级分类和确认后移动分类。    |
+| `service/tcp_transform.py`      | 将每帧 Baton Mini 动态 pose 与 `camera_from_tcp.translation_mm` 组合为动态 TCP 中间位姿；旧 common-frame helper 仅保留兼容。 |
 | `service/arm_base_transform.py` | arm-base pose 相关转换与契约支持。                                      |
 | `ui/scene1_dev_checks.py`       | 场景一开发者检验项。                                                    |
 
@@ -127,8 +128,8 @@ asset/阶段二：数据清洗/dev/mcap_cleaned/*.mcap
 
 注意：
 
-- 旧 common pose 可以服务 `format-only` 格式烟测。
-- 正式训练需要 arm-base TCP pose、相机到 TCP 外参和 work frame 标定。
+- 旧 common pose 只能服务 `format-only` 开发烟测。
+- 正式生产需要 arm-base TCP pose、相机到 TCP 平移、work frame 标定和 RealMan SDK readiness。
 - raw pose 保留/可追溯；正式主位姿固定为左右 arm-base TCP pose。
 
 ## 5. 场景二：cleaned MCAP -> MCAP_A
@@ -297,7 +298,7 @@ mean, std, min, max
 - 最终 dataset 写入 `<output_parent>/<dataset_name>/`，sidecar 和中间产物写入 `asset/阶段二：数据清洗/dev/debug/web_jobs/<dataset_name>_data_clean_sidecar/`。
 - 当前调度真实主链路：场景一 cleaned MCAP、场景二 MCAP_A、场景三 aligned MCAP、临时 Forge bridge、多 bridge 聚合 LeRobot v3、Forge inspect/quality。
 - 结果页提供三个视图：评测报告分数可视化、从最终 LeRobot v3 `observation.state` 读取的左右 TCP 3D 轨迹、逐文件状态；轨迹 API 为 `GET /api/jobs/{job_id}/trajectory`。
-- 3D 轨迹使用固定右手坐标系工程视角，显示局部原点固定在画布左下角；局部原点取当前视图 `bounds.min`，不是物理坐标 `(0, 0, 0)`，原始坐标值不会被改写。单个 episode 按原始时间戳播放，全部 episode 仅做静态总览。`format-only` 的旧 `common_frame` 数据允许双手叠加，`formal` 的左右 `arm_base` 数据必须分屏同步播放，不能暗示双手位于同一物理坐标系。
+- 3D 轨迹使用固定右手坐标系工程视角，显示局部原点固定在画布左下角；局部原点取当前视图 `bounds.min`，不是物理坐标 `(0, 0, 0)`，原始坐标值不会被改写。单个 episode 按原始时间戳播放，全部 episode 仅做静态总览。普通 Web 使用左右 `arm_base` 数据，必须分屏或明确标注不同物理坐标系，不能暗示双手位于同一世界坐标；`format-only/common_frame` 叠加仅用于开发 smoke。
 - 普通网页固定使用左右 arm-base pose 的生产链路，不向普通用户暴露 `format-only/formal`；开发 smoke 仍可显式使用 `format-only`。
 - 单个 MCAP 失败不会阻止其他成功 bridge episodes 进入最终 dataset；至少一个 MCAP 成功时批次可发布为 `partial_failed`。
 - 用户主动取消时，Runtime staging、最终 dataset 和 sidecar 均回滚；历史删除只删除网页摘要，不删除真实产物。
@@ -340,6 +341,13 @@ Web JSON API：
 | `GET`    | `/api/filesystem?path=...`           | 浏览本机目录。                                  |
 | `POST`   | `/api/filesystem/create-directory`   | 创建用户指定目录。                              |
 | `POST`   | `/api/input-files/scan`              | 扫描输入目录当前层 `.mcap` 文件，不递归。     |
+| `POST`   | `/api/baton-pose-audit/preview`      | 审计左右 Baton Mini 位姿 topic 数值和单位量级，只写报告不移动 MCAP。 |
+| `POST`   | `/api/baton-pose-audit/start`        | 后台启动 Baton 位姿审计并返回进度任务 ID。       |
+| `GET`    | `/api/baton-pose-audit/{audit_id}/status` | 轮询 Baton 位姿审计进度；完成后返回审计记录。 |
+| `POST`   | `/api/baton-pose-audit/move`         | 根据审计结果确认后移动 MCAP 到 `normal`、`unit_mismatch` 或 `other_issue`。 |
+| `POST`   | `/api/baton-pose-audit/{audit_id}/move/start` | 后台启动确认后的分类移动。                    |
+| `GET`    | `/api/baton-pose-audit/{audit_id}/move/status` | 轮询分类移动进度；完成后返回移动记录。       |
+| `GET`    | `/api/baton-pose-audit/{audit_id}`   | 读取 Baton 位姿审计记录。                       |
 | `POST`   | `/api/jobs/preview`                  | 预览 dataset、sidecar、文件数、大小和同名冲突。 |
 | `POST`   | `/api/jobs`                          | 创建批次数据集构建任务。                        |
 | `GET`    | `/api/jobs/{job_id}`                 | 获取任务、阶段和逐文件状态。                    |

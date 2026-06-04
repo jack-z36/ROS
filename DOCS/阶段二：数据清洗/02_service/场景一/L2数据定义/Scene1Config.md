@@ -36,6 +36,7 @@
 - `camera_from_tcp` 旋转固定为零，不提供人工配置字段。
 - `work_frames` 中每个 hand 的 `base_frame_id` 必须与 hand 匹配。
 - 正式生产配置必须提供 `/left_arm_base_tcp_pose` 与 `/right_arm_base_tcp_pose`。
+- 保存正式配置时，旧 `translation_m + rotation_quat_xyzw`、`position_m + orientation` 只作为只读兼容输入；保存后必须升级为 `translation_mm`、`position_mm`、`rotation_euler_rad`。
 - 旧 `frame_alignment` 块保留读取兼容，新配置不应写入。
 - 配置加载失败必须阻塞清洗，不允许进入 YOLO 式 topic 探测。
 

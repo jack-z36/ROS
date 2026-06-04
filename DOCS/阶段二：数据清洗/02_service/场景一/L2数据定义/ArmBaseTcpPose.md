@@ -43,13 +43,14 @@ T_arm_base_tcp = rm_algo_workframe2base(work_matrix, tcp_in_camera_pose)
 - X 轴：机械臂基座前方
 - Y 轴：机械臂基座左方（右手系）
 - Z 轴：机械臂基座上方
-- 单位：米（位置），弧度（姿态）
+- 单位：位置为 `m`；姿态输出为 ROS quaternion `xyzw`，无量纲。
+- 左右 arm-base 分属不同物理坐标系，不可直接相加、叠加或解释成一个统一世界坐标。
 
 ## 有效性规则
 
 - `hand` 必须与 `frame_id` 匹配：`left` → `left_arm_base`，`right` → `right_arm_base`。
 - 位置单位固定为 m。
-- 四元数必须是单位四元数或在配置加载时归一化。
+- 四元数必须是单位四元数或在输出前归一化。
 - 消息数量必须与输入 pose topic 数量一致。
 
 ## 上游来源

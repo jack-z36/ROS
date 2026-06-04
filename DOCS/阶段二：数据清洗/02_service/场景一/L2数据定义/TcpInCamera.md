@@ -2,7 +2,7 @@
 
 ## 定义
 
-`TcpInCamera` 是 arm-base 转换前的 TCP in camera 中间位姿，描述夹爪 TCP 在 Baton Mini 相机坐标系下的位置和姿态。
+`TcpInCamera` 是 arm-base 转换前的动态 TCP 中间位姿，描述每一帧夹爪 TCP 在 work frame / camera 动态位姿语义下的位置和姿态。
 
 ## 所属位置
 
@@ -13,17 +13,17 @@
 它由 `compute_tcp_in_camera` 将 Baton Mini 每帧动态 camera pose 与固定外参 [[CameraFromTcpExtrinsic]] 组合得到。TCP 动态位姿作为 `rm_algo_workframe2base` 的 `pose_in_work` 输入，其中 camera 所在工作坐标系充当 work frame 角色。
 
 ```text
-T_tcp_in_camera = extrinsic translation + rotation（固定值，不依赖相机运动）
+T_work_tcp(t) = T_work_camera(t) * T_camera_tcp
 ```
 
-注意：`compute_tcp_in_camera` 接受 camera pose 参数但结果不依赖它，因为 TCP in camera 仅由固定外参决定。
+注意：`TcpInCamera` 不是固定外参本身。`compute_tcp_in_camera` 必须使用每一帧 Baton Mini dynamic pose；若输出只等于固定 TCP 偏移，说明主链路退化，应判为错误。
 
 ## 字段或取值
 
 | 字段 | 类型 | 现实含义 |
 |------|------|----------|
 | `hand` | string | `left` 或 `right`，对应 [[HandType]] |
-| `frame_id` | string | `<hand>_camera_optical_frame` |
+| `frame_id` | string | 动态 work/camera 中间坐标系标识，最终不直接暴露给下游 |
 | `position_m` | dict | TCP 位置，`{x, y, z}`，单位 m |
 | `orientation` | dict | TCP 姿态四元数，`{x, y, z, w}`，顺序 xyzw |
 
@@ -37,7 +37,7 @@ T_tcp_in_camera = extrinsic translation + rotation（固定值，不依赖相机
 
 - Baton Mini raw pose 的位置单位固定为 `m`，不得忽略每帧动态位姿。
 - 相机到 TCP 外参仅提供固定平移，旋转固定为零。
-- `frame_id` 格式为 `<hand>_camera_optical_frame`。
+- 输出数量必须与对应 raw camera pose 数量一致。
 - 左右手必须使用各自的外参。
 
 ## 上游来源

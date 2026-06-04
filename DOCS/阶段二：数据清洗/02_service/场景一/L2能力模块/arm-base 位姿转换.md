@@ -85,7 +85,8 @@ L1：service_s1
 
 1. 用 `compute_arm_base_tcp_pose` 将 TCP in camera 转换为 arm-base TCP pose。
 2. 校验 [[WorkFrameInBaseConfig]] 的手别与 frame_id 一致性。
-3. 保证 `frame_id = <hand>_arm_base_link`。
+3. 保证输出 topic 和 frame_id 匹配：left → `/left_arm_base_tcp_pose` / `left_arm_base`，right → `/right_arm_base_tcp_pose` / `right_arm_base`。
+4. 保证动态轨迹不得退化成固定 TCP 偏移；输出数量和时间戳必须跟随 raw Baton Mini pose。
 
 本能力不负责：
 
@@ -108,7 +109,7 @@ L1：service_s1
 
 | 样例 | 输入特征 | 预期输出 | 验证方式 |
 |------|----------|----------|----------|
-| identity work frame + identity TCP in camera | `work_frame` 单位阵，TCP in camera 单位阵 | arm-base TCP ≈ 单位位姿 | unit test |
+| identity work frame + 动态 TCP in camera | `work_frame` 单位阵，TCP in camera 随 raw pose 移动 | arm-base TCP 轨迹随 raw pose 移动 | unit test |
 | 已知平移 | work_frame 平移 (0.1, 0, 0) | arm-base TCP x 偏移 0.1m | contract test |
 | 左右 hand 交换 | 左右输入互换 | frame_id 正确切换 | unit test |
 | 圆整测试 | 已知 SDK 输入输出对 | 与 SDK 独立计算结果一致 | round-trip test |
@@ -124,6 +125,7 @@ L1：service_s1
 1. 不得混用左右 WorkFrameInBaseConfig。
 2. 输出数量必须与输入 pose topic 数量一致。
 3. 必须记录 `official_api` 字段为 `Algo.rm_algo_workframe2base`。
+4. 必须覆盖“raw pose 改变时 arm-base 输出也改变”的验收，防止动态链路退化成固定外参。
 
 ## 14. 开发者功能检验契约
 
