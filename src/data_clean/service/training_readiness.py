@@ -13,6 +13,11 @@ try:  # pyarrow is available in the data-clean environment, but keep reports rob
 except Exception:  # pragma: no cover - environment fallback
     pq = None  # type: ignore[assignment]
 
+try:  # OpenCV is used only for lightweight video metadata/first-frame checks.
+    import cv2
+except Exception:  # pragma: no cover - environment fallback
+    cv2 = None  # type: ignore[assignment]
+
 
 ACTION_DIMENSIONS = [
     {"index": 0, "key": "left_x", "label": "左手 x", "group": "left", "unit": "m"},
@@ -103,9 +108,11 @@ def build_training_readiness_summary(
     alignment = _alignment_summary(job)
     gripper = _gripper_tactile_summary(job, alignment)
     bridge = _bridge_summary(job)
+    storage_media = _storage_media_summary(job, dataset_path, inspect_data, dataset_size)
 
     modules = [
         _format_module(job, quality_context, inspect_data, bridge),
+        _storage_media_module(storage_media),
         _action_module(quality_context, action_saturation),
         _sync_module(alignment, dataset_size),
         _gripper_module(gripper),
@@ -132,6 +139,7 @@ def build_training_readiness_summary(
         "alignment_summary": alignment,
         "gripper_summary": gripper,
         "bridge_summary": bridge,
+        "storage_media": storage_media,
         "subscore_explanations": SUBSCORE_EXPLANATIONS,
         "format_details": _format_details(quality_context, inspect_data, stats_data, flagged_data),
         "report_path": str(report_path),
@@ -377,6 +385,19 @@ def _gripper_module(gripper: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _storage_media_module(storage: dict[str, Any]) -> dict[str, Any]:
+    status = str(storage.get("status") or "info")
+    return {
+        "id": "storage_media",
+        "title": "文件大小/视频完整性",
+        "status": status,
+        "label": STATUS_LABELS.get(status, status),
+        "summary": str(storage.get("summary") or "暂无文件大小和媒体校验摘要。"),
+        "risks": list(storage.get("risks") or []),
+        "metrics": storage,
+    }
+
+
 def _scale_module(size: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": "dataset_scale",
@@ -410,7 +431,7 @@ def _headline(level: str) -> str:
 
 def _top_risks(modules: list[dict[str, Any]]) -> list[str]:
     risks: list[str] = []
-    for module_id in ("format_input", "action_health", "sync_quality", "gripper_tactile"):
+    for module_id in ("format_input", "storage_media", "action_health", "sync_quality", "gripper_tactile"):
         module = next((item for item in modules if item["id"] == module_id), None)
         if module:
             risks.extend(module.get("risks", []))
@@ -422,6 +443,10 @@ def _next_actions(modules: list[dict[str, Any]]) -> list[str]:
     actions: list[str] = []
     if by_id.get("format_input", {}).get("status") == "block":
         actions.append("先修复格式、formal 标定或 training_eligible 问题，再重新生成 dataset。")
+    if by_id.get("storage_media", {}).get("status") == "block":
+        actions.append("先修复 LeRobot 数据集缺失的 parquet/mp4 或帧数不一致问题，再进入训练。")
+    elif by_id.get("storage_media", {}).get("status") == "review":
+        actions.append("抽查视频首帧和文件大小体检，确认小目录不是黑屏、空视频或异常压缩。")
     if by_id.get("action_health", {}).get("status") == "review":
         actions.append("打开 3D 轨迹，重点播放带 saturated 或 smoothness 低的 episode。")
         actions.append("检查动作归一化、夹爪范围和采集动作是否长时间贴边。")
@@ -572,6 +597,441 @@ def _gripper_tactile_summary(job: dict[str, Any], alignment: dict[str, Any]) -> 
         "max_gripper_interpolation_stream": max_stream,
         "min_tactile_coverage_ratio": alignment.get("min_tactile_coverage_ratio"),
     }
+
+
+def _storage_media_summary(
+    job: dict[str, Any],
+    dataset_dir: Path,
+    inspect: dict[str, Any],
+    dataset_size: dict[str, Any],
+) -> dict[str, Any]:
+    info_path = dataset_dir / "meta" / "info.json"
+    info = _read_json(info_path, {})
+    expected_frames = (
+        _as_int(info.get("total_frames")) if isinstance(info, dict) else None
+    ) or _as_int(dataset_size.get("frames")) or 0
+    expected_fps = (
+        _as_float(info.get("fps")) if isinstance(info, dict) else None
+    ) or _as_float(dataset_size.get("fps"))
+
+    dataset_total = _path_size(dataset_dir)
+    data_total = _path_size(dataset_dir / "data")
+    video_total = _path_size(dataset_dir / "videos")
+    meta_total = _path_size(dataset_dir / "meta")
+    raw = _raw_mcap_summary(job)
+    parquet = _parquet_integrity(dataset_dir, expected_frames)
+    videos = _video_integrity(
+        dataset_dir=dataset_dir,
+        info=info if isinstance(info, dict) else {},
+        inspect=inspect,
+        parquet=parquet,
+        expected_frames=expected_frames,
+        expected_fps=expected_fps,
+        video_total_size=video_total,
+    )
+
+    storage_block_reasons = [] if info_path.exists() else ["缺少 meta/info.json，无法确认 LeRobot 数据集元信息。"]
+    block_reasons = storage_block_reasons + list(parquet.get("block_reasons") or []) + list(videos.get("block_reasons") or [])
+    review_reasons = list(parquet.get("review_reasons") or []) + list(videos.get("review_reasons") or [])
+    raw_total = int(raw.get("total_size_bytes") or 0)
+    compression_ratio = raw_total / dataset_total if raw_total > 0 and dataset_total > 0 else None
+    decoded_frame_count = int(videos.get("decoded_frame_count") or 0)
+    bytes_per_video_frame = video_total / decoded_frame_count if video_total > 0 and decoded_frame_count > 0 else None
+    if bytes_per_video_frame is not None and bytes_per_video_frame < 500 and not block_reasons:
+        review_reasons.append("mp4 平均每帧字节数极低，虽然帧数完整，也建议抽查是否过度压缩或近似空画面。")
+    if compression_ratio is not None and compression_ratio > 2000 and not block_reasons:
+        review_reasons.append(f"raw 到 LeRobot 压缩比约 {compression_ratio:.0f}x，明显高于常见视频压缩结果，建议复查导出字段。")
+
+    if block_reasons:
+        status = "block"
+        summary = f"媒体/表格完整性存在阻断问题：{block_reasons[0]}"
+    elif review_reasons:
+        status = "review"
+        summary = f"文件能读，但存在需要复查的问题：{review_reasons[0]}"
+    else:
+        prefix = (
+            f"raw {_format_bytes(raw_total)} -> LeRobot {_format_bytes(dataset_total)}"
+            if raw_total > 0
+            else f"LeRobot {_format_bytes(dataset_total)}"
+        )
+        summary = (
+            f"{prefix}；{videos.get('video_file_count', 0)} 个 mp4 与 "
+            f"{expected_frames or parquet.get('total_rows') or '-'} frames 匹配。"
+            "目录小不是直接问题：raw MCAP 含原始流和额外 topic，LeRobot 只保留训练字段，视频又经过 H.264 压缩。"
+        )
+        status = "pass"
+
+    return {
+        "status": status,
+        "summary": summary,
+        "risks": block_reasons + review_reasons,
+        "explanation": "目录小不是直接问题：raw MCAP 含原始流和额外 topic，LeRobot 只保留训练字段，视频又经过 H.264 压缩。",
+        "dataset_dir": str(dataset_dir),
+        "dataset_total_size_bytes": dataset_total,
+        "dataset_total_size_text": _format_bytes(dataset_total),
+        "data_size_bytes": data_total,
+        "data_size_text": _format_bytes(data_total),
+        "video_total_size_bytes": video_total,
+        "video_total_size_text": _format_bytes(video_total),
+        "meta_size_bytes": meta_total,
+        "meta_size_text": _format_bytes(meta_total),
+        "raw_total_size_bytes": raw_total,
+        "raw_total_size_text": _format_bytes(raw_total) if raw_total else "-",
+        "raw_to_dataset_ratio": compression_ratio,
+        "bytes_per_video_frame": bytes_per_video_frame,
+        "expected_frames": expected_frames,
+        "expected_fps": expected_fps,
+        "parquet_total_rows": parquet.get("total_rows"),
+        "parquet_row_check": parquet.get("row_check"),
+        "video_file_count": videos.get("video_file_count", 0),
+        "expected_video_file_count": videos.get("expected_video_file_count", 0),
+        "video_frame_check": videos.get("frame_check"),
+        "video_resolution_check": videos.get("resolution_check"),
+        "video_fps_check": videos.get("fps_check"),
+        "raw_files": raw.get("files", []),
+        "parquet": parquet,
+        "videos": videos,
+    }
+
+
+def _raw_mcap_summary(job: dict[str, Any]) -> dict[str, Any]:
+    raw_paths: list[Path] = []
+    seen: set[str] = set()
+    files = job.get("files") if isinstance(job.get("files"), list) else []
+    for item in files:
+        if not isinstance(item, dict):
+            continue
+        raw = item.get("input_path") or item.get("source_path")
+        if not raw:
+            continue
+        path = Path(str(raw)).expanduser()
+        key = str(path)
+        if key not in seen:
+            seen.add(key)
+            raw_paths.append(path)
+
+    entries = []
+    total = 0
+    for path in raw_paths:
+        exists = path.exists()
+        size = path.stat().st_size if exists and path.is_file() else 0
+        total += size
+        entries.append(
+            {
+                "path": str(path),
+                "name": path.name,
+                "exists": exists,
+                "size_bytes": size,
+                "size_text": _format_bytes(size) if size else "-",
+            }
+        )
+    return {"files": entries, "file_count": len(entries), "total_size_bytes": total, "total_size_text": _format_bytes(total) if total else "-"}
+
+
+def _parquet_integrity(dataset_dir: Path, expected_frames: int) -> dict[str, Any]:
+    files = sorted((dataset_dir / "data").glob("chunk-*/*.parquet"))
+    block_reasons: list[str] = []
+    review_reasons: list[str] = []
+    rows = []
+    total_rows = 0
+    if not files:
+        block_reasons.append("缺少 data/chunk-*/*.parquet，训练 action/state 表格没有写出。")
+    if pq is None:
+        review_reasons.append("当前环境没有 pyarrow，无法核对 parquet 行数。")
+        return {
+            "available": False,
+            "files": [{"path": str(path), "relative_path": _relative_path(path, dataset_dir), "key": _chunk_file_key(path), "rows": None} for path in files],
+            "file_count": len(files),
+            "total_rows": None,
+            "expected_frames": expected_frames,
+            "row_check": "unknown",
+            "block_reasons": block_reasons,
+            "review_reasons": review_reasons,
+        }
+
+    for path in files:
+        relative = _relative_path(path, dataset_dir)
+        row = {"path": str(path), "relative_path": relative, "key": _chunk_file_key(path), "rows": 0, "episodes": [], "frame_index_min": None, "frame_index_max": None}
+        try:
+            parquet_file = pq.ParquetFile(path)
+            row_count = int(parquet_file.metadata.num_rows)
+            row["rows"] = row_count
+            total_rows += row_count
+            columns = set(parquet_file.schema_arrow.names)
+            read_columns = [name for name in ("episode_index", "frame_index") if name in columns]
+            if read_columns:
+                table = pq.read_table(path, columns=read_columns)
+                data = table.to_pydict()
+                episodes = data.get("episode_index") or []
+                frames = data.get("frame_index") or []
+                if episodes:
+                    row["episodes"] = sorted({int(value) for value in episodes})
+                if frames:
+                    row["frame_index_min"] = int(min(frames))
+                    row["frame_index_max"] = int(max(frames))
+        except Exception as exc:  # noqa: BLE001
+            block_reasons.append(f"{relative} 无法读取：{type(exc).__name__}: {exc}")
+        rows.append(row)
+
+    row_check = "match"
+    if expected_frames and total_rows != expected_frames:
+        row_check = "mismatch"
+        block_reasons.append(f"parquet 总行数 {total_rows} 与 meta/job frames {expected_frames} 不一致。")
+    elif block_reasons:
+        row_check = "failed"
+    return {
+        "available": True,
+        "files": rows,
+        "file_count": len(files),
+        "total_rows": total_rows,
+        "expected_frames": expected_frames,
+        "row_check": row_check,
+        "block_reasons": block_reasons,
+        "review_reasons": review_reasons,
+    }
+
+
+def _video_integrity(
+    *,
+    dataset_dir: Path,
+    info: dict[str, Any],
+    inspect: dict[str, Any],
+    parquet: dict[str, Any],
+    expected_frames: int,
+    expected_fps: float | None,
+    video_total_size: int,
+) -> dict[str, Any]:
+    specs = _video_feature_specs(dataset_dir, info, inspect, expected_fps)
+    parquet_files = [item for item in parquet.get("files", []) if isinstance(item, dict)]
+    block_reasons: list[str] = []
+    review_reasons: list[str] = []
+    records = []
+    decoded_frame_count = 0
+    expected_count = len(specs) * len(parquet_files) if specs and parquet_files else 0
+    expected_paths: set[str] = set()
+
+    if not specs:
+        block_reasons.append("meta/info.json 未声明 video feature，无法确认双目 mp4 是否完整。")
+
+    for spec in specs:
+        feature_total = 0
+        for parquet_file in parquet_files:
+            rows = _as_int(parquet_file.get("rows"))
+            key = str(parquet_file.get("key") or "")
+            if not key:
+                continue
+            video_path = dataset_dir / "videos" / str(spec["key"]) / f"{key}.mp4"
+            expected_paths.add(str(video_path))
+            record = _inspect_video_file(video_path, dataset_dir, spec, rows)
+            records.append(record)
+            if record.get("frame_count") is not None:
+                frame_count = int(record.get("frame_count") or 0)
+                decoded_frame_count += frame_count
+                feature_total += frame_count
+            block_reasons.extend(record.get("block_reasons") or [])
+            review_reasons.extend(record.get("review_reasons") or [])
+        spec["observed_total_frames"] = feature_total
+        if expected_frames and feature_total and feature_total != expected_frames:
+            block_reasons.append(f"{spec['key']} mp4 总帧数 {feature_total} 与 meta/job frames {expected_frames} 不一致。")
+
+    actual_video_files = sorted((dataset_dir / "videos").glob("*/*/*.mp4"))
+    extras = [path for path in actual_video_files if str(path) not in expected_paths]
+    if specs and parquet_files and extras:
+        review_reasons.append(f"发现 {len(extras)} 个未被 data parquet 索引的额外 mp4，建议确认是否为历史残留。")
+    if specs and parquet_files:
+        missing = [record for record in records if record.get("missing")]
+        if missing:
+            block_reasons.append(f"缺少 {len(missing)} 个期望 mp4。")
+    elif not actual_video_files:
+        block_reasons.append("缺少 videos/ 下的 mp4 文件。")
+
+    if cv2 is None and actual_video_files:
+        review_reasons.append("当前环境没有 OpenCV，无法打开 mp4 核对帧数、FPS、分辨率和首帧。")
+    frame_check = "match" if not any(record.get("frame_mismatch") for record in records) and not block_reasons else "failed"
+    fps_check = "match" if not any(record.get("fps_mismatch") for record in records) and not block_reasons else "failed"
+    resolution_check = "match" if not any(record.get("resolution_mismatch") for record in records) and not block_reasons else "failed"
+    if cv2 is None and actual_video_files:
+        frame_check = fps_check = resolution_check = "unknown"
+
+    return {
+        "features": specs,
+        "files": records,
+        "extra_files": [_relative_path(path, dataset_dir) for path in extras],
+        "video_file_count": len(actual_video_files),
+        "expected_video_file_count": expected_count,
+        "decoded_frame_count": decoded_frame_count,
+        "frame_check": frame_check,
+        "fps_check": fps_check,
+        "resolution_check": resolution_check,
+        "total_size_bytes": video_total_size,
+        "total_size_text": _format_bytes(video_total_size),
+        "block_reasons": _dedupe_strings(block_reasons),
+        "review_reasons": _dedupe_strings(review_reasons),
+    }
+
+
+def _video_feature_specs(dataset_dir: Path, info: dict[str, Any], inspect: dict[str, Any], fallback_fps: float | None) -> list[dict[str, Any]]:
+    specs: list[dict[str, Any]] = []
+    features = info.get("features") if isinstance(info.get("features"), dict) else {}
+    for key, meta in features.items():
+        if not isinstance(meta, dict) or meta.get("dtype") != "video":
+            continue
+        shape = meta.get("shape") if isinstance(meta.get("shape"), list) else []
+        video_info = meta.get("video_info") if isinstance(meta.get("video_info"), dict) else {}
+        specs.append(
+            {
+                "key": str(key),
+                "expected_height": _as_int(shape[0]) if len(shape) >= 1 else None,
+                "expected_width": _as_int(shape[1]) if len(shape) >= 2 else None,
+                "expected_fps": _as_float(video_info.get("video.fps") or meta.get("fps") or fallback_fps),
+                "codec": video_info.get("video.codec"),
+            }
+        )
+    actual_dirs = [path for path in sorted((dataset_dir / "videos").iterdir()) if path.is_dir()] if (dataset_dir / "videos").exists() else []
+    known = {spec["key"] for spec in specs}
+    for path in actual_dirs:
+        if path.name in known:
+            continue
+        specs.append({"key": path.name, "expected_height": None, "expected_width": None, "expected_fps": fallback_fps, "codec": None})
+    if specs:
+        return specs
+
+    cameras = inspect.get("cameras") if isinstance(inspect.get("cameras"), dict) else {}
+    fallback_keys = []
+    if "left" in cameras:
+        fallback_keys.append("observation.images.left")
+    if "right" in cameras:
+        fallback_keys.append("observation.images.right")
+    return [{"key": key, "expected_height": None, "expected_width": None, "expected_fps": fallback_fps, "codec": None} for key in fallback_keys]
+
+
+def _inspect_video_file(path: Path, dataset_dir: Path, spec: dict[str, Any], expected_frames: int | None) -> dict[str, Any]:
+    relative = _relative_path(path, dataset_dir)
+    record: dict[str, Any] = {
+        "path": str(path),
+        "relative_path": relative,
+        "video_key": spec.get("key"),
+        "expected_frames": expected_frames,
+        "expected_fps": spec.get("expected_fps"),
+        "expected_width": spec.get("expected_width"),
+        "expected_height": spec.get("expected_height"),
+        "exists": path.exists(),
+        "missing": False,
+        "size_bytes": 0,
+        "size_text": "-",
+        "frame_count": None,
+        "fps": None,
+        "width": None,
+        "height": None,
+        "first_frame_mean": None,
+        "first_frame_std": None,
+        "block_reasons": [],
+        "review_reasons": [],
+    }
+    if not path.exists():
+        record["missing"] = True
+        record["block_reasons"].append(f"缺少视频文件 {relative}。")
+        return record
+    record["size_bytes"] = path.stat().st_size
+    record["size_text"] = _format_bytes(int(record["size_bytes"]))
+    if cv2 is None:
+        record["review_reasons"].append(f"{relative} 未做 OpenCV 打开校验。")
+        return record
+
+    capture = cv2.VideoCapture(str(path))
+    try:
+        if not capture.isOpened():
+            record["block_reasons"].append(f"{relative} 无法被 OpenCV 打开。")
+            return record
+        frame_count = int(round(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0))
+        fps = float(capture.get(cv2.CAP_PROP_FPS) or 0.0)
+        width = int(round(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0))
+        height = int(round(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0))
+        ok, frame = capture.read()
+    finally:
+        capture.release()
+
+    record.update({"frame_count": frame_count, "fps": fps, "width": width, "height": height})
+    if expected_frames is not None and frame_count != expected_frames:
+        record["frame_mismatch"] = True
+        record["block_reasons"].append(f"{relative} 帧数 {frame_count} 与对应 parquet 行数 {expected_frames} 不一致。")
+    expected_fps = _as_float(spec.get("expected_fps"))
+    if expected_fps is not None and (fps <= 0 or abs(fps - expected_fps) > 0.5):
+        record["fps_mismatch"] = True
+        record["block_reasons"].append(f"{relative} FPS {fps:.2f} 与期望 {expected_fps:.2f} 不一致。")
+    expected_width = _as_int(spec.get("expected_width"))
+    expected_height = _as_int(spec.get("expected_height"))
+    if expected_width and expected_height and (width != expected_width or height != expected_height):
+        record["resolution_mismatch"] = True
+        record["block_reasons"].append(f"{relative} 分辨率 {width}x{height} 与期望 {expected_width}x{expected_height} 不一致。")
+    if not ok or frame is None:
+        record["block_reasons"].append(f"{relative} 首帧无法读取。")
+        return record
+    mean = float(frame.mean())
+    std = float(frame.std())
+    record["first_frame_mean"] = mean
+    record["first_frame_std"] = std
+    if mean < 2.0 or mean > 253.0 or std < 1.0:
+        record["review_reasons"].append(f"{relative} 首帧疑似黑屏、白屏或近似纯色。")
+    return record
+
+
+def _path_size(path: Path) -> int:
+    try:
+        if path.is_file():
+            return path.stat().st_size
+        if path.is_dir():
+            total = 0
+            for item in path.rglob("*"):
+                try:
+                    if item.is_file():
+                        total += item.stat().st_size
+                except OSError:
+                    continue
+            return total
+    except OSError:
+        return 0
+    return 0
+
+
+def _format_bytes(size: int | float | None) -> str:
+    if size is None:
+        return "-"
+    value = float(size)
+    if value <= 0:
+        return "0 B"
+    units = ["B", "KB", "MB", "GB", "TB"]
+    index = 0
+    while value >= 1024 and index < len(units) - 1:
+        value /= 1024
+        index += 1
+    if index == 0:
+        return f"{int(value)} B"
+    return f"{value:.1f} {units[index]}"
+
+
+def _chunk_file_key(path: Path) -> str:
+    if len(path.parts) >= 2:
+        return f"{path.parent.name}/{path.stem}"
+    return path.stem
+
+
+def _relative_path(path: Path, root: Path) -> str:
+    try:
+        return str(path.relative_to(root))
+    except ValueError:
+        return str(path)
+
+
+def _dedupe_strings(values: list[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
 
 
 def _action_saturation_summary(dataset_dir: Path) -> dict[str, Any]:

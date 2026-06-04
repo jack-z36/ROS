@@ -1474,11 +1474,12 @@ class DataCleanWebApp:
         sidecar_dir = Path(job.get("sidecar_dir", ""))
         reports_dir = sidecar_dir / "reports"
         self._refresh_flagged_count(summary, reports_dir)
-        if isinstance(summary.get("training_readiness"), dict):
+        existing = summary.get("training_readiness")
+        if isinstance(existing, dict) and isinstance(existing.get("storage_media"), dict):
             return
         readiness_path = reports_dir / "training_readiness_summary.json"
         cached = _read_json(readiness_path, None)
-        if isinstance(cached, dict):
+        if isinstance(cached, dict) and isinstance(cached.get("storage_media"), dict):
             summary["training_readiness"] = cached
             return
         dataset_dir_raw = job.get("dataset_dir") or (job.get("dataset_summary") or {}).get("output_lerobot_v3")
@@ -2692,6 +2693,12 @@ function readinessModule(module) {
 function moduleMetricsText(module) {
   const m = module.metrics || {};
   if (module.id === 'format_input') return `state ${m.state_dim ?? '-'} / action ${m.action_dim ?? '-'} / 双目 ${m.dual_cameras ? '是' : '否'}`;
+  if (module.id === 'storage_media') {
+    const ratio = Number(m.raw_to_dataset_ratio);
+    const ratioText = Number.isFinite(ratio) ? ` / 压缩比 ${ratio.toFixed(1)}x` : '';
+    const rowsText = m.parquet_total_rows != null ? ` / 表格行 ${m.parquet_total_rows}` : '';
+    return `raw ${m.raw_total_size_text || '-'} -> LeRobot ${m.dataset_total_size_text || '-'} / 视频 ${m.video_total_size_text || '-'} / mp4 ${m.video_file_count ?? 0}${rowsText}${ratioText}`;
+  }
   if (module.id === 'action_health') return `总分 ${fmtScore(m.overall_score)} / 全局 flags ${(m.global_flags || []).length}`;
   if (module.id === 'sync_quality') return `max dt ${fmtScore(m.max_dt_ms,1)} ms / 一帧 ${fmtScore(m.frame_interval_ms,1)} ms / terminal drop ${m.terminal_dropped_steps ?? 0}`;
   if (module.id === 'gripper_tactile') return `夹爪最高插值 ${fmtPct(m.max_gripper_interpolation_rate)} / 触觉最低覆盖 ${fmtPct(m.min_tactile_coverage_ratio)}`;
