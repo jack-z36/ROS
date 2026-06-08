@@ -96,7 +96,7 @@ gopro:
 
 pressure:
   enabled: true
-  config_file: "/home/hit/ROS/src/hwk_pressure_driver/config/pressure_sensors.yaml"
+  config_file: "/home/hit/ROS/src/data_collection/hwk_pressure_driver/config/pressure_sensors.yaml"
   node_name: "pressure_driver_node"
   topics:
     left_gripper_1:

@@ -225,7 +225,7 @@ dispatch.task_id：service_s2_004
 
 ### 手动接口验证
 
-- 通过 `PYTHONPATH=src/data_clean:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3` 驱动脚本直接调用 `run_scene2_signal_reliability_detection()`，确认会创建 `src/data_clean/runs/<run_id>/run_log.json` 并记录输入、配置、步骤、统计、错误和输出路径。
+- 通过 `PYTHONPATH=src/data_clean:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3` 驱动脚本直接调用 `run_scene2_signal_reliability_detection()`，确认会创建 `src/data_clean/runs/<run_id>/run_log.json` 并记录输入、配置、步骤、统计、错误和输出路径。
 - 使用真实历史 MCAP 做手动试跑时，当前 Python 环境读取该文件失败于 `UnsupportedCompressionError: unsupported compression type zstandard`；该环境依赖问题不影响合成样本自动化验收，但建议最终人工验收前确认 MCAP zstandard 支持可用。
 
 ### 成功标准核对

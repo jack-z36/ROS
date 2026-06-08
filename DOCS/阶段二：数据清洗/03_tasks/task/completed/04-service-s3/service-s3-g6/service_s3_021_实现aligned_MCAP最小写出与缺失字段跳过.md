@@ -265,7 +265,7 @@ PYTHONPATH=src python3 -m pytest src/data_clean/tests/service -q
 # → 458 passed, 9 skipped (no regressions)
 
 # 4. L3 指定验收命令
-PYTHONPATH=src/data_clean:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -c "
+PYTHONPATH=src/data_clean:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -c "
 from repo.aligned_mcap_writer import write_aligned_mcap
 assert write_aligned_mcap is not None
 "

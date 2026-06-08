@@ -80,7 +80,7 @@
 ## 代码包入口
 
 - `src/data_clean`：阶段二数据清洗代码。
-- `src/baton_mini_sdk_demo`：Baton Mini 相关代码。
-- `src/gopro_camera_launch`：GoPro 相关代码。
+- `src/data_collection/baton_mini_sdk_demo`：Baton Mini 相关代码。
+- `src/data_collection/gopro_camera_launch`：GoPro 相关代码。
 
 只有任务直接涉及某个代码包时，才读取该代码包的架构或运行说明。

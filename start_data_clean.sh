@@ -18,8 +18,8 @@ else
   DEFAULT_CONFIG_KIND="smoke test"
 fi
 DATA_CLEAN_SOURCE="${WORKSPACE_DIR}/src/data_clean"
-MCAP_PYTHON_SOURCE="${WORKSPACE_DIR}/src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap"
-MCAP_ROS2_SOURCE="${WORKSPACE_DIR}/src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support"
+MCAP_PYTHON_SOURCE="${WORKSPACE_DIR}/src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap"
+MCAP_ROS2_SOURCE="${WORKSPACE_DIR}/src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support"
 FORGE_SOURCE="${DATA_CLEAN_FORGE_SOURCE:-/home/hit/forge}"
 FORGE_VENV="${DATA_CLEAN_FORGE_VENV:-${FORGE_SOURCE}/.venv}"
 

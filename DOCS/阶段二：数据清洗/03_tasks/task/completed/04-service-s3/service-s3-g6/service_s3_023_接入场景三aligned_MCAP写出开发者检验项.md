@@ -286,15 +286,15 @@ bash scripts/init_data_clean_dev.sh
 # → Data clean dev environment OK, branch: service-s3
 
 # 2. 本 L3 全部测试通过
-PYTHONPATH=src/data_clean:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -m pytest src/data_clean/tests/service/test_scene3_aligned_mcap_write_check.py -q
+PYTHONPATH=src/data_clean:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -m pytest src/data_clean/tests/service/test_scene3_aligned_mcap_write_check.py -q
 # → 6 passed in 0.51s
 
 # 3. 全量测试无回归
-PYTHONPATH=src/data_clean:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -m pytest src/data_clean/tests/service/ src/data_clean/tests/contract/ src/data_clean/tests/config/ src/data_clean/tests/ -q --ignore=src/data_clean/tests/runtime
+PYTHONPATH=src/data_clean:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -m pytest src/data_clean/tests/service/ src/data_clean/tests/contract/ src/data_clean/tests/config/ src/data_clean/tests/ -q --ignore=src/data_clean/tests/runtime
 # → 590 passed, 9 skipped (3 pre-existing failures unrelated to this L3)
 
 # 4. Importability
-PYTHONPATH=src/data_clean:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -c "
+PYTHONPATH=src/data_clean:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -c "
 from runtime.scene3_aligned_mcap_write_check import run_scene3_aligned_mcap_write_check
 assert callable(run_scene3_aligned_mcap_write_check)
 print('run_scene3_aligned_mcap_write_check importable: OK')

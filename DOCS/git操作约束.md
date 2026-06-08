@@ -124,8 +124,8 @@ Service 场景一到五使用同样流程，把分支名分别替换为 `service
 - ROS 构建产物：`build/`、`install/`、`log/`
 - 本地 Python 或 conda 环境：`.conda-envs/`、`.conda-home/`、`.miniconda3/`
 - 下载缓存和生成数据：`.downloads/`、`mcap_cleaned/`、`*.mcap`
-- 依赖缓存：`src/VTLA_octopus-master/.deps/`
-- 本地 IDE 或私有配置：`src/.obsidian/`、`src/gopro_camera_launch/.idea/`、`.claude/settings.local.json`
+- 依赖缓存：`src/data_collection/VTLA_octopus-master/.deps/`
+- 本地 IDE 或私有配置：`src/.obsidian/`、`src/data_collection/gopro_camera_launch/.idea/`、`.claude/settings.local.json`
 
 如果同步前发现应该忽略但未被忽略的文件，默认先更新 `.gitignore`，从暂存区移除对应文件，再继续同步。
 
