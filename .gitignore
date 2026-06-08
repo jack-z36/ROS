@@ -51,3 +51,4 @@ _tmp/
 # Python 构建产物
 *.egg-info/
 dist/
+DOCS/.obsidian/workspace.json

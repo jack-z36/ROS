@@ -4,11 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "f9b9c5284582b6e4",
+        "id": "4777c093e8005888",
         "type": "tabs",
         "children": [
           {
-            "id": "580ecbcf9427f557",
+            "id": "f5d89fc31dfc26a6",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "新标签页"
+            }
+          },
+          {
+            "id": "cce64425da5c33f4",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -17,7 +27,8 @@
               "title": "新标签页"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -74,8 +85,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "fbdbf803ffb4127f",
@@ -166,7 +176,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -179,7 +190,7 @@
       "bases:新建数据库": false
     }
   },
-  "active": "580ecbcf9427f557",
+  "active": "cce64425da5c33f4",
   "lastOpenFiles": [
     "阶段二：数据清洗/AGENTS.md.tmp.22834.f50fb9acf46b",
     "阶段二：数据清洗/文件存放规范.md",
