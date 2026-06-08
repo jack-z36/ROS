@@ -49,6 +49,10 @@ from runtime.web_pipeline_config import (
     load_web_job_effective_config,
 )
 from schemas.alignment_config import Scene3AlignmentConfig
+from schemas.lerobot_features import (
+    lerobot_feature_schema,
+    tcp_pose_offsets,
+)
 from service.mcap_io import process_mcap_file
 from service.baton_pose_audit import (
     DEFAULT_LEFT_TOPIC,
@@ -63,6 +67,7 @@ from service.baton_pose_audit import (
 from service.training_readiness import (
     build_training_readiness_summary,
     count_flagged_episodes,
+    training_readiness_contract_fingerprint,
 )
 
 
@@ -214,6 +219,37 @@ def _hydrate_trajectory_metadata(summary: dict[str, Any], bridge_mode: str) -> d
     )
     hydrated["bounds"] = _position_bounds(episodes, ("left", "right"))
     return hydrated
+
+
+def _job_lerobot_features(job: dict[str, Any]) -> dict[str, Any] | None:
+    summary = job.get("effective_config_summary")
+    if isinstance(summary, dict) and isinstance(summary.get("lerobot_features"), dict):
+        return summary["lerobot_features"]
+    snapshot_path = job.get("config_snapshot_path")
+    if snapshot_path:
+        try:
+            snapshot = load_web_job_effective_config(Path(str(snapshot_path)))
+            return snapshot.lerobot_features_config()
+        except Exception:
+            return None
+    return None
+
+
+def _tcp_offsets_or_legacy(lerobot_features: dict[str, Any] | None) -> dict[str, tuple[int, int]]:
+    try:
+        offsets = tcp_pose_offsets(lerobot_features)
+        if {"left_tcp_pose", "right_tcp_pose"}.issubset(offsets):
+            return offsets
+    except Exception:
+        pass
+    return {"left_tcp_pose": (0, 7), "right_tcp_pose": (7, 14)}
+
+
+def _state_contract_text(lerobot_features: dict[str, Any] | None) -> str:
+    offsets = _tcp_offsets_or_legacy(lerobot_features)
+    left = offsets["left_tcp_pose"]
+    right = offsets["right_tcp_pose"]
+    return f"left state[{left[0]}:{left[1]}], right state[{right[0]}:{right[1]}]"
 
 
 def _stage(name: str, status: str = "waiting", summary: str = "") -> dict[str, Any]:
@@ -1314,6 +1350,7 @@ class DataCleanWebApp:
         self._mark_file_stage(job, item, "bridge", "running", "数据格式转换")
         aligned_mcap = aligned_result.get("outputs", {}).get("aligned_mcap")
         bridge_config = job["effective_config_summary"]["bridge"]
+        effective = load_web_job_effective_config(Path(job["config_snapshot_path"]))
         result = run_forge_bridge_check(
             aligned_mcap_path=aligned_mcap,
             output_dir=paths["bridge_dir"],
@@ -1321,6 +1358,7 @@ class DataCleanWebApp:
             pose_source_profile=job.get("bridge_mode", "format-only"),
             calibration_ready=bool(job.get("calibration_ready")),
             max_pose_abs_m=float(bridge_config["max_pose_abs_m"]),
+            lerobot_features=effective.lerobot_features_config(),
         )
         outputs = result.get("outputs", {})
         item.setdefault("stage_outputs", {}).update(
@@ -1474,12 +1512,21 @@ class DataCleanWebApp:
         sidecar_dir = Path(job.get("sidecar_dir", ""))
         reports_dir = sidecar_dir / "reports"
         self._refresh_flagged_count(summary, reports_dir)
+        expected_fingerprint = training_readiness_contract_fingerprint(job)
         existing = summary.get("training_readiness")
-        if isinstance(existing, dict) and isinstance(existing.get("storage_media"), dict):
+        if (
+            isinstance(existing, dict)
+            and isinstance(existing.get("storage_media"), dict)
+            and existing.get("contract_fingerprint") == expected_fingerprint
+        ):
             return
         readiness_path = reports_dir / "training_readiness_summary.json"
         cached = _read_json(readiness_path, None)
-        if isinstance(cached, dict) and isinstance(cached.get("storage_media"), dict):
+        if (
+            isinstance(cached, dict)
+            and isinstance(cached.get("storage_media"), dict)
+            and cached.get("contract_fingerprint") == expected_fingerprint
+        ):
             summary["training_readiness"] = cached
             return
         dataset_dir_raw = job.get("dataset_dir") or (job.get("dataset_summary") or {}).get("output_lerobot_v3")
@@ -1517,6 +1564,7 @@ class DataCleanWebApp:
             dataset_dir = Path(job.get("dataset_dir", ""))
             sidecar_dir = Path(job.get("sidecar_dir", ""))
             bridge_mode = str(job.get("bridge_mode", "format-only"))
+            lerobot_features = _job_lerobot_features(job)
         cache_path = sidecar_dir / "reports" / "trajectory_summary.json"
         cached = _read_json(cache_path, None)
         if isinstance(cached, dict):
@@ -1525,14 +1573,18 @@ class DataCleanWebApp:
                 _write_json_atomic(cache_path, data)
             return data
         data = _hydrate_trajectory_metadata(
-            self._build_trajectory_summary(dataset_dir),
+            self._build_trajectory_summary(dataset_dir, lerobot_features),
             bridge_mode,
         )
         if sidecar_dir:
             _write_json_atomic(cache_path, data)
         return data
 
-    def _build_trajectory_summary(self, dataset_dir: Path) -> dict[str, Any]:
+    def _build_trajectory_summary(
+        self,
+        dataset_dir: Path,
+        lerobot_features: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         if not dataset_dir.exists():
             raise ValueError("dataset_not_found")
         data_files = sorted((dataset_dir / "data").glob("chunk-*/file-*.parquet"))
@@ -1564,7 +1616,10 @@ class DataCleanWebApp:
                 state = state_col[row_index].as_py()
                 if state is None:
                     raise ValueError("observation_state_missing")
-                if len(state) < 14:
+                offsets = _tcp_offsets_or_legacy(lerobot_features)
+                left_start, left_end = offsets["left_tcp_pose"]
+                right_start, right_end = offsets["right_tcp_pose"]
+                if len(state) < max(left_end, right_end):
                     raise ValueError("observation_state_too_short")
                 episode_index = int(episode_col[row_index].as_py())
                 episode = episodes.setdefault(
@@ -1578,10 +1633,12 @@ class DataCleanWebApp:
                 )
                 frame = int(frame_col[row_index].as_py())
                 timestamp = float(timestamp_col[row_index].as_py())
-                left_position = [float(value) for value in state[0:3]]
-                left_quaternion = [float(value) for value in state[3:7]]
-                right_position = [float(value) for value in state[7:10]]
-                right_quaternion = [float(value) for value in state[10:14]]
+                left_pose = [float(value) for value in state[left_start:left_end]]
+                right_pose = [float(value) for value in state[right_start:right_end]]
+                left_position = left_pose[:3]
+                left_quaternion = left_pose[3:7]
+                right_position = right_pose[:3]
+                right_quaternion = right_pose[3:7]
                 episode["left"].append(
                     {
                         "frame": frame,
@@ -1617,7 +1674,8 @@ class DataCleanWebApp:
                 "max": maxs,
                 "center": center,
             },
-            "state_contract": "left state[0:7], right state[7:14]",
+            "state_contract": _state_contract_text(lerobot_features),
+            "lerobot_feature_schema": lerobot_feature_schema(lerobot_features),
         }
 
     def _rewrite_value_paths(self, value: Any, replacements: dict[str, str]) -> Any:
@@ -2392,18 +2450,78 @@ function productionWorkFields(hand, value) {
   return `<label>工作坐标系原点 position_mm（mm）</label><div class="row">${['x','y','z'].map(axis=>`<input data-production="work_frames.${hand}.position_mm.${axis}" value="${escapeHtml(String(p[axis] ?? ''))}" placeholder="${axis} (mm)">`).join('')}</div>
   <label>工作坐标系旋转 rotation_euler_rad（欧拉角，rad）</label><div class="row">${['rx','ry','rz'].map(axis=>`<input data-production="work_frames.${hand}.rotation_euler_rad.${axis}" value="${escapeHtml(String(r[axis] ?? ''))}" placeholder="${axis} (rad)">`).join('')}</div>`;
 }
+function productionFilterFields(web) {
+  const scene2 = web?.scene2 || {}, pose = scene2.pose_filter || {}, tactile = scene2.tactile_filter || {};
+  const field = (label, path, value) => `<label>${label}</label><input data-production="${path}" value="${escapeHtml(String(value ?? ''))}">`;
+  return `<div class="config-grid">
+    <div class="config-section"><h3>Pose filter</h3>
+      ${field('窗口时长 ms', 'web_pipeline.scene2.pose_filter.window_duration_ms', pose.window_duration_ms)}
+      ${field('Polyorder', 'web_pipeline.scene2.pose_filter.polyorder', pose.polyorder)}
+      ${field('位置 guard 最大差 m', 'web_pipeline.scene2.pose_filter.position_guard_max_delta_m', pose.position_guard_max_delta_m)}
+      ${field('方向 guard 最大差 deg', 'web_pipeline.scene2.pose_filter.orientation_guard_max_delta_deg', pose.orientation_guard_max_delta_deg)}
+    </div>
+    <div class="config-section"><h3>Tactile filter</h3>
+      ${field('Median window', 'web_pipeline.scene2.tactile_filter.median_window', tactile.median_window)}
+      ${field('EMA alpha', 'web_pipeline.scene2.tactile_filter.ema_alpha', tactile.ema_alpha)}
+      ${field('接触 reset 阈值', 'web_pipeline.scene2.tactile_filter.contact_reset_threshold', tactile.contact_reset_threshold ?? '')}
+    </div>
+  </div>`;
+}
+function lerobotSegmentLabel(id) {
+  const labels = {
+    left_tcp_pose:'左 TCP pose', right_tcp_pose:'右 TCP pose',
+    left_gripper_width:'左夹爪宽度', right_gripper_width:'右夹爪宽度',
+    tactile_left_gripper_1:'左触觉 1', tactile_left_gripper_2:'左触觉 2',
+    tactile_right_gripper_1:'右触觉 1', tactile_right_gripper_2:'右触觉 2',
+    left_tcp_pose_t_plus_1:'左 TCP pose t+1', right_tcp_pose_t_plus_1:'右 TCP pose t+1',
+    left_gripper_width_t_plus_1:'左夹爪 t+1', right_gripper_width_t_plus_1:'右夹爪 t+1',
+  };
+  return labels[id] || id;
+}
+function lerobotFeatureRows(kind, segments) {
+  return (segments || []).map((item, index) => {
+    const required = item.id.includes('tcp_pose');
+    return `<tr data-feature-kind="${kind}" data-feature-id="${escapeHtml(item.id)}">
+      <td><input data-feature-enabled type="checkbox" ${item.enabled?'checked':''} ${required?'disabled':''}></td>
+      <td>${escapeHtml(lerobotSegmentLabel(item.id))}<br><span class="path">${escapeHtml(item.id)}</span></td>
+      <td><input data-feature-order value="${index + 1}" style="width:72px"></td>
+    </tr>`;
+  }).join('');
+}
+function productionLerobotFields(web) {
+  const features = web?.lerobot_features || {};
+  return `<div class="config-grid">
+    <div class="config-section"><h3>observation.state</h3><table><thead><tr><th>启用</th><th>段落</th><th>顺序</th></tr></thead><tbody>${lerobotFeatureRows('state_segments', features.state_segments)}</tbody></table></div>
+    <div class="config-section"><h3>action（固定 t+1 绝对量）</h3><table><thead><tr><th>启用</th><th>段落</th><th>顺序</th></tr></thead><tbody>${lerobotFeatureRows('action_segments', features.action_segments)}</tbody></table></div>
+  </div>`;
+}
 function renderProductionConfig() {
   const data = state.productionConfig, ready = data.readiness || {};
-  const camera = data.camera_from_tcp || {}, work = data.work_frames || {}, sdk = ready.sdk || {};
+  const camera = data.camera_from_tcp || {}, work = data.work_frames || {}, sdk = ready.sdk || {}, web = data.web_pipeline || {};
   const handCard = hand => `<div class="config-section"><h3>${hand==='left'?'左臂':'右臂'}</h3><p class="muted">目标 base frame：<b>${hand}_arm_base</b></p><h4>相机到夹爪 TCP 外参</h4>${productionPoseFields(`camera_from_tcp.${hand}`, camera[hand])}<h4>工作坐标系在机械臂 base 下的位姿</h4>${productionWorkFields(hand, work[hand])}</div>`;
   const gripper = ready.gripper || {};
   document.getElementById('page-config').innerHTML = `<div class="card"><div class="row"><div><h2>配置中心</h2><p class="path">${escapeHtml(data.config_path || '')}</p></div>${ready.ready?badge('success'):badge('warning')}<span>RealMan SDK：${sdk.ready?'已就绪 '+escapeHtml(sdk.version || ''):'不可用'}</span></div>${ready.ready?'<div class="notice">生产配置已就绪。</div>':`<div class="warnbox">仍需处理：${(ready.missing_items || []).map(escapeHtml).join('、')}</div>`}</div>
   <div class="card"><div class="row"><div><h3>夹爪开合标定</h3><p class="muted">通过 GoPro 实时画面与 ArUco 自动采样生成，无需手工编辑底层 marker 参数。</p></div><button class="primary right" onclick="openGripperCalibration()">自动生成 / 重新标定</button></div><div class="row">${badge(gripper.left?'success':'warning')} 左手夹爪 ${gripper.left?'已配置':'缺失'} ${badge(gripper.right?'success':'warning')} 右手夹爪 ${gripper.right?'已配置':'缺失'}</div></div>
-  <div class="card"><h3>左右臂 base 位姿转换</h3><p class="muted">人工填写：平移使用 mm，机械臂 base 旋转使用欧拉角 rad。Baton Mini 原始位姿、Runtime 换算结果和最终机械臂 TCP 输出的位置统一使用 m。</p><div class="config-grid">${handCard('left')}${handCard('right')}</div><div id="production-errors"></div><button class="primary" style="margin-top:14px" onclick="saveProductionConfig()">校验并保存正式配置</button></div>`;
+  <div class="card"><h3>左右臂 base 位姿转换</h3><p class="muted">人工填写：平移使用 mm，机械臂 base 旋转使用欧拉角 rad。Baton Mini 原始位姿、Runtime 换算结果和最终机械臂 TCP 输出的位置统一使用 m。</p><div class="config-grid">${handCard('left')}${handCard('right')}</div></div>
+  <div class="card"><h3>滤波参数</h3><p class="muted">保存后作为生产默认值影响后续任务；已运行任务保留自己的 config snapshot。</p>${productionFilterFields(web)}</div>
+  <div class="card"><h3>LeRobot 维度定义</h3><p class="muted">候选字段来自当前 aligned MCAP。TCP pose 为必选；action 固定使用下一帧 t+1 绝对目标。</p>${productionLerobotFields(web)}</div>
+  <div class="card"><div id="production-errors"></div><button class="primary" onclick="saveProductionConfig()">校验并保存正式配置</button></div>`;
 }
 function productionPayload() {
-  const result = {camera_from_tcp:{left:{translation_mm:[]},right:{translation_mm:[]}},work_frames:{left:{hand:'left',base_frame_id:'left_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}},right:{hand:'right',base_frame_id:'right_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}}}};
-  document.querySelectorAll('[data-production]').forEach(input => setNested(result, input.dataset.production, Number(input.value)));
+  const result = JSON.parse(JSON.stringify({
+    camera_from_tcp: state.productionConfig?.camera_from_tcp || {left:{translation_mm:[]},right:{translation_mm:[]}},
+    work_frames: state.productionConfig?.work_frames || {left:{hand:'left',base_frame_id:'left_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}},right:{hand:'right',base_frame_id:'right_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}}},
+    web_pipeline: state.productionConfig?.web_pipeline || {},
+  }));
+  document.querySelectorAll('[data-production]').forEach(input => setNested(result, input.dataset.production, input.value === '' ? null : Number(input.value)));
+  result.web_pipeline ||= {};
+  result.web_pipeline.lerobot_features ||= {};
+  ['state_segments','action_segments'].forEach(kind => {
+    result.web_pipeline.lerobot_features[kind] = [...document.querySelectorAll(`[data-feature-kind="${kind}"]`)]
+      .map(row => ({id:row.dataset.featureId, enabled:row.querySelector('[data-feature-enabled]').checked, order:Number(row.querySelector('[data-feature-order]').value) || 999}))
+      .sort((a,b) => a.order - b.order)
+      .map(item => ({id:item.id, enabled:item.enabled}));
+  });
   return result;
 }
 async function saveProductionConfig() {
@@ -2411,6 +2529,7 @@ async function saveProductionConfig() {
   const checked = await api('/api/production-config/validate', {method:'POST', body:JSON.stringify(payload)});
   const host = document.getElementById('production-errors');
   if (!checked.valid) { host.innerHTML = `<div class="config-errors"><ul>${checked.errors.map(item=>`<li>${escapeHtml(item.path)}：${escapeHtml(item.message)}</li>`).join('')}</ul></div>`; return; }
+  if (!confirm('保存后会影响所有后续生产任务；已运行任务保持各自的 config snapshot 不变。确认保存？')) return;
   state.productionConfig = await api('/api/production-config', {method:'POST', body:JSON.stringify(payload)});
   setNotice('正式配置已保存。后续任务会写入独立 config snapshot。');
   await loadDashboard();
@@ -2692,7 +2811,10 @@ function readinessModule(module) {
 }
 function moduleMetricsText(module) {
   const m = module.metrics || {};
-  if (module.id === 'format_input') return `state ${m.state_dim ?? '-'} / action ${m.action_dim ?? '-'} / 双目 ${m.dual_cameras ? '是' : '否'}`;
+  if (module.id === 'format_input') {
+    const expected = (m.expected_state_dim != null || m.expected_action_dim != null) ? ` / expected ${m.expected_state_dim ?? '-'}:${m.expected_action_dim ?? '-'}` : '';
+    return `state ${m.state_dim ?? '-'} / action ${m.action_dim ?? '-'}${expected} / 双目 ${m.dual_cameras ? '是' : '否'}`;
+  }
   if (module.id === 'storage_media') {
     const ratio = Number(m.raw_to_dataset_ratio);
     const ratioText = Number.isFinite(ratio) ? ` / 压缩比 ${ratio.toFixed(1)}x` : '';

@@ -116,7 +116,7 @@ data_clean_calibrated.yaml
 | `service/validator.py`          | 输入 topic/schema 与输出契约校验。                                      |
 | `service/gripper_width.py`      | ArUco 夹爪宽度提取、缺失帧插值和归一化。                                |
 | `service/baton_pose_audit.py`   | Web 端 Baton Mini 左右位姿 topic 审计、单位量级分类和确认后移动分类。    |
-| `service/training_readiness.py` | 将 Forge quality、LeRobot stats、对齐和夹爪报告合成为面向训练前复查的可读摘要。 |
+| `service/training_readiness.py` | 将 Forge quality、LeRobot stats、对齐、夹爪和 bridge feature schema 合成为面向训练前复查的可读摘要；按当前 LeRobot feature contract 判断 state/action 维度。 |
 | `service/tcp_transform.py`      | 将每帧 Baton Mini 动态 pose 与 `camera_from_tcp.translation_mm` 组合为动态 TCP 中间位姿；旧 common-frame helper 仅保留兼容。 |
 | `service/arm_base_transform.py` | arm-base pose 相关转换与契约支持。                                      |
 | `ui/scene1_dev_checks.py`       | 场景一开发者检验项。                                                    |
@@ -249,13 +249,13 @@ mean, std, min, max
 
 | 模块                                   | 职责                                                                                                                            |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `service/forge_bridge.py`            | 消费 aligned MCAP，拼接 32 维 state 和 16 维 `t+1 action`，写出 Forge-ready MCAP 与 sidecar。                                 |
+| `service/forge_bridge.py`            | 消费 aligned MCAP，按 LeRobot feature 白名单拼接 state 和固定 `t+1 action`，写出 Forge-ready MCAP 与 sidecar；默认布局仍为 32 维 state 和 16 维 action。 |
 | `runtime/forge_bridge_check.py`      | bridge dev check，支持 `format-only` 与 `formal`。                                                                          |
 | `runtime/forge_bridge_to_lerobot.py` | Forge Python fallback，显式把 topic config 传给 `MCAPReader`；支持单 bridge 转换和多 bridge 聚合写出一个 LeRobot v3 dataset。 |
 
 ### 7.1 LeRobot 临时 step 语义
 
-`observation.state` 固定 32 维：
+`observation.state` 默认 32 维；普通 Web 配置中心可在现有 aligned MCAP 字段白名单内调整非必选段落启用状态和排序：
 
 ```text
 [0:7]   left_tcp_pose_t
@@ -268,7 +268,7 @@ mean, std, min, max
 [28:32] tactile_right_gripper_2_t
 ```
 
-`action` 固定 16 维：
+`action` 默认 16 维，固定使用下一帧 `t+1` 的绝对目标；左右 TCP pose 必选，夹爪段落可配置：
 
 ```text
 [0:7]   left_tcp_pose_t+1
@@ -278,6 +278,10 @@ mean, std, min, max
 ```
 
 最后一帧因没有 `t+1` action，会在 bridge 阶段丢弃。
+
+实际导出的 shape、offset、单位和语义会写入 `forge_bridge_schema.json`、`forge_bridge_report.json` 和每个 Web job 的 `config_snapshot.yaml`。
+
+训练前技术体检读取同一份 LeRobot feature contract。它不再固定要求 `observation.state=32` 或 `action=16`；只要最终 dataset 的实际 shape 与当前 contract 一致，维度变化不会被视为格式阻断。动作贴边/饱和维度标签同样按当前 action schema 的 offset 和 component 生成。
 
 ### 7.2 format-only 与 formal
 
@@ -303,7 +307,7 @@ mean, std, min, max
 - 普通网页固定使用左右 arm-base pose 的生产链路，不向普通用户暴露 `format-only/formal`；开发 smoke 仍可显式使用 `format-only`。
 - 单个 MCAP 失败不会阻止其他成功 bridge episodes 进入最终 dataset；至少一个 MCAP 成功时批次可发布为 `partial_failed`。
 - 用户主动取消时，Runtime staging、最终 dataset 和 sidecar 均回滚；历史删除只删除网页摘要，不删除真实产物。
-- 独立配置中心只展示左右夹爪标定状态、`camera_from_tcp.translation_mm` 和 `work_frames`。夹爪配置由 gripper-only GoPro 向导自动生成；人工平移输入明确标注 `mm`，机械臂 base 旋转使用 Euler `rad`。Parser 在进入 Runtime 前统一换算为位置 `m`，最终 cleaned MCAP 的 arm-base TCP 位置也保持 `m`。
+- 独立配置中心展示左右夹爪标定状态、`camera_from_tcp.translation_mm`、`work_frames`、场景二 pose/tactile 滤波生产默认参数和 LeRobot v3 feature 段落。夹爪配置由 gripper-only GoPro 向导自动生成；人工平移输入明确标注 `mm`，机械臂 base 旋转使用 Euler `rad`。Parser 在进入 Runtime 前统一换算为位置 `m`，最终 cleaned MCAP 的 arm-base TCP 位置也保持 `m`。
 - 每个 job 必须写出可复现 snapshot；生产配置缺失或 RealMan SDK 不可用时禁止启动。
 
 Web UI 的批次处理模型：
@@ -334,8 +338,8 @@ Web JSON API：
 | `GET`    | `/api/dashboard`                     | 看板、最近任务、默认设置和标定状态。            |
 | `GET`    | `/api/history`                       | 历史任务摘要。                                  |
 | `GET`    | `/api/production-config`             | 读取普通 Web 生产配置。                         |
-| `POST`   | `/api/production-config/validate`    | 校验左右 arm-base 位姿配置并返回字段错误。      |
-| `POST`   | `/api/production-config`             | 原子保存正式生产配置。                          |
+| `POST`   | `/api/production-config/validate`    | 校验左右 arm-base 位姿配置、滤波生产默认参数和 LeRobot feature 白名单并返回字段错误。 |
+| `POST`   | `/api/production-config`             | 原子保存正式生产配置；保存后影响后续任务，已运行任务保留自己的 snapshot。 |
 | `GET`    | `/api/production-readiness`          | 检查夹爪、外参、topic 与 RealMan SDK。           |
 | `GET`    | `/api/calibration/gripper/status`    | 获取夹爪向导状态。                              |
 | `POST`   | `/api/calibration/gripper/open`      | 启动或复用 gripper-only GoPro 向导。             |
@@ -365,10 +369,11 @@ Web JSON API：
 | `reports/forge_inspect.json`          | Forge inspect 原始报告。                                              |
 | `reports/forge_quality.json`          | Forge quality 原始报告。                                              |
 | `reports/forge_quality_flagged.json`  | flagged episode 列表。                                                |
-| `reports/quality_visual_summary.json` | 评测页总分、维度分、逐 episode 分数和 flags 缓存。                    |
+| `reports/quality_visual_summary.json` | 评测页总分、维度分、训练前技术体检、逐 episode 分数和 flags 缓存。   |
+| `reports/training_readiness_summary.json` | PI0.5 / VLA 训练前技术体检摘要；包含 LeRobot feature contract fingerprint，契约变化后自动重算。 |
 | `reports/trajectory_summary.json`     | 轨迹页 episode、时间戳、左右 TCP pose、bounds 和坐标系 profile 缓存。 |
 
-轨迹 API 从最终 dataset 的 `data/chunk-*/file-*.parquet` 读取 `episode_index`、`frame_index`、`timestamp` 和 `observation.state`。响应除原始轨迹样本外，还包含：
+轨迹 API 从最终 dataset 的 `data/chunk-*/file-*.parquet` 读取 `episode_index`、`frame_index`、`timestamp` 和 `observation.state`。它优先根据 job snapshot / LeRobot feature schema 查找左右 TCP pose offset，旧任务回退 32 维默认 offset。响应除原始轨迹样本外，还包含：
 
 ```text
 coordinate_frame_profile    # common_frame_compat | dual_arm_base
@@ -377,7 +382,7 @@ hand_bounds                 # 左右轨迹独立 min/max/center
 projection_hint             # right-handed + local_bounds_min
 ```
 
-历史任务若已有旧版 `reports/trajectory_summary.json`，API 会从缓存样本补齐新版字段并写回 sidecar，不要求重新读取 parquet。
+历史任务若已有旧版 `reports/trajectory_summary.json`，API 会从缓存样本补齐新版字段并写回 sidecar，不要求重新读取 parquet。训练前技术体检缓存若缺少或不匹配当前 contract fingerprint，会重新生成并写回 `quality_visual_summary.json`。
 
 ### 8.2 `dev_menu.py`
 
@@ -387,7 +392,7 @@ projection_hint             # right-handed + local_bounds_min
 - 场景一：位姿配置、位姿转换、夹爪提取、夹爪配置、输出契约、smoke test。
 - 场景二：异常检测、数据补全、pose filter、tactile filter、MCAP_A writer。
 - 场景三：MCAP_A 输入、step timeline、字段对齐、alignment report、aligned MCAP 写出、full flow。
-- 临时 bridge：Forge bridge 生成 32 维 state 与 16 维 action。
+- 临时 bridge：Forge bridge 按 LeRobot feature contract 生成 state/action，默认 32 维 state 与 16 维 action。
 
 Service 场景最终验收仍应由用户本人运行 dev menu 后确认；自动化测试只能证明局部实现正确。
 

@@ -12,6 +12,7 @@ import yaml
 from repo.config.mcap_process_config import load_app_config
 from runtime.config_snapshot import write_config_snapshot
 from schemas.alignment_config import Scene3AlignmentConfig
+from schemas.lerobot_features import normalize_lerobot_features_config
 from schemas.pose_filter import PoseFilterAlgorithm, PoseFilterConfig
 from schemas.runtime_config_types import (
     ConfigOverrideSet,
@@ -65,6 +66,11 @@ class WebPipelineEffectiveConfig:
             image_max_dt_ms=_optional_int(values.get("image_max_dt_ms")),
             pose_source_profile=str(values["pose_source_profile"]),
             output_dir=output_dir,
+        )
+
+    def lerobot_features_config(self) -> dict[str, Any]:
+        return normalize_lerobot_features_config(
+            self.effective_summary.get("lerobot_features")
         )
 
 
@@ -267,6 +273,12 @@ def _build_summary(
 
 def _default_summary(path: Path, bridge_mode: str) -> dict[str, Any]:
     raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    production_web = raw.get("web_pipeline", {})
+    if not isinstance(production_web, dict):
+        production_web = {}
+    production_scene2 = production_web.get("scene2", {})
+    if not isinstance(production_scene2, dict):
+        production_scene2 = {}
     grippers = raw.get("gripper_streams", [])
     frame = raw.get("frame_alignment", {})
     extrinsics = frame.get("extrinsics", {})
@@ -306,8 +318,14 @@ def _default_summary(path: Path, bridge_mode: str) -> dict[str, Any]:
                 "tactile_zero_ratio_threshold": 0.95,
                 "tactile_saturation_ratio_threshold": 0.95,
             },
-            "pose_filter": {**asdict(PoseFilterConfig()), "algorithm": PoseFilterConfig().algorithm.value},
-            "tactile_filter": {**asdict(TactileFilterConfig()), "algorithm": TactileFilterConfig().algorithm.value},
+            "pose_filter": _production_filter_config(
+                production_scene2.get("pose_filter"),
+                {**asdict(PoseFilterConfig()), "algorithm": PoseFilterConfig().algorithm.value},
+            ),
+            "tactile_filter": _production_filter_config(
+                production_scene2.get("tactile_filter"),
+                {**asdict(TactileFilterConfig()), "algorithm": TactileFilterConfig().algorithm.value},
+            ),
         },
         "scene3": {
             "target_step_hz": 15,
@@ -317,7 +335,17 @@ def _default_summary(path: Path, bridge_mode: str) -> dict[str, Any]:
         },
         "bridge": {"mode": bridge_mode, "max_pose_abs_m": 10.0},
         "lerobot": {"fps": 15.0},
+        "lerobot_features": normalize_lerobot_features_config(
+            production_web.get("lerobot_features")
+        ),
     }
+
+
+def _production_filter_config(value: Any, defaults: dict[str, Any]) -> dict[str, Any]:
+    result = deepcopy(defaults)
+    if isinstance(value, dict):
+        result.update(value)
+    return result
 
 
 def _camera_tcp_legacy_extrinsic(value: Any, identity: dict[str, Any]) -> dict[str, Any]:
@@ -403,12 +431,13 @@ def _validate_summary(summary: dict[str, Any]) -> None:
         raise WebPipelineConfigError("bridge.max_pose_abs_m 必须大于 0")
     if float(summary["lerobot"]["fps"]) <= 0:
         raise WebPipelineConfigError("lerobot.fps 必须大于 0")
+    normalize_lerobot_features_config(summary.get("lerobot_features"))
 
 
 def _normalize_overrides(overrides: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(overrides, dict):
         raise WebPipelineConfigError("overrides 必须是 mapping")
-    allowed = {"scene1", "scene2", "scene3", "bridge", "lerobot"}
+    allowed = {"scene1", "scene2", "scene3", "bridge", "lerobot", "lerobot_features"}
     unknown = set(overrides) - allowed
     if unknown:
         raise WebPipelineConfigError(f"不支持的 override 配置块: {sorted(unknown)}")
@@ -510,6 +539,11 @@ def _default_override_shape() -> dict[str, Any]:
         },
         "bridge": {"max_pose_abs_m": None},
         "lerobot": {"fps": None},
+        "lerobot_features": {
+            "schema_version": None,
+            "state_segments": None,
+            "action_segments": None,
+        },
     }
 
 

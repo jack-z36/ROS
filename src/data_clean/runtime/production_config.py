@@ -11,6 +11,12 @@ from typing import Any, Callable
 import yaml
 
 from repo.config.mcap_process_config import load_app_config
+from schemas.lerobot_features import (
+    LeRobotFeatureConfigError,
+    normalize_lerobot_features_config,
+)
+from schemas.pose_filter import PoseFilterAlgorithm, PoseFilterConfig
+from schemas.tactile_filter import TactileFilterAlgorithm, TactileFilterConfig
 
 
 class ProductionConfigError(ValueError):
@@ -64,6 +70,7 @@ def production_config_view(path: str | Path) -> dict[str, Any]:
             for hand in ("left", "right")
             if hand in work_frames
         },
+        "web_pipeline": _production_web_pipeline_view(raw.get("web_pipeline")),
         "migrated_from_legacy": _uses_legacy_pose_units(raw),
     }
 
@@ -78,6 +85,7 @@ def validate_production_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(work_frames, dict):
         errors.append(_error("work_frames", "必须配置左右手工作坐标系。"))
         work_frames = {}
+    web_pipeline = payload.get("web_pipeline")
 
     expected_base = {"left": "left_arm_base", "right": "right_arm_base"}
     for hand in ("left", "right"):
@@ -125,6 +133,7 @@ def validate_production_payload(payload: dict[str, Any]) -> dict[str, Any]:
                     _finite_float(rotation[key])
             except (TypeError, ValueError) as exc:
                 errors.append(_error(f"work_frames.{hand}.rotation_euler_rad", str(exc)))
+    errors.extend(_validate_web_pipeline_payload(web_pipeline))
     return {"valid": not errors, "errors": errors}
 
 
@@ -136,6 +145,7 @@ def save_production_config(path: str | Path, payload: dict[str, Any]) -> dict[st
     raw = _read_yaml(config_path)
     raw["camera_from_tcp"] = payload["camera_from_tcp"]
     raw["work_frames"] = payload["work_frames"]
+    raw["web_pipeline"] = _normalize_web_pipeline_payload(payload.get("web_pipeline"))
     for hand in ("left", "right"):
         raw["work_frames"][hand]["hand"] = hand
         raw["work_frames"][hand]["base_frame_id"] = f"{hand}_arm_base"
@@ -225,6 +235,116 @@ def _read_yaml(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ProductionConfigError("正式配置必须是 YAML mapping。")
     return data
+
+
+def _production_web_pipeline_view(data: Any | None) -> dict[str, Any]:
+    return _normalize_web_pipeline_payload(data)
+
+
+def _normalize_web_pipeline_payload(data: Any | None) -> dict[str, Any]:
+    source = data if isinstance(data, dict) else {}
+    scene2 = source.get("scene2", {}) if isinstance(source.get("scene2", {}), dict) else {}
+    pose_filter = _normalize_pose_filter(scene2.get("pose_filter"))
+    tactile_filter = _normalize_tactile_filter(scene2.get("tactile_filter"))
+    lerobot_features = normalize_lerobot_features_config(source.get("lerobot_features"))
+    return {
+        "schema_version": 1,
+        "scene2": {
+            "pose_filter": pose_filter,
+            "tactile_filter": tactile_filter,
+        },
+        "lerobot_features": lerobot_features,
+    }
+
+
+def _normalize_pose_filter(data: Any | None) -> dict[str, Any]:
+    values = _pose_filter_defaults()
+    if isinstance(data, dict):
+        values.update(data)
+    values["algorithm"] = PoseFilterAlgorithm(values["algorithm"]).value
+    config = PoseFilterConfig(
+        algorithm=PoseFilterAlgorithm(values["algorithm"]),
+        window_duration_ms=int(values["window_duration_ms"]),
+        polyorder=int(values["polyorder"]),
+        position_guard_max_delta_m=float(values["position_guard_max_delta_m"]),
+        orientation_guard_max_delta_deg=float(values["orientation_guard_max_delta_deg"]),
+        timestamp_policy=str(values["timestamp_policy"]),
+    )
+    if config.window_duration_ms <= 0:
+        raise ValueError("scene2.pose_filter.window_duration_ms 必须大于 0")
+    if config.polyorder < 0:
+        raise ValueError("scene2.pose_filter.polyorder 不得小于 0")
+    if config.position_guard_max_delta_m < 0:
+        raise ValueError("scene2.pose_filter.position_guard_max_delta_m 不得小于 0")
+    if config.orientation_guard_max_delta_deg < 0:
+        raise ValueError("scene2.pose_filter.orientation_guard_max_delta_deg 不得小于 0")
+    if config.timestamp_policy != "preserve_original":
+        raise ValueError("scene2.pose_filter.timestamp_policy 必须是 preserve_original")
+    return {
+        "algorithm": config.algorithm.value,
+        "window_duration_ms": config.window_duration_ms,
+        "polyorder": config.polyorder,
+        "position_guard_max_delta_m": config.position_guard_max_delta_m,
+        "orientation_guard_max_delta_deg": config.orientation_guard_max_delta_deg,
+        "timestamp_policy": config.timestamp_policy,
+    }
+
+
+def _normalize_tactile_filter(data: Any | None) -> dict[str, Any]:
+    values = _tactile_filter_defaults()
+    if isinstance(data, dict):
+        values.update(data)
+    values["algorithm"] = TactileFilterAlgorithm(values["algorithm"]).value
+    contact_reset = values.get("contact_reset_threshold")
+    config = TactileFilterConfig(
+        algorithm=TactileFilterAlgorithm(values["algorithm"]),
+        median_window=int(values["median_window"]),
+        ema_alpha=float(values["ema_alpha"]),
+        contact_reset_threshold=None if contact_reset in (None, "") else float(contact_reset),
+        timestamp_policy=str(values["timestamp_policy"]),
+    )
+    return {
+        "algorithm": config.algorithm.value,
+        "median_window": config.median_window,
+        "ema_alpha": config.ema_alpha,
+        "contact_reset_threshold": config.contact_reset_threshold,
+        "timestamp_policy": config.timestamp_policy,
+    }
+
+
+def _pose_filter_defaults() -> dict[str, Any]:
+    config = PoseFilterConfig()
+    return {
+        "algorithm": config.algorithm.value,
+        "window_duration_ms": config.window_duration_ms,
+        "polyorder": config.polyorder,
+        "position_guard_max_delta_m": config.position_guard_max_delta_m,
+        "orientation_guard_max_delta_deg": config.orientation_guard_max_delta_deg,
+        "timestamp_policy": config.timestamp_policy,
+    }
+
+
+def _tactile_filter_defaults() -> dict[str, Any]:
+    config = TactileFilterConfig()
+    return {
+        "algorithm": config.algorithm.value,
+        "median_window": config.median_window,
+        "ema_alpha": config.ema_alpha,
+        "contact_reset_threshold": config.contact_reset_threshold,
+        "timestamp_policy": config.timestamp_policy,
+    }
+
+
+def _validate_web_pipeline_payload(data: Any | None) -> list[dict[str, str]]:
+    if data is None:
+        return []
+    if not isinstance(data, dict):
+        return [_error("web_pipeline", "必须是配置对象。")]
+    try:
+        _normalize_web_pipeline_payload(data)
+    except (ValueError, TypeError, LeRobotFeatureConfigError) as exc:
+        return [_error("web_pipeline", str(exc))]
+    return []
 
 
 def _ensure_arm_base_topics(raw: dict[str, Any]) -> None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import math
 import statistics
+import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,8 @@ try:  # OpenCV is used only for lightweight video metadata/first-frame checks.
     import cv2
 except Exception:  # pragma: no cover - environment fallback
     cv2 = None  # type: ignore[assignment]
+
+from schemas.lerobot_features import lerobot_feature_schema
 
 
 ACTION_DIMENSIONS = [
@@ -104,14 +107,16 @@ def build_training_readiness_summary(
     quality_context = {**quality_data, **quality_summary} if isinstance(quality_data, dict) else dict(quality_summary)
 
     dataset_size = _dataset_size(job, quality_context, inspect_data)
-    action_saturation = _action_saturation_summary(dataset_path)
     alignment = _alignment_summary(job)
     gripper = _gripper_tactile_summary(job, alignment)
     bridge = _bridge_summary(job)
+    feature_contract = _feature_contract(job, bridge)
+    action_dimensions = feature_contract["action_dimension_labels"]
+    action_saturation = _action_saturation_summary(dataset_path, action_dimensions)
     storage_media = _storage_media_summary(job, dataset_path, inspect_data, dataset_size)
 
     modules = [
-        _format_module(job, quality_context, inspect_data, bridge),
+        _format_module(job, quality_context, inspect_data, bridge, feature_contract),
         _storage_media_module(storage_media),
         _action_module(quality_context, action_saturation),
         _sync_module(alignment, dataset_size),
@@ -133,12 +138,14 @@ def build_training_readiness_summary(
         "next_actions": actions,
         "modules": modules,
         "dataset_size": dataset_size,
-        "action_dimension_labels": ACTION_DIMENSIONS,
+        "action_dimension_labels": action_dimensions,
         "action_saturation": action_saturation,
         "episode_risks": episode_risks,
         "alignment_summary": alignment,
         "gripper_summary": gripper,
         "bridge_summary": bridge,
+        "feature_contract": feature_contract,
+        "contract_fingerprint": feature_contract["contract_fingerprint"],
         "storage_media": storage_media,
         "subscore_explanations": SUBSCORE_EXPLANATIONS,
         "format_details": _format_details(quality_context, inspect_data, stats_data, flagged_data),
@@ -146,6 +153,12 @@ def build_training_readiness_summary(
     }
     _write_json_atomic(report_path, summary)
     return summary
+
+
+def training_readiness_contract_fingerprint(job: dict[str, Any]) -> str:
+    """Return the LeRobot feature contract fingerprint expected for this job."""
+
+    return str(_feature_contract(job, _bridge_summary(job))["contract_fingerprint"])
 
 
 def count_flagged_episodes(flagged: Any) -> int:
@@ -224,6 +237,7 @@ def _format_module(
     quality: dict[str, Any],
     inspect: dict[str, Any],
     bridge: dict[str, Any],
+    feature_contract: dict[str, Any],
 ) -> dict[str, Any]:
     issues: list[str] = []
     risks: list[str] = []
@@ -246,13 +260,21 @@ def _format_module(
 
     state_dim = _shape_dim(inspect.get("observation_schema", {}).get("observation.state")) or _as_int((job.get("dataset_summary") or {}).get("state_dim"))
     action_dim = _shape_dim(inspect.get("action_schema")) or _as_int((job.get("dataset_summary") or {}).get("action_dim"))
-    if state_dim != 32:
-        issues.append(f"observation.state 维度不是 32，当前为 {state_dim or '-'}。")
-    if action_dim != 16:
-        issues.append(f"action 维度不是 16，当前为 {action_dim or '-'}。")
+    expected_state_dim = _as_int(feature_contract.get("expected_state_dim"))
+    expected_action_dim = _as_int(feature_contract.get("expected_action_dim"))
+    if expected_state_dim is not None and state_dim != expected_state_dim:
+        issues.append(
+            "observation.state 维度与当前 LeRobot 维度配置不一致，"
+            f"期望 {expected_state_dim}，当前为 {state_dim or '-'}。"
+        )
+    if expected_action_dim is not None and action_dim != expected_action_dim:
+        issues.append(
+            "action 维度与当前 LeRobot 维度配置不一致，"
+            f"期望 {expected_action_dim}，当前为 {action_dim or '-'}。"
+        )
 
     status = "block" if issues else "pass"
-    summary = "格式、formal 标定、双目图像、state/action 维度均满足当前训练输入契约。" if not issues else issues[0]
+    summary = "格式、formal 标定、双目图像、state/action 维度均满足当前 LeRobot 维度配置。" if not issues else issues[0]
     risks.extend(issues)
     return {
         "id": "format_input",
@@ -265,6 +287,10 @@ def _format_module(
             "format": quality.get("format"),
             "state_dim": state_dim,
             "action_dim": action_dim,
+            "expected_state_dim": expected_state_dim,
+            "expected_action_dim": expected_action_dim,
+            "feature_schema_version": feature_contract.get("feature_schema_version"),
+            "contract_fingerprint": feature_contract.get("contract_fingerprint"),
             "has_timestamps": inspect.get("has_timestamps"),
             "has_language": inspect.get("has_language"),
             "dual_cameras": _has_dual_cameras(inspect),
@@ -489,11 +515,122 @@ def _shape_dim(schema: Any) -> int | None:
     return None
 
 
+def _feature_contract(job: dict[str, Any], bridge: dict[str, Any]) -> dict[str, Any]:
+    schema = _feature_schema_from_job(job)
+    source = "job_effective_config"
+    if schema is None:
+        schema = bridge.get("feature_schema") if isinstance(bridge.get("feature_schema"), dict) else None
+        source = "bridge_report"
+    if schema is None:
+        schema = lerobot_feature_schema(None)
+        source = "legacy_default"
+    state_schema = schema.get("observation.state") if isinstance(schema.get("observation.state"), dict) else {}
+    action_schema = schema.get("action") if isinstance(schema.get("action"), dict) else {}
+    expected_state_dim = _shape_dim(state_schema)
+    expected_action_dim = _shape_dim(action_schema)
+    action_dimensions = _action_dimensions_from_schema(action_schema)
+    return {
+        "source": source,
+        "feature_schema_version": schema.get("feature_schema_version") or schema.get("schema_version"),
+        "expected_state_dim": expected_state_dim,
+        "expected_action_dim": expected_action_dim,
+        "action_dimension_labels": action_dimensions,
+        "schema": schema,
+        "contract_fingerprint": _contract_fingerprint(schema),
+    }
+
+
+def _feature_schema_from_job(job: dict[str, Any]) -> dict[str, Any] | None:
+    summary = job.get("effective_config_summary")
+    if isinstance(summary, dict) and isinstance(summary.get("lerobot_features"), dict):
+        try:
+            return lerobot_feature_schema(summary["lerobot_features"])
+        except Exception:
+            return None
+    return None
+
+
+def _contract_fingerprint(schema: dict[str, Any]) -> str:
+    relevant = {
+        "state": schema.get("observation.state", {}),
+        "action": schema.get("action", {}),
+    }
+    payload = json.dumps(relevant, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def _action_dimensions_from_schema(action_schema: dict[str, Any]) -> list[dict[str, Any]]:
+    segments = action_schema.get("segments") if isinstance(action_schema, dict) else None
+    if not isinstance(segments, list):
+        return [dict(item) for item in ACTION_DIMENSIONS]
+    dimensions: list[dict[str, Any]] = []
+    for segment in segments:
+        if not isinstance(segment, dict):
+            continue
+        offset = segment.get("offset")
+        dim = _as_int(segment.get("dim"))
+        if not isinstance(offset, list) or len(offset) < 2 or dim is None:
+            continue
+        start = _as_int(offset[0])
+        end = _as_int(offset[1])
+        if start is None or end is None or end <= start:
+            continue
+        components = segment.get("components") if isinstance(segment.get("components"), list) else []
+        for index in range(start, end):
+            local_index = index - start
+            component = str(components[local_index]) if local_index < len(components) else f"dim{local_index}"
+            dimensions.append(
+                {
+                    "index": index,
+                    "key": f"{segment.get('name')}.{component}",
+                    "label": _action_dimension_label(str(segment.get("name") or ""), component),
+                    "group": _dimension_group(str(segment.get("name") or "")),
+                    "unit": _component_unit(segment, component),
+                    "segment": segment.get("name"),
+                    "component": component,
+                }
+            )
+    return dimensions or [dict(item) for item in ACTION_DIMENSIONS]
+
+
+def _action_dimension_label(segment_name: str, component: str) -> str:
+    if "left" in segment_name:
+        prefix = "左手"
+    elif "right" in segment_name:
+        prefix = "右手"
+    else:
+        prefix = "动作"
+    if "gripper" in segment_name:
+        return "左夹爪" if "left" in segment_name else "右夹爪" if "right" in segment_name else "夹爪"
+    return f"{prefix} {component}"
+
+
+def _dimension_group(segment_name: str) -> str:
+    if "left" in segment_name:
+        return "left"
+    if "right" in segment_name:
+        return "right"
+    return "action"
+
+
+def _component_unit(segment: dict[str, Any], component: str) -> str:
+    unit = str(segment.get("unit") or "")
+    if component in {"qx", "qy", "qz", "qw"}:
+        return "quat"
+    if "normalized" in unit or "0_to_1" in unit:
+        return "0-1"
+    if unit.startswith("m"):
+        return "m"
+    return unit or "-"
+
+
 def _bridge_summary(job: dict[str, Any]) -> dict[str, Any]:
     files = job.get("files") if isinstance(job.get("files"), list) else []
     reports = []
     training_values = []
     dropped = 0
+    feature_schema = None
+    lerobot_features = None
     for item in files:
         outputs = item.get("stage_outputs") if isinstance(item.get("stage_outputs"), dict) else {}
         if "training_eligible" in outputs:
@@ -505,12 +642,18 @@ def _bridge_summary(job: dict[str, Any]) -> dict[str, Any]:
                 reports.append(report)
                 training_values.append(bool(report.get("training_eligible", False)))
                 dropped += int(report.get("dropped_terminal_step_count") or 0)
+                if feature_schema is None and isinstance(report.get("feature_schema"), dict):
+                    feature_schema = report["feature_schema"]
+                if lerobot_features is None and isinstance(report.get("lerobot_features"), dict):
+                    lerobot_features = report["lerobot_features"]
     return {
         "bridge_count": len(reports),
         "all_training_eligible": all(training_values) if training_values else True,
         "training_eligible_values": training_values,
         "terminal_dropped_steps": dropped,
         "modes": sorted({str(report.get("mode")) for report in reports if report.get("mode")}),
+        "feature_schema": feature_schema,
+        "lerobot_features": lerobot_features,
     }
 
 
@@ -1034,9 +1177,10 @@ def _dedupe_strings(values: list[str]) -> list[str]:
     return result
 
 
-def _action_saturation_summary(dataset_dir: Path) -> dict[str, Any]:
+def _action_saturation_summary(dataset_dir: Path, action_dimensions: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     if pq is None:
         return {"available": False, "reason": "pyarrow unavailable", "episodes": [], "top_dimensions": []}
+    dimensions_meta = action_dimensions or ACTION_DIMENSIONS
     parquet_files = sorted((dataset_dir / "data").glob("chunk-*/*.parquet"))
     grouped: dict[int, list[list[float]]] = {}
     for path in parquet_files:
@@ -1053,16 +1197,16 @@ def _action_saturation_summary(dataset_dir: Path) -> dict[str, Any]:
             grouped.setdefault(int(episode_index), []).append([float(value) for value in action])
 
     episode_results = []
-    global_dim_rates: dict[int, list[float]] = {item["index"]: [] for item in ACTION_DIMENSIONS}
+    global_dim_rates: dict[int, list[float]] = {int(item["index"]): [] for item in dimensions_meta}
     for episode_index, actions in sorted(grouped.items()):
-        result = _episode_saturation(episode_index, actions)
+        result = _episode_saturation(episode_index, actions, dimensions_meta)
         episode_results.append(result)
         for dim in result["dimensions"]:
             global_dim_rates[int(dim["index"])].append(float(dim["saturation_rate"]))
 
     top_dimensions = []
-    for dim in ACTION_DIMENSIONS:
-        rates = global_dim_rates[dim["index"]]
+    for dim in dimensions_meta:
+        rates = global_dim_rates[int(dim["index"])]
         if not rates:
             continue
         rate = statistics.mean(rates)
@@ -1078,10 +1222,15 @@ def _action_saturation_summary(dataset_dir: Path) -> dict[str, Any]:
     }
 
 
-def _episode_saturation(episode_index: int, actions: list[list[float]]) -> dict[str, Any]:
+def _episode_saturation(
+    episode_index: int,
+    actions: list[list[float]],
+    action_dimensions: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     if not actions:
         return {"episode_id": f"episode_{episode_index:06d}", "episode_index": episode_index, "overall_saturation": 0.0, "dimensions": [], "top_dimensions": []}
-    dim_count = min(len(actions[0]), len(ACTION_DIMENSIONS))
+    dimensions_meta = action_dimensions or ACTION_DIMENSIONS
+    dim_count = min(len(actions[0]), len(dimensions_meta))
     dimensions = []
     valid_rates = []
     for dim_index in range(dim_count):
@@ -1101,7 +1250,7 @@ def _episode_saturation(episode_index: int, actions: list[list[float]]) -> dict[
                 valid_rates.append(rate)
             else:
                 rate = 0.0
-        dim_meta = ACTION_DIMENSIONS[dim_index]
+        dim_meta = dimensions_meta[dim_index]
         dimensions.append({**dim_meta, "saturation_rate": rate, "valid": valid})
     top = [item for item in dimensions if item["saturation_rate"] > 0.05]
     top.sort(key=lambda item: item["saturation_rate"], reverse=True)

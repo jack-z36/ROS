@@ -21,6 +21,12 @@ from mcap.writer import CompressionType, Writer
 from mcap_ros2.writer import serialize_dynamic
 
 from repo.ros2_codec import Ros2DynamicCodec
+from schemas.lerobot_features import (
+    enabled_action_segments,
+    enabled_state_segments,
+    lerobot_feature_schema,
+    normalize_lerobot_features_config,
+)
 from schemas.ros2_schemas import SENSOR_MSGS_JOINT_STATE
 
 
@@ -36,6 +42,7 @@ class ForgeBridgeConfig:
     pose_source_profile: str = "formal"
     calibration_ready: bool = False
     max_pose_abs_m: float = 10.0
+    lerobot_features: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if self.mode not in {"formal", "format-only"}:
@@ -46,6 +53,7 @@ class ForgeBridgeConfig:
             )
         if self.max_pose_abs_m <= 0:
             raise ValueError("max_pose_abs_m must be positive")
+        normalize_lerobot_features_config(self.lerobot_features)
 
 
 @dataclass(frozen=True)
@@ -126,8 +134,13 @@ def write_forge_bridge(
     try:
         _validate_mode(active_config)
         streams = _load_aligned_streams(aligned_path)
+        feature_config = normalize_lerobot_features_config(
+            active_config.lerobot_features
+        )
+        required_fields = _required_stream_fields(feature_config)
         timestamps = _complete_step_timestamps(
             streams,
+            required_fields=required_fields,
             require_all_aligned=active_config.mode == "formal",
         )
         if len(timestamps) < 2:
@@ -137,20 +150,21 @@ def write_forge_bridge(
 
         _continuous_pose_stream(streams["left_tcp_pose"], timestamps)
         _continuous_pose_stream(streams["right_tcp_pose"], timestamps)
-        _validate_stream_values(streams, timestamps, active_config)
+        _validate_stream_values(streams, timestamps, active_config, required_fields)
 
         forge_ready_path = output_path / "forge_ready.mcap"
-        _write_forge_ready_mcap(forge_ready_path, streams, timestamps)
+        _write_forge_ready_mcap(forge_ready_path, streams, timestamps, feature_config)
 
         topic_config_path = output_path / "forge_topic_config.yaml"
         topic_config_path.write_text(
-            yaml.safe_dump(_topic_config_dict(), sort_keys=False),
+            yaml.safe_dump(_topic_config_dict(feature_config), sort_keys=False),
             encoding="utf-8",
         )
 
         schema_path = output_path / "forge_bridge_schema.json"
+        schema = _schema_dict(feature_config)
         schema_path.write_text(
-            json.dumps(_schema_dict(), ensure_ascii=False, indent=2),
+            json.dumps(schema, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
 
@@ -167,10 +181,12 @@ def write_forge_bridge(
             "input_complete_step_count": len(timestamps),
             "output_step_count": len(timestamps) - 1,
             "dropped_terminal_step_count": 1,
-            "state_dim": 32,
-            "action_dim": 16,
+            "state_dim": schema["observation.state"]["shape"][0],
+            "action_dim": schema["action"]["shape"][0],
             "action_semantics": "absolute_bimanual_tcp_pose_and_gripper_at_t_plus_1",
             "formal_action_semantics": "absolute_tcp_target_pose_for_training_side_relative_conversion",
+            "lerobot_features": feature_config,
+            "feature_schema": schema,
             "aligned_topics": ALIGNED_TOPICS,
             "forge_topics": FORGE_TOPICS,
         }
@@ -270,18 +286,19 @@ def _load_aligned_streams(aligned_path: Path) -> dict[str, dict[int, Any]]:
 def _complete_step_timestamps(
     streams: dict[str, dict[int, Any]],
     *,
+    required_fields: set[str],
     require_all_aligned: bool,
 ) -> list[int]:
     missing_topics = [
         ALIGNED_TOPICS[field_name]
         for field_name, values in streams.items()
-        if not values
+        if field_name in required_fields and not values
     ]
     if missing_topics:
         raise ForgeBridgeError(
             f"missing_required_aligned_topics: {', '.join(missing_topics)}"
         )
-    timestamp_sets = [set(values) for values in streams.values()]
+    timestamp_sets = [set(streams[field_name]) for field_name in sorted(required_fields)]
     if require_all_aligned and any(
         timestamps != timestamp_sets[0] for timestamps in timestamp_sets[1:]
     ):
@@ -326,6 +343,7 @@ def _validate_stream_values(
     streams: dict[str, dict[int, Any]],
     timestamps: list[int],
     config: ForgeBridgeConfig,
+    required_fields: set[str],
 ) -> None:
     expected_dims = {
         "left_tcp_pose": 7,
@@ -338,6 +356,8 @@ def _validate_stream_values(
         "tactile_right_gripper_2": 4,
     }
     for field_name, expected_dim in expected_dims.items():
+        if field_name not in required_fields:
+            continue
         for timestamp_ns in timestamps:
             values = streams[field_name][timestamp_ns]
             if len(values) != expected_dim:
@@ -351,6 +371,8 @@ def _validate_stream_values(
                 )
 
     for field_name in ("left_gripper_width", "right_gripper_width"):
+        if field_name not in required_fields:
+            continue
         for timestamp_ns in timestamps:
             width = streams[field_name][timestamp_ns][0]
             if not 0.0 <= width <= 1.0:
@@ -373,6 +395,7 @@ def _write_forge_ready_mcap(
     output_path: Path,
     streams: dict[str, dict[int, Any]],
     timestamps: list[int],
+    feature_config: dict[str, Any],
 ) -> None:
     joint_encoder = serialize_dynamic(
         "sensor_msgs/msg/JointState",
@@ -425,7 +448,7 @@ def _write_forge_ready_mcap(
                 sequence=step_index,
                 data=joint_encoder(
                     _joint_state_message(
-                        _state_vector(streams, timestamp_ns), "observation.state"
+                        _state_vector(streams, timestamp_ns, feature_config), "observation.state"
                     )
                 ),
             )
@@ -436,7 +459,7 @@ def _write_forge_ready_mcap(
                 sequence=step_index,
                 data=joint_encoder(
                     _joint_state_message(
-                        _action_vector(streams, next_timestamp_ns), "action"
+                        _action_vector(streams, next_timestamp_ns, feature_config), "action"
                     )
                 ),
             )
@@ -456,38 +479,36 @@ def _joint_state_message(values: list[float], frame_id: str) -> Any:
     )
 
 
-def _state_vector(streams: dict[str, dict[int, Any]], timestamp_ns: int) -> list[float]:
+def _state_vector(
+    streams: dict[str, dict[int, Any]],
+    timestamp_ns: int,
+    feature_config: dict[str, Any],
+) -> list[float]:
     values: list[float] = []
-    for field_name, _start, _end, _unit in STATE_SEGMENTS:
-        values.extend(streams[field_name][timestamp_ns])
+    for segment in enabled_state_segments(feature_config):
+        values.extend(streams[segment.source_field][timestamp_ns])
     return values
 
 
 def _action_vector(
     streams: dict[str, dict[int, Any]],
     next_timestamp_ns: int,
+    feature_config: dict[str, Any],
 ) -> list[float]:
-    return [
-        *streams["left_tcp_pose"][next_timestamp_ns],
-        *streams["left_gripper_width"][next_timestamp_ns],
-        *streams["right_tcp_pose"][next_timestamp_ns],
-        *streams["right_gripper_width"][next_timestamp_ns],
-    ]
+    values: list[float] = []
+    for segment in enabled_action_segments(feature_config):
+        values.extend(streams[segment.source_field][next_timestamp_ns])
+    return values
 
 
-def _schema_dict() -> dict[str, Any]:
+def _schema_dict(feature_config: dict[str, Any]) -> dict[str, Any]:
+    schema = lerobot_feature_schema(feature_config)
     return {
         "schema_version": "forge_bridge_bimanual_absolute_v1",
         "warning": "Temporary Forge bridge only; not the formal UMI relative action chunk schema.",
-        "observation.state": {
-            "shape": [32],
-            "segments": _segments_dict(STATE_SEGMENTS),
-        },
-        "action": {
-            "shape": [16],
-            "time_offset_steps": 1,
-            "segments": _segments_dict(ACTION_SEGMENTS),
-        },
+        "feature_schema_version": schema["schema_version"],
+        "observation.state": schema["observation.state"],
+        "action": schema["action"],
         "images": {
             "observation.images.left": FORGE_TOPICS["image_left"],
             "observation.images.right": FORGE_TOPICS["image_right"],
@@ -495,28 +516,20 @@ def _schema_dict() -> dict[str, Any]:
     }
 
 
-def _segments_dict(
-    segments: list[tuple[str, int, int, str]],
-) -> list[dict[str, Any]]:
-    return [
-        {"name": name, "offset": [start, end], "dim": end - start, "unit": unit}
-        for name, start, end, unit in segments
-    ]
-
-
-def _topic_config_dict() -> dict[str, Any]:
+def _topic_config_dict(feature_config: dict[str, Any]) -> dict[str, Any]:
+    schema = lerobot_feature_schema(feature_config)
     return {
         "episodes": {"strategy": "single"},
         "fields": {
             "observation.state": {
                 "topic": FORGE_TOPICS["state"],
                 "field": "position",
-                "target_shape": [32],
+                "target_shape": schema["observation.state"]["shape"],
             },
             "action": {
                 "topic": FORGE_TOPICS["action"],
                 "field": "position",
-                "target_shape": [16],
+                "target_shape": schema["action"]["shape"],
             },
             "observation.images.left": {
                 "topic": FORGE_TOPICS["image_left"],
@@ -531,6 +544,13 @@ def _topic_config_dict() -> dict[str, Any]:
             "max_skew_ms": 1.0,
         },
     }
+
+
+def _required_stream_fields(feature_config: dict[str, Any]) -> set[str]:
+    fields = {"image_left", "image_right"}
+    fields.update(segment.source_field for segment in enabled_state_segments(feature_config))
+    fields.update(segment.source_field for segment in enabled_action_segments(feature_config))
+    return fields
 
 
 def _now_iso() -> str:

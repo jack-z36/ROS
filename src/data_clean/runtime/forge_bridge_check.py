@@ -22,6 +22,7 @@ def run_forge_bridge_check(
     pose_source_profile: str | None = None,
     calibration_ready: bool = False,
     max_pose_abs_m: float = 10.0,
+    lerobot_features: dict | None = None,
 ) -> dict:
     """Run the bridge and return a JSON-friendly developer-check result."""
 
@@ -35,6 +36,7 @@ def run_forge_bridge_check(
                 pose_source_profile=active_profile,
                 calibration_ready=calibration_ready,
                 max_pose_abs_m=max_pose_abs_m,
+                lerobot_features=lerobot_features,
             ),
         )
         return {"status": "success", "outputs": asdict(result), "errors": []}

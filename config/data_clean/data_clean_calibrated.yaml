@@ -126,3 +126,47 @@ work_frames:
       ry: 0.118
       rz: -1.395
     source: user_input
+web_pipeline:
+  schema_version: 1
+  scene2:
+    pose_filter:
+      algorithm: savgol
+      window_duration_ms: 200
+      polyorder: 2
+      position_guard_max_delta_m: 0.02
+      orientation_guard_max_delta_deg: 5.0
+      timestamp_policy: preserve_original
+    tactile_filter:
+      algorithm: median_ema
+      median_window: 3
+      ema_alpha: 0.35
+      contact_reset_threshold: null
+      timestamp_policy: preserve_original
+  lerobot_features:
+    schema_version: 1
+    state_segments:
+    - id: left_tcp_pose
+      enabled: true
+    - id: right_tcp_pose
+      enabled: true
+    - id: left_gripper_width
+      enabled: true
+    - id: right_gripper_width
+      enabled: true
+    - id: tactile_left_gripper_1
+      enabled: false
+    - id: tactile_left_gripper_2
+      enabled: false
+    - id: tactile_right_gripper_1
+      enabled: false
+    - id: tactile_right_gripper_2
+      enabled: false
+    action_segments:
+    - id: left_tcp_pose_t_plus_1
+      enabled: true
+    - id: left_gripper_width_t_plus_1
+      enabled: true
+    - id: right_tcp_pose_t_plus_1
+      enabled: true
+    - id: right_gripper_width_t_plus_1
+      enabled: true
