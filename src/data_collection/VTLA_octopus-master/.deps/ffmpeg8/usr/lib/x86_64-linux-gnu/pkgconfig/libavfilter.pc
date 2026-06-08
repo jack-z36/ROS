@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib/x86_64-linux-gnu
+includedir=/usr/include/x86_64-linux-gnu
+
+Name: libavfilter
+Description: FFmpeg audio/video filtering library
+Version: 11.14.100
+Requires: 
+Requires.private: libswscale >= 9.5.100, libavformat >= 62.12.100, libavcodec >= 62.28.100, libswresample >= 6.3.100, libavutil >= 60.26.100
+Conflicts:
+Libs: -L${libdir}  -lavfilter 
+Libs.private: -pthread -lm -latomic -lz -lbs2b -llilv-0 -lrubberband -lfftw3 -lsamplerate -lstdc++ -lmysofa -lflite_cmu_time_awb -lflite_cmu_us_awb -lflite_cmu_us_kal -lflite_cmu_us_kal16 -lflite_cmu_us_rms -lflite_cmu_us_slt -lflite_usenglish -lflite_cmulex -lflite -lharfbuzz -lfribidi -lplacebo -lvmaf -ltesseract -larchive -lcurl -lass -lva -lvidstab -lm -lgomp -lzmq -lzimg -lOpenCL -lfontconfig -lfreetype -lfreetype -L/usr/lib/x86_64-linux-gnu/pkgconfig/../ -lvpl -ldl -lstdc++
+Cflags: -I${includedir}

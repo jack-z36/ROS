@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib/x86_64-linux-gnu
+includedir=/usr/include/x86_64-linux-gnu
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 60.26.100
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavutil 
+Libs.private: -lva-drm -lva -lva-x11 -lva -lvdpau -lX11 -L/usr/lib/x86_64-linux-gnu -lgcrypt -lm -lz -ldrm -L/usr/lib/x86_64-linux-gnu/pkgconfig/../ -lvpl -ldl -lstdc++ -lOpenCL -lssl -lcrypto -lva -latomic -pthread -lX11
+Cflags: -I${includedir}
