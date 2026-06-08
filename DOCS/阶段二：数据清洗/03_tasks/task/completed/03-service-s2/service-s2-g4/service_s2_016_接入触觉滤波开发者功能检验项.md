@@ -256,7 +256,7 @@ dispatch.task_id：service_s2_016
 - `bash -n start_data_clean.sh`：通过。
 - `printf '2\nq\n' | ./start_data_clean.sh --dev`：通过，实际展示场景二菜单，包含 `scene2_tactile_filter`。
 - `printf '9\n' | ./start_data_clean.sh --dev`：通过，实际展示无效选择提示 `选择超出范围: 9`。
-- `PYTHONPATH=src/data_clean:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 - <<'PY' ... PY`：手动驱动 `run_scene2_tactile_filter()`，观察到 `status=success`，写出 `tactile_filter_result.json`、`tactile_filter_diff_summary.json` 和 `filtered_sequence_refs.json`。
+- `PYTHONPATH=src/data_clean:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 - <<'PY' ... PY`：手动驱动 `run_scene2_tactile_filter()`，观察到 `status=success`，写出 `tactile_filter_result.json`、`tactile_filter_diff_summary.json` 和 `filtered_sequence_refs.json`。
 - `python3 -m pytest src/data_clean/tests -q`：未通过；收集阶段因既有 `src/data_clean/tests/config_tests/test_frame_alignment_config.py` 导入 `repo.config.mcap_process_config.ExtrinsicConfig` 失败中断，该类型不在本 L3 修改范围内。
 - LSP diagnostics：无法执行，当前环境缺少 `basedpyright-langserver`；已用目标 pytest、相邻 runtime pytest、`py_compile`、shell 语法检查和开发者菜单手动验证替代。
 

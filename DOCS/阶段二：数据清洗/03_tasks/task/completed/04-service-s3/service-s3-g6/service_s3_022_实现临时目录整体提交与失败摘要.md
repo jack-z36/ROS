@@ -288,7 +288,7 @@ PYTHONPATH=src python3 -m pytest src/data_clean/tests/service -q
 # 4. 验收命令
 bash -c '
 cd /home/hit/ROS
-PYTHONPATH=src/data_clean:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -c "
+PYTHONPATH=src/data_clean:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support python3 -c "
 from service.aligned_mcap_writer import run_aligned_mcap_write_staging
 assert callable(run_aligned_mcap_write_staging)
 print(\"run_aligned_mcap_write_staging importable: OK\")

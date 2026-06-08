@@ -23,7 +23,7 @@ gopro_camera_launch
 使用 launch 文件：
 
 ```bash
-src/gopro_camera_launch/launch/gopro_pose_record.launch.py
+src/data_collection/gopro_camera_launch/launch/gopro_pose_record.launch.py
 ```
 
 这个 launch 文件启动的是 `v4l2_camera` 包里的节点：

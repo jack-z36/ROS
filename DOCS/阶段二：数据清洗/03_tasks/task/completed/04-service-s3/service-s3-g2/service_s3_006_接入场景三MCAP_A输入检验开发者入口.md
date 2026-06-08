@@ -327,7 +327,7 @@ cd /home/hit/ROS && PYTHONPATH=src/data_clean python3 -m pytest \
 # → 408 passed, 9 skipped, 3 failed（3 个失败为 pre-existing contract 问题，非本 L3 导致）
 
 # 4. 菜单注册验证
-cd /home/hit/ROS && PYTHONPATH="src/data_clean:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support" python3 -c "
+cd /home/hit/ROS && PYTHONPATH="src/data_clean:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap:src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support" python3 -c "
 from ui.dev_menu import SCENE_MENUS
 scene3 = next(checks for scene_id, _label, checks in SCENE_MENUS if scene_id == 'scene3')
 ids = [check_id for check_id, _label, _runner in scene3]

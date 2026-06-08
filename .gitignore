@@ -16,7 +16,7 @@ mcap_cleaned/
 *.mcap
 
 # Vendored/downloaded dependency caches
-src/VTLA_octopus-master/.deps/
+src/data_collection/VTLA_octopus-master/.deps/
 vendor/RealManRobot/
 
 # Runtime/editor noise
@@ -27,7 +27,7 @@ vendor/RealManRobot/
 # Local IDE/project metadata
 .vscode/
 src/.obsidian/
-src/gopro_camera_launch/.idea/
+src/data_collection/gopro_camera_launch/.idea/
 .claude/settings.local.json
 
 # 阶段二运行记录和缓存

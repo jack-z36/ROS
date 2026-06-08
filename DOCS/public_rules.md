@@ -212,8 +212,8 @@ Octopus 的架构索引文件为：
 - 如果任务无法明确归入某个阶段/场景，或属于跨阶段零散维护，Win 文档规划端可以阅读并追加 `DOCS/总执行日志.md`；Ubuntu L3 执行端不得写该文件。
 - 涉及 Git 状态、提交、推送、拉取、远端、账号、分支或仓库同步时，先阅读 `DOCS/git操作约束.md`。
 - 涉及 Octopus 采集程序时，先阅读 `DOCS/Octopus_architecture.md`。
-- 涉及 `src/gopro_camera_launch` 时，先阅读该包的架构和运行指南。
-- 涉及 `src/baton_mini_sdk_demo` 时，先阅读该包的架构和运行指南。
+- 涉及 `src/data_collection/gopro_camera_launch` 时，先阅读该包的架构和运行指南。
+- 涉及 `src/data_collection/baton_mini_sdk_demo` 时，先阅读该包的架构和运行指南。
 - 涉及 `src/data_clean` 或 `start_data_clean.sh` 时，优先判断是否为 Ubuntu L3 执行：如果是，只读当前 L3 指定上下文；如果不是，再按实际问题读取必要的阶段二文档。
 - 修改代码或脚本前，先确认它服务的是逐个启动、批量启动、Octopus 录制验证，还是 MCAP 数据清洗。
 - 运行命令后，如结果会影响阶段/场景判断，Ubuntu L3 执行端只写入当前 L3 执行摘要；Win 文档规划端再统一整理共享文档。

@@ -14,7 +14,7 @@ from typing import Any
 import yaml
 
 
-WORKSPACE_DIR = Path("/home/hit/ROS")
+WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = WORKSPACE_DIR / "config/all_sensor_nodes.yaml"
 
 
