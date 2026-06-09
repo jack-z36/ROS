@@ -63,7 +63,7 @@ pressure:
     match: 
       ID_VENDOR_ID: "1a86"
       ID_MODEL_ID: "7523"
-      HWK_CHIP_UID: "007B0036-3035510B-3735333"
+      HWK_CHIP_UID: "00820035-3035510B-3735333"
       HWK_DEVICE_ADDR: "6"
       HWK_PACKAGE_ID: "29"
     target:
