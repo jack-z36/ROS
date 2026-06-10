@@ -59,12 +59,14 @@ hardware_identity:
 gopro:
   right:
     enabled: true
-    video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.1.2:1.0-video-index0"
+    video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.1.1:1.0-video-index0"
     namespace: "gopro_right"
     node_name: "gopro_right_camera"
     camera_name: "gopro_right"
     frame_id: "gopro_right_optical_frame"
     frame_rate: 30
+    pixel_format: "YUYV"
+    output_encoding: "rgb8"
     topics:
       # image_raw: 视频帧，类型 sensor_msgs/msg/Image，包含时间戳、宽高、编码和像素数据。
       # camera_info: 相机标定信息，类型 sensor_msgs/msg/CameraInfo，包含内参、畸变和投影矩阵。
@@ -77,12 +79,14 @@ gopro:
         name: "camera_info"
   left:
     enabled: true
-    video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.1.4:1.0-video-index0"
+    video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.4.3:1.0-video-index0"
     namespace: "gopro_left"
     node_name: "gopro_left_camera"
     camera_name: "gopro_left"
     frame_id: "gopro_left_optical_frame"
     frame_rate: 30
+    pixel_format: "YUYV"
+    output_encoding: "rgb8"
     topics:
       # image_raw: 视频帧，类型 sensor_msgs/msg/Image，包含时间戳、宽高、编码和像素数据。
       # camera_info: 相机标定信息，类型 sensor_msgs/msg/CameraInfo，包含内参、畸变和投影矩阵。

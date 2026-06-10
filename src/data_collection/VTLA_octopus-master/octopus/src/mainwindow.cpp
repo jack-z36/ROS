@@ -210,7 +210,7 @@ void MainWindow::subscribeTopics()
                     state->resampler = std::make_shared<Resampler>(av::vformat_t{
                         .width   = state->width,
                         .height  = state->height,
-                        .pix_fmt = AV_PIX_FMT_BGRA,
+                        .pix_fmt = AV_PIX_FMT_RGBA,
                     });
                 }
 

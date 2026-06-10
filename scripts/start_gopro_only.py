@@ -67,6 +67,8 @@ def _build_command(side: str, cfg: dict[str, Any]) -> list[str]:
         f"camera_name:={cfg.get('camera_name', f'gopro_{side}')}",
         f"frame_id:={cfg.get('frame_id', f'gopro_{side}_optical_frame')}",
         f"frame_rate:={cfg.get('frame_rate', 30)}",
+        f"pixel_format:={cfg.get('pixel_format', 'YUYV')}",
+        f"output_encoding:={cfg.get('output_encoding', 'rgb8')}",
         f"image_raw_topic:={image_raw_topic}",
         f"camera_info_topic:={camera_info_topic}",
     ]

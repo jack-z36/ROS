@@ -131,6 +131,8 @@ def _gopro_include(side, cfg, launch_file):
                     "camera_name": _stringify(cfg.get("camera_name", f"gopro_{side}")),
                     "frame_id": _stringify(cfg.get("frame_id", f"gopro_{side}_optical_frame")),
                     "frame_rate": _stringify(cfg.get("frame_rate", 30)),
+                    "pixel_format": _stringify(cfg.get("pixel_format", "YUYV")),
+                    "output_encoding": _stringify(cfg.get("output_encoding", "rgb8")),
                     "image_raw_topic": _stringify(image_raw_topic),
                     "camera_info_topic": _stringify(camera_info_topic),
                 }.items(),

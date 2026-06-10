@@ -21,6 +21,8 @@ def _launch_setup(context):
     node_name = LaunchConfiguration('node_name').perform(context)
     camera_name = LaunchConfiguration('camera_name').perform(context)
     frame_id = LaunchConfiguration('frame_id').perform(context)
+    pixel_format = LaunchConfiguration('pixel_format').perform(context)
+    output_encoding = LaunchConfiguration('output_encoding').perform(context)
     image_raw_topic = LaunchConfiguration('image_raw_topic').perform(context)
     camera_info_topic = LaunchConfiguration('camera_info_topic').perform(context)
 
@@ -47,6 +49,8 @@ def _launch_setup(context):
                 'video_device': video_device,
                 'camera_name': camera_name,
                 'frame_id': frame_id,
+                'pixel_format': pixel_format,
+                'output_encoding': output_encoding,
                 'use_v4l2_buffer_timestamps': True,
                 'use_sensor_data_qos': True,
                 'publish_camera_info': publish_camera_info,
@@ -79,6 +83,8 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument('node_name', default_value='gopro_camera'),
             DeclareLaunchArgument('camera_name', default_value='gopro'),
             DeclareLaunchArgument('frame_id', default_value='camera_optical_frame'),
+            DeclareLaunchArgument('pixel_format', default_value='YUYV'),
+            DeclareLaunchArgument('output_encoding', default_value='rgb8'),
             DeclareLaunchArgument('image_raw_topic', default_value='image_raw'),
             DeclareLaunchArgument('camera_info_topic', default_value='camera_info'),
             OpaqueFunction(function=_launch_setup),
