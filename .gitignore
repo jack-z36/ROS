@@ -26,6 +26,7 @@ vendor/RealManRobot/
 
 # Local IDE/project metadata
 .vscode/
+.obsidian/
 src/.obsidian/
 src/data_collection/gopro_camera_launch/.idea/
 .claude/settings.local.json
@@ -51,4 +52,4 @@ _tmp/
 # Python 构建产物
 *.egg-info/
 dist/
-DOCS/.obsidian/workspace.json
+DOCS/.obsidian/

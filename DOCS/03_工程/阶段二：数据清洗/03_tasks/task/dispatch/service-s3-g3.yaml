@@ -1,0 +1,65 @@
+﻿dispatch_index:
+  group: service-s3-g3
+  branch: service-s3
+  source_l2: DOCS/03_工程/阶段二：数据清洗/02_service/场景三/L2能力模块/统一Step时间轴生成器.md
+  max_parallel_agents: 1
+  waves:
+    - wave: 1
+      parallel_group: service-s3-g3-p1
+      depends_on: [service_s3_002, service_s3_004]
+      tasks: [service_s3_007]
+    - wave: 2
+      parallel_group: service-s3-g3-p2
+      depends_on: [service_s3_005, service_s3_007]
+      tasks: [service_s3_008]
+    - wave: 3
+      parallel_group: service-s3-g3-p3
+      depends_on: [service_s3_006, service_s3_008]
+      tasks: [service_s3_009]
+  tasks:
+    service_s3_007:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s3-g3/service_s3_007_定义Step时间轴生成摘要类型.md
+      title: 定义 Step 时间轴生成摘要类型
+      depends_on: [service_s3_002, service_s3_004]
+      blocks: [service_s3_008]
+      conflict_scope:
+        files:
+          - src/data_clean/schemas/alignment_index.py
+          - src/data_clean/schemas/__init__.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.schemas
+        config_keys: []
+    service_s3_008:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s3-g3/service_s3_008_实现统一Step时间轴生成服务.md
+      title: 实现统一 Step 时间轴生成服务
+      depends_on: [service_s3_005, service_s3_007]
+      blocks: [service_s3_009]
+      conflict_scope:
+        files:
+          - src/data_clean/service/step_timeline_generator.py
+          - src/data_clean/service/__init__.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.service
+        config_keys:
+          - scene3_alignment
+    service_s3_009:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s3-g3/service_s3_009_接入场景三Step时间轴开发者检验项.md
+      title: 接入场景三 Step 时间轴开发者检验项
+      depends_on: [service_s3_006, service_s3_008]
+      blocks: []
+      conflict_scope:
+        files:
+          - start_data_clean.sh
+          - src/data_clean/runtime/scene3_step_timeline_check.py
+          - src/data_clean/ui/dev_menu.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.runtime
+          - data_clean.ui
+        config_keys:
+          - scene3_alignment
