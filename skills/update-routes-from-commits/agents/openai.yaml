@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Routes from Commits"
+  short_description: "Maintain route files from Git commits"
+  default_prompt: "Use $update-routes-from-commits to analyze the latest relevant commit and update route files."

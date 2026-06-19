@@ -53,3 +53,6 @@ _tmp/
 *.egg-info/
 dist/
 DOCS/.obsidian/
+
+# Vendored LeRobot test artifacts with unavailable Git LFS objects
+**/third_party/lerobot/tests/artifacts/

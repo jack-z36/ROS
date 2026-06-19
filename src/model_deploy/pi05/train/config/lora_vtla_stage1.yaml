@@ -1,0 +1,87 @@
+lora:
+  rank: 32
+  alpha: 64
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - out_proj
+    - action_in_proj
+    - action_out_proj
+    - time_mlp_in
+    - time_mlp_out
+    - linear
+
+data:
+  dataset_path: /home/hit/pi05_ws/datasets/lerobot_octopus_v3_vtla
+  fps: 60
+  num_workers: 4
+  chunk_size: 30
+  use_color_jitter: true
+  image_size: 224
+  state_dim: 26
+  action_dim: 14
+  cameras:
+    - top
+    - left_wrist
+    - right_wrist
+    - left_tactile
+    - right_tactile
+  features:
+    observation.images.top:
+      dtype: image
+      shape: [224, 224, 3]
+    observation.images.left_wrist:
+      dtype: image
+      shape: [224, 224, 3]
+    observation.images.right_wrist:
+      dtype: image
+      shape: [224, 224, 3]
+    observation.images.left_tactile:
+      dtype: image
+      shape: [224, 224, 3]
+    observation.images.right_tactile:
+      dtype: image
+      shape: [224, 224, 3]
+    observation.state:
+      dtype: float32
+      shape: [26]
+    action:
+      dtype: float32
+      shape: [14]
+
+model:
+  chunk_size: 30
+  n_action_steps: 30
+  state_dim: 26
+  action_dim: 14
+  max_action_dim: 14
+  pretrained_path: lerobot/pi05_base
+  train_expert_only: false
+
+training:
+  batch_size: 2
+  lr: 1.0e-4
+  epochs: 6
+  max_steps_per_epoch: null
+  gradient_accumulation_steps: 8
+  warmup_steps: 500
+  checkpoint_freq_epochs: 1
+  seed: 42
+  grad_clip_norm: 1.0
+  resume_from_checkpoint:
+  mixed_precision: bf16
+
+logging:
+  project_name: pi05
+  run_name: pi05_octopus_vtla_right_hand_pour_water_cup_lora_v1
+  output_dir: ../../outputs/checkpoints
+  export_dir: ../../outputs/exports
+  use_tensorboard: true
+  tensorboard_dir: ../../outputs/logs/tensorboard
+  tensorboard_auto_launch: true
+  tensorboard_host: localhost
+  tensorboard_port: 6006
+  log_freq: 200
