@@ -1,4 +1,4 @@
-# L2-04 · action 处理与发布层（输出侧）
+﻿# L2-04 · action 处理与发布层（输出侧）
 
 > [!info] 归属
 > - 对应分层：**Service + Runtime + UI**（相邻三层，输出链路紧密耦合）。
@@ -89,6 +89,29 @@ safety_guard **直接修改**（关节检查逻辑整体替换为 TCP 检查）�
 2. **dry-run**：mode=dry-run，看日志打印的 16D action 是否正确。
 3. **shadow-run**：mode=shadow-run，看 `/pi05/policy_action` 发布的 Float32MultiArray 是否 16D、段序正确；bridge（L2-05）此时不接，但 topic 有输出。
 4. **mode 切换测试**：dry→shadow→safe 的 publishes_command_topics 属性正确。
+
+## L2 Gate
+
+| 字段 | 内容 |
+|---|---|
+| L2 分支 | `model_deploy-l2-04-publish` |
+| 集成分支 | `model_deploy` |
+| required L3 | deploy_013、deploy_014、deploy_015、deploy_016 |
+| 验收运行目录 | `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/` |
+| 验收结果文档 | `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/验收结果.md` |
+| 最低验证层级 | dry-run + shadow-run |
+| 真机风险 | hardware-blocked |
+
+通过标准：
+
+- deploy_013~deploy_016 全部完成，并在 L3 任务文件中勾选成功标准。
+- safety_guard 单测、dry-run 和 shadow-run 验证通过。
+- `/pi05/policy_action` 发布 16D，段序正确，metrics 信息完整。
+- shadow-run 下 `sent_to_driver=false`，真机发送链路默认被 gate 阻断。
+- 当前代码路径全部指向 `src/model_deploy/pi05/...`。
+- `验收结果.md` 已记录运行命令、测试输入、观察点、通过现象、实际结果、证据链接和未验证项。
+
+Gate 通过后，允许按 `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md` 自动同步 L2 分支并 `--no-ff` 合入 `model_deploy`。
 
 ## 回滚方式
 

@@ -1,4 +1,4 @@
-# L3 微元改造任务：observation_collector 改造为 TCP+width 装配
+﻿# L3 微元改造任务：observation_collector 改造为 TCP+width 装配
 
 ## 1. 任务定位
 
@@ -10,6 +10,14 @@ L3 编号：deploy_009
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_009_observation_collector改造.md`
 改造类型：behavior-change
 真机风险等级：none
+L2 Git 分支：model_deploy-l2-03-assembly
+验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly
+对应 L2 运行验收场景：[S1, S2, S3]
+验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_009_验收卡片.md
+验收模式：static-review
+辅助验收模式：['downstream-l2']
+本地验收是否必须：false
+验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
 
 ## 2. 调度元数据
 
@@ -18,7 +26,16 @@ dispatch:
   task_id: deploy_009
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_009_observation_collector改造.md
   group: l2-03-assembly
-  branch: model_deploy
+  branch: model_deploy-l2-03-assembly
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly
+  acceptance_scenarios: [S1, S2, S3]
+  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_009_验收卡片.md
+  acceptance_mode: static-review
+  acceptance_secondary_modes: [downstream-l2]
+  local_acceptance_required: false
+  acceptance_round_limit: 3
+  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
   wave: 1
   parallel_group: l2-03-assembly-p1
   depends_on: [deploy_002, deploy_005]
@@ -27,7 +44,7 @@ dispatch:
   blocks: [deploy_010, deploy_012]
   conflict_scope:
     files:
-      - pi05_test/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py
+      - src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py
     modules:
       - pi05.deploy.runtime.observation_collector
     config_keys: []
@@ -147,7 +164,7 @@ dispatch:
 
 ```bash
 python3 -c "
-src = open('pi05_test/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py', encoding='utf-8').read()
+src = open('src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py', encoding='utf-8').read()
 for m in ['update_tcp_pose','update_gripper_width','update_tactile']:
     assert f'def {m}' in src, f'{m} missing'
 for f in ['left_tcp_pose','right_tcp_pose','left_gripper_width','right_gripper_width']:
@@ -172,9 +189,18 @@ print('deploy_009 验收通过: collector→TCP+width装配, 触觉预留, 门�
 
 不适用，本 L3 不触发真机动作。
 
+### 验收证据落点
+
+本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
+
+```text
+验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/验收结果.md
+验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/scripts/
+验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs/
+```
 ## 9. 允许修改
 
-- `pi05_test/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py`
+- `src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py`
 
 ## 10. 禁止修改
 
@@ -191,15 +217,15 @@ print('deploy_009 验收通过: collector→TCP+width装配, 触觉预留, 门�
 
 ### 必读代码
 
-1. `pi05_test/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py`（本 L3 修改）
-2. `pi05_test/pi05/common/src/pi05/common/data/state_codec.py`（deploy_002 改后，确认新 BimanualState/encode_bimanual_state 签名）
+1. `src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py`（本 L3 修改）
+2. `src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py`（deploy_002 改后，确认新 BimanualState/encode_bimanual_state 签名）
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
-4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
+3. `DOCS/02_约束/Git协作/Git操作规则.md`
+4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -220,6 +246,7 @@ print('deploy_009 验收通过: collector→TCP+width装配, 触觉预留, 门�
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
+- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] REQUIRED_IMAGE_KEYS 改为鱼眼双目。
 - [ ] _required_value_keys 改为 TCP+width。
 - [ ] update_tcp_pose/update_gripper_width 新增。

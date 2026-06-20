@@ -8,7 +8,15 @@
 ```yaml
 dispatch_index:
   group: l2-01-types
-  branch: model_deploy
+  branch: model_deploy-l2-01-types
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types
+  acceptance_result: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/验收结果.md
+  acceptance_scenarios: [S1, S2, S3]
+  cards_dir: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types
+  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/l2-01-types_整体验收卡片.md
+  l2_acceptance_report: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/L2整体验收报告.md
+  acceptance_round_limit: 3
   source_l2: DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-01-Types层重构.md
   max_parallel_agents: 2
   waves:
@@ -27,41 +35,65 @@ dispatch_index:
     deploy_001:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_001_重构action_spec为TCP_width结构.md
       title: 重构 action_spec 为 TCP+width 结构
+      acceptance_scenarios: [S1, S2]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_001_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
       depends_on: []
       conflict_scope:
         files:
-          - pi05_test/pi05/common/src/pi05/common/robot/action_spec.py
+          - src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py
         modules:
           - pi05.common.robot.action_spec
         config_keys: []
     deploy_002:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_002_重构state_codec为TCP_width结构.md
       title: 重构 state_codec 为 TCP+width 结构
+      acceptance_scenarios: [S1, S2]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_002_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
       depends_on: [deploy_001]
       conflict_scope:
         files:
-          - pi05_test/pi05/common/src/pi05/common/data/state_codec.py
+          - src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py
         modules:
           - pi05.common.data.state_codec
         config_keys: []
     deploy_003:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_003_action_codec维度校验跟随.md
       title: action_codec 维度校验跟随
+      acceptance_scenarios: [S3]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_003_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
       depends_on: [deploy_001]
       conflict_scope:
         files:
-          - pi05_test/pi05/common/src/pi05/common/data/action_codec.py
+          - src/model_deploy/pi05/common/src/pi05/common/data/action_codec.py
         modules:
           - pi05.common.data.action_codec
         config_keys: []
     deploy_004:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_004_types层单测.md
       title: Types 层单测覆盖
+      acceptance_scenarios: [S1, S2, S3]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_004_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
       depends_on: [deploy_001, deploy_002, deploy_003]
       conflict_scope:
         files:
-          - pi05_test/pi05/common/tests/test_action_spec_tcp.py
-          - pi05_test/pi05/common/tests/test_state_codec_tcp.py
+          - src/model_deploy/pi05/common/tests/test_action_spec_tcp.py
+          - src/model_deploy/pi05/common/tests/test_state_codec_tcp.py
         modules:
           - tests.types_layer
         config_keys: []
@@ -82,8 +114,18 @@ dispatch_index:
 
 ## 全组完成标志
 
-deploy_004 pytest 通过 = L2-01 Types 层重构完成 = 可开始 L2-02（Config 层）。
+deploy_004 pytest 通过，且 `05_acceptance/l2-01-types/验收结果.md` 中 S1/S2/S3 均通过 = L2-01 Types 层重构完成 = 可开始 L2-02（Config 层）。
 
 ## 真机风险
 
 全组 robot_risk = none。Types 层纯数据结构，不触发真机。真机风险在 L2-05（硬件执行栈）。
+
+## L2 Gate
+
+- L2 分支：`model_deploy-l2-01-types`
+- 集成分支：`model_deploy`
+- 验收结果：`DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/验收结果.md`
+- required L3：deploy_001、deploy_002、deploy_003、deploy_004
+- 最低验证层级：unit
+- 通过条件：required L3 全部完成、Types 层运行验收 S1/S2/S3 通过、无真机动作、验收结果文档记录运行命令、测试输入、观察点、通过现象和实际结果。
+- Gate 通过后：允许按阶段四 Git 规则提交并推送 `model_deploy-l2-01-types`，再 `--no-ff` 合入 `model_deploy`。

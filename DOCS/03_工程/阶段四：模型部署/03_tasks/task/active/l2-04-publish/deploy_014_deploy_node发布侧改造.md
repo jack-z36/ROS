@@ -1,4 +1,4 @@
-# L3 微元改造任务：deploy_node 发布侧改造
+﻿# L3 微元改造任务：deploy_node 发布侧改造
 
 ## 1. 任务定位
 
@@ -10,6 +10,14 @@ L3 编号：deploy_014
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_014_deploy_node发布侧改造.md`
 改造类型：behavior-change
 真机风险等级：none（dry-run/shadow 不触发真机，真机由 bridge/L2-05）
+L2 Git 分支：model_deploy-l2-04-publish
+验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish
+对应 L2 运行验收场景：[S2, S3]
+验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish/deploy_014_验收卡片.md
+验收模式：static-review
+辅助验收模式：['downstream-l2']
+本地验收是否必须：false
+验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs
 
 ## 2. 调度元数据
 
@@ -18,7 +26,16 @@ dispatch:
   task_id: deploy_014
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_014_deploy_node发布侧改造.md
   group: l2-04-publish
-  branch: model_deploy
+  branch: model_deploy-l2-04-publish
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish
+  acceptance_scenarios: [S2, S3]
+  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish/deploy_014_验收卡片.md
+  acceptance_mode: static-review
+  acceptance_secondary_modes: [downstream-l2]
+  local_acceptance_required: false
+  acceptance_round_limit: 3
+  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs
   wave: 1
   parallel_group: l2-04-publish-p1
   depends_on: [deploy_001, deploy_010]
@@ -27,7 +44,7 @@ dispatch:
   blocks: [deploy_015, deploy_016]
   conflict_scope:
     files:
-      - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
+      - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
     modules:
       - pi05.deploy.ros_nodes.pi05_vla_deploy_node
     config_keys:
@@ -140,7 +157,7 @@ dispatch:
 
 ```bash
 python3 -c "
-src = open('pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py', encoding='utf-8').read()
+src = open('src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py', encoding='utf-8').read()
 # policy_action_pub 新增
 assert 'policy_action_pub' in src and 'Float32MultiArray' in src
 # 四路 publisher 删除
@@ -167,9 +184,18 @@ print('deploy_014 验收通过: 发布侧→单路policy_action 16D, 订阅侧�
 
 不触发真机。shadow-run 的 gate 关闭在 bridge（L2-05），本 L3 在 shadow/safe 都发 policy_action。
 
+### 验收证据落点
+
+本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
+
+```text
+验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/验收结果.md
+验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/scripts/
+验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs/
+```
 ## 9. 允许修改
 
-- `pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（仅发布侧：import + _create_publishers + _control_tick + _joint_msg）
+- `src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（仅发布侧：import + _create_publishers + _control_tick + _joint_msg）
 
 ## 10. 禁止修改
 
@@ -187,15 +213,15 @@ print('deploy_014 验收通过: 发布侧→单路policy_action 16D, 订阅侧�
 
 ### 必读代码
 
-1. `pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（本 L3 改发布侧；deploy_010 改后看订阅侧现状）
-2. `pi05_test/pi05/common/src/pi05/common/robot/action_spec.py`（deploy_001 改后，确认 BimanualAction.as_vector 16D）
+1. `src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（本 L3 改发布侧；deploy_010 改后看订阅侧现状）
+2. `src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py`（deploy_001 改后，确认 BimanualAction.as_vector 16D）
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
-4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
+3. `DOCS/02_约束/Git协作/Git操作规则.md`
+4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -216,6 +242,7 @@ print('deploy_014 验收通过: 发布侧→单路policy_action 16D, 订阅侧�
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
+- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] policy_action_pub 新增（Float32MultiArray 16D）。
 - [ ] 四路 publisher 删除。
 - [ ] _joint_msg 删除。
