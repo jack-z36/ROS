@@ -35,7 +35,7 @@ DOCS/03_工程/阶段四：模型部署/05_acceptance/<l2>/
 3. Run:
 
 ```bash
-python .agents/skills/stage4-l3-orchestrator/scripts/validate_stage4_l3_cards.py
+python skills/stage4-l3-orchestrator/scripts/validate_stage4_l3_cards.py
 ```
 
 4. Select executable L3 tasks by `wave`, `depends_on`, `dispatch_status`, and `conflict_scope`.
@@ -43,13 +43,13 @@ python .agents/skills/stage4-l3-orchestrator/scripts/validate_stage4_l3_cards.py
 6. Generate execution prompts with:
 
 ```bash
-python .agents/skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py --role executor --task <L3_TASK_PATH>
+python skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py --role executor --task <L3_TASK_PATH>
 ```
 
 7. After an execution sub-agent finishes, spawn an acceptance sub-agent for the matching card:
 
 ```bash
-python .agents/skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py --role acceptor --card <L3_CARD_PATH> --round <N>
+python skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py --role acceptor --card <L3_CARD_PATH> --round <N>
 ```
 
 8. If the acceptance result is `FAIL_LOCAL`, return the feedback to the same execution sub-agent or a new execution sub-agent with the same L3 ownership.
@@ -57,7 +57,7 @@ python .agents/skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt
 10. When all required L3 tasks for one L2 are complete or explicitly blocked, run L2 acceptance:
 
 ```bash
-python .agents/skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py --role l2-acceptor --l2 <l2>
+python skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py --role l2-acceptor --l2 <l2>
 ```
 
 ## Execution Sub-Agent Rules
