@@ -252,6 +252,7 @@ mean, std, min, max
 | `service/forge_bridge.py`            | 消费 aligned MCAP，按 LeRobot feature 白名单拼接 state 和固定 `t+1 action`，写出 Forge-ready MCAP 与 sidecar；默认布局仍为 32 维 state 和 16 维 action。 |
 | `runtime/forge_bridge_check.py`      | bridge dev check，支持 `format-only` 与 `formal`。                                                                          |
 | `runtime/forge_bridge_to_lerobot.py` | Forge Python fallback，显式把 topic config 传给 `MCAPReader`；支持单 bridge 转换和多 bridge 聚合写出一个 LeRobot v3 dataset。 |
+| `service/lerobot_timestamp_rebase.py` | LeRobot v3 产物后处理：`write_dataset` 写出后，按 episode 把 `timestamp` 相对化（每 episode 第一帧 = 0.0，满足 LeRobot v3 训练要求）；只改 `data/chunk-*/file-*.parquet` 的 `timestamp` 列，不动 video/info/stats/episodes meta，不改 forge 源码。 |
 
 ### 7.1 LeRobot 临时 step 语义
 
@@ -278,6 +279,8 @@ mean, std, min, max
 ```
 
 最后一帧因没有 `t+1` action，会在 bridge 阶段丢弃。
+
+Forge writer 写入的 `timestamp` 是 MCAP 绝对 Unix 时间戳（`log_time/1e9`）。LeRobot v3 训练要求每个 episode 第一帧 `timestamp = 0.0`，因此 `convert_forge_bridges_to_lerobot` 在 `write_dataset` 之后会调用 `service/lerobot_timestamp_rebase.py`：按 episode 减去本 episode 第一帧时间戳，原地重写 `data/chunk-*/file-*.parquet`，保留真实帧间隔并保证幂等。该后处理不改 forge 生成逻辑，不动 video、`info.json`、`stats.json` 和 episodes meta。
 
 实际导出的 shape、offset、单位和语义会写入 `forge_bridge_schema.json`、`forge_bridge_report.json` 和每个 Web job 的 `config_snapshot.yaml`。
 
