@@ -3,5 +3,5 @@
 如果任务涉及阶段四 L3 调度、执行或验收，按 `AGENTS.md` 指向的加载规则读取项目本地 skill：
 
 ```text
-.agents/skills/stage4-l3-orchestrator/SKILL.md
+skills/stage4-l3-orchestrator/SKILL.md
 ```

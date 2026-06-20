@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 
-SKILL_PATH = ".agents/skills/stage4-l3-orchestrator/SKILL.md"
+SKILL_PATH = "skills/stage4-l3-orchestrator/SKILL.md"
 
 
 def find_stage4(root: Path) -> Path:
