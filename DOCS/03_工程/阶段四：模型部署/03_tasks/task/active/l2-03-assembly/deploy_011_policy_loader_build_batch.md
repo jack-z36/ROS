@@ -1,4 +1,4 @@
-# L3 微元改造任务：policy_loader._build_batch + image_names 默认值
+﻿# L3 微元改造任务：policy_loader._build_batch + image_names 默认值
 
 ## 1. 任务定位
 
@@ -10,6 +10,14 @@ L3 编号：deploy_011
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_011_policy_loader_build_batch.md`
 改造类型：behavior-change
 真机风险等级：none
+L2 Git 分支：model_deploy-l2-03-assembly
+验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly
+对应 L2 运行验收场景：[S1, S4]
+验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_011_验收卡片.md
+验收模式：direct-local
+辅助验收模式：[]
+本地验收是否必须：true
+验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
 
 ## 3. 本次唯一目标
 
@@ -24,7 +32,16 @@ dispatch:
   task_id: deploy_011
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_011_policy_loader_build_batch.md
   group: l2-03-assembly
-  branch: model_deploy
+  branch: model_deploy-l2-03-assembly
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly
+  acceptance_scenarios: [S1, S4]
+  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_011_验收卡片.md
+  acceptance_mode: direct-local
+  acceptance_secondary_modes: []
+  local_acceptance_required: true
+  acceptance_round_limit: 3
+  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
   wave: 1
   parallel_group: l2-03-assembly-p1
   depends_on: [deploy_002]
@@ -33,7 +50,7 @@ dispatch:
   blocks: [deploy_012]
   conflict_scope:
     files:
-      - pi05_test/pi05/deploy/src/pi05/deploy/models/policy_loader.py
+      - src/model_deploy/pi05/deploy/src/pi05/deploy/models/policy_loader.py
     modules:
       - pi05.deploy.models.policy_loader
     config_keys: []
@@ -129,7 +146,7 @@ dispatch:
 
 ```bash
 python3 -c "
-src = open('pi05_test/pi05/deploy/src/pi05/deploy/models/policy_loader.py', encoding='utf-8').read()
+src = open('src/model_deploy/pi05/deploy/src/pi05/deploy/models/policy_loader.py', encoding='utf-8').read()
 # image_names 默认值改鱼眼
 assert 'left_fisheye' in src and 'right_fisheye' in src
 # 旧相机名在默认值位置应删除
@@ -153,9 +170,18 @@ print('deploy_011 验收通过: image_names→鱼眼, _build_batch保留')
 
 不适用。
 
+### 验收证据落点
+
+本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
+
+```text
+验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/验收结果.md
+验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/scripts/
+验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs/
+```
 ## 9. 允许修改
 
-- `pi05_test/pi05/deploy/src/pi05/deploy/models/policy_loader.py`（仅 image_names 默认值 + fallback）
+- `src/model_deploy/pi05/deploy/src/pi05/deploy/models/policy_loader.py`（仅 image_names 默认值 + fallback）
 
 ## 10. 禁止修改
 
@@ -173,15 +199,15 @@ print('deploy_011 验收通过: image_names→鱼眼, _build_batch保留')
 
 ### 必读代码
 
-1. `pi05_test/pi05/deploy/src/pi05/deploy/models/policy_loader.py`（本 L3 修改）
-2. `pi05_test/pi05/common/src/pi05/common/data/state_codec.py`（deploy_002 改后，确认 encode_bimanual_state 输出 16D）
+1. `src/model_deploy/pi05/deploy/src/pi05/deploy/models/policy_loader.py`（本 L3 修改）
+2. `src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py`（deploy_002 改后，确认 encode_bimanual_state 输出 16D）
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
-4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
+3. `DOCS/02_约束/Git协作/Git操作规则.md`
+4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -202,6 +228,7 @@ print('deploy_011 验收通过: image_names→鱼眼, _build_batch保留')
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
+- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] image_names 默认值改为鱼眼。
 - [ ] _manifest_image_names fallback 改为鱼眼。
 - [ ] _build_batch 逻辑保留（审查确认自动跟随 16D）。

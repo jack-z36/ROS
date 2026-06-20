@@ -1,4 +1,4 @@
-# L3 微元改造任务：新 launch + shadow-run 全链路验证
+﻿# L3 微元改造任务：新 launch + shadow-run 全链路验证
 
 ## 1. 任务定位
 
@@ -10,6 +10,14 @@ L3 编号：deploy_022
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_022_launch与shadow_run全链路.md`
 改造类型：new-feature
 真机风险等级：low（shadow-run：全链路验证但机械臂不动，gate 关）
+L2 Git 分支：model_deploy-l2-05-hardware
+验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware
+对应 L2 运行验收场景：[S1, S2, S3, S4]
+验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_022_验收卡片.md
+验收模式：direct-local
+辅助验收模式：['env-blocked']
+本地验收是否必须：true
+验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
 
 ## 2. 调度元数据
 
@@ -18,7 +26,16 @@ dispatch:
   task_id: deploy_022
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_022_launch与shadow_run全链路.md
   group: l2-05-hardware
-  branch: model_deploy
+  branch: model_deploy-l2-05-hardware
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware
+  acceptance_scenarios: [S1, S2, S3, S4]
+  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_022_验收卡片.md
+  acceptance_mode: direct-local
+  acceptance_secondary_modes: [env-blocked]
+  local_acceptance_required: true
+  acceptance_round_limit: 3
+  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
   wave: 3
   parallel_group: l2-05-hardware-p3
   depends_on: [deploy_017, deploy_018, deploy_019, deploy_020, deploy_021]
@@ -27,8 +44,8 @@ dispatch:
   blocks: [deploy_023]
   conflict_scope:
     files:
-      - pi05_test/pi05/deploy/launch/pi05_rm65_deploy.launch.py
-      - pi05_test/pi05/deploy/tests/test_shadow_run_integration.py
+      - src/model_deploy/pi05/deploy/launch/pi05_rm65_deploy.launch.py
+      - src/model_deploy/pi05/deploy/tests/test_shadow_run_integration.py
     modules:
       - deploy.launch
       - tests.shadow_integration
@@ -40,7 +57,7 @@ dispatch:
       - rm65_arm_right
       - elephant_gripper_left
       - elephant_gripper_right
-  robot_risk: low
+  robot_risk: hardware-blocked
   dispatch_status: ready
 ```
 
@@ -135,7 +152,7 @@ dispatch:
 # launch 语法检查
 python3 -c "
 import ast
-path = 'pi05_test/pi05/deploy/launch/pi05_rm65_deploy.launch.py'
+path = 'src/model_deploy/pi05/deploy/launch/pi05_rm65_deploy.launch.py'
 src = open(path, encoding='utf-8').read()
 ast.parse(src)
 for node in ['command_bridge_sender_node','rm65_driver_node','elephant_gripper_node','Pi05VlaDeployNode']:
@@ -156,15 +173,24 @@ print('deploy_022 launch验收通过')
 
 ### 真机风险控制
 
-shadow-run：gate 关，不动机器人。robot_risk: low。连真机读状态但不发命令。
+shadow-run：gate 关，不动机器人。robot_risk: hardware-blocked。连真机读状态但不发命令。
 - 是否会真实发送命令：否（gate 关）
 - 默认关闭：是（shadow）
 - 回滚：切回旧 launch
 
+### 验收证据落点
+
+本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
+
+```text
+验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/验收结果.md
+验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/scripts/
+验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs/
+```
 ## 9. 允许修改
 
-- 新建 `pi05_test/pi05/deploy/launch/pi05_rm65_deploy.launch.py`
-- 新建 `pi05_test/pi05/deploy/tests/test_shadow_run_integration.py`（可选）
+- 新建 `src/model_deploy/pi05/deploy/launch/pi05_rm65_deploy.launch.py`
+- 新建 `src/model_deploy/pi05/deploy/tests/test_shadow_run_integration.py`（可选）
 
 ## 10. 禁止修改
 
@@ -182,15 +208,15 @@ shadow-run：gate 关，不动机器人。robot_risk: low。连真机读状态�
 
 ### 必读代码
 
-1. `pi05_test/pi05/deploy/launch/pi05_picotele_mux.launch.py`（参考旧 launch 写法）
+1. `src/model_deploy/pi05/deploy/launch/pi05_picotele_mux.launch.py`（参考旧 launch 写法）
 2. 各新建节点（deploy_017~021 产物）
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
-4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
+3. `DOCS/02_约束/Git协作/Git操作规则.md`
+4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -210,6 +236,7 @@ shadow-run：gate 关，不动机器人。robot_risk: low。连真机读状态�
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
+- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] pi05_rm65_deploy.launch.py 新建（拉起全节点）。
 - [ ] 旧 launch 保留。
 - [ ] shadow-run 全链路：policy_action → bridge → status(sent_to_driver=false)。

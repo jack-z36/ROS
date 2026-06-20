@@ -1,4 +1,4 @@
-# L2-01 · Types 层重构
+﻿# L2-01 · Types 层重构
 
 > [!info] 归属
 > - 对应分层：**Types**（最底层基座，不依赖任何层）。
@@ -95,6 +95,28 @@
 2. **段序一致性测试**：构造一个已知 16D 向量，split 后再 assemble，断言还原一致（round-trip）。
 3. **归一化校验**：构造 quaternion 段，断言模长≈1（或文档约定归一化在边界做）。
 4. **预留触觉测试**：第一版触觉段 disabled 时，encode 输出 16D；enabled 时输出 32D。
+
+## L2 Gate
+
+| 字段 | 内容 |
+|---|---|
+| L2 分支 | `model_deploy-l2-01-types` |
+| 集成分支 | `model_deploy` |
+| required L3 | deploy_001、deploy_002、deploy_003、deploy_004 |
+| 验收运行目录 | `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/` |
+| 验收结果文档 | `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/验收结果.md` |
+| 最低验证层级 | unit |
+| 真机风险 | none |
+
+通过标准：
+
+- deploy_001~deploy_004 全部完成，并在 L3 任务文件中勾选成功标准。
+- Types 层维度、段序、round-trip 和触觉预留测试通过。
+- 当前代码路径全部指向 `src/model_deploy/pi05/...`。
+- `验收结果.md` 已记录运行命令、测试输入、观察点、通过现象、实际结果、证据链接和未验证项。
+- 未触发 dry-run、fake-policy、real-policy 或 real-robot。
+
+Gate 通过后，允许按 `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md` 自动同步 L2 分支并 `--no-ff` 合入 `model_deploy`。
 
 ## 回滚方式
 

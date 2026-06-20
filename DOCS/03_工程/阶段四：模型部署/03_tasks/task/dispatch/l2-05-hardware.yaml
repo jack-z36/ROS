@@ -11,7 +11,15 @@
 ```yaml
 dispatch_index:
   group: l2-05-hardware
-  branch: model_deploy
+  branch: model_deploy-l2-05-hardware
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware
+  acceptance_result: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/验收结果.md
+  acceptance_scenarios: [S1, S2, S3, S4, S5]
+  cards_dir: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware
+  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/l2-05-hardware_整体验收卡片.md
+  l2_acceptance_report: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/L2整体验收报告.md
+  acceptance_round_limit: 3
   source_l2: DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-05-硬件执行栈.md
   max_parallel_agents: 3
   waves:
@@ -34,45 +42,69 @@ dispatch_index:
     deploy_017:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_017_command_bridge骨架.md
       title: command_bridge_sender_node 骨架
+      acceptance_scenarios: [S1, S2]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_017_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
       depends_on: []
       robot_risk: none
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
         modules:
           - pi05.deploy.ros_nodes.command_bridge_sender_node
         hardware_paths: []
     deploy_018:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_018_bridge_ik预检.md
       title: bridge IK 预检 + workspace
+      acceptance_scenarios: [S1, S3]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_018_验收卡片.md
+      acceptance_mode: static-review
+      acceptance_secondary_modes: [hardware-blocked]
+      local_acceptance_required: false
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
       depends_on: [deploy_017]
-      robot_risk: low
+      robot_risk: hardware-blocked
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
         modules:
           - pi05.deploy.ros_nodes.command_bridge_sender_node
         hardware_paths:
           - rm65_sdk
     deploy_019:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_019_bridge_gate与映射.md
-      title: bridge width→angle 映射 + gate
+      title: bridge gate 与 width 映射
+      acceptance_scenarios: [S1, S2, S4]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_019_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
       depends_on: [deploy_017]
-      robot_risk: low
+      robot_risk: hardware-blocked
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
         modules:
           - pi05.deploy.ros_nodes.command_bridge_sender_node
         hardware_paths: []
     deploy_020:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_020_rm65_driver_node.md
-      title: rm65_driver_node（状态发布 + 命令执行）
+      title: rm65_driver_node
+      acceptance_scenarios: [S5]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_020_验收卡片.md
+      acceptance_mode: static-review
+      acceptance_secondary_modes: [hardware-blocked]
+      local_acceptance_required: false
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
       depends_on: []
-      robot_risk: high
+      robot_risk: hardware-blocked
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/rm65_driver_node.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/rm65_driver_node.py
         modules:
           - pi05.deploy.ros_nodes.rm65_driver_node
         hardware_paths:
@@ -81,12 +113,18 @@ dispatch_index:
           - rm65_sdk
     deploy_021:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_021_elephant_gripper_node.md
-      title: elephant_gripper_node（状态发布 + 命令执行 + 标定）
+      title: elephant_gripper_node
+      acceptance_scenarios: [S5]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_021_验收卡片.md
+      acceptance_mode: static-review
+      acceptance_secondary_modes: [hardware-blocked]
+      local_acceptance_required: false
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
       depends_on: []
-      robot_risk: high
+      robot_risk: hardware-blocked
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/elephant_gripper_node.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/elephant_gripper_node.py
         modules:
           - pi05.deploy.ros_nodes.elephant_gripper_node
         hardware_paths:
@@ -95,12 +133,18 @@ dispatch_index:
           - gripper_modbus
     deploy_022:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_022_launch与shadow_run全链路.md
-      title: 新 launch + shadow-run 全链路验证
+      title: launch 与 shadow-run 全链路
+      acceptance_scenarios: [S1, S2, S3, S4]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_022_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: [env-blocked]
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
       depends_on: [deploy_017, deploy_018, deploy_019, deploy_020, deploy_021]
-      robot_risk: low
+      robot_risk: hardware-blocked
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/launch/pi05_rm65_deploy.launch.py
+          - src/model_deploy/pi05/deploy/launch/pi05_rm65_deploy.launch.py
         modules:
           - deploy.launch
         hardware_paths:
@@ -110,9 +154,15 @@ dispatch_index:
           - elephant_gripper_right
     deploy_023:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_023_real_robot_smoke_test.md
-      title: real-robot smoke test（safe-run + 急停）
+      title: real-robot smoke test
+      acceptance_scenarios: [S5]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_023_验收卡片.md
+      acceptance_mode: hardware-blocked
+      acceptance_secondary_modes: []
+      local_acceptance_required: false
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
       depends_on: [deploy_022]
-      robot_risk: critical
+      robot_risk: real-robot
       dispatch_status: blocked
       blocked_reason: "必须 deploy_022 shadow-run 通过 + 标定完成 + bundle 就绪 + 急停就绪 + 人在场"
       conflict_scope:
@@ -131,42 +181,31 @@ dispatch_index:
 
 | wave | 任务 | 并行性 | 真机风险 | 说明 |
 |---|---|---|---|---|
-| 1 | deploy_017 ∥ deploy_020 ∥ deploy_021 | 可并行（3 个不同新文件） | 017=none, 020/021=high | bridge 骨架 + 两个硬件适配节点，新建不同文件无冲突。代码实现可无硬件完成（AST 验收）。 |
-| 2 | deploy_018 ∥ deploy_019 | 可并行（同文件不同方法，但同文件建议串行或同 Agent） | low | bridge 接入 IK + gate/映射。同改 command_bridge_sender_node.py。 |
-| 3 | deploy_022 | 单独 | low | 新 launch + shadow-run 全链路。依赖 wave1/2 全部完成。 |
-| 4 | deploy_023 | 单独 | **critical** | real-robot smoke test。**blocked**，必须满足 5 项前置条件。 |
-
-## 真机风险分级
-
-| L3 | 风险 | 原因 | 真机测试时机 |
-|---|---|---|---|
-| deploy_017 | none | 只发 command topic 无下游 | 无需真机 |
-| deploy_018 | low | IK 只查不执行 | deploy_022 shadow |
-| deploy_019 | low | gate 控制 shadow 不发 | deploy_022 shadow |
-| deploy_020 | **high** | movep_canfd 驱动机械臂 | deploy_023 real-robot |
-| deploy_021 | **high** | modbus 驱动夹爪 | deploy_023 real-robot |
-| deploy_022 | low | shadow gate 关不动 | 本身即 shadow |
-| deploy_023 | **critical** | safe-run 真机运动 | 本身即 real-robot |
+| 1 | deploy_017 ∥ deploy_020 ∥ deploy_021 | 可并行 | 017=none，020/021=hardware-blocked | bridge 骨架 + 两个硬件适配节点，新建不同文件无冲突。 |
+| 2 | deploy_018 ∥ deploy_019 | 可并行但建议同 Agent | hardware-blocked | bridge 接入 IK + gate/映射，同改 command_bridge_sender_node.py。 |
+| 3 | deploy_022 | 单独 | hardware-blocked | 新 launch + shadow-run 全链路。 |
+| 4 | deploy_023 | 单独 | real-robot | real-robot smoke test，默认 blocked。 |
 
 ## deploy_023 的 blocked 解除条件
 
-必须全部满足：
-1. deploy_022 shadow-run 全链路通过
-2. width↔angle 标定完成（deploy_021 实测系数）
-3. 真模型 bundle 就绪（Q1，16D 训练）
-4. 物理急停就绪 + deadman 可用
-5. 人在场 + 主 Agent/用户授权
+必须全部满足：deploy_022 shadow-run 全链路通过、width 与 gripper 标定完成、真模型 bundle 就绪、物理急停和 deadman 可用、人在场、主 Agent/用户授权。
 
 ## 全组完成标志
 
-deploy_023 smoke test 通过 = L2-05 硬件执行栈完成 = **阶段四模型部署改造全部完成**。
-
-## 与 L2-01~04 的关系
-
-L2-05 是独立子系统，通过 `/pi05/policy_action` topic 与 L2-01~04 解耦。L2-05 的 deploy_017~019/022 不依赖 L2-01~04 的代码完成（只需 topic 契约）。但 deploy_023（real-robot）需要真模型 bundle（L2-01~04 提供的 16D 语义）。
+deploy_022 shadow-run 通过并且 deploy_023 的 blocked / real-robot 记录完整 = L2-05 可进行 Gate 判断。只有 deploy_023 smoke test 真实执行并通过，才能声明阶段四真机 smoke test 通过。
 
 ## 回滚路径
 
-- bridge/驱动节点不启动 → policy_action 仍可独立 dry-run（L2-04 不受影响）
-- 切回旧 launch（pi05_picotele_mux）+ 旧 config + 旧 bundle（Q7 三件套）
-- 物理急停（运动中）
+- bridge/驱动节点不启动，policy_action 仍可独立 dry-run。
+- 切回旧 launch、旧 config、旧 bundle。
+- 运动中以物理急停优先。
+
+## L2 Gate
+
+- L2 分支：`model_deploy-l2-05-hardware`
+- 集成分支：`model_deploy`
+- 验收结果：`DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/验收结果.md`
+- required L3：deploy_017、deploy_018、deploy_019、deploy_020、deploy_021、deploy_022、deploy_023
+- 最低验证层级：shadow-run + gated real-robot
+- 通过条件：deploy_017 至 deploy_022 完成并通过 S1/S2/S3/S4；deploy_023 只有在安全条件满足后才允许解除 blocked；验收结果文档记录运行命令、测试输入、观察点、通过现象、实际结果和真机风险控制结论。
+- Gate 通过后：允许按阶段四 Git 规则提交并推送 `model_deploy-l2-05-hardware`，再 `--no-ff` 合入 `model_deploy`。

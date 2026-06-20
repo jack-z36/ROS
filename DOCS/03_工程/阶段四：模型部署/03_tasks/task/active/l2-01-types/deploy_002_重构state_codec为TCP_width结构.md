@@ -1,4 +1,4 @@
-# L3 微元改造任务：重构 state_codec 为 TCP+width 结构
+﻿# L3 微元改造任务：重构 state_codec 为 TCP+width 结构
 
 ## 1. 任务定位
 
@@ -10,6 +10,14 @@ L3 编号：deploy_002
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_002_重构state_codec为TCP_width结构.md`
 改造类型：behavior-change
 真机风险等级：none
+L2 Git 分支：model_deploy-l2-01-types
+验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types
+对应 L2 运行验收场景：[S1, S2]
+验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_002_验收卡片.md
+验收模式：direct-local
+辅助验收模式：[]
+本地验收是否必须：true
+验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
 
 ## 2. 调度元数据
 
@@ -18,7 +26,16 @@ dispatch:
   task_id: deploy_002
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_002_重构state_codec为TCP_width结构.md
   group: l2-01-types
-  branch: model_deploy
+  branch: model_deploy-l2-01-types
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types
+  acceptance_scenarios: [S1, S2]
+  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_002_验收卡片.md
+  acceptance_mode: direct-local
+  acceptance_secondary_modes: []
+  local_acceptance_required: true
+  acceptance_round_limit: 3
+  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
   wave: 2
   parallel_group: l2-01-types-p2
   depends_on: [deploy_001]
@@ -27,7 +44,7 @@ dispatch:
   blocks: [deploy_004]
   conflict_scope:
     files:
-      - pi05_test/pi05/common/src/pi05/common/data/state_codec.py
+      - src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py
     modules:
       - pi05.common.data.state_codec
     config_keys: []
@@ -138,7 +155,7 @@ dispatch:
 ```bash
 python3 -c "
 import ast
-path = 'pi05_test/pi05/common/src/pi05/common/data/state_codec.py'
+path = 'src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py'
 src = open(path, encoding='utf-8').read()
 tree = ast.parse(src)
 # 检查 decode_picotele_proprioception 已删
@@ -170,9 +187,18 @@ print('deploy_002 验收通过: BimanualState→TCP+width, include_tactile预留
 
 不适用，本 L3 不触发真机动作。
 
+### 验收证据落点
+
+本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
+
+```text
+验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/验收结果.md
+验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/scripts/
+验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs/
+```
 ## 9. 允许修改
 
-- `pi05_test/pi05/common/src/pi05/common/data/state_codec.py`
+- `src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py`
 
 ## 10. 禁止修改
 
@@ -192,15 +218,15 @@ print('deploy_002 验收通过: BimanualState→TCP+width, include_tactile预留
 
 ### 必读代码
 
-1. `pi05_test/pi05/common/src/pi05/common/data/state_codec.py`（本 L3 直接修改）
-2. `pi05_test/pi05/common/src/pi05/common/robot/action_spec.py`（deploy_001 改后，确认新常量 TCP_POSE_DOF/GRIPPER_WIDTH_DOF/STATE_DIM）
+1. `src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py`（本 L3 直接修改）
+2. `src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py`（deploy_001 改后，确认新常量 TCP_POSE_DOF/GRIPPER_WIDTH_DOF/STATE_DIM）
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
-4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
+3. `DOCS/02_约束/Git协作/Git操作规则.md`
+4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -223,10 +249,12 @@ print('deploy_002 验收通过: BimanualState→TCP+width, include_tactile预留
 
 - `task_id` 与正文 L3 编号一致。
 - `task_file` 与当前文件路径一致。
+- `branch` 是当前 L2 分支 `model_deploy-l2-01-types`。
+- `integration_branch` 是 `model_deploy`。
+- `acceptance_dir` 指向 `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types`。
 - `depends_on: [deploy_001]` 已完成（deploy_001 已归档或确认 action_spec 新常量就位）。
 - `dispatch_status` 不是 `blocked` 或 `waiting_user`。
 - `robot_risk` 与验收方式一致（none）。
-
 ```text
 最小复现 / 测试（AST 断言脚本）
 → 最小实现（改 state_codec.py）
@@ -239,10 +267,12 @@ print('deploy_002 验收通过: BimanualState→TCP+width, include_tactile预留
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
+- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] 已读取 AS-IS、TO-BE、Contract Delta 和所属 L2。
 - [ ] 已确认 deploy_001 的新常量（TCP_POSE_DOF/GRIPPER_WIDTH_DOF/STATE_DIM）已就位。
 - [ ] 改动没有破坏必须保留的原始行为（frozen dataclass / 维度校验 / float32 / _vector）。
 - [ ] state 段序为全左→全右（非交替）。
+- [ ] 已将验收结果、脚本或日志登记到所属 L2 的 `05_acceptance` 目录。
 - [ ] 已完成本 L3 的自动化验收（AST 断言通过）。
 - [ ] 已写明回滚方式。
 
@@ -252,7 +282,7 @@ print('deploy_002 验收通过: BimanualState→TCP+width, include_tactile预留
 关闭参数 / 配置：include_tactile 默认 False（第一版不触觉）
 切回旧入口：不适用
 移除 adapter：不适用（直接修改）
-回退文件：git checkout -- pi05_test/pi05/common/src/pi05/common/data/state_codec.py
+回退文件：git checkout -- src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py
 不可自动回滚的人工步骤：无
 ```
 

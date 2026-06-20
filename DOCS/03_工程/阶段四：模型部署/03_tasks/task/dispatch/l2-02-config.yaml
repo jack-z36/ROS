@@ -8,7 +8,15 @@
 ```yaml
 dispatch_index:
   group: l2-02-config
-  branch: model_deploy
+  branch: model_deploy-l2-02-config
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config
+  acceptance_result: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/验收结果.md
+  acceptance_scenarios: [S1, S2, S3]
+  cards_dir: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config
+  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/l2-02-config_整体验收卡片.md
+  l2_acceptance_report: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/L2整体验收报告.md
+  acceptance_round_limit: 3
   source_l2: DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-02-Config层重构.md
   max_parallel_agents: 1
   waves:
@@ -30,12 +38,18 @@ dispatch_index:
   tasks:
     deploy_005:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_005_重构observation_topic字段.md
-      title: 重构 observation topic 字段为鱼眼/TCP/gripper
+      title: 重构 observation topic 字段
+      acceptance_scenarios: [S1, S2]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_005_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs
       depends_on: []
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py
-          - pi05_test/pi05/common/src/pi05/common/ros/topics.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py
+          - src/model_deploy/pi05/common/src/pi05/common/ros/topics.py
         modules:
           - pi05.deploy.config.schema
           - pi05.common.ros.topics
@@ -43,12 +57,18 @@ dispatch_index:
           - topics.observation
     deploy_006:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_006_command重构与删BridgeMux.md
-      title: command topic 重构 + 删除 Bridge/Mux config
+      title: command 重构与删除 BridgeMux 语义
+      acceptance_scenarios: [S1, S3]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_006_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs
       depends_on: [deploy_005]
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py
-          - pi05_test/pi05/common/src/pi05/common/ros/topics.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py
+          - src/model_deploy/pi05/common/src/pi05/common/ros/topics.py
         modules:
           - pi05.deploy.config.schema
           - pi05.common.ros.topics
@@ -60,11 +80,17 @@ dispatch_index:
           - mux
     deploy_007:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_007_Runtime维度与SafetyConfig.md
-      title: RuntimeConfig 默认维度 + SafetyConfig 重构
+      title: Runtime 维度与 SafetyConfig 跟随
+      acceptance_scenarios: [S1, S2, S3]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_007_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs
       depends_on: [deploy_006]
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py
         modules:
           - pi05.deploy.config.schema
         config_keys:
@@ -73,12 +99,18 @@ dispatch_index:
           - safety
     deploy_008:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_008_deploy_yaml与单测.md
-      title: deploy.yaml 更新 + Config 层单测
+      title: deploy.yaml 与配置单测
+      acceptance_scenarios: [S1, S2, S3]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_008_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs
       depends_on: [deploy_005, deploy_006, deploy_007]
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/config/deploy.yaml
-          - pi05_test/pi05/deploy/tests/test_config_tcp_width.py
+          - src/model_deploy/pi05/deploy/config/deploy.yaml
+          - src/model_deploy/pi05/deploy/tests/test_config_tcp_width.py
         modules:
           - tests.config_layer
         config_keys:
@@ -97,21 +129,24 @@ dispatch_index:
 | 3 | deploy_007 | 单独 | RuntimeConfig 维度 + SafetyConfig（同改 schema.py）。 |
 | 4 | deploy_008 | 单独 | deploy.yaml + 单测（验收前三者）。 |
 
-## 为什么串行（max_parallel_agents: 1）
+## 为什么串行
 
-**关键决策**：deploy_005/006/007 都修改 `schema.py`（和 topics.py），`conflict_scope.files` 有交集。按调度元数据规则第 4 条「conflict_scope.files 有交集，不得并行分发」，必须串行。
-
-虽然三者改 schema.py 的不同部分（observation / command+bridge+mux / runtime+safety），理论上可以并行，但单文件并行改容易产生合并冲突和中间状态不一致。串行更安全。
-
-## 冲突检查
-
-- deploy_005/006/007：schema.py 有交集 → 串行。
-- deploy_008：改 deploy.yaml + 新建测试文件，与前三者文件无交集，但 depends_on 三者（需 schema 定型才能写配置和测试）。
+deploy_005/006/007 都修改 `schema.py`（和 topics.py），`conflict_scope.files` 有交集，必须串行。deploy_008 依赖前三者完成后再写配置和测试。
 
 ## 全组完成标志
 
-deploy_008 pytest 通过 = L2-02 Config 层重构完成 = 可开始 L2-03（数据装配 Service 层）。
+deploy_008 pytest 通过，且 `05_acceptance/l2-02-config/验收结果.md` 中 S1/S2/S3 均通过 = L2-02 Config 层重构完成 = 可开始 L2-03（数据装配 Service 层）。
 
 ## 真机风险
 
 全组 robot_risk = none。Config 层不触发真机。真机风险在 L2-05。
+
+## L2 Gate
+
+- L2 分支：`model_deploy-l2-02-config`
+- 集成分支：`model_deploy`
+- 验收结果：`DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/验收结果.md`
+- required L3：deploy_005、deploy_006、deploy_007、deploy_008
+- 最低验证层级：unit / config load
+- 通过条件：required L3 全部完成、Config 运行验收 S1/S2/S3 通过、无真机动作、验收结果文档记录运行命令、测试输入、观察点、通过现象和实际结果。
+- Gate 通过后：允许按阶段四 Git 规则提交并推送 `model_deploy-l2-02-config`，再 `--no-ff` 合入 `model_deploy`。

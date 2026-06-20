@@ -1,4 +1,4 @@
-# L3 微元改造任务：Types 层单测覆盖
+﻿# L3 微元改造任务：Types 层单测覆盖
 
 ## 1. 任务定位
 
@@ -10,6 +10,14 @@ L3 编号：deploy_004
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_004_types层单测.md`
 改造类型：test-coverage
 真机风险等级：none
+L2 Git 分支：model_deploy-l2-01-types
+验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types
+对应 L2 运行验收场景：[S1, S2, S3]
+验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_004_验收卡片.md
+验收模式：direct-local
+辅助验收模式：[]
+本地验收是否必须：true
+验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
 
 ## 2. 调度元数据
 
@@ -18,7 +26,16 @@ dispatch:
   task_id: deploy_004
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_004_types层单测.md
   group: l2-01-types
-  branch: model_deploy
+  branch: model_deploy-l2-01-types
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types
+  acceptance_scenarios: [S1, S2, S3]
+  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_004_验收卡片.md
+  acceptance_mode: direct-local
+  acceptance_secondary_modes: []
+  local_acceptance_required: true
+  acceptance_round_limit: 3
+  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
   wave: 3
   parallel_group: l2-01-types-p3
   depends_on: [deploy_001, deploy_002, deploy_003]
@@ -27,8 +44,8 @@ dispatch:
   blocks: []
   conflict_scope:
     files:
-      - pi05_test/pi05/common/tests/test_action_spec_tcp.py
-      - pi05_test/pi05/common/tests/test_state_codec_tcp.py
+      - src/model_deploy/pi05/common/tests/test_action_spec_tcp.py
+      - src/model_deploy/pi05/common/tests/test_state_codec_tcp.py
     modules:
       - tests.types_layer
     config_keys: []
@@ -70,7 +87,7 @@ dispatch:
 | 被测代码 action_spec | `action_spec.py`（deploy_001 改后） | ACTION_DIM=16, BimanualAction(TCP+width), split_bimanual_action(交替段序) | 缺测试守护 | 否（只测不改） |
 | 被测代码 state_codec | `state_codec.py`（deploy_002 改后） | BimanualState(TCP+width), encode_bimanual_state(全左→全右, include_tactile) | 缺测试守护 | 否 |
 | 被测代码 action_codec | `action_codec.py`（deploy_003 改后） | ensure_action_vector/chunk(跟随16D), split_action | 缺测试守护 | 否 |
-| 现有测试目录 | `pi05_test/pi05/common/tests/`（待确认是否存在） | — | 需新建测试文件 | 是（新建测试） |
+| 现有测试目录 | `src/model_deploy/pi05/common/tests/`（待确认是否存在） | — | 需新建测试文件 | 是（新建测试） |
 
 ### 必须保留的现有行为
 
@@ -133,7 +150,7 @@ dispatch:
 ### 自动化验收命令
 
 ```bash
-cd pi05_test/pi05 && python3 -m pytest pi05/common/tests/test_action_spec_tcp.py pi05/common/tests/test_state_codec_tcp.py -v
+cd src/model_deploy/pi05 && python3 -m pytest tests/deploy/test_action_spec_tcp.py pi05/common/tests/test_state_codec_tcp.py -v
 ```
 
 测试目录路径可能需根据实际项目结构调整（执行时确认 pi05/common/tests/ 是否存在，不存在则创建）。
@@ -152,10 +169,19 @@ cd pi05_test/pi05 && python3 -m pytest pi05/common/tests/test_action_spec_tcp.py
 
 不适用，本 L3 是纯测试，不触发真机动作。
 
+### 验收证据落点
+
+本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
+
+```text
+验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/验收结果.md
+验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/scripts/
+验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs/
+```
 ## 9. 允许修改
 
-- 新建 `pi05_test/pi05/common/tests/test_action_spec_tcp.py`
-- 新建 `pi05_test/pi05/common/tests/test_state_codec_tcp.py`
+- 新建 `src/model_deploy/pi05/common/tests/test_action_spec_tcp.py`
+- 新建 `src/model_deploy/pi05/common/tests/test_state_codec_tcp.py`
 - 如 tests 目录不存在，创建它和 `__init__.py`（如 pytest 需要）。
 
 ## 10. 禁止修改
@@ -174,16 +200,16 @@ cd pi05_test/pi05 && python3 -m pytest pi05/common/tests/test_action_spec_tcp.py
 
 ### 必读代码
 
-1. `pi05_test/pi05/common/src/pi05/common/robot/action_spec.py`（deploy_001 改后）
-2. `pi05_test/pi05/common/src/pi05/common/data/state_codec.py`（deploy_002 改后）
-3. `pi05_test/pi05/common/src/pi05/common/data/action_codec.py`（deploy_003 改后）
+1. `src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py`（deploy_001 改后）
+2. `src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py`（deploy_002 改后）
+3. `src/model_deploy/pi05/common/src/pi05/common/data/action_codec.py`（deploy_003 改后）
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
-4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
+3. `DOCS/02_约束/Git协作/Git操作规则.md`
+4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -219,6 +245,7 @@ cd pi05_test/pi05 && python3 -m pytest pi05/common/tests/test_action_spec_tcp.py
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
+- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] 已读取 Contract Delta 和所属 L2。
 - [ ] 已确认 deploy_001/002/003 的被测代码就位。
 - [ ] 已确认测试 import 路径可行（只 import Types 层）。

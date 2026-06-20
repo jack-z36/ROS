@@ -8,7 +8,15 @@
 ```yaml
 dispatch_index:
   group: l2-04-publish
-  branch: model_deploy
+  branch: model_deploy-l2-04-publish
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish
+  acceptance_result: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/验收结果.md
+  acceptance_scenarios: [S1, S2, S3, S4]
+  cards_dir: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish
+  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish/l2-04-publish_整体验收卡片.md
+  l2_acceptance_report: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/L2整体验收报告.md
+  acceptance_round_limit: 3
   source_l2: DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-04-action处理与发布层.md
   max_parallel_agents: 2
   waves:
@@ -27,11 +35,17 @@ dispatch_index:
   tasks:
     deploy_013:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_013_safety_guard改造.md
-      title: safety_guard 改造为 policy-action 通用检查
+      title: safety_guard 改造
+      acceptance_scenarios: [S1, S2]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish/deploy_013_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: []
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs
       depends_on: [deploy_001, deploy_007]
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/runtime/safety_guard.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/safety_guard.py
         modules:
           - pi05.deploy.runtime.safety_guard
         config_keys:
@@ -39,36 +53,54 @@ dispatch_index:
     deploy_014:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_014_deploy_node发布侧改造.md
       title: deploy_node 发布侧改造
+      acceptance_scenarios: [S2, S3]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish/deploy_014_验收卡片.md
+      acceptance_mode: static-review
+      acceptance_secondary_modes: [downstream-l2]
+      local_acceptance_required: false
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs
       depends_on: [deploy_001, deploy_010]
       must_run_after: [deploy_010]
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
         modules:
           - pi05.deploy.ros_nodes.pi05_vla_deploy_node
         config_keys:
           - topics.command
     deploy_015:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_015_publish_metrics增强.md
-      title: _publish_metrics 字段增强
+      title: publish metrics 增强
+      acceptance_scenarios: [S2, S3, S4]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish/deploy_015_验收卡片.md
+      acceptance_mode: static-review
+      acceptance_secondary_modes: [downstream-l2]
+      local_acceptance_required: false
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs
       depends_on: [deploy_014]
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
-          - pi05_test/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
+          - src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py
         modules:
           - pi05.deploy.ros_nodes.pi05_vla_deploy_node
           - pi05.deploy.runtime.shared_buffer
         config_keys: []
     deploy_016:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_016_单测与shadow_run验证.md
-      title: L2-04 单测与 shadow-run 验证
+      title: 单测与 shadow-run 验证
+      acceptance_scenarios: [S1, S2, S3, S4]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish/deploy_016_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: [env-blocked]
+      local_acceptance_required: true
+      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs
       depends_on: [deploy_013, deploy_014, deploy_015]
       robot_risk: dry-run-only
       conflict_scope:
         files:
-          - pi05_test/pi05/deploy/tests/test_safety_guard_tcp.py
-          - pi05_test/pi05/deploy/tests/test_publish_dry_run.py
+          - src/model_deploy/pi05/deploy/tests/test_safety_guard_tcp.py
+          - src/model_deploy/pi05/deploy/tests/test_publish_dry_run.py
         modules:
           - tests.publish
         config_keys: []
@@ -78,31 +110,32 @@ dispatch_index:
 
 | wave | 任务 | 并行性 | 说明 |
 |---|---|---|---|
-| 1 | deploy_013 ∥ deploy_014 | 可并行 | 改不同文件（safety_guard.py vs deploy_node.py），conflict_scope 无交集。都依赖 L2-01(deploy_001)/L2-02(deploy_007)。deploy_014 额外依赖 deploy_010（同文件订阅侧先完成）。 |
-| 2 | deploy_015 | 单独 | 改 deploy_node.py（metrics 部分）+ shared_buffer.py，与 deploy_014 同 deploy_node.py，必须串行（014 先）。 |
+| 1 | deploy_013 ∥ deploy_014 | 可并行 | 改不同文件。deploy_014 额外依赖 deploy_010。 |
+| 2 | deploy_015 | 单独 | 改 deploy_node.py metrics 部分，与 deploy_014 串行。 |
 | 3 | deploy_016 | 单独 | 单测 + shadow-run 验证，依赖前三者。 |
 
 ## 跨 L2 依赖说明
 
-- `depends_on_external: [deploy_001, deploy_007, deploy_010]`：deploy_001（ACTION_DIM=16/BimanualAction）、deploy_007（SafetyConfig TCP/width）、deploy_010（deploy_node 订阅侧，deploy_014 的同文件前置）。
+`depends_on_external: [deploy_001, deploy_007, deploy_010]`：deploy_001 提供 16D action，deploy_007 提供 SafetyConfig，deploy_010 提供 deploy_node 订阅侧。
 
-## 与 L2-03 的协调（关键）
+## shadow-run 语义说明
 
-deploy_014（本组）改 deploy_node.py 发布侧，deploy_010（L2-03）改 deploy_node.py 订阅侧。同一文件两半：
-- **必须串行**（deploy_010 先归档，deploy_014 后做），或主 Agent 安排同一 Agent 顺序完成两半。
-- deploy_014 的 `must_run_after: [deploy_010]` 明确标注。
+L2-04 完成后，Pi05 节点能在 shadow-run 下发布 `/pi05/policy_action`（16D），但 bridge（L2-05）未启动，所以 policy_action 有输出、无下游消费、不动真机。
 
 ## 全组完成标志
 
-deploy_016 pytest 通过 = L2-04 action 处理与发布层完成 = 可开始 L2-05（硬件执行栈，真机风险最高）。
+deploy_016 dry-run / shadow-run 验证通过，且 `05_acceptance/l2-04-publish/验收结果.md` 中 S1/S2/S3/S4 均通过 = L2-04 action 处理与发布层完成 = 可开始 L2-05。
 
 ## 真机风险
 
 deploy_016 为 dry-run-only/shadow-run 逻辑层（mock + stub，不接真机）。其余 L3 为 none。真机风险在 L2-05。
 
-## shadow-run 语义说明
+## L2 Gate
 
-L2-04 完成后，Pi05 节点能在 shadow-run 下发布 `/pi05/policy_action`（16D），但 bridge（L2-05）未启动，所以：
-- policy_action 有输出（Pi05 侧通了）
-- 无下游消费（不动真机）
-这正是 shadow-run 的语义。L2-05 完成后，bridge 接 policy_action，shadow-run 下 bridge gate 关闭仍不动真机；safe-run 才动真机。
+- L2 分支：`model_deploy-l2-04-publish`
+- 集成分支：`model_deploy`
+- 验收结果：`DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/验收结果.md`
+- required L3：deploy_013、deploy_014、deploy_015、deploy_016
+- 最低验证层级：dry-run + shadow-run
+- 通过条件：required L3 全部完成、Publish 运行验收 S1/S2/S3/S4 通过、`sent_to_driver=false`、验收结果文档记录运行命令、测试输入、观察点、通过现象和实际结果。
+- Gate 通过后：允许按阶段四 Git 规则提交并推送 `model_deploy-l2-04-publish`，再 `--no-ff` 合入 `model_deploy`。

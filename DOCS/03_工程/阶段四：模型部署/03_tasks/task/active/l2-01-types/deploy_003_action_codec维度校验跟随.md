@@ -1,4 +1,4 @@
-# L3 微元改造任务：action_codec 维度校验跟随
+﻿# L3 微元改造任务：action_codec 维度校验跟随
 
 ## 1. 任务定位
 
@@ -10,6 +10,14 @@ L3 编号：deploy_003
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_003_action_codec维度校验跟随.md`
 改造类型：behavior-change
 真机风险等级：none
+L2 Git 分支：model_deploy-l2-01-types
+验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types
+对应 L2 运行验收场景：[S3]
+验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_003_验收卡片.md
+验收模式：direct-local
+辅助验收模式：[]
+本地验收是否必须：true
+验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
 
 ## 2. 调度元数据
 
@@ -18,7 +26,16 @@ dispatch:
   task_id: deploy_003
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_003_action_codec维度校验跟随.md
   group: l2-01-types
-  branch: model_deploy
+  branch: model_deploy-l2-01-types
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types
+  acceptance_scenarios: [S3]
+  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_003_验收卡片.md
+  acceptance_mode: direct-local
+  acceptance_secondary_modes: []
+  local_acceptance_required: true
+  acceptance_round_limit: 3
+  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs
   wave: 2
   parallel_group: l2-01-types-p2
   depends_on: [deploy_001]
@@ -27,7 +44,7 @@ dispatch:
   blocks: [deploy_004]
   conflict_scope:
     files:
-      - pi05_test/pi05/common/src/pi05/common/data/action_codec.py
+      - src/model_deploy/pi05/common/src/pi05/common/data/action_codec.py
     modules:
       - pi05.common.data.action_codec
     config_keys: []
@@ -124,7 +141,7 @@ dispatch:
 ```bash
 python3 -c "
 import ast
-path = 'pi05_test/pi05/common/src/pi05/common/data/action_codec.py'
+path = 'src/model_deploy/pi05/common/src/pi05/common/data/action_codec.py'
 src = open(path, encoding='utf-8').read()
 ast.parse(src)  # 语法正确
 # 确认无硬编码 14（在逻辑中）
@@ -152,9 +169,18 @@ print('deploy_003 验收通过: 无硬编码14, ACTION_DIM引用保留')
 
 不适用，本 L3 不触发真机动作。
 
+### 验收证据落点
+
+本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
+
+```text
+验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/验收结果.md
+验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/scripts/
+验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types/logs/
+```
 ## 9. 允许修改
 
-- `pi05_test/pi05/common/src/pi05/common/data/action_codec.py`（仅 docstring，逻辑确认）
+- `src/model_deploy/pi05/common/src/pi05/common/data/action_codec.py`（仅 docstring，逻辑确认）
 
 ## 10. 禁止修改
 
@@ -170,15 +196,15 @@ print('deploy_003 验收通过: 无硬编码14, ACTION_DIM引用保留')
 
 ### 必读代码
 
-1. `pi05_test/pi05/common/src/pi05/common/data/action_codec.py`（本 L3 审查对象）
-2. `pi05_test/pi05/common/src/pi05/common/robot/action_spec.py`（deploy_001 改后，确认 ACTION_DIM=16）
+1. `src/model_deploy/pi05/common/src/pi05/common/data/action_codec.py`（本 L3 审查对象）
+2. `src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py`（deploy_001 改后，确认 ACTION_DIM=16）
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
-4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
+3. `DOCS/02_约束/Git协作/Git操作规则.md`
+4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -216,10 +242,12 @@ print('deploy_003 验收通过: 无硬编码14, ACTION_DIM引用保留')
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
+- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] 已读取 Contract Delta 和所属 L2。
 - [ ] 已确认 deploy_001 的 ACTION_DIM=16 就位。
 - [ ] 已审查 action_codec 全文无硬编码 14（逻辑层）。
 - [ ] docstring 已更新为 16-D 表述。
+- [ ] 已将验收结果、脚本或日志登记到所属 L2 的 `05_acceptance` 目录。
 - [ ] 已完成本 L3 的自动化验收。
 - [ ] 已写明回滚方式。
 
@@ -229,7 +257,7 @@ print('deploy_003 验收通过: 无硬编码14, ACTION_DIM引用保留')
 关闭参数 / 配置：不适用
 切回旧入口：不适用
 移除 adapter：不适用
-回退文件：git checkout -- pi05_test/pi05/common/src/pi05/common/data/action_codec.py
+回退文件：git checkout -- src/model_deploy/pi05/common/src/pi05/common/data/action_codec.py
 不可自动回滚的人工步骤：无
 ```
 
