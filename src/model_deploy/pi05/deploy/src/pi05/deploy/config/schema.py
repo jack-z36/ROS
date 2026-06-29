@@ -12,7 +12,7 @@ from typing import Any, Mapping
 
 import yaml
 
-from pi05.common.ros.topics import Pi05CommandTopics, Pi05ObservationTopics
+from pi05.common.ros.topics import DEFAULT_NAMESPACE, Pi05CommandTopics, Pi05ObservationTopics
 
 
 class DeployConfigError(ValueError):
@@ -45,8 +45,8 @@ class RuntimeConfig:
     execute_horizon: int = 10
     prefetch_steps: int = 5
     blend_steps: int = 3
-    action_dim: int = 14
-    state_dim: int = 26
+    action_dim: int = 16
+    state_dim: int = 16
     max_action_age_sec: float = 0.45
     max_inference_requests: int = 1
     max_pending_chunks: int = 1
@@ -93,74 +93,39 @@ class RuntimeConfig:
 
 @dataclass(frozen=True)
 class ObservationTopicsConfig:
-    """ROS input topics consumed by the observation collector."""
+    """ROS input topics consumed by the observation collector.
 
-    top_image: str
-    left_wrist_image: str
-    right_wrist_image: str
-    top_image_raw: str
-    left_wrist_image_raw: str
-    right_wrist_image_raw: str
-    proprioception: str
-    left_hand_state: str
-    right_hand_state: str
-    left_ee_position: str
-    left_ee_rpy: str
-    right_ee_position: str
-    right_ee_rpy: str
-    proprioception_order: str = "right_left"
-    left_tactile_image: str | None = None
-    right_tactile_image: str | None = None
-    left_tactile_image_raw: str | None = None
-    right_tactile_image_raw: str | None = None
+    TO-BE fields: fisheye stereo cameras, left/right TCP pose,
+    left/right gripper state, and tactile reserved (optional).
+    """
+
+    left_fisheye_image: str
+    right_fisheye_image: str
+    left_fisheye_image_raw: str
+    right_fisheye_image_raw: str
+    left_tcp_pose: str
+    right_tcp_pose: str
+    left_gripper_state: str
+    right_gripper_state: str
+    tactile_l1: str | None = None
+    tactile_l2: str | None = None
+    tactile_r1: str | None = None
+    tactile_r2: str | None = None
 
 
 @dataclass(frozen=True)
 class CommandTopicsConfig:
-    """ROS command and telemetry topics produced by deployment."""
+    """ROS command and telemetry topics produced by deployment.
 
-    left_arm_joint_target: str
-    right_arm_joint_target: str
-    left_hand_target: str
-    right_hand_target: str
+    TO-BE: single policy_action topic instead of four joint/hand targets.
+    """
+
+    policy_action: str
     status: str
     metrics: str
 
 
-@dataclass(frozen=True)
-class BridgeTopicsConfig:
-    """Optional adapter topics for an existing execution stack."""
 
-    left_arm_joint_target: str = "/vla/left_arm/safe_joint_target"
-    right_arm_joint_target: str = "/vla/right_arm/safe_joint_target"
-    left_hand_trigger: str = "/vla/left_hand/trigger"
-    right_hand_trigger: str = "/vla/right_hand/trigger"
-    left_deadman: str = "/vla/left_arm/deadman"
-    right_deadman: str = "/vla/right_arm/deadman"
-
-
-@dataclass(frozen=True)
-class MuxTopicsConfig:
-    """Topic set used by the teleop/VLA command multiplexer."""
-
-    teleop_left_arm_joint_target: str = "/teleop/left_arm/safe_joint_target"
-    teleop_right_arm_joint_target: str = "/teleop/right_arm/safe_joint_target"
-    teleop_left_hand_trigger: str = "/xr/pico/left/trigger"
-    teleop_right_hand_trigger: str = "/xr/pico/right/trigger"
-    teleop_left_deadman: str = "/xr/pico/left/grip"
-    teleop_right_deadman: str = "/xr/pico/right/grip"
-    vla_left_arm_joint_target: str = "/vla/left_arm/safe_joint_target"
-    vla_right_arm_joint_target: str = "/vla/right_arm/safe_joint_target"
-    vla_left_hand_trigger: str = "/vla/left_hand/trigger"
-    vla_right_hand_trigger: str = "/vla/right_hand/trigger"
-    output_left_arm_joint_target: str = "/mux/left_arm/safe_joint_target"
-    output_right_arm_joint_target: str = "/mux/right_arm/safe_joint_target"
-    output_left_hand_trigger: str = "/mux/left_hand/trigger"
-    output_right_hand_trigger: str = "/mux/right_hand/trigger"
-    output_left_deadman: str = "/mux/left_arm/deadman"
-    output_right_deadman: str = "/mux/right_arm/deadman"
-    vla_enable: str = "/mux/enable_vla"
-    status: str = "/mux/status"
 
 
 @dataclass(frozen=True)
@@ -170,8 +135,6 @@ class TopicsConfig:
     namespace: str
     observation: ObservationTopicsConfig
     command: CommandTopicsConfig
-    bridge_output: BridgeTopicsConfig
-    mux: MuxTopicsConfig
 
 
 @dataclass(frozen=True)
@@ -187,44 +150,20 @@ class JointLimitsConfig:
 
 @dataclass(frozen=True)
 class SafetyConfig:
-    """Runtime safety checks applied after policy inference."""
+    """Runtime safety checks applied after policy inference.
+    
+    TO-BE: TCP/width checks instead of joint-space checks.
+    JointLimitsConfig is preserved as bridge parameter source.
+    """
 
-    max_joint_delta_rad: float = 0.08
+    max_tcp_delta_m: float = 0.05
     stale_observation_timeout_s: float = 0.5
     command_timeout_s: float = 0.45
     clamp_normalized_action: bool = True
     hold_last_action: bool = True
-    hand_min: float = 300.0
-    hand_max: float = 1000.0
+    gripper_width_min: float = 0.0
+    gripper_width_max: float = 1.0
     joint_limits: JointLimitsConfig = field(default_factory=JointLimitsConfig)
-
-
-@dataclass(frozen=True)
-class BridgeConfig:
-    """Whether and how the bridge forwards Pi0.5 command topics."""
-
-    enabled: bool = False
-    publish_to_picotele: bool = False
-    forward_commands: bool = False
-    speed_scale: float = 0.25
-    publish_deadman: bool = False
-
-    @property
-    def forwards_commands(self) -> bool:
-        return self.enabled and (self.forward_commands or self.publish_to_picotele)
-
-
-@dataclass(frozen=True)
-class MuxConfig:
-    """Runtime behavior for the teleop/VLA command multiplexer."""
-
-    enabled: bool = False
-    default_mode: str = "teleop"
-    publish_hz: float = 60.0
-    vla_command_timeout_s: float = 0.45
-    manual_takeover_deadman_threshold: float = 0.3
-    vla_deadman_value: float = 1.0
-    status_publish_hz: float = 2.0
 
 
 @dataclass(frozen=True)
@@ -245,8 +184,6 @@ class DeployConfig:
     image: ImageConfig
     topics: TopicsConfig
     safety: SafetyConfig
-    bridge: BridgeConfig
-    mux: MuxConfig
     raw: Mapping[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
@@ -266,7 +203,7 @@ def load_deploy_config(path: str | Path) -> DeployConfig:
 
 def _deploy_from_mapping(cls: type[DeployConfig], raw: Mapping[str, Any], *, base_dir: Path) -> DeployConfig:
     root = _mapping(raw, "<root>")
-    namespace = _str(_mapping(root.get("topics", {}), "topics"), "namespace", default="/pi05_vla")
+    namespace = _str(_mapping(root.get("topics", {}), "topics"), "namespace", default=DEFAULT_NAMESPACE)
     default_obs = Pi05ObservationTopics.with_namespace(namespace)
     default_cmd = Pi05CommandTopics.with_namespace(namespace)
 
@@ -275,8 +212,6 @@ def _deploy_from_mapping(cls: type[DeployConfig], raw: Mapping[str, Any], *, bas
     image_raw = _mapping(root.get("image", {}), "image")
     topics_raw = _mapping(root.get("topics", {}), "topics")
     safety_raw = _mapping(root.get("safety", {}), "safety")
-    bridge_raw = _mapping(root.get("bridge", {}), "bridge")
-    mux_raw = _mapping(root.get("mux", {}), "mux")
 
     return cls(
         bundle=BundleConfig(bundle_dir=_path(bundle_raw, "bundle_dir", base_dir=base_dir)),
@@ -292,8 +227,8 @@ def _deploy_from_mapping(cls: type[DeployConfig], raw: Mapping[str, Any], *, bas
             execute_horizon=_positive_int(runtime_raw, "execute_horizon", default=10),
             prefetch_steps=_non_negative_int(runtime_raw, "prefetch_steps", default=5),
             blend_steps=_non_negative_int(runtime_raw, "blend_steps", default=_int_value(runtime_raw, "chunk_blend_steps", default=3)),
-            action_dim=_positive_int(runtime_raw, "action_dim", default=14),
-            state_dim=_positive_int(runtime_raw, "state_dim", default=26),
+            action_dim=_positive_int(runtime_raw, "action_dim", default=16),
+            state_dim=_positive_int(runtime_raw, "state_dim", default=16),
             max_action_age_sec=_positive_float(runtime_raw, "max_action_age_sec", default=0.45),
             max_inference_requests=_positive_int(runtime_raw, "max_inference_requests", default=1),
             max_pending_chunks=_positive_int(runtime_raw, "max_pending_chunks", default=1),
@@ -319,127 +254,55 @@ def _deploy_from_mapping(cls: type[DeployConfig], raw: Mapping[str, Any], *, bas
             namespace=namespace,
             observation=_observation_topics(topics_raw, default_obs),
             command=_command_topics(topics_raw, default_cmd),
-            bridge_output=_bridge_topics(topics_raw),
-            mux=_mux_topics(topics_raw),
         ),
         safety=_safety_config(safety_raw, runtime_raw=runtime_raw),
-        bridge=BridgeConfig(
-            enabled=_bool(bridge_raw, "enabled", default=False),
-            publish_to_picotele=_bool(bridge_raw, "publish_to_picotele", default=False),
-            forward_commands=_bool(
-                bridge_raw,
-                "forward_commands",
-                default=_bool(bridge_raw, "publish_to_picotele", default=False),
-            ),
-            speed_scale=_float(bridge_raw, "speed_scale", default=0.25),
-            publish_deadman=_bool(bridge_raw, "publish_deadman", default=False),
-        ),
-        mux=_mux_config(mux_raw),
         raw=dict(root),
     )
 
 def _observation_topics(topics_raw: Mapping[str, Any], defaults: Pi05ObservationTopics) -> ObservationTopicsConfig:
     raw = _mapping(topics_raw.get("observation", {}), "topics.observation")
     return ObservationTopicsConfig(
-        top_image=_str(raw, "top_image", default=defaults.top_image),
-        left_wrist_image=_str(raw, "left_wrist_image", default=defaults.left_wrist_image),
-        right_wrist_image=_str(raw, "right_wrist_image", default=defaults.right_wrist_image),
-        top_image_raw=_str(raw, "top_image_raw", default=defaults.top_image.removesuffix("/compressed")),
-        left_wrist_image_raw=_str(raw, "left_wrist_image_raw", default=defaults.left_wrist_image.removesuffix("/compressed")),
-        right_wrist_image_raw=_str(raw, "right_wrist_image_raw", default=defaults.right_wrist_image.removesuffix("/compressed")),
-        left_tactile_image=_optional_str(raw, "left_tactile_image"),
-        right_tactile_image=_optional_str(raw, "right_tactile_image"),
-        left_tactile_image_raw=_optional_str(raw, "left_tactile_image_raw"),
-        right_tactile_image_raw=_optional_str(raw, "right_tactile_image_raw"),
-        proprioception=_str(raw, "proprioception", default=defaults.proprioception),
-        left_hand_state=_str(raw, "left_hand_state", default=defaults.left_hand_state),
-        right_hand_state=_str(raw, "right_hand_state", default=defaults.right_hand_state),
-        left_ee_position=_str(raw, "left_ee_position", default=defaults.left_ee_position),
-        left_ee_rpy=_str(raw, "left_ee_rpy", default=defaults.left_ee_rpy),
-        right_ee_position=_str(raw, "right_ee_position", default=defaults.right_ee_position),
-        right_ee_rpy=_str(raw, "right_ee_rpy", default=defaults.right_ee_rpy),
-        proprioception_order=_choice(raw, "proprioception_order", {"right_left", "left_right"}, default="right_left"),
+        left_fisheye_image=_str(raw, "left_fisheye_image", default=defaults.left_fisheye_image),
+        right_fisheye_image=_str(raw, "right_fisheye_image", default=defaults.right_fisheye_image),
+        left_fisheye_image_raw=_str(raw, "left_fisheye_image_raw", default=defaults.left_fisheye_image.removesuffix("/compressed")),
+        right_fisheye_image_raw=_str(raw, "right_fisheye_image_raw", default=defaults.right_fisheye_image.removesuffix("/compressed")),
+        left_tcp_pose=_str(raw, "left_tcp_pose", default=defaults.left_tcp_pose),
+        right_tcp_pose=_str(raw, "right_tcp_pose", default=defaults.right_tcp_pose),
+        left_gripper_state=_str(raw, "left_gripper_state", default=defaults.left_gripper_state),
+        right_gripper_state=_str(raw, "right_gripper_state", default=defaults.right_gripper_state),
+        tactile_l1=_optional_str(raw, "tactile_l1"),
+        tactile_l2=_optional_str(raw, "tactile_l2"),
+        tactile_r1=_optional_str(raw, "tactile_r1"),
+        tactile_r2=_optional_str(raw, "tactile_r2"),
     )
 
 
 def _command_topics(topics_raw: Mapping[str, Any], defaults: Pi05CommandTopics) -> CommandTopicsConfig:
     raw = _mapping(topics_raw.get("command", {}), "topics.command")
     return CommandTopicsConfig(
-        left_arm_joint_target=_str(raw, "left_arm_joint_target", default=defaults.left_arm_joint_target),
-        right_arm_joint_target=_str(raw, "right_arm_joint_target", default=defaults.right_arm_joint_target),
-        left_hand_target=_str(raw, "left_hand_target", default=defaults.left_hand_target),
-        right_hand_target=_str(raw, "right_hand_target", default=defaults.right_hand_target),
+        policy_action=_str(raw, "policy_action", default=defaults.policy_action),
         status=_str(raw, "status", default=defaults.status),
         metrics=_str(raw, "metrics", default=defaults.metrics),
     )
 
 
-def _bridge_topics(topics_raw: Mapping[str, Any]) -> BridgeTopicsConfig:
-    raw = _mapping(topics_raw.get("bridge_output", {}), "topics.bridge_output")
-    return BridgeTopicsConfig(
-        left_arm_joint_target=_str(raw, "left_arm_joint_target", default="/vla/left_arm/safe_joint_target"),
-        right_arm_joint_target=_str(raw, "right_arm_joint_target", default="/vla/right_arm/safe_joint_target"),
-        left_hand_trigger=_str(raw, "left_hand_trigger", default="/vla/left_hand/trigger"),
-        right_hand_trigger=_str(raw, "right_hand_trigger", default="/vla/right_hand/trigger"),
-        left_deadman=_str(raw, "left_deadman", default="/vla/left_arm/deadman"),
-        right_deadman=_str(raw, "right_deadman", default="/vla/right_arm/deadman"),
-    )
 
-
-def _mux_topics(topics_raw: Mapping[str, Any]) -> MuxTopicsConfig:
-    raw = _mapping(topics_raw.get("mux", {}), "topics.mux")
-    return MuxTopicsConfig(
-        teleop_left_arm_joint_target=_str(
-            raw,
-            "teleop_left_arm_joint_target",
-            default="/teleop/left_arm/safe_joint_target",
-        ),
-        teleop_right_arm_joint_target=_str(
-            raw,
-            "teleop_right_arm_joint_target",
-            default="/teleop/right_arm/safe_joint_target",
-        ),
-        teleop_left_hand_trigger=_str(raw, "teleop_left_hand_trigger", default="/xr/pico/left/trigger"),
-        teleop_right_hand_trigger=_str(raw, "teleop_right_hand_trigger", default="/xr/pico/right/trigger"),
-        teleop_left_deadman=_str(raw, "teleop_left_deadman", default="/xr/pico/left/grip"),
-        teleop_right_deadman=_str(raw, "teleop_right_deadman", default="/xr/pico/right/grip"),
-        vla_left_arm_joint_target=_str(raw, "vla_left_arm_joint_target", default="/vla/left_arm/safe_joint_target"),
-        vla_right_arm_joint_target=_str(raw, "vla_right_arm_joint_target", default="/vla/right_arm/safe_joint_target"),
-        vla_left_hand_trigger=_str(raw, "vla_left_hand_trigger", default="/vla/left_hand/trigger"),
-        vla_right_hand_trigger=_str(raw, "vla_right_hand_trigger", default="/vla/right_hand/trigger"),
-        output_left_arm_joint_target=_str(
-            raw,
-            "output_left_arm_joint_target",
-            default="/mux/left_arm/safe_joint_target",
-        ),
-        output_right_arm_joint_target=_str(
-            raw,
-            "output_right_arm_joint_target",
-            default="/mux/right_arm/safe_joint_target",
-        ),
-        output_left_hand_trigger=_str(raw, "output_left_hand_trigger", default="/mux/left_hand/trigger"),
-        output_right_hand_trigger=_str(raw, "output_right_hand_trigger", default="/mux/right_hand/trigger"),
-        output_left_deadman=_str(raw, "output_left_deadman", default="/mux/left_arm/deadman"),
-        output_right_deadman=_str(raw, "output_right_deadman", default="/mux/right_arm/deadman"),
-        vla_enable=_str(raw, "vla_enable", default="/mux/enable_vla"),
-        status=_str(raw, "status", default="/mux/status"),
-    )
 
 
 def _safety_config(raw: Mapping[str, Any], *, runtime_raw: Mapping[str, Any]) -> SafetyConfig:
     limits_raw = _mapping(raw.get("joint_limits", {}), "safety.joint_limits")
     return SafetyConfig(
-        max_joint_delta_rad=_float(
+        max_tcp_delta_m=_float(
             raw,
-            "max_joint_delta_rad",
+            "max_tcp_delta_m",
             default=_float(runtime_raw, "max_delta_per_step", default=0.03),
         ),
         stale_observation_timeout_s=_positive_float(raw, "stale_observation_timeout_s", default=0.5),
         command_timeout_s=_positive_float(raw, "command_timeout_s", default=0.45),
         clamp_normalized_action=_bool(raw, "clamp_normalized_action", default=True),
         hold_last_action=_bool(raw, "hold_last_action", default=True),
-        hand_min=_float(raw, "hand_min", default=300.0),
-        hand_max=_float(raw, "hand_max", default=1000.0),
+        gripper_width_min=_float(raw, "gripper_width_min", default=0.0),
+        gripper_width_max=_float(raw, "gripper_width_max", default=1.0),
         joint_limits=JointLimitsConfig(
             enabled=_bool(limits_raw, "enabled", default=False),
             left_min_rad=tuple(_float_list(limits_raw, "left_min_rad", default=[])),
@@ -447,18 +310,6 @@ def _safety_config(raw: Mapping[str, Any], *, runtime_raw: Mapping[str, Any]) ->
             right_min_rad=tuple(_float_list(limits_raw, "right_min_rad", default=[])),
             right_max_rad=tuple(_float_list(limits_raw, "right_max_rad", default=[])),
         ),
-    )
-
-
-def _mux_config(raw: Mapping[str, Any]) -> MuxConfig:
-    return MuxConfig(
-        enabled=_bool(raw, "enabled", default=False),
-        default_mode=_choice(raw, "default_mode", {"teleop", "vla"}, default="teleop"),
-        publish_hz=_positive_float(raw, "publish_hz", default=60.0),
-        vla_command_timeout_s=_positive_float(raw, "vla_command_timeout_s", default=0.45),
-        manual_takeover_deadman_threshold=_float(raw, "manual_takeover_deadman_threshold", default=0.3),
-        vla_deadman_value=_float(raw, "vla_deadman_value", default=1.0),
-        status_publish_hz=_positive_float(raw, "status_publish_hz", default=2.0),
     )
 
 

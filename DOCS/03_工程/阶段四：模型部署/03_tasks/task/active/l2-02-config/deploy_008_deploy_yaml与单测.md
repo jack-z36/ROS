@@ -225,12 +225,12 @@ cd src/model_deploy/pi05 && python3 -m pytest tests/deploy/test_config_tcp_width
 
 ## 13. 成功标准
 
-- [ ] 已完成任务文件身份校验。
-- [ ] 已确认当前分支符合所属 L2 分支规范。
-- [ ] deploy.yaml 字段更新为新 schema。
-- [ ] 触觉字段在 deploy.yaml 中为可选（注释/省略）。
-- [ ] pytest 全部通过。
-- [ ] 已写明回滚方式。
+- [x] 已完成任务文件身份校验。
+- [x] 已确认当前分支符合所属 L2 分支规范。
+- [x] deploy.yaml 字段更新为新 schema。
+- [x] 触觉字段在 deploy.yaml 中为可选（注释/省略）。
+- [x] pytest 全部通过。
+- [x] 已写明回滚方式。
 
 ## 14. 回滚方式
 
@@ -242,3 +242,88 @@ cd src/model_deploy/pi05 && python3 -m pytest tests/deploy/test_config_tcp_width
 ## 15. 完成后交接
 
 交接摘要必须包含：读取文档、身份校验、更新 deploy.yaml 字段、新建测试 case 数、pytest 结果、成功标准勾选、真机影响（无）、回滚、未做事项（没改 schema/上层）、后续建议（L2-02 完成，可开始 L2-03）。
+
+## 16. 执行摘要
+
+**执行日期**：2026-06-20
+
+**执行 Agent**：Sisyphus-Junior (OpenCode)
+
+**分支**：model_deploy-l2-02-config ✅
+
+**依赖检查**：
+- deploy_005：PASS_LOCAL ✅
+- deploy_006：PASS_LOCAL ✅
+- deploy_007：PASS_LOCAL ✅
+
+**读取文档**：
+- AGENTS.md ✅
+- skills/stage4-l3-orchestrator/SKILL.md ✅
+- L3 任务文件本身 ✅
+- TO-BE Contract.md（topic 表）✅
+- L2-02-Config层重构.md ✅
+- schema.py（deploy_005/006/007 改后）✅
+- deploy.yaml（原 AS-IS）✅
+
+**身份校验**：
+- 文件名 `deploy_008_deploy_yaml与单测.md` → L3 ID deploy_008 ✅
+- 文件路径含 `l2-02-config` → group l2-02-config ✅
+- 主体 L3 ID deploy_008 ✅
+- Dispatch YAML task_id: deploy_008 ✅
+- Branch: model_deploy-l2-02-config ✅
+
+**deploy.yaml 更新内容**：
+1. `topics.namespace`: `/pi05_vla` → `/pi05`
+2. `topics.observation`: 删除 realsense/proprioception/hand_state/ee_position/rpy；新增 fisheye/tcp_pose/gripper_state（触觉注释为可选）
+3. `topics.command`: 四路 joint_target → 单路 `policy_action`
+4. 删除 `topics.bridge_output` / `topics.mux` 段
+5. 删除 `bridge` / `mux` 顶层段
+6. `runtime.action_dim`: 14→16，`runtime.state_dim`: 26→16
+7. `safety`: max_joint_delta_rad → max_tcp_delta_m；hand_min/max → gripper_width_min/max
+
+**新建测试文件**：`src/model_deploy/pi05/tests/deploy/test_config_tcp_width.py`（含 `tests/deploy/conftest.py`）
+- `test_load_new_config`：加载新 deploy.yaml，断言 observation/command 字段正确 ✅
+- `test_dims_default_16`：RuntimeConfig action_dim/state_dim == 16 ✅
+- `test_safety_tcp_width`：SafetyConfig max_tcp_delta_m/gripper_width_min/max 存在，hand_min/max 不存在 ✅
+- `test_no_bridge_mux`：DeployConfig 无 bridge/mux 属性 ✅
+- `test_tactile_optional`：deploy.yaml 不配触觉时，加载成功，tactile 字段为 None ✅
+- `test_old_config_rejected`：旧字段在新 schema 下被忽略，TO-BE 默认值生效 ✅
+
+**pytest 结果**：6 passed in 0.04s ✅
+
+**真机影响**：无（none 风险等级）
+
+**回滚方式**：已写明（git checkout deploy.yaml；删除测试文件）
+
+**未做事项**：
+- 未修改 schema.py/topics.py（禁止修改）
+- 未修改 deploy 包非 config 代码
+- 未修改上层 deploy_node（L2-03/04 做）
+- 未编辑 dispatch 索引
+- 未执行 Git commit/push
+
+**后续建议**：
+- L2-02 Config 层重构所有 L3（deploy_005~008）已完成
+- L2-02 可作为整体验收
+- 可开始 L2-03（数据装配 / Repo/Service 层）
+
+---
+
+### Round 2 Fix（2026-06-20）
+
+**问题**：Acceptance round 1 FAIL_LOCAL — 测试文件路径与验收命令不匹配。
+- 验收命令期望：`tests/deploy/test_config_tcp_width.py`
+- 实际位置：`deploy/tests/test_config_tcp_width.py`
+
+**修复**：
+1. 将测试文件从 `deploy/tests/test_config_tcp_width.py` 迁移到 `tests/deploy/test_config_tcp_width.py`
+2. 将 conftest.py 从 `deploy/tests/conftest.py` 迁移到 `tests/deploy/conftest.py`
+3. 删除 `deploy/tests/` 目录
+
+**验收命令验证**：
+```bash
+cd src/model_deploy/pi05 && python3 -m pytest tests/deploy/test_config_tcp_width.py -v
+# → 6 passed in 0.04s ✅
+```
+
+**deploy.yaml、测试逻辑、禁止修改项检查**：全部 unchanged from round 1 (previously verified as correct).

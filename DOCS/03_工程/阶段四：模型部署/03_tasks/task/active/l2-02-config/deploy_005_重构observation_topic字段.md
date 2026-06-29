@@ -247,14 +247,14 @@ print('deploy_005 验收通过: observation 字段重构为鱼眼/TCP/gripper/�
 
 ## 13. 成功标准
 
-- [ ] 已完成任务文件身份校验。
-- [ ] 已确认当前分支符合所属 L2 分支规范。
-- [ ] 已读取 TO-BE Contract topic 表和所属 L2。
-- [ ] ObservationTopicsConfig 字段重构为鱼眼/TCP/gripper/触觉预留。
-- [ ] Pi05ObservationTopics 默认值同步更新。
-- [ ] 触觉字段为可选（None 默认）。
-- [ ] 已完成自动化验收（AST 断言）。
-- [ ] 已写明回滚方式。
+- [x] 已完成任务文件身份校验。
+- [x] 已确认当前分支符合所属 L2 分支规范。
+- [x] 已读取 TO-BE Contract topic 表和所属 L2。
+- [x] ObservationTopicsConfig 字段重构为鱼眼/TCP/gripper/触觉预留。
+- [x] Pi05ObservationTopics 默认值同步更新。
+- [x] 触觉字段为可选（None 默认）。
+- [x] 已完成自动化验收（AST 断言）。
+- [x] 已写明回滚方式。
 
 ## 14. 回滚方式
 
@@ -267,3 +267,93 @@ print('deploy_005 验收通过: observation 字段重构为鱼眼/TCP/gripper/�
 ## 15. 完成后交接
 
 交接摘要必须包含：读取文档、身份校验、修改文件、新增字段、验收命令与结果、成功标准勾选、真机影响（无）、回滚方式、未做事项（没改 command/runtime/safety/deploy_node）、后续建议（deploy_006）。
+
+---
+
+## 16. 执行摘要 (deploy_005)
+
+### 读取文档
+- AGENTS.md 全局路由入口
+- DOCS/02_约束/上下文加载/04_L3微元任务执行加载规则.md
+- skills/stage4-l3-orchestrator/SKILL.md
+- DOCS/03_工程/阶段四：模型部署/01_contracts/TO-BE Contract.md（topic 总表 observation 部分）
+- DOCS/03_工程/阶段四：模型部署/01_contracts/Contract Delta.md（D3/D7/D8）
+- DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-02-Config层重构.md
+- `src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py`
+- `src/model_deploy/pi05/common/src/pi05/common/ros/topics.py`
+- DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_005_验收卡片.md（存在确认）
+
+### 身份校验
+- 用户指定路径: `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_005_重构observation_topic字段.md`
+- 实际读取路径: 一致
+- 文件名编号: `deploy_005`
+- 正文 L3 编号: `deploy_005`
+- 一致性: ✅ 一致
+- 当前分支: `model_deploy-l2-02-config` ✅
+- Dispatch 校验: `depends_on: []` ✅, `dispatch_status: ready` ✅, `robot_risk: none` ✅
+- 验收模式: `direct-local` ✅
+- 本地验收必须: `true` ✅
+
+### 修改文件
+
+1. **`src/model_deploy/pi05/common/src/pi05/common/ros/topics.py`**
+   - `DEFAULT_NAMESPACE`: `/pi05_vla` → `/pi05`
+   - `Pi05ObservationTopics`: 旧字段（top_image/left_wrist_image/right_wrist_image/proprioception/left_hand_state/right_hand_state/lee_ee_position/left_ee_rpy/right_ee_position/right_ee_rpy）→ 新字段（left_fisheye_image/right_fisheye_image/left_tcp_pose/right_tcp_pose/left_gripper_state/right_gripper_state）
+   - `with_namespace()`: 生成路径对齐 TO-BE topic 表
+
+2. **`src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py`**
+   - `ObservationTopicsConfig` 类: 旧 18 字段 → 新 12 字段（8 必需 str + 4 可选 tactile `str | None = None`）
+   - `_observation_topics()`: 字段映射重写为新结构
+   - `_deploy_from_mapping()` namespace 默认值: 硬编码 `/pi05_vla` → `DEFAULT_NAMESPACE` 常量引用
+
+### 新增字段
+
+| config 字段 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `left_fisheye_image` | `str` | `/pi05/observation/image/left_gripper_fisheye` | 左夹爪鱼眼图像 |
+| `right_fisheye_image` | `str` | `/pi05/observation/image/right_gripper_fisheye` | 右夹爪鱼眼图像 |
+| `left_fisheye_image_raw` | `str` | 同上（removesuffix /compressed） | left_fisheye_image raw 变体 |
+| `right_fisheye_image_raw` | `str` | 同上 | right_fisheye_image raw 变体 |
+| `left_tcp_pose` | `str` | `/pi05/observation/arm/left_tcp_pose` | 左臂 TCP pose |
+| `right_tcp_pose` | `str` | `/pi05/observation/arm/right_tcp_pose` | 右臂 TCP pose |
+| `left_gripper_state` | `str` | `/pi05/observation/gripper/left_state` | 左夹爪开合状态 |
+| `right_gripper_state` | `str` | `/pi05/observation/gripper/right_state` | 右夹爪开合状态 |
+| `tactile_l1` | `str \| None` | `None` | 触觉预留 l1 |
+| `tactile_l2` | `str \| None` | `None` | 触觉预留 l2 |
+| `tactile_r1` | `str \| None` | `None` | 触觉预留 r1 |
+| `tactile_r2` | `str \| None` | `None` | 触觉预留 r2 |
+
+### 验收命令与结果
+
+**命令**: AST 字段断言（L3 §8 自动化验收命令）
+**结果**: `deploy_005 验收通过: observation 字段重构为鱼眼/TCP/gripper/触觉预留`
+
+附加单元测试：
+- `Pi05ObservationTopics.with_namespace()` 默认路径正确
+- `ObservationTopicsConfig` 创建、冻结、tactile 默认 None
+- `_observation_topics()` 工厂函数默认值及覆盖
+- Python 语法校验通过
+
+### 未做事项
+- 未改 `CommandTopicsConfig`（deploy_006 做）
+- 未改 `RuntimeConfig`/`SafetyConfig`（deploy_007 做）
+- 未改 deploy_node（L2-03 做）
+- 未改 Bridge/Mux config（deploy_006 做）
+- 未改 deploy.yaml（deploy_008 做）
+- 未补单测（deploy_008 做）
+- 未改 `Pi05CommandTopics`（deploy_006 做）
+- 未改 `_str`/`_optional_str`等辅助函数
+
+### 真机影响
+无。本 L3 只改 config schema 和 topic 默认值，不涉及真机动作。
+
+### 回滚方式
+```text
+git checkout -- src/model_deploy/pi05/common/src/pi05/common/ros/topics.py src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py
+配合：切回旧 deploy.yaml
+```
+
+### 后续建议
+- 执行 deploy_006（command topic 字段重构）
+- deploy_007（runtime/safety config）
+- deploy_008（deploy.yaml + 单测）
