@@ -10,7 +10,7 @@ from pi05.common.robot.action_spec import ACTION_DIM, BimanualAction, split_bima
 
 
 def ensure_action_vector(action: Iterable[float] | np.ndarray) -> np.ndarray:
-    """Validate and return one flat 14-D action vector."""
+    """Validate and return one flat 16-D action vector."""
     vector = np.asarray(action, dtype=np.float32).reshape(-1)
     if vector.size != ACTION_DIM:
         raise ValueError(f"Expected {ACTION_DIM} action values, got {vector.size}")

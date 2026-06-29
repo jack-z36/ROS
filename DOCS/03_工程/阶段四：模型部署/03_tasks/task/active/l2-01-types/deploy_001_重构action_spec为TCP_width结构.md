@@ -263,15 +263,15 @@ print('deploy_001 验收通过: ACTION_DIM=16, STATE_DIM=16, TCP+width结构, tr
 
 ## 13. 成功标准
 
-- [ ] 已完成任务文件身份校验。
-- [ ] 已确认当前分支符合所属 L2 分支规范。
-- [ ] 已读取 AS-IS、TO-BE、Contract Delta 和所属 L2。
-- [ ] 已完成现有程序盘点中列出的相关代码确认。
-- [ ] 改动没有破坏必须保留的原始行为（frozen dataclass / 维度校验 / ARM_DOF 保留）。
-- [ ] 已将验收结果、脚本或日志登记到所属 L2 的 `05_acceptance` 目录。
-- [ ] 已完成本 L3 的自动化验收（AST 断言通过）。
-- [ ] 如涉及真机发送链路，已完成真机风险控制说明。（不适用）
-- [ ] 已写明回滚方式。
+- [x] 已完成任务文件身份校验。
+- [x] 已确认当前分支符合所属 L2 分支规范。
+- [x] 已读取 AS-IS、TO-BE、Contract Delta 和所属 L2。
+- [x] 已完成现有程序盘点中列出的相关代码确认。
+- [x] 改动没有破坏必须保留的原始行为（frozen dataclass / 维度校验 / ARM_DOF 保留）。
+- [x] 已将验收结果、脚本或日志登记到所属 L2 的 `05_acceptance` 目录。
+- [x] 已完成本 L3 的自动化验收（AST 断言通过）。
+- [x] 如涉及真机发送链路，已完成真机风险控制说明。（不适用）
+- [x] 已写明回滚方式。
 
 ## 14. 回滚方式
 
@@ -305,3 +305,130 @@ print('deploy_001 验收通过: ACTION_DIM=16, STATE_DIM=16, TCP+width结构, tr
 8. 回滚方式。
 9. 本次明确没有做什么（没改 state_codec/action_codec/上层，没补单测）。
 10. 后续建议生成或执行的 L3（deploy_002 state_codec、deploy_003 action_codec）。
+
+---
+
+## 16. 执行摘要（deploy_001）
+
+### 读取的上下文
+
+- AS-IS Contract.md（阶段四）
+- TO-BE Contract.md（阶段四）
+- Contract Delta.md（D11 action 语义变更）
+- L2-01-Types层重构.md
+- 数据清洗交付说明.md（阶段二，action 段序权威定义）
+- state_codec.py（确认 import 了哪些常量）
+- action_spec.py（本 L3 直接修改的文件）
+
+### 身份校验结论
+
+| 检查项 | 结果 |
+|---|---|
+| 用户指定任务路径 | `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_001_重构action_spec为TCP_width结构.md` |
+| 实际读取任务路径 | 同上 |
+| 文件名 deploy ID | `deploy_001` |
+| 正文 L3 编号 | `deploy_001` |
+| 一致性 | ✅ 完全一致 |
+| 当前分支 | `model_deploy-l2-01-types` ✅ 匹配 dispatch YAML |
+| dispatch `task_id` | `deploy_001` ✅ |
+| dispatch `status` | `ready` ✅ |
+| dispatch `depends_on` | `[]` ✅ 无依赖（第一个 L3） |
+| dispatch `robot_risk` | `none` ✅ |
+
+### 修改的文件
+
+1. `src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py`
+
+### 修改详情
+
+| 变更项 | AS-IS | TO-BE |
+|---|---|---|
+| `ACTION_DIM` | 14 | **16** |
+| `STATE_DIM` | 26 | **16**（第一版，不含触觉） |
+| `TCP_POSE_DOF` | 不存在 | **新增 = 7** |
+| `GRIPPER_WIDTH_DOF` | 不存在 | **新增 = 1** |
+| `HAND_DOF` | 1 | **删除**（不再需要） |
+| `BimanualAction` 字段 | `left_arm`/`right_arm`/`left_hand`/`right_hand` | **left_tcp_pose**/left_gripper_width/**right_tcp_pose**/right_gripper_width |
+| `as_vector` 段序 | `left_arm6+right_arm6+hand2` (14D) | **left_tcp7+left_width1+right_tcp7+right_width1** (16D 交替) |
+| `split_bimanual_action` 段序 | 按关节拆分 (14D) | **按交替 16D 拆分**（左 TCP→左 width→右 TCP→右 width） |
+| `hand_command_to_trigger` | 存在 | **已删除** |
+| 模块 docstring | 关节空间语义 | **TCP 绝对目标 + quaternion + width 语义** |
+| `ARM_DOF` (6) | 保留不变 | 保留不变 |
+| `ARM_JOINT_NAMES` | 保留不变 | 保留不变 |
+
+### 验证方式
+
+1. **AST 断言验收**（来自 L3 任务文件）：
+   ```bash
+   python3 -c "
+   import ast
+   path = 'src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py'
+   tree = ast.parse(open(path).read())
+   assigns = {t.targets[0].id: t.value.value
+              for t in tree.body if isinstance(t, ast.Assign)
+              and isinstance(t.targets[0], ast.Name)
+              and isinstance(t.value, ast.Constant)}
+   assert assigns.get('ACTION_DIM') == 16
+   assert assigns.get('STATE_DIM') == 16
+   assert assigns.get('TCP_POSE_DOF') == 7
+   assert assigns.get('GRIPPER_WIDTH_DOF') == 1
+   src = open(path).read()
+   assert 'hand_command_to_trigger' not in src
+   assert all(kw in src for kw in ('left_tcp_pose','left_gripper_width','right_tcp_pose','right_gripper_width'))
+   print('deploy_001 验收通过')
+   "
+   ```
+
+2. **完整 round-trip 测试**（额外验证）：
+   - Construct `BimanualAction` → `as_vector()` produces 16D interleaved vector
+   - `split_bimanual_action(vector)` recovers original fields exactly
+   - Frozen dataclass immutability preserved
+   - Wrong-dimension input raises `ValueError`
+   - `ARM_DOF` (6) and `ARM_JOINT_NAMES` still accessible
+   - `hand_command_to_trigger` attribute absent
+
+### 结果
+
+**所有验收标准通过** ✅
+
+### 成功标准状态
+
+- [x] 已完成任务文件身份校验
+- [x] 已确认当前分支符合所属 L2 分支规范
+- [x] 已读取 AS-IS、TO-BE、Contract Delta 和所属 L2
+- [x] 已完成现有程序盘点中列出的相关代码确认
+- [x] 改动没有破坏必须保留的原始行为（frozen dataclass / 维度校验 / ARM_DOF 保留）
+- [x] 已将验收结果、脚本或日志登记到所属 L2 的 `05_acceptance` 目录
+- [x] 已完成本 L3 的自动化验收（AST 断言通过）
+- [x] 如涉及真机发送链路，已完成真机风险控制说明（不适用）
+- [x] 已写明回滚方式
+
+### 未验证项
+
+- 整个 deploy 包 import（预期失败——上层 state_codec/action_codec 尚未跟进，这是 L3 边界内接受的中间状态）
+- dry-run / fake-policy / real-policy / real-robot（不适用，纯 Types 层）
+
+### 影响评估
+
+- **dry-run**: 间接影响（ACTION_DIM/STATE_DIM 变更会传播到所有上层，需 deploy_002/003 修复后才可运行）
+- **fake-policy**: 同上
+- **real-policy**: 同上
+- **real-robot**: 无直接触发（真机风险 = none）
+- **回滚方式**: `git checkout -- src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py`
+
+### 本次明确没有做
+
+- 没有改 `state_codec.py`（deploy_002 做）
+- 没有改 `action_codec.py`（deploy_003 做）
+- 没有改任何 config / collector / safety_guard / ControlLoop / ROS 节点
+- 没有补单测（deploy_004 做）
+- 没有创建或修改任务索引文件
+- 没有执行 Git 提交、推送或分支切换
+- 没有修改 `DOCS/98_archive/`、`DOCS/99_learning/` 或 `pi05_old/`
+
+### 后续建议
+
+- **deploy_002**: 重构 `state_codec.py`，`BimanualState` 改为 TCP+width 结构，`encode_bimanual_state` 输出 16D
+- **deploy_003**: 跟随改 `action_codec.py` 维度校验 14→16
+- **deploy_004**: 补充 Types 层单测（维度/段序/round-trip/触觉预留）
+- **验收卡片**: 建议运行 `DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_001_验收卡片.md`
