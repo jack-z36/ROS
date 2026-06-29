@@ -13,6 +13,22 @@
 DOCS/02_约束/Git协作/Git操作规则.md
 ```
 
+## Ralph / OpenCode 加载要求
+
+当任务属于阶段四 Ralph / OpenCode 循环工程时，OpenCode 主 Agent 必须在读取状态摘要、选择目标 L2、检查分支或派发 L3 前加载本文件。不得等到准备提交时才读取 Git 规则。
+
+加载链路固定为：
+
+```text
+ralph_stage4_prompt.md
+→ DOCS/02_约束/上下文加载/08_循环工程加载规则.md
+→ DOCS/02_约束/Git协作/Git操作规则.md
+→ DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md
+→ DOCS/02_约束/循环工程/behaviors/11_Git原子提交行为.md
+```
+
+主 Agent 输出当前循环状态摘要时，必须同时说明当前分支、目标 L2 分支、remote 名称和 remote URL 是否满足本文件要求。
+
 ## 分支模型
 
 阶段四 `model_deploy` L3 执行采用 L2 分支制。
@@ -26,7 +42,7 @@ DOCS/02_约束/Git协作/Git操作规则.md
   - `model_deploy-l2-04-publish`
   - `model_deploy-l2-05-hardware`
 
-单个 L3 完成后不默认提交推送。同一 L2 的 required L3 全部通过 L2 Gate 后，才允许进行 L2 批量同步。
+普通单个 L3 执行 sub-agent 不得提交或推送。Ralph / OpenCode 循环工程中，主 Agent 在单个 L3 验收进入可提交终态后，必须在所属 L2 分支进行 L3 原子提交并尝试小包 push；同一 L2 的 required L3 全部通过 L2 Gate 后，才允许合入 `model_deploy`。
 
 ## L2 开工流程
 
@@ -47,15 +63,30 @@ git switch model_deploy-l2-xx-* || git switch -c model_deploy-l2-xx-* origin/mod
 git pull --ff-only
 ```
 
-## L2 自动同步流程
+## L3 原子提交流程
+
+Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_L2_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交：
+
+```powershell
+git status --short --branch
+git branch --show-current
+git remote -v
+git add <当前L3允许提交的文件清单>
+git status --short
+git commit -m "feat(model_deploy): <deploy_id> <summary> 北京时间 YYYY-MM-DD HH:MM"
+git push -u origin model_deploy-l2-xx-*
+```
+
+提交前必须确认当前分支是该 L3 所属 L2 分支。禁止 `git add -A`、`git commit --amend`、force push、rebase 或跨 L2 混合提交。
+
+如果本地 commit 成功但 push 因网络失败，必须记录到 `DOCS/03_工程/阶段四：模型部署/00_status/git_sync_status.md`，将该 L3 标为 `pending_push`，并用 docs-only 小提交持久化记录；不得 amend 已有 L3 commit。
+
+## L2 Gate 后合入流程
 
 当且仅当所属 L2 Gate 通过后，AI 可以自动执行以下同步流程：
 
 ```powershell
 git status --short --branch
-git add -A
-git status --short
-git commit -m "feat(model_deploy): complete L2-xx <name> 北京时间 YYYY-MM-DD HH:MM"
 git push -u origin model_deploy-l2-xx-*
 git switch model_deploy
 git pull --ff-only
@@ -108,4 +139,4 @@ L2 Gate 是阶段四自动同步的前置条件。每个 L2 的 `05_acceptance/<
 - 是否允许自动同步。
 - 自动同步结果。
 
-未通过 Gate 的 L2 不得提交、推送或合入 `model_deploy`。
+未通过 Gate 的 L2 不得合入 `model_deploy`。L3 原子提交只允许在所属 L2 分支上进行，且必须有对应 L3 验收终态和证据记录。
