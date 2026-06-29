@@ -1,4 +1,4 @@
-﻿# L2-03 · 数据装配 Service 层（输入侧）
+# L2-03 · 数据装配 Service 层（输入侧）
 
 > [!info] 归属
 > - 对应分层：**Repo + Service**（相邻两层，单向依赖）。
@@ -86,29 +86,6 @@ collector 的字段装配逻辑**直接修改**（旧字段集整体替换）。
 2. **missing fields 测试**：缺 TCP pose 时 snapshot 不生成，日志节流报 missing。
 3. **触觉预留测试**：config 关闭触觉时，snapshot 不依赖触觉即可生成。
 4. **batch 维度测试**：`_build_batch` 输出的 `observation.state` 维度与 bundle 期望一致（16D）。
-
-## L2 Gate
-
-| 字段 | 内容 |
-|---|---|
-| L2 分支 | `model_deploy-l2-03-assembly` |
-| 集成分支 | `model_deploy` |
-| required L3 | deploy_009、deploy_010、deploy_011、deploy_012 |
-| 验收运行目录 | `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/` |
-| 验收结果文档 | `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/验收结果.md` |
-| 最低验证层级 | dry-run |
-| 真机风险 | dry-run-only |
-
-通过标准：
-
-- deploy_009~deploy_012 全部完成，并在 L3 任务文件中勾选成功标准。
-- dry-run 能构造目标 observation snapshot 和模型 batch。
-- missing fields、触觉关闭、batch 维度验证通过。
-- 当前代码路径全部指向 `src/model_deploy/pi05/...`。
-- `验收结果.md` 已记录运行命令、测试输入、观察点、通过现象、实际结果、证据链接和未验证项。
-- 验证过程不触发真机动作。
-
-Gate 通过后，允许按 `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md` 自动同步 L2 分支并 `--no-ff` 合入 `model_deploy`。
 
 ## 回滚方式
 

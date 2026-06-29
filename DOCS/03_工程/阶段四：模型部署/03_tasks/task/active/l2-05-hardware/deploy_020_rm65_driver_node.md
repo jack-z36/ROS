@@ -1,4 +1,4 @@
-﻿# L3 微元改造任务：rm65_driver_node（状态发布 + 命令执行）
+# L3 微元改造任务：rm65_driver_node（状态发布 + 命令执行）
 
 ## 1. 任务定位
 
@@ -10,14 +10,6 @@ L3 编号：deploy_020
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_020_rm65_driver_node.md`
 改造类型：new-feature
 真机风险等级：high（直接驱动 RM65 机械臂）
-L2 Git 分支：model_deploy-l2-05-hardware
-验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware
-对应 L2 运行验收场景：[S5]
-验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_020_验收卡片.md
-验收模式：static-review
-辅助验收模式：['hardware-blocked']
-本地验收是否必须：false
-验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
 
 ## 2. 调度元数据
 
@@ -26,16 +18,7 @@ dispatch:
   task_id: deploy_020
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_020_rm65_driver_node.md
   group: l2-05-hardware
-  branch: model_deploy-l2-05-hardware
-  integration_branch: model_deploy
-  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware
-  acceptance_scenarios: [S5]
-  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_020_验收卡片.md
-  acceptance_mode: static-review
-  acceptance_secondary_modes: [hardware-blocked]
-  local_acceptance_required: false
-  acceptance_round_limit: 3
-  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
+  branch: model_deploy
   wave: 1
   parallel_group: l2-05-hardware-p1
   depends_on: []
@@ -44,7 +27,7 @@ dispatch:
   blocks: [deploy_022, deploy_023]
   conflict_scope:
     files:
-      - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/rm65_driver_node.py
+      - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/rm65_driver_node.py
     modules:
       - pi05.deploy.ros_nodes.rm65_driver_node
     config_keys: []
@@ -53,7 +36,7 @@ dispatch:
       - rm65_arm_left
       - rm65_arm_right
       - rm65_sdk
-  robot_risk: hardware-blocked
+  robot_risk: high
   dispatch_status: ready
 ```
 
@@ -160,7 +143,7 @@ dispatch:
 ```bash
 python3 -c "
 import ast
-path = 'src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/rm65_driver_node.py'
+path = 'pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/rm65_driver_node.py'
 src = open(path, encoding='utf-8').read()
 ast.parse(src)
 assert 'movep_canfd' in src or 'movep' in src.lower()
@@ -190,18 +173,9 @@ print('deploy_020 验收通过: rm65_driver_node(状态发布quaternion+命令�
 > - 回滚到原始发送路径：节点不启动；bridge gate 关
 > - 急停优先：物理急停必须优先于软件 gate
 
-### 验收证据落点
-
-本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
-
-```text
-验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/验收结果.md
-验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/scripts/
-验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs/
-```
 ## 9. 允许修改
 
-- 新建 `src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/rm65_driver_node.py`
+- 新建 `pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/rm65_driver_node.py`
 
 ## 10. 禁止修改
 
@@ -231,8 +205,8 @@ print('deploy_020 验收通过: rm65_driver_node(状态发布quaternion+命令�
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/Git协作/Git操作规则.md`
-4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
+3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
+4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -255,7 +229,6 @@ print('deploy_020 验收通过: rm65_driver_node(状态发布quaternion+命令�
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
-- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] rm65_driver_node.py 新建。
 - [ ] 状态发布：取 quaternion 归一化 → PoseStamped。
 - [ ] 命令执行：PoseStamped → 定点数 → movep_canfd pose_quat。

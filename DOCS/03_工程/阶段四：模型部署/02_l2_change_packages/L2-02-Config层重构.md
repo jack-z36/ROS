@@ -1,4 +1,4 @@
-﻿# L2-02 · Config 层重构
+# L2-02 · Config 层重构
 
 > [!info] 归属
 > - 对应分层：**Config**（依赖 Types，不依赖 Repo/Service/Runtime）。
@@ -93,29 +93,6 @@ Config 层直接修改。不用 adapter。旧 config 文件保留（deploy.yaml 
 1. **单测**：构造新 config YAML，加载后断言 topic 名、维度、mode 三档正确。
 2. **非法值测试**：缺必需字段时 `__post_init__` 报错。
 3. **触觉预留测试**：tactile 字段默认 None 时不阻塞 config 加载。
-
-## L2 Gate
-
-| 字段 | 内容 |
-|---|---|
-| L2 分支 | `model_deploy-l2-02-config` |
-| 集成分支 | `model_deploy` |
-| required L3 | deploy_005、deploy_006、deploy_007、deploy_008 |
-| 验收运行目录 | `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/` |
-| 验收结果文档 | `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/验收结果.md` |
-| 最低验证层级 | unit / config load |
-| 真机风险 | none |
-
-通过标准：
-
-- deploy_005~deploy_008 全部完成，并在 L3 任务文件中勾选成功标准。
-- Config schema 单测和 `deploy.yaml` 加载验证通过。
-- topic、维度、mode、SafetyConfig 与 TO-BE Contract 一致。
-- 当前代码路径全部指向 `src/model_deploy/pi05/...`。
-- `验收结果.md` 已记录运行命令、测试输入、观察点、通过现象、实际结果、证据链接和未验证项。
-- 未触发真机动作。
-
-Gate 通过后，允许按 `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md` 自动同步 L2 分支并 `--no-ff` 合入 `model_deploy`。
 
 ## 回滚方式
 

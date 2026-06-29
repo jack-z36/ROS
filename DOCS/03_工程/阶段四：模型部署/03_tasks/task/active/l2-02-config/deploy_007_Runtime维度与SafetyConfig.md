@@ -1,4 +1,4 @@
-﻿# L3 微元改造任务：RuntimeConfig 默认维度 + SafetyConfig 重构
+# L3 微元改造任务：RuntimeConfig 默认维度 + SafetyConfig 重构
 
 ## 1. 任务定位
 
@@ -10,14 +10,6 @@ L3 编号：deploy_007
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_007_Runtime维度与SafetyConfig.md`
 改造类型：behavior-change
 真机风险等级：none
-L2 Git 分支：model_deploy-l2-02-config
-验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config
-对应 L2 运行验收场景：[S1, S2, S3]
-验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_007_验收卡片.md
-验收模式：direct-local
-辅助验收模式：[]
-本地验收是否必须：true
-验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs
 
 ## 2. 调度元数据
 
@@ -26,16 +18,7 @@ dispatch:
   task_id: deploy_007
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_007_Runtime维度与SafetyConfig.md
   group: l2-02-config
-  branch: model_deploy-l2-02-config
-  integration_branch: model_deploy
-  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config
-  acceptance_scenarios: [S1, S2, S3]
-  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_007_验收卡片.md
-  acceptance_mode: direct-local
-  acceptance_secondary_modes: []
-  local_acceptance_required: true
-  acceptance_round_limit: 3
-  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs
+  branch: model_deploy
   wave: 3
   parallel_group: l2-02-config-p3
   depends_on: [deploy_006]
@@ -44,7 +27,7 @@ dispatch:
   blocks: [deploy_008]
   conflict_scope:
     files:
-      - src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py
+      - pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py
     modules:
       - pi05.deploy.config.schema
     config_keys:
@@ -166,7 +149,7 @@ dispatch:
 ```bash
 python3 -c "
 import ast
-src = open('src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py', encoding='utf-8').read()
+src = open('pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py', encoding='utf-8').read()
 tree = ast.parse(src)
 # RuntimeConfig action_dim/state_dim 默认 16（需从 AST 提取，或用文本检查）
 # 文本检查更简单：
@@ -197,18 +180,9 @@ print('deploy_007 验收通过: 维度16/16, SafetyConfig→TCP/width, JointLimi
 
 不适用。
 
-### 验收证据落点
-
-本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
-
-```text
-验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/验收结果.md
-验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/scripts/
-验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs/
-```
 ## 9. 允许修改
 
-- `src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py`（RuntimeConfig 维度 + SafetyConfig）
+- `pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py`（RuntimeConfig 维度 + SafetyConfig）
 
 ## 10. 禁止修改
 
@@ -227,14 +201,14 @@ print('deploy_007 验收通过: 维度16/16, SafetyConfig→TCP/width, JointLimi
 
 ### 必读代码
 
-1. `src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py`（RuntimeConfig/SafetyConfig/_safety_config）
+1. `pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py`（RuntimeConfig/SafetyConfig/_safety_config）
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/Git协作/Git操作规则.md`
-4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
+3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
+4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -254,14 +228,13 @@ print('deploy_007 验收通过: 维度16/16, SafetyConfig→TCP/width, JointLimi
 
 ## 13. 成功标准
 
-- [x] 已完成任务文件身份校验。
-- [x] 已确认当前分支符合所属 L2 分支规范。
-- [x] action_dim/state_dim 默认 16/16。
-- [x] SafetyConfig 改为 TCP/width 检查字段。
-- [x] JointLimitsConfig 保留。
-- [x] RuntimeConfig 调度参数和 mode 未动。
-- [x] 已完成自动化验收。
-- [x] 已写明回滚方式。
+- [ ] 已完成任务文件身份校验。
+- [ ] action_dim/state_dim 默认 16/16。
+- [ ] SafetyConfig 改为 TCP/width 检查字段。
+- [ ] JointLimitsConfig 保留。
+- [ ] RuntimeConfig 调度参数和 mode 未动。
+- [ ] 已完成自动化验收。
+- [ ] 已写明回滚方式。
 
 ## 14. 回滚方式
 
@@ -273,91 +246,3 @@ print('deploy_007 验收通过: 维度16/16, SafetyConfig→TCP/width, JointLimi
 ## 15. 完成后交接
 
 交接摘要必须包含：读取文档、身份校验、修改内容、max_tcp_delta_m 默认值选择、验收结果、成功标准勾选、真机影响（无）、回滚、未做事项（没改调度参数/mode/JointLimits/safety_guard/deploy.yaml）、后续建议（deploy_008）。
-
-## 16. 执行摘要
-
-### 执行日期
-
-2026-06-20
-
-### 身份校验
-
-| 校验项 | 结果 |
-|--------|------|
-| 用户指定任务路径 | `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_007_Runtime维度与SafetyConfig.md` |
-| 实际读取任务路径 | 同上 |
-| 文件名编号 | `deploy_007` |
-| 正文 L3 编号 | `deploy_007` |
-| 是否一致 | ✅ |
-| 当前分支 | `model_deploy-l2-02-config` |
-| 分支符合要求 | ✅ |
-| dispatch YAML task_id | `deploy_007` (一致 ✅) |
-| dispatch YAML branch | `model_deploy-l2-02-config` (一致 ✅) |
-| acceptance_mode | `direct-local` (一致 ✅) |
-| local_acceptance_required | `true` (一致 ✅) |
-| depends_on [deploy_006] | `PASS_LOCAL` ✅ (见 `deploy_006_acceptance_round_1.md`) |
-| dispatch_status | `ready` ✅ |
-
-### 读取的文档
-
-- `AGENTS.md`
-- `skills/stage4-l3-orchestrator/SKILL.md`
-- `DOCS/02_约束/上下文加载/04_L3微元任务执行加载规则.md`
-- `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
-- `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-- `DOCS/03_工程/阶段四：模型部署/01_contracts/Contract Delta.md`（D9/D11/D13）
-- `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-02-Config层重构.md`
-- `DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_007_验收卡片.md`
-- `DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs/deploy_006_acceptance_round_1.md`
-- `src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py`
-
-### 修改的文件
-
-| 文件 | 修改内容 |
-|------|---------|
-| `src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py` | RuntimeConfig action_dim/state_dim 14/26→16/16；_deploy_from_mapping 默认值 14/26→16/16；SafetyConfig max_joint_delta_rad→max_tcp_delta_m(0.05)、hand_min/max→gripper_width_min=0.0/max=1.0；_safety_config 字段名跟随；SafetyConfig docstring 更新 |
-
-### 未修改(按 L3 约束)
-
-- RuntimeConfig 调度参数（inference_hz/control_hz/chunk_size 等）和 mode 三档
-- JointLimitsConfig（保留作 bridge 参数来源）
-- ObservationTopicsConfig / CommandTopicsConfig（deploy_005/006 已改）
-- safety_guard.py
-- deploy.yaml（deploy_008 做）
-- 通用辅助函数
-
-### 验证命令与结果
-
-**命令 1 (AST 断言):**
-```bash
-python3 -c "import ast; src = open('src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py', encoding='utf-8').read(); tree = ast.parse(src); assert 'action_dim: int = 16' in src; assert 'state_dim: int = 16' in src; assert 'max_tcp_delta_m' in src; assert 'gripper_width_min' in src and 'gripper_width_max' in src; safety_config_section = src.split('class SafetyConfig')[1].split('class')[0]; assert 'max_joint_delta_rad' not in safety_config_section; assert 'hand_min' not in safety_config_section; assert 'class JointLimitsConfig' in src; assert 'default=16' in src; print('deploy_007 验收通过')"
-```
-结果: ✅ `deploy_007 验收通过: 维度16/16, SafetyConfig→TCP/width, JointLimits保留`
-
-**命令 2 (Import/dataclass):**
-```bash
-PYTHONPATH="src/model_deploy/pi05/common/src:src/model_deploy/pi05/deploy/src:$PYTHONPATH" python3 -c "from pi05.deploy.config.schema import RuntimeConfig, SafetyConfig, JointLimitsConfig; rc = RuntimeConfig(); assert rc.action_dim == 16; assert rc.state_dim == 16; sc = SafetyConfig(); assert sc.max_tcp_delta_m == 0.05; assert sc.gripper_width_min == 0.0; assert sc.gripper_width_max == 1.0; assert not hasattr(sc, 'max_joint_delta_rad'); assert not hasattr(sc, 'hand_min'); assert not hasattr(sc, 'hand_max'); jl = JointLimitsConfig(); assert jl.enabled == False; print('import/dataclass 验证通过')"
-```
-结果: ✅ `deploy_007 import/dataclass 验证通过`
-
-### max_tcp_delta_m 默认值选择
-
-选择了保守值 `0.05`（米/步），相当于 TCP 单步位移 5cm 限幅。原值从 `max_delta_per_step=0.03`（关节 rad）变为 TCP 空间的 `0.05`（米），这是合理的保守首版——TCP 空间位移通常大于关节 rad 变化。后续可根据真实机器人标定调整。
-
-### 真机影响
-
-无。本 L3 只改 config schema 字段名和默认值，不改运行时执行路径。safety_guard.py 会因字段名失配而暂时报错（预期中间状态），由 L2-04（D13）修复。
-
-### 回滚方式
-
-```bash
-git checkout -- src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py
-```
-
-不可自动回滚的人工步骤：无。
-
-### 后续建议
-
-1. 执行 `deploy_008`（更新 deploy.yaml 示例配置 + 单测）。
-2. L2-04 更新 `safety_guard.py` 读取新 SafetyConfig 字段名。
-3. 确认 max_tcp_delta_m 默认值 0.05 在真机联调时是否需要调整。

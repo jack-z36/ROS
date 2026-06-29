@@ -8,15 +8,7 @@
 ```yaml
 dispatch_index:
   group: l2-03-assembly
-  branch: model_deploy-l2-03-assembly
-  integration_branch: model_deploy
-  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly
-  acceptance_result: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/验收结果.md
-  acceptance_scenarios: [S1, S2, S3, S4]
-  cards_dir: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly
-  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/l2-03-assembly_整体验收卡片.md
-  l2_acceptance_report: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/L2整体验收报告.md
-  acceptance_round_limit: 3
+  branch: model_deploy
   source_l2: DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-03-数据装配Service层.md
   max_parallel_agents: 2
   waves:
@@ -35,66 +27,42 @@ dispatch_index:
   tasks:
     deploy_009:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_009_observation_collector改造.md
-      title: observation_collector 改造
-      acceptance_scenarios: [S1, S2, S3]
-      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_009_验收卡片.md
-      acceptance_mode: static-review
-      acceptance_secondary_modes: [downstream-l2]
-      local_acceptance_required: false
-      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
+      title: observation_collector 改造为 TCP+width 装配
       depends_on: [deploy_002, deploy_005]
       conflict_scope:
         files:
-          - src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py
+          - pi05_test/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py
         modules:
           - pi05.deploy.runtime.observation_collector
         config_keys: []
     deploy_010:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_010_deploy_node订阅侧改造.md
       title: deploy_node 订阅侧改造
-      acceptance_scenarios: [S1, S2]
-      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_010_验收卡片.md
-      acceptance_mode: static-review
-      acceptance_secondary_modes: [downstream-l2]
-      local_acceptance_required: false
-      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
       depends_on: [deploy_009]
       conflict_scope:
         files:
-          - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
+          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
         modules:
           - pi05.deploy.ros_nodes.pi05_vla_deploy_node
         config_keys: []
     deploy_011:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_011_policy_loader_build_batch.md
-      title: policy_loader batch 构建跟随
-      acceptance_scenarios: [S1, S4]
-      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_011_验收卡片.md
-      acceptance_mode: direct-local
-      acceptance_secondary_modes: []
-      local_acceptance_required: true
-      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
+      title: policy_loader._build_batch + image_names 默认值
       depends_on: [deploy_002]
       conflict_scope:
         files:
-          - src/model_deploy/pi05/deploy/src/pi05/deploy/models/policy_loader.py
+          - pi05_test/pi05/deploy/src/pi05/deploy/models/policy_loader.py
         modules:
           - pi05.deploy.models.policy_loader
         config_keys: []
     deploy_012:
       file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_012_dry_run验证.md
-      title: dry-run 验证
-      acceptance_scenarios: [S1, S2, S3, S4]
-      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_012_验收卡片.md
-      acceptance_mode: direct-local
-      acceptance_secondary_modes: [env-blocked]
-      local_acceptance_required: true
-      acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
+      title: L2-03 数据装配 dry-run 验证
       depends_on: [deploy_009, deploy_010, deploy_011]
       robot_risk: dry-run-only
       conflict_scope:
         files:
-          - src/model_deploy/pi05/deploy/tests/test_assembly_dry_run.py
+          - pi05_test/pi05/deploy/tests/test_assembly_dry_run.py
         modules:
           - tests.assembly
         config_keys: []
@@ -104,32 +72,24 @@ dispatch_index:
 
 | wave | 任务 | 并行性 | 说明 |
 |---|---|---|---|
-| 1 | deploy_009 ∥ deploy_011 | 可并行 | 改不同文件（collector.py vs policy_loader.py），conflict_scope 无交集。 |
-| 2 | deploy_010 | 单独 | 改 deploy_node 订阅侧，依赖 deploy_009。 |
+| 1 | deploy_009 ∥ deploy_011 | 可并行 | 改不同文件（collector.py vs policy_loader.py），conflict_scope 无交集。都依赖 L2-01(deploy_002) + deploy_005(collector 还需 topic 字段)。 |
+| 2 | deploy_010 | 单独 | 改 deploy_node 订阅侧，依赖 deploy_009（callback 调 collector 新方法）。与 L2-04 共享 deploy_node.py（发布侧），需协调。 |
 | 3 | deploy_012 | 单独 | dry-run 验证，依赖前三者。 |
 
 ## 跨 L2 依赖说明
 
-本功能组依赖 L2-01（deploy_002 state_codec）和 L2-02（deploy_005 observation topic）。`depends_on_external` 标注外部依赖。
+本功能组依赖 L2-01（deploy_002 state_codec）和 L2-02（deploy_005 observation topic）。`depends_on_external` 标注外部依赖。主 Agent 调度时须确认 deploy_002/005 已归档。
 
-## 与 L2-04 的协调
+## 与 L2-04 的协调（关键）
 
-deploy_010（本组）改 deploy_node.py 订阅侧，L2-04 改 deploy_node.py 发布侧。同一文件两半，必须串行或由同一 Agent 顺序完成。
+deploy_010（本组）改 deploy_node.py 订阅侧，L2-04 改 deploy_node.py 发布侧。同一文件两半：
+- **必须串行**（deploy_010 先，L2-04 后），或主 Agent 安排同一 Agent 顺序完成两半。
+- 若并行，conflict_scope.files 有交集（pi05_vla_deploy_node.py），违反调度规则第 4 条。
 
 ## 全组完成标志
 
-deploy_012 dry-run 验证通过，且 `05_acceptance/l2-03-assembly/验收结果.md` 中 S1/S2/S3/S4 均通过 = L2-03 数据装配层完成 = 可开始 L2-04。
+deploy_012 pytest 通过 = L2-03 数据装配层完成 = 可开始 L2-04（action 发布与 policy 安全）。
 
 ## 真机风险
 
 deploy_012 为 dry-run-only（用构造数据 + stub，不接真机/真模型）。其余 L3 为 none。真机风险在 L2-05。
-
-## L2 Gate
-
-- L2 分支：`model_deploy-l2-03-assembly`
-- 集成分支：`model_deploy`
-- 验收结果：`DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/验收结果.md`
-- required L3：deploy_009、deploy_010、deploy_011、deploy_012
-- 最低验证层级：dry-run
-- 通过条件：required L3 全部完成、Assembly 运行验收 S1/S2/S3/S4 通过、不触发真机动作、验收结果文档记录运行命令、测试输入、观察点、通过现象和实际结果。
-- Gate 通过后：允许按阶段四 Git 规则提交并推送 `model_deploy-l2-03-assembly`，再 `--no-ff` 合入 `model_deploy`。

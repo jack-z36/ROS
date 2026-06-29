@@ -1,4 +1,4 @@
-﻿# L3 微元改造任务：deploy_node 订阅侧改造
+# L3 微元改造任务：deploy_node 订阅侧改造
 
 ## 1. 任务定位
 
@@ -10,14 +10,6 @@ L3 编号：deploy_010
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_010_deploy_node订阅侧改造.md`
 改造类型：behavior-change
 真机风险等级：none
-L2 Git 分支：model_deploy-l2-03-assembly
-验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly
-对应 L2 运行验收场景：[S1, S2]
-验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_010_验收卡片.md
-验收模式：static-review
-辅助验收模式：['downstream-l2']
-本地验收是否必须：false
-验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
 
 ## 2. 调度元数据
 
@@ -26,16 +18,7 @@ dispatch:
   task_id: deploy_010
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-assembly/deploy_010_deploy_node订阅侧改造.md
   group: l2-03-assembly
-  branch: model_deploy-l2-03-assembly
-  integration_branch: model_deploy
-  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly
-  acceptance_scenarios: [S1, S2]
-  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-assembly/deploy_010_验收卡片.md
-  acceptance_mode: static-review
-  acceptance_secondary_modes: [downstream-l2]
-  local_acceptance_required: false
-  acceptance_round_limit: 3
-  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs
+  branch: model_deploy
   wave: 2
   parallel_group: l2-03-assembly-p2
   depends_on: [deploy_009]
@@ -44,7 +27,7 @@ dispatch:
   blocks: [deploy_012]
   conflict_scope:
     files:
-      - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
+      - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
     modules:
       - pi05.deploy.ros_nodes.pi05_vla_deploy_node
     config_keys: []
@@ -166,7 +149,7 @@ dispatch:
 
 ```bash
 python3 -c "
-src = open('src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py', encoding='utf-8').read()
+src = open('pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py', encoding='utf-8').read()
 # 新 callback
 for m in ['_tcp_pose_cb','_gripper_cb']:
     assert f'def {m}' in src, f'{m} missing'
@@ -194,18 +177,9 @@ print('deploy_010 验收通过: 订阅侧→鱼眼/TCP/gripper, 发布侧保留'
 
 不适用。
 
-### 验收证据落点
-
-本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
-
-```text
-验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/验收结果.md
-验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/scripts/
-验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-assembly/logs/
-```
 ## 9. 允许修改
 
-- `src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（仅订阅侧：import + _create_subscriptions + _image_topic_map + callback 部分）
+- `pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（仅订阅侧：import + _create_subscriptions + _image_topic_map + callback 部分）
 
 ## 10. 禁止修改
 
@@ -224,15 +198,15 @@ print('deploy_010 验收通过: 订阅侧→鱼眼/TCP/gripper, 发布侧保留'
 
 ### 必读代码
 
-1. `src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（本 L3 改订阅侧）
-2. `src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py`（deploy_009 改后，确认 update_tcp_pose/update_gripper_width 签名）
+1. `pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（本 L3 改订阅侧）
+2. `pi05_test/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py`（deploy_009 改后，确认 update_tcp_pose/update_gripper_width 签名）
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/Git协作/Git操作规则.md`
-4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
+3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
+4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -255,7 +229,6 @@ print('deploy_010 验收通过: 订阅侧→鱼眼/TCP/gripper, 发布侧保留'
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
-- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] 订阅改为鱼眼/TCP pose/gripper width。
 - [ ] _tcp_pose_cb/_gripper_cb 新增并调 collector 新方法。
 - [ ] 旧 callback 删除。

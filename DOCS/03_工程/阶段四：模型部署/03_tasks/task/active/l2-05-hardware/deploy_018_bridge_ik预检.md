@@ -1,4 +1,4 @@
-﻿# L3 微元改造任务：bridge 接入 IK 预检 + workspace 检查
+# L3 微元改造任务：bridge 接入 IK 预检 + workspace 检查
 
 ## 1. 任务定位
 
@@ -10,14 +10,6 @@ L3 编号：deploy_018
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_018_bridge_ik预检.md`
 改造类型：new-feature
 真机风险等级：low（IK 预检不执行运动，只查询可解性，但需连 RM65 SDK）
-L2 Git 分支：model_deploy-l2-05-hardware
-验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware
-对应 L2 运行验收场景：[S1, S3]
-验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_018_验收卡片.md
-验收模式：static-review
-辅助验收模式：['hardware-blocked']
-本地验收是否必须：false
-验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
 
 ## 2. 调度元数据
 
@@ -26,16 +18,7 @@ dispatch:
   task_id: deploy_018
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_018_bridge_ik预检.md
   group: l2-05-hardware
-  branch: model_deploy-l2-05-hardware
-  integration_branch: model_deploy
-  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware
-  acceptance_scenarios: [S1, S3]
-  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_018_验收卡片.md
-  acceptance_mode: static-review
-  acceptance_secondary_modes: [hardware-blocked]
-  local_acceptance_required: false
-  acceptance_round_limit: 3
-  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
+  branch: model_deploy
   wave: 2
   parallel_group: l2-05-hardware-p2
   depends_on: [deploy_017]
@@ -44,7 +27,7 @@ dispatch:
   blocks: [deploy_022]
   conflict_scope:
     files:
-      - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
+      - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
     modules:
       - pi05.deploy.ros_nodes.command_bridge_sender_node
     config_keys: []
@@ -52,7 +35,7 @@ dispatch:
       - shadow-run
     hardware_paths:
       - rm65_sdk
-  robot_risk: hardware-blocked
+  robot_risk: low
   dispatch_status: ready
 ```
 
@@ -144,7 +127,7 @@ dispatch:
 
 ```bash
 python3 -c "
-src = open('src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py', encoding='utf-8').read()
+src = open('pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py', encoding='utf-8').read()
 assert '_check_workspace' in src, 'workspace check missing'
 assert '_check_ik' in src, 'ik check missing'
 assert 'inverse_kinematics' in src.lower(), 'rm_inverse_kinematics call missing'
@@ -163,23 +146,14 @@ print('deploy_018 验收通过: workspace+IK预检接入')
 
 ### 真机风险控制
 
-IK 预检不执行运动（rm_inverse_kinematics 只查可解性）。robot_risk: hardware-blocked。需连 SDK 但不动机器人。
+IK 预检不执行运动（rm_inverse_kinematics 只查可解性）。robot_risk: low。需连 SDK 但不动机器人。
 - 是否会真实发送命令：否（只查询 IK）
 - 默认是否关闭真实发送：是（不发 movep）
 - 回滚到原始发送路径：ik_check_enabled=False 跳过
 
-### 验收证据落点
-
-本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
-
-```text
-验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/验收结果.md
-验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/scripts/
-验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs/
-```
 ## 9. 允许修改
 
-- `src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py`（IK/workspace 检查方法）
+- `pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py`（IK/workspace 检查方法）
 
 ## 10. 禁止修改
 
@@ -197,7 +171,7 @@ IK 预检不执行运动（rm_inverse_kinematics 只查可解性）。robot_risk
 
 ### 必读代码
 
-1. `src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py`（deploy_017 建后）
+1. `pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py`（deploy_017 建后）
 
 ### 必读硬件文档
 
@@ -207,8 +181,8 @@ IK 预检不执行运动（rm_inverse_kinematics 只查可解性）。robot_risk
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/Git协作/Git操作规则.md`
-4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
+3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
+4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -228,7 +202,6 @@ IK 预检不执行运动（rm_inverse_kinematics 只查可解性）。robot_risk
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
-- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] _check_workspace 实现（纯几何）。
 - [ ] _check_ik 实现（rm_inverse_kinematics flag=0）。
 - [ ] 检查链插入第 5/5.5 步。

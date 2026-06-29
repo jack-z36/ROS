@@ -1,4 +1,4 @@
-﻿# L3 微元改造任务：_publish_metrics 字段增强
+# L3 微元改造任务：_publish_metrics 字段增强
 
 ## 1. 任务定位
 
@@ -10,14 +10,6 @@ L3 编号：deploy_015
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_015_publish_metrics增强.md`
 改造类型：behavior-change
 真机风险等级：none
-L2 Git 分支：model_deploy-l2-04-publish
-验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish
-对应 L2 运行验收场景：[S2, S3, S4]
-验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish/deploy_015_验收卡片.md
-验收模式：static-review
-辅助验收模式：['downstream-l2']
-本地验收是否必须：false
-验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs
 
 ## 2. 调度元数据
 
@@ -26,16 +18,7 @@ dispatch:
   task_id: deploy_015
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_015_publish_metrics增强.md
   group: l2-04-publish
-  branch: model_deploy-l2-04-publish
-  integration_branch: model_deploy
-  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish
-  acceptance_scenarios: [S2, S3, S4]
-  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-publish/deploy_015_验收卡片.md
-  acceptance_mode: static-review
-  acceptance_secondary_modes: [downstream-l2]
-  local_acceptance_required: false
-  acceptance_round_limit: 3
-  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs
+  branch: model_deploy
   wave: 2
   parallel_group: l2-04-publish-p2
   depends_on: [deploy_014]
@@ -44,8 +27,8 @@ dispatch:
   blocks: [deploy_016]
   conflict_scope:
     files:
-      - src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
-      - src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py
+      - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
+      - pi05_test/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py
     modules:
       - pi05.deploy.ros_nodes.pi05_vla_deploy_node
       - pi05.deploy.runtime.shared_buffer
@@ -137,8 +120,8 @@ dispatch:
 
 ```bash
 python3 -c "
-sb = open('src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py', encoding='utf-8').read()
-dn = open('src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py', encoding='utf-8').read()
+sb = open('pi05_test/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py', encoding='utf-8').read()
+dn = open('pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py', encoding='utf-8').read()
 for f in ['observation_ready','policy_ready','last_action_publish_ts']:
     assert f in sb, f'{f} missing in RuntimeMetrics'
     assert f in dn, f'{f} missing in _publish_metrics'
@@ -160,19 +143,10 @@ print('deploy_015 验收通过: metrics字段增强, 原计数保留')
 
 不适用。
 
-### 验收证据落点
-
-本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
-
-```text
-验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/验收结果.md
-验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/scripts/
-验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-publish/logs/
-```
 ## 9. 允许修改
 
-- `src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（_publish_metrics 部分）
-- `src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py`（RuntimeMetrics）
+- `pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（_publish_metrics 部分）
+- `pi05_test/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py`（RuntimeMetrics）
 
 ## 10. 禁止修改
 
@@ -189,15 +163,15 @@ print('deploy_015 验收通过: metrics字段增强, 原计数保留')
 
 ### 必读代码
 
-1. `src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（deploy_014 改后）
-2. `src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py`
+1. `pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py`（deploy_014 改后）
+2. `pi05_test/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py`
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/Git协作/Git操作规则.md`
-4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
+3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
+4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -217,7 +191,6 @@ print('deploy_015 验收通过: metrics字段增强, 原计数保留')
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
-- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] RuntimeMetrics 新增 4 个字段。
 - [ ] _publish_metrics JSON 含新字段。
 - [ ] 原计数保留。

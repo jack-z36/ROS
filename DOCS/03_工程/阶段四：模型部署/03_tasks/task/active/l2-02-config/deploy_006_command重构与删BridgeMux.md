@@ -1,4 +1,4 @@
-﻿# L3 微元改造任务：command topic 重构 + 删除 Bridge/Mux config
+# L3 微元改造任务：command topic 重构 + 删除 Bridge/Mux config
 
 ## 1. 任务定位
 
@@ -10,14 +10,6 @@ L3 编号：deploy_006
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_006_command重构与删BridgeMux.md`
 改造类型：behavior-change
 真机风险等级：none
-L2 Git 分支：model_deploy-l2-02-config
-验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config
-对应 L2 运行验收场景：[S1, S3]
-验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_006_验收卡片.md
-验收模式：direct-local
-辅助验收模式：[]
-本地验收是否必须：true
-验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs
 
 ## 2. 调度元数据
 
@@ -26,16 +18,7 @@ dispatch:
   task_id: deploy_006
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_006_command重构与删BridgeMux.md
   group: l2-02-config
-  branch: model_deploy-l2-02-config
-  integration_branch: model_deploy
-  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config
-  acceptance_scenarios: [S1, S3]
-  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_006_验收卡片.md
-  acceptance_mode: direct-local
-  acceptance_secondary_modes: []
-  local_acceptance_required: true
-  acceptance_round_limit: 3
-  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs
+  branch: model_deploy
   wave: 2
   parallel_group: l2-02-config-p2
   depends_on: [deploy_005]
@@ -44,8 +27,8 @@ dispatch:
   blocks: [deploy_007]
   conflict_scope:
     files:
-      - src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py
-      - src/model_deploy/pi05/common/src/pi05/common/ros/topics.py
+      - pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py
+      - pi05_test/pi05/common/src/pi05/common/ros/topics.py
     modules:
       - pi05.deploy.config.schema
       - pi05.common.ros.topics
@@ -171,8 +154,8 @@ dispatch:
 
 ```bash
 python3 -c "
-schema = open('src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py', encoding='utf-8').read()
-topics = open('src/model_deploy/pi05/common/src/pi05/common/ros/topics.py', encoding='utf-8').read()
+schema = open('pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py', encoding='utf-8').read()
+topics = open('pi05_test/pi05/common/src/pi05/common/ros/topics.py', encoding='utf-8').read()
 # policy_action 存在
 assert 'policy_action' in schema and 'policy_action' in topics
 # Bridge/Mux 类已删
@@ -199,19 +182,10 @@ print('deploy_006 验收通过: command收敛policy_action, Bridge/Mux已删')
 
 不适用。
 
-### 验收证据落点
-
-本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
-
-```text
-验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/验收结果.md
-验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/scripts/
-验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config/logs/
-```
 ## 9. 允许修改
 
-- `src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py`（command + 删 Bridge/Mux）
-- `src/model_deploy/pi05/common/src/pi05/common/ros/topics.py`（Pi05CommandTopics）
+- `pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py`（command + 删 Bridge/Mux）
+- `pi05_test/pi05/common/src/pi05/common/ros/topics.py`（Pi05CommandTopics）
 
 ## 10. 禁止修改
 
@@ -229,15 +203,15 @@ print('deploy_006 验收通过: command收敛policy_action, Bridge/Mux已删')
 
 ### 必读代码
 
-1. `src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py`
-2. `src/model_deploy/pi05/common/src/pi05/common/ros/topics.py`
+1. `pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py`
+2. `pi05_test/pi05/common/src/pi05/common/ros/topics.py`
 
 ### 必读约束文档
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/Git协作/Git操作规则.md`
-4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
+3. `DOCS/02_约束/文档体系/阶段二任务体系/L3调度元数据规则.md`
+4. `DOCS/02_约束/文档体系/阶段二任务体系/L3任务身份校验规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -257,15 +231,14 @@ print('deploy_006 验收通过: command收敛policy_action, Bridge/Mux已删')
 
 ## 13. 成功标准
 
-- [x] 已完成任务文件身份校验。
-- [x] 已确认当前分支符合所属 L2 分支规范。
-- [x] CommandTopicsConfig 收敛为 policy_action。
-- [x] Bridge/Mux 四类四函数已删。
-- [x] TopicsConfig/DeployConfig 删 bridge/mux 字段。
-- [x] _deploy_from_mapping 删对应解析段。
-- [x] Pi05CommandTopics 同步更新。
-- [x] 已完成自动化验收。
-- [x] 已写明回滚方式。
+- [ ] 已完成任务文件身份校验。
+- [ ] CommandTopicsConfig 收敛为 policy_action。
+- [ ] Bridge/Mux 四类四函数已删。
+- [ ] TopicsConfig/DeployConfig 删 bridge/mux 字段。
+- [ ] _deploy_from_mapping 删对应解析段。
+- [ ] Pi05CommandTopics 同步更新。
+- [ ] 已完成自动化验收。
+- [ ] 已写明回滚方式。
 
 ## 14. 回滚方式
 
@@ -277,57 +250,3 @@ print('deploy_006 验收通过: command收敛policy_action, Bridge/Mux已删')
 ## 15. 完成后交接
 
 交接摘要必须包含：读取文档、身份校验、修改/删除内容、验收结果、成功标准勾选、真机影响（无）、回滚、未做事项（没改 runtime/safety/deploy.yaml/deploy_node，没删 bridge_node源文件）、后续建议（deploy_007）。
-
-## 16. 执行摘要
-
-### 身份校验
-
-| 校验项 | 结果 |
-|--------|------|
-| 任务文件路径与 deploy_id | ✅ `deploy_006_command重构与删BridgeMux.md`, id=deploy_006 |
-| dispatch YAML task_id | ✅ l2-02-config.yaml: deploy_006 |
-| 验收卡片 | ✅ deploy_006_验收卡片.md, mode=direct-local |
-| 当前分支 | ✅ model_deploy-l2-02-config |
-| 依赖 deploy_005 | ✅ PASS_LOCAL (round_1.md) |
-| dispatch_status | ✅ ready |
-
-### 修改的文件
-
-| 文件 | 变更 |
-|------|------|
-| `src/model_deploy/pi05/common/src/pi05/common/ros/topics.py` | Pi05CommandTopics: 四路字段 → policy_action; with_namespace 生成单路 `/pi05/policy_action` |
-| `src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py` | CommandTopicsConfig: 四路 → policy_action; 删 BridgeTopicsConfig/MuxTopicsConfig/BridgeConfig/MuxConfig 四个类; 删 _bridge_topics/_mux_topics/_mux_config 三个函数; TopicsConfig 删 bridge_output/mux; DeployConfig 删 bridge/mux; _deploy_from_mapping 删对应解析段 |
-
-### 验证命令与结果
-
-```bash
-# AST 断言（L3 §8）
-python3 -c "schema=open('src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py').read(); topics=open('src/model_deploy/pi05/common/src/pi05/common/ros/topics.py').read(); assert 'policy_action' in schema and 'policy_action' in topics; ...; print('deploy_006 验收通过: command收敛policy_action, Bridge/Mux已删')"
-```
-
-结果: ✅ `deploy_006 验收通过: command收敛policy_action, Bridge/Mux已删`
-
-```bash
-# 导入与 dataclass 行为验证
-PYTHONPATH="src/model_deploy/pi05/common/src:src/model_deploy/pi05/deploy/src:$PYTHONPATH" python3 -c "导入 Pi05CommandTopics / CommandTopicsConfig / TopicsConfig / DeployConfig 验证新字段、旧字段删除、frozen、旧类不存在"
-```
-
-结果: ✅ `deploy_006 import/dataclass 验证通过`
-
-```bash
-# 端到端 YAML 加载
-PYTHONPATH="src/model_deploy/pi05/common/src:src/model_deploy/pi05/deploy/src:$PYTHONPATH" python3 -c "load_deploy_config('...deploy.yaml') 验证 command 默认路径等"
-```
-
-结果: ✅ `deploy_006 端到端加载验证通过`
-
-### 未验证事项
-
-- deploy.yaml 中 bridge_output/mux/bridge/mux 键尚未更新（deploy_008 处理）。
-- deploy_node _create_subscriptions 适配旧 command topic（L2-03 处理）。
-- bridge_node/mux_node 源文件未删（保留回滚路径，按 L3 约束不删）。
-- RuntimeConfig/SafetyConfig 未改（deploy_007 处理）。
-
-### 结论
-
-**所有成功标准已勾选，三组自动化验证通过。L3 目标达成。建议进入验收 agent 评估 (acceptance card)。**

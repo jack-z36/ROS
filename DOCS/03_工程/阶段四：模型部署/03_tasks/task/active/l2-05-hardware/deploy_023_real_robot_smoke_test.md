@@ -1,4 +1,4 @@
-﻿# L3 微元改造任务：real-robot smoke test（safe-run + 急停）
+# L3 微元改造任务：real-robot smoke test（safe-run + 急停）
 
 ## 1. 任务定位
 
@@ -9,15 +9,7 @@ L2 改造工作包：L2-05 硬件执行栈
 L3 编号：deploy_023
 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_023_real_robot_smoke_test.md`
 改造类型：test-coverage
-真机风险等级：real-robot（直接驱动 RM65 + 大象夹爪真机运动）
-L2 Git 分支：model_deploy-l2-05-hardware
-验收证据目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware
-对应 L2 运行验收场景：[S5]
-验收卡片路径：DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_023_验收卡片.md
-验收模式：hardware-blocked
-辅助验收模式：[]
-本地验收是否必须：false
-验收反馈目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
+真机风险等级：critical（直接驱动 RM65 + 大象夹爪真机运动）
 
 ## 2. 调度元数据
 
@@ -26,16 +18,7 @@ dispatch:
   task_id: deploy_023
   task_file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_023_real_robot_smoke_test.md
   group: l2-05-hardware
-  branch: model_deploy-l2-05-hardware
-  integration_branch: model_deploy
-  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware
-  acceptance_scenarios: [S5]
-  acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-05-hardware/deploy_023_验收卡片.md
-  acceptance_mode: hardware-blocked
-  acceptance_secondary_modes: []
-  local_acceptance_required: false
-  acceptance_round_limit: 3
-  acceptance_feedback_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs
+  branch: model_deploy
   wave: 4
   parallel_group: l2-05-hardware-p4
   depends_on: [deploy_022]
@@ -55,7 +38,7 @@ dispatch:
       - elephant_gripper_right
       - estop_physical
       - deadman_physical
-  robot_risk: real-robot
+  robot_risk: critical
   dispatch_status: blocked
   blocked_reason: "必须 deploy_022 shadow-run 全链路通过后才解除；必须有人在场 + 急停就绪"
 ```
@@ -174,15 +157,6 @@ dispatch:
 > - 急停：物理急停必须优先，随时可用
 > - 保守阶梯：必须从"保持当前"开始，逐步加量，不跳级
 
-### 验收证据落点
-
-本 L3 的验收结果、专用脚本和日志必须归入所属 L2 验收目录：
-
-```text
-验收结果文档：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/验收结果.md
-验收脚本目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/scripts/
-验收日志目录：DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-hardware/logs/
-```
 ## 9. 允许修改
 
 - 无（纯验收，不改代码）
@@ -210,8 +184,6 @@ dispatch:
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/L3微元改造任务模板.md`
-3. `DOCS/02_约束/Git协作/Git操作规则.md`
-4. `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`
 
 ### 相关历史任务或执行记录
 
@@ -241,7 +213,6 @@ dispatch:
 ## 13. 成功标准
 
 - [ ] 已完成任务文件身份校验。
-- [ ] 已确认当前分支符合所属 L2 分支规范。
 - [ ] 前置 5 项全部满足（shadow/标定/bundle/急停/人在场）。
 - [ ] 保持当前位姿：机械臂不动。
 - [ ] 微小位移：机械臂缓慢移动预期距离。
