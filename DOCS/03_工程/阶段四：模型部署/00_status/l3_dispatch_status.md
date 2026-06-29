@@ -18,7 +18,7 @@
 |---|---|---|
 | l2-01-types | `03_tasks/task/dispatch/l2-01-types.yaml` | 全组已标记 `synced` |
 | l2-02-config | `03_tasks/task/dispatch/l2-02-config.yaml` | 全组已标记 `synced` |
-| l2-03-assembly | `03_tasks/task/dispatch/l2-03-assembly.yaml` | 下一组待从 dispatch 中选择 ready L3 |
+| l2-03-assembly | `03_tasks/task/dispatch/l2-03-assembly.yaml` | 4 个 L3 均已 `committed-local`（`0a75f77`+`4c8080d`）；deploy_009/010/011 `PASS_LOCAL`，deploy_012 `BLOCKED_ENV`（torch 缺失）；Gate 不通过，待 torch 环境重跑 012 放行 |
 | l2-04-publish | `03_tasks/task/dispatch/l2-04-publish.yaml` | 等待 L2-03 Gate |
 | l2-05-hardware | `03_tasks/task/dispatch/l2-05-hardware.yaml` | 等待 L2-04 Gate；`deploy_023` 默认 blocked |
 
