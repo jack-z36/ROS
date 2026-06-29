@@ -24,6 +24,10 @@ vendor/RealManRobot/
 *.swp
 *.swo
 
+# Agent / tool 运行产物（会话、计划、笔记缓存，本地生成，不托管）
+.omo/
+.ralph/
+
 # Local IDE/project metadata
 .vscode/
 .obsidian/
