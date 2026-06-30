@@ -65,6 +65,8 @@ gopro:
     camera_name: "gopro_right"
     frame_id: "gopro_right_optical_frame"
     frame_rate: 30
+    pixel_format: "YUYV"
+    output_encoding: "rgb8"
     topics:
       # image_raw: 视频帧，类型 sensor_msgs/msg/Image，包含时间戳、宽高、编码和像素数据。
       # camera_info: 相机标定信息，类型 sensor_msgs/msg/CameraInfo，包含内参、畸变和投影矩阵。
@@ -83,6 +85,8 @@ gopro:
     camera_name: "gopro_left"
     frame_id: "gopro_left_optical_frame"
     frame_rate: 30
+    pixel_format: "YUYV"
+    output_encoding: "rgb8"
     topics:
       # image_raw: 视频帧，类型 sensor_msgs/msg/Image，包含时间戳、宽高、编码和像素数据。
       # camera_info: 相机标定信息，类型 sensor_msgs/msg/CameraInfo，包含内参、畸变和投影矩阵。
@@ -96,7 +100,7 @@ gopro:
 
 pressure:
   enabled: true
-  config_file: "/home/hit/ROS/src/hwk_pressure_driver/config/pressure_sensors.yaml"
+  config_file: "/home/hit/ROS/src/data_collection/hwk_pressure_driver/config/pressure_sensors.yaml"
   node_name: "pressure_driver_node"
   topics:
     left_gripper_1:

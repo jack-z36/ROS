@@ -18,31 +18,56 @@ L3 编号：
 
 `当前任务文件路径` 必须使用相对仓库根目录路径，不得写 Windows 盘符路径、Linux 绝对路径或任何开发者本机工作区路径。
 
-## 2. 本次目标
+## 2. 调度元数据
+
+本节用于主 Agent 判断当前 L3 在功能组任务池中的并行 / 串行关系。必须使用 YAML；所有路径必须是相对仓库根目录路径。
+
+```yaml
+dispatch:
+  task_id: <L3编号>
+  task_file: DOCS/阶段二：数据清洗/03_tasks/task/active/<功能组>/<文件名>.md
+  group: <功能组>
+  branch: <runtime-mvp / service-s1 / service-s2 / service-s3 / service-s4 / service-s5>
+  wave: 1
+  parallel_group: <功能组>-p1
+  depends_on: []
+  must_run_after: []
+  can_run_parallel_with: []
+  blocks: []
+  conflict_scope:
+    files: []
+    modules: []
+    config_keys: []
+  dispatch_status: ready
+```
+
+`dispatch_status` 只允许 `ready`、`blocked`、`waiting_user`。`depends_on` 中列出的 L3 必须完成并归档后，本 L3 才能执行。
+
+## 3. 本次目标
 
 ```text
 <用一句话说明本次只做什么>
 ```
 
-## 3. 本次不做
+## 4. 本次不做
 
 -
 -
 -
 
-## 4. 执行对象
+## 5. 执行对象
 
 说明本次 L3 主要处理的对象。这里不要强行写成输入数据；可以是一个类型、一个文件读写动作、一个计算规则、一个 runner 流程或一个文档原子定义。
 
 -
 
-## 5. 执行依赖
+## 6. 执行依赖
 
 说明开始本任务前必须已经存在或必须先读取的依赖。这里只写任务级依赖，具体路径、字段、读写动作、计算样例或调用顺序放入类别主体模板。
 
 -
 
-## 6. 上游接口确认
+## 7. 上游接口确认
 
 如果本 L3 直接消费上游功能的接口，必须先填写本节；如果没有直接上游接口，写“无直接上游接口”。
 
@@ -54,7 +79,7 @@ L3 编号：
 如果有冲突，本次处理策略：
 ```
 
-## 7. 预期改动形态
+## 8. 预期改动形态
 
 说明本任务完成后，仓库中会出现什么形态的变化。不要写泛泛的“完成任务”，要能帮助后续 Agent 判断任务是否跑偏。
 

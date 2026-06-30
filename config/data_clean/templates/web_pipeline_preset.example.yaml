@@ -1,0 +1,15 @@
+schema_version: 1
+name: fast_debug
+overrides:
+  scene1:
+    gripper:
+      left:
+        marker_min: 33.25
+        marker_max: 144.522
+  scene2:
+    pose_filter:
+      window_duration_ms: 160
+  scene3:
+    target_step_hz: 15
+  lerobot:
+    fps: 15

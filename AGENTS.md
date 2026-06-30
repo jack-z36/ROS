@@ -2,6 +2,8 @@
 
 本文件只作为仓库入口索引和交互模式分流，不承载阶段细节和完整预读清单。具体规则下沉到对应工作流、约束文件和 L3 任务文件。
 
+任何代码编写，都必须要遵从约束：/home/hit/ROS/DOCS/阶段二：数据清洗/约束文件/文件存放规范.md
+
 ## 基础规则
 
 - 仓库公共规则：`DOCS/public_rules.md`
@@ -11,10 +13,11 @@
 - 阶段二功能分支接力流程：`DOCS/阶段二：数据清洗/约束文件/功能分支接力流程.md`
 - 阶段二 L3 功能组目录约束：`DOCS/阶段二：数据清洗/约束文件/L3功能组目录约束.md`
 - 阶段二 L3 现有实现盘点约束：`DOCS/阶段二：数据清洗/约束文件/L3现有实现盘点约束.md`
+- 阶段二 L3 调度元数据约束：`DOCS/阶段二：数据清洗/约束文件/L3调度元数据约束.md`
 
 处理任务时先判断交互模式，再只读取该模式需要的入口文档。不得因为用户提到“阶段二”就自动加载阶段四件套、场景六件套或全部模板。
 
-阶段二默认不在 `main` 上工作；Win 文档规划和 Ubuntu L3 执行都应位于对应 L1 feature 分支，例如 Runtime MVP 使用 `runtime-mvp`，Service 使用 `feature/stage2-service`。
+阶段二默认不在 `main` 上工作；Win 文档规划和 Ubuntu L3 执行都应位于对应 Runtime 分支或 Service 场景分支。Runtime MVP 使用 `runtime-mvp`；Service 场景一到五分别使用 `service-s1`、`service-s2`、`service-s3`、`service-s4`、`service-s5`。
 
 ## 两种主要协作模式
 
@@ -32,12 +35,13 @@
 - `DOCS/阶段二：数据清洗/约束文件/开发者验收入口约束.md`
 - `DOCS/阶段二：数据清洗/约束文件/L3功能组目录约束.md`
 - `DOCS/阶段二：数据清洗/约束文件/L3现有实现盘点约束.md`
+- `DOCS/阶段二：数据清洗/约束文件/L3调度元数据约束.md`
 
 写入边界：
 
 - 可写阶段二规划文档、L2/L3 文档、模板和必要的 Win 端规划记录。
 - 不执行代码开发，不运行源码改写命令，不移动 L3 到 completed。
-- 开始规划前必须确认当前处于对应 L1 feature 分支；不得在 `main` 上生成阶段二 L2/L3。
+- 开始规划前必须确认当前处于对应 Runtime 分支或 Service 场景分支；不得在 `main` 上生成阶段二 L2/L3。
 
 ### 2. Ubuntu L3 执行模式
 
@@ -50,6 +54,7 @@
 - 用户指定的 L3 文件。
 - L3 文件中列出的必读任务文档、相关 L3、约束文档和代码文件。
 - `DOCS/阶段二：数据清洗/约束文件/L3任务文件身份校验约束.md`
+- `DOCS/阶段二：数据清洗/约束文件/L3调度元数据约束.md`
 - `DOCS/阶段二：数据清洗/约束文件/双机协作写入边界.md`
 - `DOCS/阶段二：数据清洗/约束文件/功能分支接力流程.md`
 
@@ -59,7 +64,7 @@
 - 完成后将当前 L3 从 `DOCS/阶段二：数据清洗/03_tasks/task/active/<功能组>/` 移到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<L1归档目录>/<功能组>/`，并在原 active 功能组目录为空时删除该空目录。
 - 禁止写 `DOCS/总执行日志.md`、`DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md`。
 - 执行前必须校验用户指定路径、实际读取路径、文件名编号和正文 `L3 编号` 一致；找不到或不一致时必须停止，不得改读同目录其他 L3。
-- 执行前必须确认当前分支是当前 L3 所属 L1 feature 分支；Ubuntu 禁止在 `main` 上执行 L3 或推送 `main`。
+- 执行前必须确认当前分支是当前 L3 所属 Runtime 分支或 Service 场景分支；Ubuntu 禁止在 `main` 上执行 L3 或推送 `main`。
 - Service 场景 L3 的自动化验收不能替代最终场景验收；场景最终验收必须由用户本人运行 `./start_data_clean.sh --dev`。
 
 ## 常用目录
@@ -75,8 +80,7 @@
 ## 代码包入口
 
 - `src/data_clean`：阶段二数据清洗代码。
-- `src/baton_mini_sdk_demo`：Baton Mini 相关代码。
-- `src/gopro_camera_launch`：GoPro 相关代码。
+- `src/data_collection/baton_mini_sdk_demo`：Baton Mini 相关代码。
+- `src/data_collection/gopro_camera_launch`：GoPro 相关代码。
 
 只有任务直接涉及某个代码包时，才读取该代码包的架构或运行说明。
-

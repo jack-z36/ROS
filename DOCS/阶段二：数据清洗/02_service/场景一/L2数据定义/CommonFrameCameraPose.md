@@ -1,12 +1,14 @@
+> ⚠️ **Deprecated since 2026-06 debug-common-frames L3 001**。当前主链路不再输出 common-frame 相机 pose；保留为历史字段，不推荐消费方依赖。替代品：见 [[arm-base 位姿转换]]。
+
 # CommonFrameCameraPose
 
 ## 定义
 
-`CommonFrameCameraPose` 是左右 Baton Mini 相机在 common frame 下的位姿表达。
+`CommonFrameCameraPose` 是左右 Baton Mini 相机在 common frame 下的位姿表达（已废弃，保留历史兼容）。
 
 ## 所属位置
 
-阶段二 Service 场景一，来源能力模块：[[common frame 位姿转换]]。
+阶段二 Service 场景一，来源能力模块：[[arm-base 位姿转换]]。
 
 ## 现实语义
 

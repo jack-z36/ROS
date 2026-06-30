@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import textwrap
+from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any
 
@@ -32,6 +33,20 @@ SUPPORTED_IMAGE_ENCODINGS = {
     "rgb8",
     "mono8",
 }
+
+HEADER_STAMP_ALIGNMENT_TYPES = {
+    "sensor_msgs/msg/Image",
+    "hwk_pressure_interfaces/msg/PressureFrame",
+    "data_clean/msg/TactilePressureFrame",
+}
+
+
+@dataclass(frozen=True)
+class AlignmentTimestamp:
+    """Timestamp selected for cross-topic alignment."""
+
+    timestamp_ns: int
+    time_domain: str
 
 
 class Ros2DynamicCodec:
@@ -65,6 +80,48 @@ class Ros2DynamicCodec:
 
     def encode_float32(self, value: float) -> bytes:
         return self._float32_encoder(SimpleNamespace(data=float(value)))
+
+
+def extract_header_stamp_ns(ros_message: Any) -> int | None:
+    """Return a positive ROS ``header.stamp`` value when one is available."""
+
+    stamp = getattr(getattr(ros_message, "header", None), "stamp", None)
+    if stamp is None:
+        return None
+    timestamp_ns = int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
+    return timestamp_ns if timestamp_ns > 0 else None
+
+
+def select_alignment_timestamp(
+    schema: Schema | None,
+    message: Message,
+    *,
+    codec: Ros2DynamicCodec | None = None,
+    decoded_message: Any | None = None,
+) -> AlignmentTimestamp:
+    """Choose a stable timestamp for scene 3 alignment.
+
+    Camera and tactile headers describe sensor events and are preferred.
+    Pose headers are intentionally excluded because Baton devices can publish
+    unsynchronised device-clock values. MCAP publish time is the common-clock
+    fallback; log time is only used when publish time is unavailable.
+    """
+
+    if schema is not None and schema.name in HEADER_STAMP_ALIGNMENT_TYPES:
+        if decoded_message is None:
+            try:
+                decoded_message = (codec or Ros2DynamicCodec()).decode(schema, message)
+            except Ros2CodecError:
+                decoded_message = None
+        if decoded_message is not None:
+            header_stamp_ns = extract_header_stamp_ns(decoded_message)
+            if header_stamp_ns is not None:
+                return AlignmentTimestamp(header_stamp_ns, "header_stamp")
+
+    publish_time = int(message.publish_time)
+    if publish_time > 0:
+        return AlignmentTimestamp(publish_time, "publish_time")
+    return AlignmentTimestamp(int(message.log_time), "log_time")
 
 
 def normalize_ros2_schema(schema: Schema, cache: dict[int, Schema] | None = None) -> Schema:
@@ -132,6 +189,21 @@ def inject_pose_fields(
     pose.orientation.y = qy
     pose.orientation.z = qz
     pose.orientation.w = qw
+    return ros_message
+
+
+def inject_tactile_fields(
+    ros_message: Any,
+    filtered_matrix: list[list[float]],
+) -> Any:
+    """Replace tactile pressure data with filtered values.
+
+    Works with ``hwk_pressure_interfaces/msg/PressureFrame`` which has a
+    mutable ``data`` flat list field.  The ``rows`` / ``cols`` fields are
+    preserved as-is.
+    """
+    flat_data = [float(cell) for row in filtered_matrix for cell in row]
+    ros_message.data = flat_data
     return ros_message
 
 

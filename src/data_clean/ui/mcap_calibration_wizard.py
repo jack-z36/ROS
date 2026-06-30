@@ -27,7 +27,7 @@ from urllib.parse import urlparse
 import cv2
 import numpy as np
 import yaml
-from config.mcap_process_config import (
+from repo.config.mcap_process_config import (
     AppConfig,
     GripperStreamConfig,
     PoseStreamConfig,
@@ -119,6 +119,160 @@ class CommonFrameSideCalibration:
     position_std: float
 
 
+@dataclass(frozen=True)
+class CommonFrameRightCalibration:
+    """Right-hand common frame calibration with raw pose and inverse extrinsic."""
+
+    input_topic: str
+    output_topic: str
+    sample_frames: int
+    position_std: float
+    t_right_start_common: TransformConfig
+    common_from_right_start: TransformConfig
+
+
+ASSET_BASE = WORKSPACE_DIR / "asset/阶段二：数据清洗"
+DEV_RUNS_BASE = ASSET_BASE / "dev_runs/scene1"
+
+
+@dataclass(frozen=True)
+class Scene1DevRun:
+    run_id: str
+    check_id: str
+    run_dir: Path
+    artifact_dir: Path
+    log_dir: Path
+    config_dir: Path
+    effective_config: Path
+    status: str
+
+
+def create_scene1_dev_run(check_id: str) -> Scene1DevRun:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_id = f"{timestamp}_{check_id}"
+    run_dir = DEV_RUNS_BASE / run_id
+    artifact_dir = run_dir / "artifacts"
+    log_dir = run_dir / "logs"
+    config_dir = run_dir / "config"
+    effective_config = config_dir / "effective_config.yaml"
+
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    config_dir.mkdir(parents=True, exist_ok=True)
+
+    run_log = {
+        "run_id": run_id,
+        "check_id": check_id,
+        "run_dir": str(run_dir),
+        "artifact_dir": str(artifact_dir),
+        "log_dir": str(log_dir),
+        "effective_config": str(effective_config),
+        "status": "ready",
+        "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+    with (log_dir / "run_log.json").open("w", encoding="utf-8") as fh:
+        json.dump(run_log, fh, ensure_ascii=False, indent=2)
+
+    with effective_config.open("w", encoding="utf-8") as fh:
+        yaml.safe_dump({"#": "effective config snapshot"}, fh, allow_unicode=True)
+
+    return Scene1DevRun(
+        run_id=run_id,
+        check_id=check_id,
+        run_dir=run_dir,
+        artifact_dir=artifact_dir,
+        log_dir=log_dir,
+        config_dir=config_dir,
+        effective_config=effective_config,
+        status="ready",
+    )
+
+
+def write_gripper_calibration_artifacts(
+    dev_run: Scene1DevRun,
+    results: list[GripperSideCalibration],
+) -> Scene1DevRun:
+    config_path = dev_run.artifact_dir / "gripper_calibration_config.yaml"
+    summary_path = dev_run.artifact_dir / "gripper_calibration_summary.json"
+    run_log_path = dev_run.log_dir / "run_log.json"
+
+    config_data = {
+        "gripper_calibration": {
+            "generated_by": "scene1_gripper_calibration_config",
+            "calibrated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "sides": {},
+        }
+    }
+    summary = {}
+
+    for item in results:
+        side_config = {
+            "hand": item.hand,
+            "image_topic": item.image_topic,
+            "output_topic": item.output_topic,
+            "aruco_dict": item.aruco_dict,
+            "marker_id_0": item.marker_id_0,
+            "marker_id_1": item.marker_id_1,
+            "marker_min": round(item.marker_min, 3),
+            "marker_max": round(item.marker_max, 3),
+            "gripper_max": 100.0,
+            "calibration_source": "browser_gopro_calibration",
+        }
+        config_data["gripper_calibration"]["sides"][item.hand] = side_config
+
+        summary[item.hand] = {
+            "marker_id_0": item.marker_id_0,
+            "marker_id_1": item.marker_id_1,
+            "marker_min": round(item.marker_min, 3),
+            "marker_max": round(item.marker_max, 3),
+            "gripper_max": 100.0,
+            "closed_rate": round(item.closed_rate, 4),
+            "open_rate": round(item.open_rate, 4),
+            "closed_std": round(item.closed_std, 3),
+            "open_std": round(item.open_std, 3),
+            "closed_frames": item.closed_frames,
+            "open_frames": item.open_frames,
+        }
+
+    with config_path.open("w", encoding="utf-8") as fh:
+        yaml.safe_dump(config_data, fh, allow_unicode=True, sort_keys=False)
+
+    with summary_path.open("w", encoding="utf-8") as fh:
+        json.dump(summary, fh, ensure_ascii=False, indent=2)
+
+    with run_log_path.open("r", encoding="utf-8") as fh:
+        run_log = json.load(fh)
+
+    run_log["status"] = "success"
+    run_log["artifacts"] = {
+        "gripper_calibration_config.yaml": str(config_path),
+        "gripper_calibration_summary.json": str(summary_path),
+    }
+    run_log["completed_at"] = datetime.now().astimezone().isoformat(timespec="seconds")
+
+    with run_log_path.open("w", encoding="utf-8") as fh:
+        json.dump(run_log, fh, ensure_ascii=False, indent=2)
+
+    return Scene1DevRun(
+        run_id=dev_run.run_id,
+        check_id=dev_run.check_id,
+        run_dir=dev_run.run_dir,
+        artifact_dir=dev_run.artifact_dir,
+        log_dir=dev_run.log_dir,
+        config_dir=dev_run.config_dir,
+        effective_config=dev_run.effective_config,
+        status="success",
+    )
+
+
+def save_gripper_calibration_to_production(
+    output_path: Path,
+    results: list[GripperSideCalibration],
+) -> AppConfig:
+    config = load_app_config(output_path)
+    return _save_gripper(config, output_path, results)
+
+
 def _short_path(path: str | Path) -> str:
     try:
         return os.path.relpath(str(path), str(WORKSPACE_DIR))
@@ -141,6 +295,24 @@ def _aruco_dictionaries() -> dict[str, Any]:
 
 
 def _to_mapping(transform: TransformConfig) -> dict[str, Any]:
+    return {
+        "start_from_common": {
+            "translation": {
+                "x": transform.translation.x,
+                "y": transform.translation.y,
+                "z": transform.translation.z,
+            },
+            "rotation_xyzw": {
+                "qx": transform.rotation_xyzw.qx,
+                "qy": transform.rotation_xyzw.qy,
+                "qz": transform.rotation_xyzw.qz,
+                "qw": transform.rotation_xyzw.qw,
+            },
+        }
+    }
+
+
+def _to_mapping_from_transform(transform: TransformConfig) -> dict[str, Any]:
     return {
         "start_from_common": {
             "translation": {
@@ -709,15 +881,17 @@ def _write_yaml_with_backup(path: Path, data: dict[str, Any]) -> None:
 def _print_status(config: AppConfig) -> None:
     status = calibration_item_status(config)
     print()
-    print("当前标定状态")
+    print("当前标定状态（common_frame 仅作历史兼容参考，不再作为主路线必需项）")
     for key, label in (
         ("gripper_left", "左手夹爪"),
         ("gripper_right", "右手夹爪"),
-        ("common_frame_left", "左手 common frame"),
-        ("common_frame_right", "右手 common frame"),
     ):
         print(f"  {label}: {'已完成' if status[key] else '未完成'}")
-    print(f"  总体: {'完整已标定' if config_is_calibrated(config) else '未完整标定'}")
+    print("  [注] 左右 common frame 标定已废弃，不再作为主路线必需项。")
+    has_common = status.get("common_frame_left", False) or status.get("common_frame_right", False)
+    if has_common:
+        print("  [注] 旧 common frame 配置仍保留，但不会被主路线使用。")
+    print(f"  总体: {'基本标定完成（gripper 就绪）' if config_is_calibrated(config) else '未完整标定（需完成夹爪标定）'}")
 
 
 def _reload_config(output_path: Path, fallback_path: Path) -> AppConfig:
@@ -736,6 +910,34 @@ def _save_common_frame(config: AppConfig, output_path: Path, results: list[Commo
     _apply_common_frame_results(data, results, output_path.parent)
     _write_yaml_with_backup(output_path, data)
     return load_app_config(output_path)
+
+
+def _save_frame_alignment_from_right(
+    config: AppConfig,
+    output_path: Path,
+    result: CommonFrameRightCalibration,
+) -> AppConfig:
+    data = _base_config_mapping(config)
+    _apply_frame_alignment_from_right(data, result)
+    _write_yaml_with_backup(output_path, data)
+    return load_app_config(output_path)
+
+
+def _apply_frame_alignment_from_right(data: dict[str, Any], result: CommonFrameRightCalibration) -> None:
+    calibration = _ensure_nested_status(data.get("calibration", {}))
+    calibration["common_frame"]["right"] = {
+        "calibrated": True,
+        "method": "live_baton_pose_window_frame_alignment",
+        "input_topic": result.input_topic,
+        "output_topic": result.output_topic,
+        "t_right_start_common": _to_mapping_from_transform(result.t_right_start_common)["start_from_common"],
+        "common_from_right_start": _to_mapping_from_transform(result.common_from_right_start)["start_from_common"],
+        "sample_frames": result.sample_frames,
+        "position_std": round(result.position_std, 9),
+        "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+    _mark_overall_status(calibration)
+    data["calibration"] = calibration
 
 
 def _find_open_port(start_port: int = 8765, host: str = "127.0.0.1") -> int:
@@ -823,6 +1025,27 @@ def _average_quaternion_xyzw(quaternions: list[tuple[float, float, float, float]
         average = -average
     average = average / np.linalg.norm(average)
     return tuple(float(value) for value in average)
+
+
+def _se3_inverse_xyzw(
+    translation: tuple[float, float, float],
+    rotation_xyzw: tuple[float, float, float, float],
+) -> tuple[tuple[float, float, float], tuple[float, float, float, float]]:
+    """Compute SE(3) inverse of (translation, quaternion_xyzw).
+
+    For T = (t, R), T^(-1) = (-R^T * t, R^(-1)).
+    Quaternion conjugate gives R^(-1) for unit quaternions.
+    """
+    qx, qy, qz, qw = rotation_xyzw
+    tx, ty, tz = translation
+
+    inv_qx, inv_qy, inv_qz, inv_qw = -qx, -qy, -qz, qw
+
+    inv_tx = -(tx * (1 - 2 * (qy * qy + qz * qz)) + ty * 2 * (qx * qy + qz * qw) + tz * 2 * (qx * qz - qy * qw))
+    inv_ty = -(tx * 2 * (qx * qy - qz * qw) + ty * (1 - 2 * (qx * qx + qz * qz)) + tz * 2 * (qy * qz + qx * qw))
+    inv_tz = -(tx * 2 * (qx * qz + qy * qw) + ty * 2 * (qy * qz - qx * qw) + tz * (1 - 2 * (qx * qx + qy * qy)))
+
+    return (inv_tx, inv_ty, inv_tz), (inv_qx, inv_qy, inv_qz, inv_qw)
 
 
 class BrowserCalibrationSession:
@@ -947,7 +1170,11 @@ class BrowserCalibrationSession:
                 self.common_hand = hand
                 self.common_status = "ready"
                 stream = _pose_for_hand(self.config.pose_streams, hand)
-                self.message = f"请将 {HAND_LABELS[hand]} Baton Mini 放到 common frame 原点/标准姿态，然后点击开始采样。位姿 topic: {stream.input_topic}"
+                self.message = (
+                    f"【已废弃】common frame 标定已不再作为主路线必需项。\n"
+                    f"请将 {HAND_LABELS[hand]} Baton Mini 放到 common frame 原点/标准姿态，\n"
+                    f"然后点击开始采样。位姿 topic: {stream.input_topic}"
+                )
             elif mode == "home":
                 self.mode = "home"
             else:
@@ -1128,15 +1355,30 @@ class BrowserCalibrationSession:
         hand = self.common_hand
         stream = _pose_for_hand(self.config.pose_streams, hand)
         try:
-            result = self._sample_common_frame_pose(hand, stream)
-            with self.lock:
-                self.config = _save_common_frame(self.config, self.output_path, [result])
-                self.common_status = "sampled"
-                self.error = ""
-                self.message = (
-                    f"{HAND_LABELS[hand]} common frame 已保存："
-                    f"{result.sample_frames} 帧，位置标准差 {result.position_std:.6g}。"
-                )
+            if hand == "right":
+                result = self._sample_right_common_frame_pose(stream)
+                with self.lock:
+                    self.config = _save_frame_alignment_from_right(
+                        self.config, self.output_path, result
+                    )
+                    self.common_status = "sampled"
+                    self.error = ""
+                    self.message = (
+                        f"【已废弃】{HAND_LABELS[hand]} common frame 外参已生成："
+                        f"{result.sample_frames} 帧，位置标准差 {result.position_std:.6g}。"
+                        f"common_from_right_start 由 inverse(T_right_start_common) 计算。\n"
+                        f"注意：此配置不再作为主路线必需项。"
+                    )
+            else:
+                result = self._sample_common_frame_pose(hand, stream)
+                with self.lock:
+                    self.config = _save_common_frame(self.config, self.output_path, [result])
+                    self.common_status = "sampled"
+                    self.error = ""
+                    self.message = (
+                        f"{HAND_LABELS[hand]} common frame 已保存："
+                        f"{result.sample_frames} 帧，位置标准差 {result.position_std:.6g}。"
+                    )
         except Exception as exc:  # noqa: BLE001 - report to browser.
             with self.lock:
                 self.common_status = "failed"
@@ -1191,6 +1433,74 @@ class BrowserCalibrationSession:
             position_std=position_std,
         )
 
+    def _sample_right_common_frame_pose(self, stream: PoseStreamConfig) -> CommonFrameRightCalibration:
+        deadline = time.monotonic() + SAMPLE_SECONDS
+        positions: list[tuple[float, float, float]] = []
+        quaternions: list[tuple[float, float, float, float]] = []
+        last_seq: int | None = None
+        last_fresh_pose_time = time.monotonic()
+
+        while time.monotonic() < deadline:
+            sample = self.subscriber.latest_pose(stream.input_topic, max_age_sec=FRESH_IMAGE_MAX_AGE_SEC)
+            if sample is None:
+                if time.monotonic() - last_fresh_pose_time > LOST_IMAGE_TIMEOUT_SEC:
+                    raise RuntimeError(f"{stream.input_topic} 超过 {LOST_IMAGE_TIMEOUT_SEC:.0f} 秒没有新位姿。")
+                time.sleep(0.01)
+                continue
+            pose, _stamp, seq = sample
+            if last_seq == seq:
+                time.sleep(0.005)
+                continue
+            last_seq = seq
+            last_fresh_pose_time = time.monotonic()
+            x, y, z, qx, qy, qz, qw = pose
+            positions.append((x, y, z))
+            quaternions.append((qx, qy, qz, qw))
+
+        if len(positions) < MIN_SAMPLE_FRAMES:
+            raise RuntimeError(f"右手位姿采样帧数不足：{len(positions)} < {MIN_SAMPLE_FRAMES}")
+
+        position_array = np.asarray(positions, dtype=np.float64)
+        median_position = np.median(position_array, axis=0)
+        position_std = float(np.mean(np.std(position_array, axis=0)))
+        qx, qy, qz, qw = _average_quaternion_xyzw(quaternions)
+
+        t_right_start_common = TransformConfig(
+            translation=Vector3Config(
+                x=float(median_position[0]),
+                y=float(median_position[1]),
+                z=float(median_position[2]),
+            ),
+            rotation_xyzw=QuaternionConfig(qx=qx, qy=qy, qz=qz, qw=qw),
+        )
+
+        inv_translation, inv_rotation = _se3_inverse_xyzw(
+            (float(median_position[0]), float(median_position[1]), float(median_position[2])),
+            (qx, qy, qz, qw),
+        )
+        common_from_right_start = TransformConfig(
+            translation=Vector3Config(
+                x=inv_translation[0],
+                y=inv_translation[1],
+                z=inv_translation[2],
+            ),
+            rotation_xyzw=QuaternionConfig(
+                qx=inv_rotation[0],
+                qy=inv_rotation[1],
+                qz=inv_rotation[2],
+                qw=inv_rotation[3],
+            ),
+        )
+
+        return CommonFrameRightCalibration(
+            input_topic=stream.input_topic,
+            output_topic=stream.output_topic,
+            sample_frames=len(positions),
+            position_std=position_std,
+            t_right_start_common=t_right_start_common,
+            common_from_right_start=common_from_right_start,
+        )
+
     def exit(self) -> dict[str, Any]:
         with self.lock:
             self.message = "正在退出标定中心。"
@@ -1198,8 +1508,8 @@ class BrowserCalibrationSession:
         return self.state()
 
 
-def _html_page() -> str:
-    return r"""<!doctype html>
+def _html_page(*, gripper_only: bool = False) -> str:
+    html = r"""<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -1245,8 +1555,8 @@ def _html_page() -> str:
       <h3>操作</h3>
       <div id="homeControls">
         <button class="primary" onclick="setMode('gripper')">夹爪宽度实时标定</button>
-        <button onclick="setMode('common','left')">左手 common frame 标定</button>
-        <button onclick="setMode('common','right')">右手 common frame 标定</button>
+        <button onclick="setMode('common','left')">左手 common frame 标定（已废弃）</button>
+        <button onclick="setMode('common','right')">右手 common frame 标定（已废弃）</button>
         <button onclick="setMode('home')">查看状态</button>
         <button class="danger" onclick="exitWizard()">退出标定中心</button>
       </div>
@@ -1260,7 +1570,7 @@ def _html_page() -> str:
       </div>
       <div id="commonControls" class="hidden">
         <h4 id="commonTitle"></h4>
-        <p class="muted">将对应 Baton Mini 放到 common frame 原点/标准姿态，并保持静止。程序会读取实时 odometry，保存 start_from_common。</p>
+        <p class="muted">【已废弃】common frame 标定不再作为主路线必需项。新路线改为用户直接输入 work_frame_in_arm_base_pose。此功能保留仅用于历史兼容。</p>
         <button class="primary" id="commonSampleBtn" onclick="sampleCommon()">开始采样并保存</button>
         <button onclick="setMode('home')">返回中心</button>
       </div>
@@ -1295,8 +1605,8 @@ function refreshImages() {
 }
 function render() {
   if (!state) return;
-  document.getElementById('overall').textContent = state.is_calibrated ? '完整已标定' : '未完整标定';
-  const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪', common_frame_left:'左手 common frame', common_frame_right:'右手 common frame'};
+  document.getElementById('overall').textContent = state.is_calibrated ? '夹爪已标定' : '未完整标定';
+  const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪', common_frame_left:'左手 common frame（已废弃）', common_frame_right:'右手 common frame（已废弃）'};
   document.getElementById('status').innerHTML = Object.keys(labels).map(k => `<div class="badge ${state.status[k] ? 'done' : 'todo'}">${labels[k]}：${state.status[k] ? '已完成' : '未完成'}</div>`).join('');
   const msg = document.getElementById('message');
   msg.textContent = state.message || '';
@@ -1335,12 +1645,26 @@ heartbeat();
 </script>
 </body>
 </html>"""
+    if not gripper_only:
+        return html
+    return (
+        html.replace(
+            "<button onclick=\"setMode('common','left')\">左手 common frame 标定（已废弃）</button>\n"
+            "        <button onclick=\"setMode('common','right')\">右手 common frame 标定（已废弃）</button>\n",
+            "",
+        )
+        .replace(
+            "const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪', common_frame_left:'左手 common frame（已废弃）', common_frame_right:'右手 common frame（已废弃）'};",
+            "const labels = {gripper_left:'左手夹爪', gripper_right:'右手夹爪'};",
+        )
+    )
 
 
 class CalibrationHttpServer(ThreadingHTTPServer):
-    def __init__(self, server_address: tuple[str, int], handler_class: type[BaseHTTPRequestHandler], session: BrowserCalibrationSession):
+    def __init__(self, server_address: tuple[str, int], handler_class: type[BaseHTTPRequestHandler], session: BrowserCalibrationSession, *, gripper_only: bool = False):
         super().__init__(server_address, handler_class)
         self.session = session
+        self.gripper_only = gripper_only
 
 
 class CalibrationRequestHandler(BaseHTTPRequestHandler):
@@ -1353,7 +1677,7 @@ class CalibrationRequestHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         try:
             if parsed.path == "/":
-                self._send_bytes(_html_page().encode("utf-8"), "text/html; charset=utf-8")
+                self._send_bytes(_html_page(gripper_only=self.server.gripper_only).encode("utf-8"), "text/html; charset=utf-8")
             elif parsed.path == "/state":
                 self._send_json(self.server.session.state())
             elif parsed.path == "/frame.jpg":
@@ -1455,7 +1779,7 @@ def _calibration_center_menu() -> str:
     print()
     print("标定中心")
     print("  1  夹爪宽度实时标定")
-    print("  2  common frame 位姿标定")
+    print("  2  [已废弃] common frame 位姿标定")
     print("  3  查看当前标定状态")
     print("  q  返回/退出")
     return input("选择: ").strip().lower()
@@ -1483,6 +1807,9 @@ def run_calibration_wizard(
     config_path: str | Path,
     *,
     output_path: str | Path = DEFAULT_OUTPUT_CONFIG,
+    port: int | None = None,
+    gripper_only: bool = False,
+    no_browser: bool = False,
 ) -> int:
     config_path = Path(config_path)
     output_path = Path(output_path)
@@ -1493,6 +1820,7 @@ def run_calibration_wizard(
     print(f"  标定配置输出: {_short_path(output_path)}")
     print("  夹爪标定订阅: /gopro_left/image_raw, /gopro_right/image_raw")
     print("  common frame 标定订阅: pose_streams 中的左右 Baton Mini odometry topic")
+    print("  [注] common frame 标定已废弃，新路线使用 work_frame_in_arm_base_pose")
     print("  交互方式: 浏览器向导，OpenCV 仅做后台 ArUco 检测。")
 
     process = ManagedGoProProcess(None)
@@ -1510,19 +1838,22 @@ def run_calibration_wizard(
             print("  可继续使用 common frame 标定；夹爪宽度标定需要 GoPro 图像。")
             process = ManagedGoProProcess(None)
         session = BrowserCalibrationSession(config_path, output_path, config, subscriber, process)
+        if gripper_only:
+            session.set_mode("gripper")
         session.start_background_threads()
-        port = _find_open_port()
-        server = CalibrationHttpServer(("127.0.0.1", port), CalibrationRequestHandler, session)
+        active_port = port or _find_open_port()
+        server = CalibrationHttpServer(("127.0.0.1", active_port), CalibrationRequestHandler, session, gripper_only=gripper_only)
         server_thread = threading.Thread(target=server.serve_forever, daemon=True)
         server_thread.start()
-        url = f"http://127.0.0.1:{port}"
+        url = f"http://127.0.0.1:{active_port}"
         print()
         print("浏览器标定页面已启动")
         print(f"  {url}")
         print("  如果浏览器没有自动打开，请复制上面的地址到浏览器。")
         print("  浏览器不可用时，可在本终端输入 g 回车，进入夹爪标定终端兜底流程。")
         print("  退出页面或按 Ctrl+C 会停止本向导启动的 GoPro 节点。")
-        _open_browser(url)
+        if not no_browser:
+            _open_browser(url)
         while not session.stop_event.is_set():
             if sys.stdin.isatty():
                 readable, _writable, _error = select.select([sys.stdin], [], [], 0)
@@ -1561,12 +1892,21 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="实时 GoPro 数据清洗标定中心。")
     parser.add_argument("--config", default=str(WORKSPACE_DIR / "config/data_clean/data_clean_smoke_test.yaml"))
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT_CONFIG))
+    parser.add_argument("--port", type=int, default=0)
+    parser.add_argument("--gripper-only", action="store_true")
+    parser.add_argument("--no-browser", action="store_true")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
-    return run_calibration_wizard(args.config, output_path=args.output)
+    return run_calibration_wizard(
+        args.config,
+        output_path=args.output,
+        port=args.port or None,
+        gripper_only=args.gripper_only,
+        no_browser=args.no_browser,
+    )
 
 
 if __name__ == "__main__":

@@ -16,7 +16,8 @@ mcap_cleaned/
 *.mcap
 
 # Vendored/downloaded dependency caches
-src/VTLA_octopus-master/.deps/
+src/data_collection/VTLA_octopus-master/.deps/
+vendor/RealManRobot/
 
 # Runtime/editor noise
 .DS_Store
@@ -25,13 +26,18 @@ src/VTLA_octopus-master/.deps/
 
 # Local IDE/project metadata
 .vscode/
+.claude/
+.omo/
+.ralph/
+.codex/
 src/.obsidian/
-src/gopro_camera_launch/.idea/
-.claude/settings.local.json
+DOCS/.obsidian/
+src/data_collection/gopro_camera_launch/.idea/
 
 # 阶段二运行记录和缓存
 src/data_clean/runs/
 src/data_clean/.cache/
+config/data_clean/presets/*.yaml
 
 # 阶段二测试（代码 + 结果 + fixture）
 src/data_clean/tests/
@@ -49,3 +55,4 @@ _tmp/
 # Python 构建产物
 *.egg-info/
 dist/
+DOCS/.obsidian/workspace.json

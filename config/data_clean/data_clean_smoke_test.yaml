@@ -23,10 +23,12 @@ pose_streams:
     msg_type: nav_msgs/msg/Odometry
     output_topic: /baton_mini_left/camera_common_pose
     transform_file: /home/hit/ROS/config/data_clean/data_clean_left_transform.yaml
+    output_arm_base_tcp_pose: /left_arm_base_tcp_pose
   - input_topic: /baton_mini_right/fast_odom
     msg_type: nav_msgs/msg/Odometry
     output_topic: /baton_mini_right/camera_common_pose
     transform_file: /home/hit/ROS/config/data_clean/data_clean_right_transform.yaml
+    output_arm_base_tcp_pose: /right_arm_base_tcp_pose
 
 gripper_streams:
   - image_topic: /gopro_left/image_raw
@@ -49,3 +51,46 @@ gripper_streams:
     marker_min: 20.0
     marker_max: 300.0
     gripper_max: 100.0
+
+camera_from_tcp:
+  left:
+    translation_mm: [0.0, 0.0, 0.0]
+  right:
+    translation_mm: [0.0, 0.0, 0.0]
+
+work_frames:
+  left:
+    hand: left
+    base_frame_id: left_arm_base
+    work_frame_id: camera_work
+    position_mm: {x: 0.0, y: 0.0, z: 0.0}
+    rotation_euler_rad: {rx: 0.0, ry: 0.0, rz: 0.0}
+    source: smoke_test
+  right:
+    hand: right
+    base_frame_id: right_arm_base
+    work_frame_id: camera_work
+    position_mm: {x: 0.0, y: 0.0, z: 0.0}
+    rotation_euler_rad: {rx: 0.0, ry: 0.0, rz: 0.0}
+    source: smoke_test
+
+# frame_alignment: 场景一位姿转换配置契约
+# common_anchor 定义 common_frame 锚点，默认 left（= left_umi_start_frame）
+# common_from_right_start 必须由 T_right_start_common 求逆生成，不是固定底座直接给出
+# camera_from_*_tcp 表示 T_camera_tcp，不得混用 tcp_from_camera
+frame_alignment:
+  common_anchor: left
+  extrinsics:
+    common_from_left_start:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    common_from_right_start:
+      # 由 inverse(T_right_start_common) 生成，T_right_start_common 为右手位于 common_frame 标定位姿时的 raw pose
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    camera_from_left_tcp:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    camera_from_right_tcp:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]

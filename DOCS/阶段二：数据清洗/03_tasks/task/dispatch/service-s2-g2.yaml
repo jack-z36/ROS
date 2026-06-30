@@ -1,0 +1,55 @@
+dispatch_index:
+  group: service-s2-g2
+  branch: service-s2
+  source_l2: DOCS/阶段二：数据清洗/02_service/场景二/L2能力模块/数据补全器.md
+  max_parallel_agents: 1
+  waves:
+    - wave: 1
+      parallel_group: service-s2-g2-p1
+      depends_on: [service_s2_001]
+      tasks: [service_s2_005]
+    - wave: 2
+      parallel_group: service-s2-g2-p2
+      depends_on: [service_s2_005]
+      tasks: [service_s2_006]
+    - wave: 3
+      parallel_group: service-s2-g2-p3
+      depends_on: [service_s2_006]
+      tasks: [service_s2_007]
+    - wave: 4
+      parallel_group: service-s2-g2-p4
+      depends_on: [service_s2_004, service_s2_007]
+      tasks: [service_s2_008]
+  tasks:
+    service_s2_005:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g2/service_s2_005_定义数据补全器策略与结果类型.md
+      title: 定义数据补全器策略与结果类型
+      depends_on: [service_s2_001]
+      conflict_scope:
+        files: [src/data_clean/schemas/, src/data_clean/tests/, DOCS/阶段二：数据清洗/02_service/场景二/L2数据定义/]
+        modules: [data_clean.schemas]
+        config_keys: []
+    service_s2_006:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g2/service_s2_006_实现repair_run聚合与合法邻居查找.md
+      title: 实现 repair run 聚合与合法邻居查找
+      depends_on: [service_s2_005]
+      conflict_scope:
+        files: [src/data_clean/service/, src/data_clean/tests/]
+        modules: [data_clean.service]
+        config_keys: [repair.run_grouping]
+    service_s2_007:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g2/service_s2_007_实现三模态补全计算规则.md
+      title: 实现三模态补全计算规则
+      depends_on: [service_s2_006]
+      conflict_scope:
+        files: [src/data_clean/service/, src/data_clean/tests/]
+        modules: [data_clean.service]
+        config_keys: [repair.pose, repair.tactile, repair.gripper]
+    service_s2_008:
+      file: DOCS/阶段二：数据清洗/03_tasks/task/active/service-s2-g2/service_s2_008_接入数据补全开发者功能检验项.md
+      title: 接入数据补全开发者功能检验项
+      depends_on: [service_s2_004, service_s2_007]
+      conflict_scope:
+        files: [start_data_clean.sh, src/data_clean/runtime/, src/data_clean/ui/, src/data_clean/tests/]
+        modules: [data_clean.runtime, data_clean.ui]
+        config_keys: [dev_menu.scene2.signal_repair]

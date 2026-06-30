@@ -8,7 +8,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable
 
-from config.mcap_process_config import AppConfig, load_app_config
+from repo.config.mcap_process_config import AppConfig, load_app_config
 from service.validator import FileProcessingReport
 
 

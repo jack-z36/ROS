@@ -10,7 +10,7 @@ SCANNER_CONFIG="${SCANNER_CONFIG:-${HOME}/.config/scanner.json}"
 MCAP_OUTPUT_DIR="${MCAP_OUTPUT_DIR:-${WORKSPACE_DIR}/mcap}"
 OCTOPUS_EXECUTABLE="${OCTOPUS_EXECUTABLE:-${WORKSPACE_DIR}/install/octopus/lib/octopus/octopus}"
 QT_ROOT="${QT_ROOT:-${HOME}/Qt/6.11.0/gcc_64}"
-FFMPEG_ROOT="${FFMPEG_ROOT:-${WORKSPACE_DIR}/src/VTLA_octopus-master/.deps/ffmpeg8/usr}"
+FFMPEG_ROOT="${FFMPEG_ROOT:-${WORKSPACE_DIR}/src/data_collection/VTLA_octopus-master/.deps/ffmpeg8/usr}"
 
 source_setup_file() {
   local setup_file="$1"
@@ -53,6 +53,8 @@ if [[ -d "${FFMPEG_ROOT}" ]]; then
   export LD_LIBRARY_PATH="${FFMPEG_ROOT}/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
 fi
 
+export QT_RHI_BACKEND="${QT_RHI_BACKEND:-opengl}"
+
 if [[ "${OCTOPUS_LOCAL_ONLY}" == "1" ]]; then
   export ROS_AUTOMATIC_DISCOVERY_RANGE="LOCALHOST"
   export ROS_STATIC_PEERS=""
@@ -73,5 +75,6 @@ if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" ]]; then
 fi
 
 echo "ROS discovery scope: ${ROS_AUTOMATIC_DISCOVERY_RANGE}"
+echo "Qt RHI backend: ${QT_RHI_BACKEND}"
 echo "Starting Octopus: ${OCTOPUS_EXECUTABLE}"
 exec "${OCTOPUS_EXECUTABLE}"

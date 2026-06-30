@@ -1,12 +1,14 @@
+> ⚠️ **Deprecated since 2026-06 debug-common-frames L3 001**。当前主链路不再输出 common-frame TCP pose；保留为历史字段，不推荐消费方依赖。替代品：见 [[ArmBaseTcpPose]]。
+
 # CommonFrameTcpPose
 
 ## 定义
 
-`CommonFrameTcpPose` 是左右夹爪 TCP 在 common frame 下的位姿表达，是场景二位姿滤波、异常检测和后续 IK 的优先输入。
+`CommonFrameTcpPose` 是左右夹爪 TCP 在 common frame 下的位姿表达（已废弃，保留历史兼容）。
 
 ## 所属位置
 
-阶段二 Service 场景一，来源能力模块：[[common frame 位姿转换]]。
+阶段二 Service 场景一，来源能力模块：[[arm-base 位姿转换]]。
 
 ## 现实语义
 
