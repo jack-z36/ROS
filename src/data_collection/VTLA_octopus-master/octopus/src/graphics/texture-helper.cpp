@@ -275,7 +275,7 @@ namespace av
         case AV_PIX_FMT_ARGB:
         case AV_PIX_FMT_0RGB:    return "argb";
         case AV_PIX_FMT_RGBA:
-        case AV_PIX_FMT_RGB0:    return "bgra";
+        case AV_PIX_FMT_RGB0:    return "rgba";
         case AV_PIX_FMT_ABGR:
         case AV_PIX_FMT_0BGR:    return "abgr";
         case AV_PIX_FMT_BGRA:
