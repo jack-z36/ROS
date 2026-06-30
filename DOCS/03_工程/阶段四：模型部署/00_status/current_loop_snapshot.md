@@ -16,12 +16,15 @@
 
 | 字段 | 内容 |
 |---|---|
-| 更新时间 | 待主 Agent 每轮结束后更新 |
+| 更新时间 | 2026-06-29 14:00（北京时间） |
 | 当前目标 L2 | l2-03-assembly |
 | 上游 Gate | l2-01-types PASS；l2-02-config PASS |
-| 下一步 | 按 `l2-03-assembly.yaml` 选择 ready L3 |
-| Git 前置 | 每次提交前重新检查当前分支、工作区、remote 和提交范围 |
-| 阻塞项 | 以 dispatch、验收结果和 Git 状态为准 |
+| L2-03 进度 | 4 个 required L3 全部 committed-local 并推送；deploy_009/010/011 `PASS_LOCAL`，deploy_012 `BLOCKED_ENV`（torch 缺失，5/6 case 跳过，静态评审全通过） |
+| L2-03 Gate | 不通过（BLOCKED_ENV） |
+| 下一步 | 用户决策：是否安装 PyTorch（CPU 版 `pip3 install torch --index-url https://download.pytorch.org/whl/cpu`）以解锁 deploy_012 round 3；装好后重跑 `cd src/model_deploy/pi05 && python3 -m pytest tests/deploy/test_assembly_dry_run.py -v`，6/6 通过则 deploy_012 升级 PASS_LOCAL → L2-03 Gate 放行 → 合入 model_deploy → 进入 L2-04 |
+| Git 前置 | L2-03 分支 `0a75f77`+`4c8080d` 已推送；model_deploy 上有本次工作区清理 `0ca55e0`；每次提交前重新检查分支、工作区、remote |
+| 阻塞项 | deploy_012 BLOCKED_ENV（torch 缺失）；循环目标 deploy_022 需 L2-03/04/05 依次放行 |
+| 文档体系缺口 | `DO4/02_约束/循环工程/` 下 02/03/04 角色约束和 behaviors 06/07/08/13/15 原子文件未建立；00_status 仅在 model_deploy 分支 tracked（L2 分支缺失） |
 
 ## 维护规则
 

@@ -18,7 +18,7 @@
 |---|---|---|---|---|---|
 | l2-01-types | `model_deploy-l2-01-types` | `bad739a` | 已推送或以远端状态为准 | 已合入 `model_deploy` | 以 Git 实际状态和 L2 验收结果为准 |
 | l2-02-config | `model_deploy-l2-02-config` | `4c79b32` | 已推送或以远端状态为准 | 已合入 `model_deploy` | 以 Git 实际状态和 L2 验收结果为准 |
-| l2-03-assembly | `model_deploy-l2-03-assembly` | 待记录 | 待记录 | 未合入 | L2 Gate 未通过 |
+| l2-03-assembly | `model_deploy-l2-03-assembly` | `0a75f77`（L3 代码+dispatch）、`4c8080d`（L2 验收文档固化） | 已推送 `origin/model_deploy-l2-03-assembly` | 未合入 | L2 Gate 不通过（deploy_012 BLOCKED_ENV: torch 缺失）；待 torch 环境补齐重跑后放行合入 |
 | l2-04-publish | `model_deploy-l2-04-publish` | 待记录 | 待记录 | 未合入 | L2 Gate 未通过 |
 | l2-05-hardware | `model_deploy-l2-05-hardware` | 待记录 | 待记录 | 未合入 | L2 Gate 未通过 |
 
