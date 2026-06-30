@@ -59,7 +59,7 @@ hardware_identity:
 gopro:
   right:
     enabled: true
-    video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.2:1.0-video-index0"
+    video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.1.1:1.0-video-index0"
     namespace: "gopro_right"
     node_name: "gopro_right_camera"
     camera_name: "gopro_right"
@@ -79,7 +79,7 @@ gopro:
         name: "camera_info"
   left:
     enabled: true
-    video_device: "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:2.4.3.2.4:1.0-video-index0"
+    video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.3:1.0-video-index0"
     namespace: "gopro_left"
     node_name: "gopro_left_camera"
     camera_name: "gopro_left"

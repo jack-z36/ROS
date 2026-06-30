@@ -26,9 +26,13 @@ vendor/RealManRobot/
 
 # Local IDE/project metadata
 .vscode/
+.claude/
+.omo/
+.ralph/
+.codex/
 src/.obsidian/
+DOCS/.obsidian/
 src/data_collection/gopro_camera_launch/.idea/
-.claude/settings.local.json
 
 # 阶段二运行记录和缓存
 src/data_clean/runs/
