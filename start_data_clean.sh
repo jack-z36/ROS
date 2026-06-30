@@ -103,12 +103,16 @@ PYTHONPATH_ENTRIES=("${DATA_CLEAN_SOURCE}")
 if [[ -d "${FORGE_SOURCE}/forge" ]]; then
   PYTHONPATH_ENTRIES+=("${FORGE_SOURCE}")
 fi
-if [[ -d "${MCAP_PYTHON_SOURCE}" ]]; then
-  PYTHONPATH_ENTRIES+=("${MCAP_PYTHON_SOURCE}")
-fi
-if [[ -d "${MCAP_ROS2_SOURCE}" ]]; then
-  PYTHONPATH_ENTRIES+=("${MCAP_ROS2_SOURCE}")
-fi
+# 注：不再把 VTLA_octopus 里自带的（vendored）mcap / mcap-ros2-support 加进
+# PYTHONPATH。那份副本是不完整的纯 Python 版本，缺少 C 扩展 _chunk_builder，
+# 会让 `import mcap.writer` 报 ModuleNotFoundError: No module named 'mcap._chunk_builder'。
+# conda 环境里已经 pip 安装了完整版 mcap，优先使用它即可。
+# if [[ -d "${MCAP_PYTHON_SOURCE}" ]]; then
+#   PYTHONPATH_ENTRIES+=("${MCAP_PYTHON_SOURCE}")
+# fi
+# if [[ -d "${MCAP_ROS2_SOURCE}" ]]; then
+#   PYTHONPATH_ENTRIES+=("${MCAP_ROS2_SOURCE}")
+# fi
 export PYTHONPATH="$(IFS=:; echo "${PYTHONPATH_ENTRIES[*]}"):${PYTHONPATH:-}"
 
 if has_arg "--help" "$@" || has_arg "-h" "$@"; then
