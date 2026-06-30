@@ -23,16 +23,16 @@
 | 1 | 状态恢复 | `behaviors/01_状态恢复行为.md` |
 | 2 | L2 选择 | `behaviors/02_L2选择行为.md` |
 | 3 | L2 开工前检查 | `behaviors/03_L2开工前检查行为.md` |
-| 4 | L3 候选选择 | `behaviors/04_L3候选选择行为.md` |
-| 5 | 任务分配 | `behaviors/05_任务分配行为.md` |
-| 6 | 失败回路处理 | `behaviors/09_失败回路处理行为.md` |
-| 7 | L3 状态固化 | `behaviors/10_L3状态固化行为.md` |
-| 8 | Git 原子提交 | `behaviors/11_Git原子提交行为.md` |
-| 9 | L2 Gate 触发 | `behaviors/12_L2Gate触发行为.md` |
-| 10 | 循环快照写入 | `behaviors/14_循环快照写入行为.md` |
+| 4 | 环境依赖配置 | `behaviors/16_环境依赖配置行为.md` |
+| 5 | L3 候选选择 | `behaviors/04_L3候选选择行为.md` |
+| 6 | 任务分配 | `behaviors/05_任务分配行为.md` |
+| 7 | 失败回路处理 | `behaviors/09_失败回路处理行为.md` |
+| 8 | L3 状态固化 | `behaviors/10_L3状态固化行为.md` |
+| 9 | Git 原子提交 | `behaviors/11_Git原子提交行为.md` |
+| 10 | L2 Gate 触发 | `behaviors/12_L2Gate触发行为.md` |
+| 11 | 循环快照写入 | `behaviors/14_循环快照写入行为.md` |
 
 ## 禁止事项
 
 - 禁止只读取本文就执行主循环。
 - 禁止在本文补写具体行为规则；新增行为必须新增 `behaviors/` 原子文件。
-

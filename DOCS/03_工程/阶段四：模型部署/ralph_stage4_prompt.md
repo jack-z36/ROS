@@ -53,7 +53,8 @@
 5. 生成执行 sub-agent prompt 时，只提供执行角色约束和对应 L3 上下文。
 6. 生成验收 sub-agent prompt 时，只提供验收角色约束和对应验收卡片上下文。
 7. 每个 L3 验收进入可提交终态后，由主 Agent 按 Git 规则执行 L3 原子提交。
-8. L2 Gate 通过前，不得进入依赖它的下游 L2，不得合入 `model_deploy`。
+8. 任何依赖安装、开发验证和 Python 命令执行前，必须按环境依赖配置行为确认 Conda 环境 `model_deploy`。
+9. L2 Gate 通过前，不得进入依赖它的下游 L2，不得合入 `model_deploy`。
 
 ## OpenCode 配置约束
 
