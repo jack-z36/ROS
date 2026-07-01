@@ -3,8 +3,8 @@
 ## 适用范围
 
 - 阶段：阶段四：模型部署
-- 任务模式：阶段四 L2 / L3 执行、L2 Gate 后同步、模型部署代码和工程文档协作
-- 适用对象：`model_deploy` 集成分支、阶段四 L2 分支、`src/model_deploy/pi05/` 和阶段四工程文档
+- 任务模式：阶段四 L2 / L3 执行、模型部署代码和工程文档协作
+- 适用对象：`model_deploy` 二级长期分支、阶段四三级功能分支、`src/model_deploy/pi05/` 和阶段四工程文档
 - 不适用对象：阶段二数据清洗分支、`main` 稳定分支合并流程
 
 使用本文件前，必须先读取：
@@ -27,93 +27,87 @@ ralph_stage4_prompt.md
 → DOCS/02_约束/循环工程/behaviors/11_Git原子提交行为.md
 ```
 
-主 Agent 输出当前循环状态摘要时，必须同时说明当前分支、目标 L2 分支、remote 名称和 remote URL 是否满足本文件要求。
+主 Agent 输出当前循环状态摘要时，必须同时说明当前分支、目标三级分支、remote 名称和 remote URL 是否满足本文件要求。
 
 ## 分支模型
 
-阶段四 `model_deploy` L3 执行采用 L2 分支制。
+- 二级长期分支：`model_deploy`
+- 三级功能分支：从 `model_deploy` 创建，命名为 `feat/model_deploy/<topic>`、`fix/model_deploy/<topic>`、`docs/model_deploy/<topic>`、`chore/model_deploy/<topic>` 或 `spike/model_deploy/<topic>`。
+- L2 / L3 工作如果需要独立分支，统一落在三级功能分支命名下，例如 `feat/model_deploy/l2-03-assembly`。
+- 三级分支合入 `model_deploy` 后删除；不再长期保留旧的 `model_deploy-l2-xx-*` 分支。
 
-- 集成分支：`model_deploy`
-- L2 分支命名：`model_deploy-l2-xx-*`
-- L2 分支示例：
-  - `model_deploy-l2-01-types`
-  - `model_deploy-l2-02-config`
-  - `model_deploy-l2-03-assembly`
-  - `model_deploy-l2-04-publish`
-  - `model_deploy-l2-05-hardware`
+普通单个 L3 执行 sub-agent 不得提交或推送。Ralph / OpenCode 循环工程中，主 Agent 在单个 L3 验收进入可提交终态后，必须在当前三级功能分支进行 L3 原子提交并尝试小包 push；同一功能分支的 required L3 全部通过 Gate 后，才允许合入 `model_deploy`。
 
-普通单个 L3 执行 sub-agent 不得提交或推送。Ralph / OpenCode 循环工程中，主 Agent 在单个 L3 验收进入可提交终态后，必须在所属 L2 分支进行 L3 原子提交并尝试小包 push；同一 L2 的 required L3 全部通过 L2 Gate 后，才允许合入 `model_deploy`。
+## 功能分支开工流程
 
-## L2 开工流程
+从 `model_deploy` 创建新三级功能分支：
 
-从集成分支创建新 L2 分支：
-
-```powershell
+```bash
 git fetch origin
 git switch model_deploy
 git pull --ff-only
-git switch -c model_deploy-l2-xx-*
+git switch -c feat/model_deploy/<topic>
 ```
 
-如果远端已经存在对应 L2 分支：
+如果远端已经存在对应三级功能分支：
 
-```powershell
+```bash
 git fetch origin
-git switch model_deploy-l2-xx-* || git switch -c model_deploy-l2-xx-* origin/model_deploy-l2-xx-*
+git switch feat/model_deploy/<topic> || git switch -c feat/model_deploy/<topic> origin/feat/model_deploy/<topic>
 git pull --ff-only
 ```
 
 ## L3 原子提交流程
 
-Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_L2_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交：
+Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交：
 
-```powershell
+```bash
 git status --short --branch
 git branch --show-current
 git remote -v
 git add <当前L3允许提交的文件清单>
 git status --short
 git commit -m "feat(model_deploy): <deploy_id> <summary> 北京时间 YYYY-MM-DD HH:MM"
-git push -u origin model_deploy-l2-xx-*
+git push -u origin feat/model_deploy/<topic>
 ```
 
-提交前必须确认当前分支是该 L3 所属 L2 分支。禁止 `git add -A`、`git commit --amend`、force push、rebase 或跨 L2 混合提交。
+提交前必须确认当前分支是该 L3 所属三级功能分支。禁止 `git add -A`、`git commit --amend`、force push、rebase 或跨功能分支混合提交。
 
 如果本地 commit 成功但 push 因网络失败，必须记录到 `DOCS/03_工程/阶段四：模型部署/00_status/git_sync_status.md`，将该 L3 标为 `pending_push`，并用 docs-only 小提交持久化记录；不得 amend 已有 L3 commit。
 
-## L2 Gate 后合入流程
+## Gate 后合入流程
 
-当且仅当所属 L2 Gate 通过后，AI 可以自动执行以下同步流程：
+当且仅当所属功能 Gate 通过后，AI 可以自动执行以下同步流程：
 
-```powershell
+```bash
 git status --short --branch
-git push -u origin model_deploy-l2-xx-*
+git push -u origin feat/model_deploy/<topic>
 git switch model_deploy
 git pull --ff-only
-git merge --no-ff model_deploy-l2-xx-* -m "merge(model_deploy): integrate L2-xx <name> 北京时间 YYYY-MM-DD HH:MM"
+git merge --no-ff feat/model_deploy/<topic> -m "merge(model_deploy): integrate <topic> 北京时间 YYYY-MM-DD HH:MM"
 git push origin model_deploy
+git branch -d feat/model_deploy/<topic>
+git push origin --delete feat/model_deploy/<topic>
 ```
-
-L2 分支推送后保留远端分支，不自动删除。
 
 ## 阻断条件
 
 出现以下任一情况时，停止自动同步并向用户报告：
 
-- L2 Gate 未通过，或 `05_acceptance/<l2>/验收结果.md` 未记录通过结论。
-- 当前分支不是对应 L2 分支，或 L2 分支不是从 `model_deploy` 开出。
+- 功能 Gate 未通过，或对应验收结果未记录通过结论。
+- 当前分支不是对应三级功能分支，或该分支不是从 `model_deploy` 开出。
 - `model_deploy` 远端领先、本地分叉或 `pull --ff-only` 失败。
 - `git merge --no-ff` 产生冲突。
-- 工作区包含本 L2 之外的非预期变更。
+- 工作区包含本功能之外的非预期变更。
 - 待提交内容包含超大文件、缓存、私有配置、环境目录或未归档解释的运行产物。
-- 真机相关 L2 缺少风险确认、急停准备或人工验收记录。
+- 真机相关任务缺少风险确认、急停准备或人工验收记录。
 
 ## 阶段四提交范围
 
 允许提交：
 
-- `src/model_deploy/pi05/` 下本 L2 明确允许的源码、配置、脚本或测试。
-- `DOCS/03_工程/阶段四：模型部署/` 下本 L2 的任务文件、验收结果和工程记录。
+- `src/model_deploy/pi05/` 下本功能明确允许的源码、配置、脚本或测试。
+- `DOCS/03_工程/阶段四：模型部署/` 下本功能的任务文件、验收结果和工程记录。
 - `DOCS/02_约束/` 下本次明确要求维护的约束、模板或工作流文件。
 
 禁止提交：
@@ -123,9 +117,9 @@ L2 分支推送后保留远端分支，不自动删除。
 - 本地环境、私有配置、下载缓存、模型权重和大型数据产物
 - 未经说明的第三方源码改动，尤其是 `src/model_deploy/third_party/`
 
-## L2 Gate 与 Git 同步关系
+## Gate 与 Git 同步关系
 
-L2 Gate 是阶段四自动同步的前置条件。每个 L2 的 `05_acceptance/<l2>/验收结果.md` 必须记录：
+Gate 是阶段四自动同步的前置条件。每个功能分支的验收结果必须记录：
 
 - required L3 完成情况。
 - 执行过的运行命令或人工验收项。
@@ -139,4 +133,4 @@ L2 Gate 是阶段四自动同步的前置条件。每个 L2 的 `05_acceptance/<
 - 是否允许自动同步。
 - 自动同步结果。
 
-未通过 Gate 的 L2 不得合入 `model_deploy`。L3 原子提交只允许在所属 L2 分支上进行，且必须有对应 L3 验收终态和证据记录。
+未通过 Gate 的三级功能分支不得合入 `model_deploy`。L3 原子提交只允许在所属三级功能分支上进行，且必须有对应 L3 验收终态和证据记录。
