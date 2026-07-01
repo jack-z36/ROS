@@ -24,15 +24,16 @@ vendor/RealManRobot/
 *.swp
 *.swo
 
-# Local IDE/project metadata
-.vscode/
-.claude/
+# Agent / tool 运行产物（会话、计划、笔记缓存，本地生成，不托管）
 .omo/
 .ralph/
-.codex/
+
+# Local IDE/project metadata
+.vscode/
+.obsidian/
 src/.obsidian/
-DOCS/.obsidian/
 src/data_collection/gopro_camera_launch/.idea/
+.claude/settings.local.json
 
 # 阶段二运行记录和缓存
 src/data_clean/runs/
@@ -55,4 +56,7 @@ _tmp/
 # Python 构建产物
 *.egg-info/
 dist/
-DOCS/.obsidian/workspace.json
+DOCS/.obsidian/
+
+# Vendored LeRobot test artifacts with unavailable Git LFS objects
+**/third_party/lerobot/tests/artifacts/

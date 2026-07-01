@@ -2508,10 +2508,9 @@ function renderProductionConfig() {
   <div class="card"><div id="production-errors"></div><button class="primary" onclick="saveProductionConfig()">校验并保存正式配置</button></div>`;
 }
 function productionPayload() {
-  const defaultWorkFrames = {left:{hand:'left',base_frame_id:'left_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}},right:{hand:'right',base_frame_id:'right_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}}};
   const result = JSON.parse(JSON.stringify({
     camera_from_tcp: state.productionConfig?.camera_from_tcp || {left:{translation_mm:[]},right:{translation_mm:[]}},
-    work_frames: {left:{...defaultWorkFrames.left, ...(state.productionConfig?.work_frames?.left || {})}, right:{...defaultWorkFrames.right, ...(state.productionConfig?.work_frames?.right || {})}},
+    work_frames: state.productionConfig?.work_frames || {left:{hand:'left',base_frame_id:'left_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}},right:{hand:'right',base_frame_id:'right_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}}},
     web_pipeline: state.productionConfig?.web_pipeline || {},
   }));
   document.querySelectorAll('[data-production]').forEach(input => setNested(result, input.dataset.production, input.value === '' ? null : Number(input.value)));

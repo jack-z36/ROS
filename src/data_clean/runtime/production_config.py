@@ -76,7 +76,6 @@ def production_config_view(path: str | Path) -> dict[str, Any]:
 
 
 def validate_production_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    payload = _normalize_production_payload(payload)
     errors: list[dict[str, str]] = []
     camera = payload.get("camera_from_tcp")
     work_frames = payload.get("work_frames")
@@ -139,7 +138,6 @@ def validate_production_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def save_production_config(path: str | Path, payload: dict[str, Any]) -> dict[str, Any]:
-    payload = _normalize_production_payload(payload)
     validation = validate_production_payload(payload)
     if not validation["valid"]:
         raise ProductionConfigError("; ".join(item["message"] for item in validation["errors"]))
@@ -177,52 +175,6 @@ def save_production_config(path: str | Path, payload: dict[str, Any]) -> dict[st
         if temporary.exists():
             temporary.unlink()
     return production_config_view(config_path)
-
-
-def _normalize_production_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    if not isinstance(payload, dict):
-        return payload
-    normalized = dict(payload)
-
-    camera = payload.get("camera_from_tcp")
-    if isinstance(camera, dict):
-        normalized_camera: dict[str, Any] = {}
-        for hand in ("left", "right"):
-            ext = camera.get(hand)
-            if not isinstance(ext, dict):
-                if ext is not None:
-                    normalized_camera[hand] = ext
-                continue
-            ext_out = dict(ext)
-            ext_out["translation_mm"] = _normalize_xyz_sequence(ext.get("translation_mm"))
-            normalized_camera[hand] = ext_out
-        normalized["camera_from_tcp"] = normalized_camera
-
-    work_frames = payload.get("work_frames")
-    if isinstance(work_frames, dict):
-        normalized_work: dict[str, Any] = {}
-        for hand in ("left", "right"):
-            work = work_frames.get(hand)
-            if not isinstance(work, dict):
-                if work is not None:
-                    normalized_work[hand] = work
-                continue
-            work_out = dict(work)
-            work_out.setdefault("hand", hand)
-            work_out.setdefault("base_frame_id", f"{hand}_arm_base")
-            work_out.setdefault("work_frame_id", "camera_work")
-            normalized_work[hand] = work_out
-        normalized["work_frames"] = normalized_work
-
-    return normalized
-
-
-def _normalize_xyz_sequence(value: Any) -> Any:
-    if isinstance(value, list):
-        return value
-    if isinstance(value, dict):
-        return [value.get(index, value.get(str(index))) for index in range(3)]
-    return value
 
 
 def production_readiness(

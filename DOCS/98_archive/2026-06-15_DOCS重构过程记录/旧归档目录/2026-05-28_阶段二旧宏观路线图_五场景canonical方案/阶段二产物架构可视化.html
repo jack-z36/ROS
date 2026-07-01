@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>阶段二产物架构可视化</title>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --ink: #202124;
+      --muted: #62666d;
+      --line: #d8d7d0;
+      --panel: #ffffff;
+      --raw: #57606a;
+      --clean: #0f766e;
+      --valid: #7c3aed;
+      --align: #2563eb;
+      --canon: #b45309;
+      --export: #be123c;
+      --runtime: #334155;
+      --service: #0f766e;
+      --repo: #2563eb;
+      --config: #b45309;
+      --types: #6d28d9;
+      --ui: #be123c;
+      --ok: #166534;
+      --warn: #92400e;
+      --radius: 8px;
+      --shadow: 0 1px 2px rgba(32, 33, 36, 0.08);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    a {
+      color: #0f5d9a;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--line);
+      background: rgba(247, 247, 244, 0.94);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 10px 22px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      overflow-x: auto;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .nav strong {
+      margin-right: 8px;
+      color: var(--ink);
+    }
+
+    .hero {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 34px 22px 24px;
+    }
+
+    .kicker {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 880px;
+      font-size: clamp(32px, 5vw, 56px);
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 820px;
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .summary-grid {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 22px 26px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .summary-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      min-height: 112px;
+    }
+
+    .summary-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .summary-card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 24px;
+      line-height: 1.15;
+    }
+
+    .band {
+      border-top: 1px solid var(--line);
+      padding: 34px 0;
+    }
+
+    .band:nth-of-type(even) {
+      background: #ffffff;
+    }
+
+    .inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 22px;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .section-lead {
+      max-width: 880px;
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(11, minmax(74px, 1fr));
+      gap: 8px;
+      align-items: stretch;
+      margin-top: 20px;
+    }
+
+    .node {
+      min-height: 136px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-top: 6px solid var(--raw);
+      border-radius: var(--radius);
+      padding: 10px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .node.clean { border-top-color: var(--clean); }
+    .node.valid { border-top-color: var(--valid); }
+    .node.align { border-top-color: var(--align); }
+    .node.canon { border-top-color: var(--canon); }
+    .node.export { border-top-color: var(--export); }
+
+    .node .label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .node h3 {
+      margin: 6px 0;
+      font-size: 16px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .node p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: #7b7f86;
+      font-size: 24px;
+      min-height: 136px;
+    }
+
+    .support-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .support-card {
+      background: #fbfbf8;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .support-card h3,
+    .flow-card h3,
+    .contract-card h3,
+    .scenario-card h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .support-card p,
+    .flow-card p,
+    .contract-card p,
+    .scenario-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .layer-layout {
+      display: grid;
+      grid-template-columns: 0.9fr 1.2fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .layers {
+      display: grid;
+      gap: 8px;
+    }
+
+    .layer {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-left: 7px solid var(--runtime);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .layer.ui { border-left-color: var(--ui); }
+    .layer.runtime { border-left-color: var(--runtime); }
+    .layer.service { border-left-color: var(--service); }
+    .layer.repo { border-left-color: var(--repo); }
+    .layer.config { border-left-color: var(--config); }
+    .layer.types { border-left-color: var(--types); }
+
+    .layer h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .layer p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .flow-card {
+      min-height: 126px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .flow-card .step {
+      display: inline-block;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: #202124;
+      color: #fff;
+      text-align: center;
+      line-height: 28px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .direction {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .direction-card {
+      border-radius: var(--radius);
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: #fbfbf8;
+    }
+
+    .direction-card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .direction-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .scenario-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      min-height: 216px;
+    }
+
+    .scenario-card .tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .scenario-card ul,
+    .checklist ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .contract-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .contract-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      min-height: 150px;
+    }
+
+    .contract-card code,
+    .tree code,
+    .nav code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    .tree {
+      background: #202124;
+      color: #f8fafc;
+      border-radius: var(--radius);
+      padding: 18px;
+      overflow-x: auto;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .checklist {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .check {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .check strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .source {
+      margin-top: 20px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfbf8;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 980px) {
+      .summary-grid,
+      .support-grid,
+      .layer-layout,
+      .direction,
+      .contract-grid,
+      .checklist {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .pipeline {
+        grid-template-columns: 1fr;
+      }
+
+      .arrow {
+        min-height: 26px;
+        transform: rotate(90deg);
+      }
+
+      .scenario-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .summary-grid,
+      .support-grid,
+      .layer-layout,
+      .direction,
+      .flow-steps,
+      .scenario-grid,
+      .contract-grid,
+      .checklist {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 26px;
+      }
+
+      .subtitle {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="nav" aria-label="页面导航">
+      <strong>阶段二架构</strong>
+      <a href="#pipeline">产物流</a>
+      <a href="#layers">层间数据流</a>
+      <a href="#scenes">五场景映射</a>
+      <a href="#contracts">产物契约</a>
+      <a href="#guardrails">开发护栏</a>
+      <a href="阶段二产物架构设计.md">源 Markdown</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="kicker">DOCS / 阶段二：数据清洗 / 其他</p>
+      <h1>阶段二产物架构可视化</h1>
+      <p class="subtitle">把 raw MCAP 逐级转换为 cleaned、validated、aligned、canonical dataset，并通过明确的层间数据流约束后续程序开发。</p>
+    </section>
+
+    <section class="summary-grid" aria-label="架构摘要">
+      <article class="summary-card">
+        <span>主数据产物</span>
+        <strong>6 类</strong>
+        <span>raw / cleaned / validated / aligned / canonical / exports</span>
+      </article>
+      <article class="summary-card">
+        <span>执行场景</span>
+        <strong>5 个</strong>
+        <span>清洗、验证、对齐、构建、导出</span>
+      </article>
+      <article class="summary-card">
+        <span>程序分层</span>
+        <strong>6 层</strong>
+        <span>Types -> Config -> Repo -> Service -> Runtime -> UI</span>
+      </article>
+      <article class="summary-card">
+        <span>标准交付</span>
+        <strong>canonical dataset</strong>
+        <span>阶段三训练前的唯一可信输入</span>
+      </article>
+    </section>
+
+    <section id="pipeline" class="band">
+      <div class="inner">
+        <h2>产物流</h2>
+        <p class="section-lead">主路径不是简单格式转换，而是数据语义逐级增强。每一级产物都必须能被下一级明确消费，并能通过报告解释自身质量。</p>
+        <div class="pipeline" aria-label="阶段二主产物流">
+          <article class="node">
+            <span class="label">输入</span>
+            <h3>raw MCAP</h3>
+            <p>阶段一采集得到的原始 topic 日志，不可原地修改。</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="node clean">
+            <span class="label">场景一</span>
+            <h3>cleaned MCAP</h3>
+            <p>补齐夹爪宽度和 common frame 相机 pose。</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="node valid">
+            <span class="label">场景二</span>
+            <h3>validated MCAP</h3>
+            <p>完成滤波、异常处理和机器人可执行性标记。</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="node align">
+            <span class="label">场景三</span>
+            <h3>aligned MCAP</h3>
+            <p>统一 step 时间轴，记录对齐方式和误差。</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="node canon">
+            <span class="label">场景四</span>
+            <h3>canonical dataset</h3>
+            <p>形成 episode、step、observation、action、masks 和 schema。</p>
+          </article>
+          <div class="arrow" aria-hidden="true">→</div>
+          <article class="node export">
+            <span class="label">场景五</span>
+            <h3>exports</h3>
+            <p>从 canonical dataset 可重复导出训练格式。</p>
+          </article>
+        </div>
+
+        <div class="support-grid">
+          <article class="support-card">
+            <h3>配置与标定</h3>
+            <p>夹爪标定、common frame、滤波阈值、step 频率和导出映射按场景归属，随开发逐步增长。</p>
+          </article>
+          <article class="support-card">
+            <h3>报告与 masks</h3>
+            <p>alignment、quality、robot constraint 和 invalid reason 决定哪些数据能进入训练。</p>
+          </article>
+          <article class="support-card">
+            <h3>manifest</h3>
+            <p>记录输入、配置、软件版本、处理步骤和关键报告，让任意 episode 可追溯。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="layers" class="band">
+      <div class="inner">
+        <h2>层间数据流</h2>
+        <p class="section-lead">分层不只规定依赖方向，也规定数据如何进入、被校验、被读取、被处理、被写出，以及状态和错误如何回流。</p>
+        <div class="layer-layout">
+          <div class="layers" aria-label="强制分层">
+            <article class="layer ui">
+              <h3>UI</h3>
+              <p>把用户意图转成 RunRequest，展示 RunSummary。</p>
+            </article>
+            <article class="layer runtime">
+              <h3>Runtime</h3>
+              <p>创建 RunContext，编排配置、输入、处理、写出、日志和 manifest。</p>
+            </article>
+            <article class="layer service">
+              <h3>Service</h3>
+              <p>执行清洗、验证、对齐、dataset 构建和导出业务逻辑。</p>
+            </article>
+            <article class="layer repo">
+              <h3>Repo</h3>
+              <p>封装 MCAP、Parquet、JSON、YAML 和目录读写。</p>
+            </article>
+            <article class="layer config">
+              <h3>Config</h3>
+              <p>解析并校验配置、默认值、单位、坐标系、阈值和必需字段。</p>
+            </article>
+            <article class="layer types">
+              <h3>Types</h3>
+              <p>定义 DTO、schema、report、artifact refs 和错误类型。</p>
+            </article>
+          </div>
+
+          <div class="flow-steps" aria-label="层间数据流步骤">
+            <article class="flow-card">
+              <span class="step">1</span>
+              <h3>UI -> Runtime</h3>
+              <p>提交 <code>RunRequest(mode, scene, input, overrides)</code>，不直接读写数据文件。</p>
+            </article>
+            <article class="flow-card">
+              <span class="step">2</span>
+              <h3>Runtime -> Config</h3>
+              <p>加载配置和临时覆盖，得到 <code>ValidatedConfig</code> 或配置缺失定位。</p>
+            </article>
+            <article class="flow-card">
+              <span class="step">3</span>
+              <h3>Runtime -> Repo</h3>
+              <p>检查输入输出路径，生成 <code>InputInventory</code> 和 <code>OutputPlan</code>。</p>
+            </article>
+            <article class="flow-card">
+              <span class="step">4</span>
+              <h3>Runtime -> Service</h3>
+              <p>传入上下文、配置和产物引用，Service 只消费已解析的结构化对象。</p>
+            </article>
+            <article class="flow-card">
+              <span class="step">5</span>
+              <h3>Service <-> Repo</h3>
+              <p>Repo 提供 typed streams/tables，Service 生成主产物、masks、reports 和 metrics。</p>
+            </article>
+            <article class="flow-card">
+              <span class="step">6</span>
+              <h3>Runtime -> UI</h3>
+              <p>汇总 <code>SceneResult</code>，写日志和 manifest，再返回状态、路径和下一步动作。</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="direction">
+          <article class="direction-card">
+            <strong>请求与数据下行</strong>
+            <p>UI 意图进入 Runtime，经过 Config 和 Repo 的边界校验后，Service 才能处理 typed input，并由 Repo 写出产物。</p>
+          </article>
+          <article class="direction-card">
+            <strong>结果与错误回流</strong>
+            <p>Config、Repo、Service 的错误统一回到 Runtime，写入结构化日志和报告，再由 UI 显示失败场景、步骤、摘要和日志路径。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="scenes" class="band">
+      <div class="inner">
+        <h2>五场景映射</h2>
+        <p class="section-lead">每个场景都套用同一个层间数据流模板：UI 提交意图，Runtime 编排，Config 校验，Repo 读写，Service 转换，Runtime 回传结果。</p>
+        <div class="scenario-grid">
+          <article class="scenario-card">
+            <span class="tag">场景一</span>
+            <h3>raw -> cleaned</h3>
+            <p>补齐基础语义。</p>
+            <ul>
+              <li>读入 raw MCAP topic inventory</li>
+              <li>夹爪宽度提取</li>
+              <li>common frame 位姿转换</li>
+              <li>写出 cleaned MCAP 和清洗报告</li>
+            </ul>
+          </article>
+          <article class="scenario-card">
+            <span class="tag">场景二</span>
+            <h3>cleaned -> validated</h3>
+            <p>验证可靠性和物理可执行性。</p>
+            <ul>
+              <li>滤波、异常检测和补全</li>
+              <li>IK、关节限制和仿真验证</li>
+              <li>写出异常报告和修复记录</li>
+              <li>不可执行片段进入下游 masks</li>
+            </ul>
+          </article>
+          <article class="scenario-card">
+            <span class="tag">场景三</span>
+            <h3>validated -> aligned</h3>
+            <p>统一 step 时间轴。</p>
+            <ul>
+              <li>生成目标 step 时间戳</li>
+              <li>对齐图像、位姿、触觉、夹爪</li>
+              <li>统计误差、缺失和插值比例</li>
+              <li>写出 alignment report</li>
+            </ul>
+          </article>
+          <article class="scenario-card">
+            <span class="tag">场景四</span>
+            <h3>aligned -> canonical</h3>
+            <p>构建标准数据集。</p>
+            <ul>
+              <li>生成 schema 和 episode</li>
+              <li>写 step_index 和 masks</li>
+              <li>生成 action chunk</li>
+              <li>写 reports 和 processing_manifest</li>
+            </ul>
+          </article>
+          <article class="scenario-card">
+            <span class="tag">场景五</span>
+            <h3>canonical -> exports</h3>
+            <p>导出训练格式。</p>
+            <ul>
+              <li>读取 schema、index 和 masks</li>
+              <li>过滤不可训练 step</li>
+              <li>映射字段、shape 和 dtype</li>
+              <li>写导出报告和校验结果</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="contracts" class="band">
+      <div class="inner">
+        <h2>canonical dataset 契约</h2>
+        <p class="section-lead">canonical dataset 是阶段二交付给阶段三的标准中间态。后续 exporter 只消费它，不回头读取上游中间产物修复数据。</p>
+        <pre class="tree"><code>canonical_dataset_mcap/
+├── dataset_meta.json
+├── dataset_index.parquet
+├── schema/
+│   ├── observation_schema.json
+│   ├── action_schema.json
+│   ├── frame_schema.json
+│   ├── topic_schema.json
+│   └── quality_schema.json
+├── episodes/
+│   └── episode_xxxxxx/
+│       ├── episode_meta.json
+│       ├── data.mcap
+│       ├── step_index.parquet
+│       ├── masks.parquet
+│       ├── alignment_report.json
+│       ├── quality_report.json
+│       ├── robot_constraint_report.json
+│       └── processing_manifest.json
+└── exports/</code></pre>
+
+        <div class="contract-grid" style="margin-top: 14px;">
+          <article class="contract-card">
+            <h3>schema 解释所有 episode</h3>
+            <p>observation、action、frame、topic、quality schema 必须能解释 dataset 下的每条 episode。</p>
+          </article>
+          <article class="contract-card">
+            <h3>step_index 定位数据</h3>
+            <p><code>step_index.parquet</code> 把 step 世界映射到 <code>data.mcap</code> 消息或派生字段。</p>
+          </article>
+          <article class="contract-card">
+            <h3>masks 阻止脏数据入训</h3>
+            <p>必需字段缺失、不可对齐、不可执行或不可训练时，必须带 invalid reason。</p>
+          </article>
+          <article class="contract-card">
+            <h3>action 可复现</h3>
+            <p>relative trajectory action 必须能从 common-frame TCP 轨迹和夹爪宽度复现。</p>
+          </article>
+          <article class="contract-card">
+            <h3>manifest 可追溯</h3>
+            <p>输入、配置、软件版本、处理步骤和关键报告必须能追到来源。</p>
+          </article>
+          <article class="contract-card">
+            <h3>exports 可再生成</h3>
+            <p>删除 <code>exports/</code> 后，应能从 canonical dataset 重新导出训练格式。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="guardrails" class="band">
+      <div class="inner">
+        <h2>开发护栏</h2>
+        <p class="section-lead">后续实现可以自由拆模块，但不能突破边界校验、结构化日志、单向依赖和可追溯产物契约。</p>
+        <div class="checklist">
+          <article class="check">
+            <strong>边界校验</strong>
+            <ul>
+              <li>输入路径、文件格式、topic/schema 必须显式校验。</li>
+              <li>配置字段必须校验类型、单位、范围、坐标系和路径。</li>
+              <li>输出目录、覆盖策略和报告可解析性必须提前检查。</li>
+            </ul>
+          </article>
+          <article class="check">
+            <strong>日志与错误</strong>
+            <ul>
+              <li>核心模块禁止裸 <code>print</code>。</li>
+              <li>失败必须定位到场景、步骤、文件、episode、step 或字段。</li>
+              <li>Runtime 统一写结构化日志、失败摘要和 manifest。</li>
+            </ul>
+          </article>
+          <article class="check">
+            <strong>分层纪律</strong>
+            <ul>
+              <li>UI 不直接读写 MCAP/Parquet/JSON。</li>
+              <li>Service 不解析命令行、不管理交互菜单。</li>
+              <li>Repo 不做业务判断，只封装持久化读写。</li>
+            </ul>
+          </article>
+          <article class="check">
+            <strong>训练安全</strong>
+            <ul>
+              <li>不可训练 step 必须被 masks 过滤。</li>
+              <li>导出器不回头修复上游数据。</li>
+              <li>机器人不可执行片段不能静默进入 exports。</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="source">
+          来源文档：<a href="阶段二产物架构设计.md">阶段二产物架构设计.md</a>。本 HTML 是静态可视化页面，不需要启动本地服务。
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

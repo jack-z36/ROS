@@ -1,0 +1,62 @@
+﻿dispatch_index:
+  group: service-s2-g6
+  branch: service-s2
+  source_l2: DOCS/03_工程/阶段二：数据清洗/02_service/场景二/L2能力模块/IK 求解与 MCAP_B 生成器.md
+  max_parallel_agents: 1
+  waves:
+    - wave: 1
+      parallel_group: service-s2-g6-p1
+      tasks: [service_s2_021, service_s2_022]
+    - wave: 2
+      parallel_group: service-s2-g6-p2
+      depends_on: [service_s2_022]
+      tasks: [service_s2_023]
+    - wave: 3
+      parallel_group: service-s2-g6-p3
+      depends_on: [service_s2_021, service_s2_022, service_s2_023]
+      tasks: [service_s2_024]
+    - wave: 4
+      parallel_group: service-s2-g6-p4
+      depends_on: [service_s2_021, service_s2_022, service_s2_023, service_s2_024]
+      tasks: [service_s2_025]
+  tasks:
+    service_s2_021:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s2-g6/service_s2_021_建立睿尔曼SDK本地部署与IK自检.md
+      title: 建立睿尔曼 SDK 本地部署与 IK 自检
+      depends_on: []
+      conflict_scope:
+        files: [vendor/RealManRobot/, src/data_clean/tests/]
+        modules: []
+        config_keys: [realman_sdk]
+    service_s2_022:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s2-g6/service_s2_022_定义IK与MCAP_B数据契约.md
+      title: 定义 IK 与 MCAP_B 数据契约
+      depends_on: []
+      conflict_scope:
+        files: [src/data_clean/schemas/, src/data_clean/tests/, DOCS/03_工程/阶段二：数据清洗/02_service/场景二/L2数据定义/]
+        modules: [data_clean.schemas]
+        config_keys: [scene2.ik_mcap_b]
+    service_s2_023:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s2-g6/service_s2_023_实现common_frame到robot_base坐标转换.md
+      title: 实现 common_frame 到 robot_base 坐标转换
+      depends_on: [service_s2_022]
+      conflict_scope:
+        files: [src/data_clean/service/tcp_transform.py, src/data_clean/service/, src/data_clean/tests/]
+        modules: [data_clean.service]
+        config_keys: [scene2.ik_mcap_b.common_to_base]
+    service_s2_024:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s2-g6/service_s2_024_实现RM65_SDK_IK求解适配器.md
+      title: 实现 RM65 SDK IK 求解适配器
+      depends_on: [service_s2_021, service_s2_022, service_s2_023]
+      conflict_scope:
+        files: [src/data_clean/service/, src/data_clean/tests/]
+        modules: [data_clean.service]
+        config_keys: [scene2.ik_mcap_b.rm65]
+    service_s2_025:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s2-g6/service_s2_025_写出MCAP_B并接入开发者功能检验项.md
+      title: 写出 MCAP_B 并接入开发者功能检验项
+      depends_on: [service_s2_021, service_s2_022, service_s2_023, service_s2_024]
+      conflict_scope:
+        files: [src/data_clean/repo/, src/data_clean/runtime/, src/data_clean/ui/, start_data_clean.sh, src/data_clean/tests/]
+        modules: [data_clean.repo, data_clean.runtime, data_clean.ui]
+        config_keys: [dev_menu.scene2.ik_mcap_b_writer]

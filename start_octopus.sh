@@ -53,8 +53,6 @@ if [[ -d "${FFMPEG_ROOT}" ]]; then
   export LD_LIBRARY_PATH="${FFMPEG_ROOT}/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
 fi
 
-export QT_RHI_BACKEND="${QT_RHI_BACKEND:-opengl}"
-
 if [[ "${OCTOPUS_LOCAL_ONLY}" == "1" ]]; then
   export ROS_AUTOMATIC_DISCOVERY_RANGE="LOCALHOST"
   export ROS_STATIC_PEERS=""
@@ -75,6 +73,5 @@ if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" ]]; then
 fi
 
 echo "ROS discovery scope: ${ROS_AUTOMATIC_DISCOVERY_RANGE}"
-echo "Qt RHI backend: ${QT_RHI_BACKEND}"
 echo "Starting Octopus: ${OCTOPUS_EXECUTABLE}"
 exec "${OCTOPUS_EXECUTABLE}"

@@ -37,7 +37,6 @@ class IdentityTargetConfig:
     topic: str
     frame_id: str
     required: bool
-    device_addr: int = 6
 
 
 @dataclass(frozen=True)
@@ -171,10 +170,6 @@ def _parse_driver_config(params: Mapping[str, Any], config_dir: Path) -> DriverC
         )
         _remember_realpath(port, used_serial_realpaths)
 
-    identity_addrs: set = set()
-    if identity_targets:
-        identity_addrs = {t.device_addr for t in identity_targets.values()}
-
     for index, port in enumerate(_expand_serial_port_globs(params)):
         if _realpath_key(port) in used_serial_realpaths:
             continue
@@ -183,24 +178,12 @@ def _parse_driver_config(params: Mapping[str, Any], config_dir: Path) -> DriverC
             raise ConfigError(f"duplicate serial port name: {name}")
         used_serial_names.add(name)
         used_serial_realpaths.add(_realpath_key(port))
-        if identity_addrs:
-            discovered_sensors = [
-                SensorConfig(
-                    device_addr=addr,
-                    rows=default_sensor.rows,
-                    cols=default_sensor.cols,
-                    poll_rate_hz=default_sensor.poll_rate_hz,
-                )
-                for addr in sorted(identity_addrs)
-            ]
-        else:
-            discovered_sensors = [default_sensor]
         serial_ports.append(
             SerialPortConfig(
                 name=name,
                 port=port,
                 baudrate=default_baudrate,
-                sensors=discovered_sensors,
+                sensors=[default_sensor],
             )
         )
 
@@ -355,10 +338,6 @@ def _load_identity_targets(
         if not uid:
             continue
 
-        device_addr = _as_int(match.get("HWK_DEVICE_ADDR", 6), f"pressure.{logical_name}.match.HWK_DEVICE_ADDR")
-        if not 0 <= device_addr <= 0x0F:
-            device_addr = 6
-
         topic = str(target.get("topic", "")).strip()
         hand = str(target.get("hand", "")).strip()
         gripper = str(target.get("gripper", "")).strip()
@@ -386,7 +365,6 @@ def _load_identity_targets(
             topic=topic,
             frame_id=str(target.get("frame_id", "")).strip(),
             required=_as_bool(entry_raw.get("required", True), f"pressure.{logical_name}.required"),
-            device_addr=device_addr,
         )
 
     if strict_identity and not targets:

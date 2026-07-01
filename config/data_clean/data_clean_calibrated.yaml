@@ -1,6 +1,6 @@
 calibration:
   generated_by: core.mcap_calibration_wizard
-  updated_at: '2026-06-30T15:17:02+08:00'
+  updated_at: '2026-05-03T16:57:43+08:00'
   gripper:
     left:
       calibrated: true
@@ -9,17 +9,17 @@ calibration:
       output_topic: /gopro_left/gripper_width
       aruco_dict: DICT_4X4_1000
       marker_ids:
-      - 1
       - 0
-      marker_min: 69.305
-      marker_max: 297.505
+      - 1
+      marker_min: 33.25
+      marker_max: 144.522
       closed_detection_rate: 1.0
       open_detection_rate: 1.0
-      closed_std_px: 0.121
-      open_std_px: 0.257
-      closed_frames: 55
-      open_frames: 46
-      updated_at: '2026-06-30T15:17:02+08:00'
+      closed_std_px: 0.0
+      open_std_px: 0.0
+      closed_frames: 49
+      open_frames: 47
+      updated_at: '2026-05-03T16:56:16+08:00'
     right:
       calibrated: true
       method: live_gopro_aruco
@@ -62,32 +62,10 @@ pose_streams:
 - input_topic: /baton_mini_left/fast_odom
   msg_type: nav_msgs/msg/Odometry
   output_topic: /baton_mini_left/fast_odom
-  transform:
-    start_from_common:
-      translation:
-        x: 0.0
-        y: 0.0
-        z: 0.0
-      rotation_xyzw:
-        qx: 0.0
-        qy: 0.0
-        qz: 0.0
-        qw: 1.0
   output_arm_base_tcp_pose: /left_arm_base_tcp_pose
 - input_topic: /baton_mini_right/fast_odom
   msg_type: nav_msgs/msg/Odometry
   output_topic: /baton_mini_right/fast_odom
-  transform:
-    start_from_common:
-      translation:
-        x: 0.0
-        y: 0.0
-        z: 0.0
-      rotation_xyzw:
-        qx: 0.0
-        qy: 0.0
-        qz: 0.0
-        qw: 1.0
   output_arm_base_tcp_pose: /right_arm_base_tcp_pose
 gripper_streams:
 - image_topic: /gopro_left/image_raw
@@ -95,10 +73,10 @@ gripper_streams:
   output_topic: /gopro_left/gripper_width
   output_msg_type: std_msgs/msg/Float32
   aruco_dict: DICT_4X4_1000
-  marker_id_0: 1
-  marker_id_1: 0
-  marker_min: 69.305
-  marker_max: 297.505
+  marker_id_0: 0
+  marker_id_1: 1
+  marker_min: 33.25
+  marker_max: 144.522
   gripper_max: 100.0
 - image_topic: /gopro_right/image_raw
   image_msg_type: sensor_msgs/msg/Image
@@ -123,6 +101,9 @@ camera_from_tcp:
     - 145
 work_frames:
   left:
+    hand: left
+    base_frame_id: left_arm_base
+    work_frame_id: camera_work
     position_mm:
       x: -420
       y: -148
@@ -131,11 +112,11 @@ work_frames:
       rx: -1.96
       ry: 0.12
       rz: 1.393
-    hand: left
-    base_frame_id: left_arm_base
-    work_frame_id: camera_work
     source: user_input
   right:
+    hand: right
+    base_frame_id: right_arm_base
+    work_frame_id: camera_work
     position_mm:
       x: -420
       y: -148
@@ -144,9 +125,6 @@ work_frames:
       rx: 1.96
       ry: 0.118
       rz: -1.395
-    hand: right
-    base_frame_id: right_arm_base
-    work_frame_id: camera_work
     source: user_input
 web_pipeline:
   schema_version: 1
@@ -176,13 +154,13 @@ web_pipeline:
     - id: right_gripper_width
       enabled: true
     - id: tactile_left_gripper_1
-      enabled: true
+      enabled: false
     - id: tactile_left_gripper_2
-      enabled: true
+      enabled: false
     - id: tactile_right_gripper_1
-      enabled: true
+      enabled: false
     - id: tactile_right_gripper_2
-      enabled: true
+      enabled: false
     action_segments:
     - id: left_tcp_pose_t_plus_1
       enabled: true
