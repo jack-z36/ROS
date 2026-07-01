@@ -79,6 +79,13 @@ SIDECAR_ROOT = STAGE2_ASSET_ROOT / "dev/debug/web_jobs"
 PRESETS_DIR = WORKSPACE_DIR / "config/data_clean/presets"
 BATON_AUDIT_DIRNAME = "baton_pose_audits"
 DEFAULT_GLOBAL_WORKERS = 6
+
+# 中间产物（cleaned/MCAP_A/aligned/forge_ready）存放根目录配置。
+# 解析优先级：settings.json 的 intermediate_root > 环境变量 > 默认 run_root（向后兼容）。
+# 环境变量让换电脑/CI 无需改代码即可重定向中间产物到大盘，避免系统盘被写满。
+INTERMEDIATE_ROOT_ENV = "DATA_CLEAN_INTERMEDIATE_ROOT"
+INTERMEDIATE_FREE_GB_WARNING = 20      # 低于此值在新建任务页提示空间不足风险
+INTERMEDIATE_FREE_GB_REJECT = 10        # 低于此值在建任务时直接拒绝，避免跑到一半 Errno 28
 STAGE_NAMES = [
     "夹爪提取",
     "位姿转换",
@@ -325,8 +332,10 @@ class DataCleanWebApp:
         self.run_root = run_root
         self.jobs_dir = run_root / "jobs"
         self.baton_audits_dir = run_root / BATON_AUDIT_DIRNAME
-        self.staging_dir = run_root / "outputs/staging"
         self.settings_path = run_root / "settings.json"
+        self.intermediate_root = self._resolve_intermediate_root(run_root)
+        self.staging_dir = self.intermediate_root / "outputs/staging"
+        self.staging_dir.mkdir(parents=True, exist_ok=True)
         self.lock = threading.RLock()
         self.global_workers = max(1, global_workers)
         self.worker_budget = threading.BoundedSemaphore(self.global_workers)
@@ -358,6 +367,30 @@ class DataCleanWebApp:
                 _write_json_atomic(path, data)
             self.jobs[data["job_id"]] = data
 
+    def _resolve_intermediate_root(self, run_root: Path) -> Path:
+        """Resolve the root directory for intermediate products (cleaned/MCAP_A/aligned/forge_ready).
+
+        Priority: settings.json ``intermediate_root`` > env ``DATA_CLEAN_INTERMEDIATE_ROOT`` > ``run_root``.
+        Keeping ``run_root`` as the fallback preserves the original behavior, so unconfigured deployments
+        are not broken; the create-task page nudges users to point this at a large disk.
+        """
+        configured = self._settings().get("intermediate_root")
+        if configured:
+            return Path(configured).expanduser()
+        env_value = os.environ.get(INTERMEDIATE_ROOT_ENV, "").strip()
+        if env_value:
+            return Path(env_value).expanduser()
+        return run_root
+
+    @staticmethod
+    def _disk_free_gb(path: Path) -> float:
+        """Return available disk space (GB) at ``path``, creating it first if needed."""
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+            return os.statvfs(path).f_bavail * os.statvfs(path).f_frsize / (1024 ** 3)
+        except OSError:
+            return 0.0
+
     def _save_job(self, job: dict[str, Any]) -> None:
         job["progress"] = _job_progress(job)
         job["counts"] = _status_counts(job.get("files", []))
@@ -368,15 +401,19 @@ class DataCleanWebApp:
         data = _read_json(self.settings_path, {})
         return data if isinstance(data, dict) else {}
 
-    def _save_settings(self, input_dir: str, output_dir: str) -> None:
-        _write_json_atomic(
-            self.settings_path,
-            {
-                "last_input_dir": input_dir,
-                "last_output_dir": output_dir,
-                "updated_at": _now_iso(),
-            },
-        )
+    def _save_settings(
+        self,
+        input_dir: str,
+        output_dir: str,
+        intermediate_root: str | None = None,
+    ) -> None:
+        merged = self._settings()
+        merged["last_input_dir"] = input_dir
+        merged["last_output_dir"] = output_dir
+        if intermediate_root is not None:
+            merged["intermediate_root"] = intermediate_root
+        merged["updated_at"] = _now_iso()
+        _write_json_atomic(self.settings_path, merged)
 
     def load_config(self, *, input_dir: str | None = None, output_dir: str | None = None, workers: int | None = None) -> AppConfig:
         return load_app_config(
@@ -406,6 +443,9 @@ class DataCleanWebApp:
                 ),
                 "sidecar_root": str(SIDECAR_ROOT),
                 "global_workers": self.global_workers,
+                "intermediate_root": str(self.intermediate_root),
+                "staging_root": str(self.staging_dir),
+                "staging_disk_free_gb": round(self._disk_free_gb(self.staging_dir), 1),
             },
             "calibration": _calibration_info(config),
             "production_readiness": readiness,
@@ -969,6 +1009,20 @@ class DataCleanWebApp:
         if conflict_policy == "skip" and (dataset_dir.exists() or sidecar_dir.exists()):
             raise ValueError("dataset or sidecar already exists; choose overwrite or use a new dataset name")
 
+        intermediate_raw = str(payload.get("intermediate_dir", "")).strip()
+        if intermediate_raw:
+            intermediate_root = _safe_path(intermediate_raw)
+            intermediate_root.mkdir(parents=True, exist_ok=True)
+            free_gb = self._disk_free_gb(intermediate_root)
+            if free_gb < INTERMEDIATE_FREE_GB_REJECT:
+                raise ValueError(
+                    f"中间产物目录 {intermediate_root} 所在磁盘仅剩 {free_gb:.1f}G，"
+                    f"低于 {INTERMEDIATE_FREE_GB_REJECT}G 阈值，请选择更大的磁盘。"
+                )
+            self.intermediate_root = intermediate_root
+            self.staging_dir = intermediate_root / "outputs/staging"
+            self.staging_dir.mkdir(parents=True, exist_ok=True)
+
         job_id = _job_id()
         effective = build_web_job_effective_config(
             default_config_path=self.config_path,
@@ -1041,7 +1095,11 @@ class DataCleanWebApp:
         with self.lock:
             self.cancel_events[job_id] = threading.Event()
             self._save_job(job)
-            self._save_settings(str(input_dir), str(output_parent))
+            self._save_settings(
+                str(input_dir),
+                str(output_parent),
+                intermediate_root=str(self.intermediate_root) if intermediate_raw else None,
+            )
         thread = threading.Thread(target=self._run_job, args=(job_id,), daemon=True)
         thread.start()
         return {"job": self._public_job(job)}
@@ -2175,12 +2233,16 @@ function renderCreate() {
   const s = state.dashboard?.settings || {};
   const input = state.retryDraft?.input_dir || s.last_input_dir || '';
   const output = state.retryDraft?.output_dir || s.last_output_dir || '';
+  const intermediate = s.intermediate_root || '';
   const datasetName = state.retryDraft?.dataset_name || s.default_dataset_name || '';
   const remark = state.retryDraft?.remark || '';
   const ready = state.dashboard?.production_readiness || {ready:false, missing_items:['正在读取生产配置']};
   const readinessBox = ready.ready
     ? '<div class="notice" style="margin-top:14px">生产配置已就绪：任务将使用左右 arm-base TCP 位姿构建训练数据集。</div>'
     : `<div class="warnbox" style="margin-top:14px">生产配置未就绪：${(ready.missing_items || []).map(escapeHtml).join('、')}。<br><button onclick="showPage('config')">进入配置中心</button></div>`;
+  const freeGb = typeof s.staging_disk_free_gb === 'number' ? s.staging_disk_free_gb : null;
+  const diskWarn = (freeGb === null || freeGb >= 20) ? ''
+    : `<div class="warnbox" style="margin-top:8px">中间产物目录所在磁盘仅剩 ${freeGb}G，多文件并发可能空间不足；建议更换为更大容量的磁盘或降低 worker 数。</div>`;
   document.getElementById('page-create').innerHTML = `
     <div class="split">
       <div class="card">
@@ -2189,6 +2251,8 @@ function renderCreate() {
         <label>数据集名称</label><input id="dataset-name" value="${escapeHtml(datasetName)}" oninput="previewJob()" placeholder="YYYYMMDD_HH">
         <label>输入目录</label><div class="row"><input id="input-dir" value="${escapeHtml(input)}"><button onclick="openDirModal('input')">浏览</button></div>
         <label>输出父目录（LeRobot export）</label><div class="row"><input id="output-dir" value="${escapeHtml(output)}" oninput="previewJob()"><button onclick="openDirModal('output')">浏览</button></div>
+        <label>中间产物目录（建议大容量磁盘）</label><div class="row"><input id="intermediate-dir" value="${escapeHtml(intermediate)}" placeholder="留空则使用默认位置"><button onclick="openDirModal('intermediate')">浏览</button></div>
+        ${diskWarn}
         ${readinessBox}
         <details><summary>高级设置</summary>
           <label>运行终点</label><select id="run-endpoint"><option value="full">完整批次数据集构建</option></select>
@@ -2720,7 +2784,7 @@ function closeConfirm() { document.getElementById('confirm-modal').classList.rem
 async function submitJob() {
   const policy = document.getElementById('conflict-policy').value;
   if (policy === 'skip') { closeConfirm(); return; }
-  const payload = {remark:document.getElementById('remark').value, dataset_name:document.getElementById('dataset-name').value, input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, run_endpoint:document.getElementById('run-endpoint').value, workers:document.getElementById('workers').value || 'auto', conflict_policy:policy, files:[...state.selected].map(path=>({path}))};
+  const payload = {remark:document.getElementById('remark').value, dataset_name:document.getElementById('dataset-name').value, input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, intermediate_dir:(document.getElementById('intermediate-dir')?.value || ''), run_endpoint:document.getElementById('run-endpoint').value, workers:document.getElementById('workers').value || 'auto', conflict_policy:policy, files:[...state.selected].map(path=>({path}))};
   const data = await api('/api/jobs', {method:'POST', body:JSON.stringify(payload)});
   closeConfirm();
   openJob(data.job.job_id);
@@ -3118,6 +3182,7 @@ async function deleteHistory(id) { if (!confirm('只删除历史摘要，不删�
 function dirInputId(target) {
   if (target === 'input') return 'input-dir';
   if (target === 'output') return 'output-dir';
+  if (target === 'intermediate') return 'intermediate-dir';
   if (target === 'audit-input') return 'audit-input-dir';
   if (target === 'audit-classified') return 'audit-classified-dir';
   return 'input-dir';
