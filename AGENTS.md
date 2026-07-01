@@ -17,7 +17,7 @@
 
 处理任务时先判断交互模式，再只读取该模式需要的入口文档。不得因为用户提到“阶段二”就自动加载阶段四件套、场景六件套或全部模板。
 
-阶段二默认不在 `main` 上工作；Win 文档规划和 Ubuntu L3 执行都应位于对应 Runtime 分支或 Service 场景分支。Runtime MVP 使用 `runtime-mvp`；Service 场景一到五分别使用 `service-s1`、`service-s2`、`service-s3`、`service-s4`、`service-s5`。
+本仓库采用“一级稳定主干 + 二级长期集成分支 + 三级短功能分支”的 Git 模型。`main` 只保存稳定里程碑；二级长期分支为 `data_collection`、`data_clean`、`model_deploy`、`docs_maintaining`；日常开发和 L3 执行应从对应二级分支创建三级短功能分支，完成并合入二级分支后删除。阶段二默认目标分支是 `data_clean` 或从 `data_clean` 创建的三级分支，不再使用固定的 `runtime-mvp` / `service-s1` 到 `service-s5` 长期分支。
 
 ## 两种主要协作模式
 
@@ -41,7 +41,7 @@
 
 - 可写阶段二规划文档、L2/L3 文档、模板和必要的 Win 端规划记录。
 - 不执行代码开发，不运行源码改写命令，不移动 L3 到 completed。
-- 开始规划前必须确认当前处于对应 Runtime 分支或 Service 场景分支；不得在 `main` 上生成阶段二 L2/L3。
+- 开始规划前必须确认当前处于 `data_clean`、`docs_maintaining` 或它们派生的三级短功能分支；不得在 `main` 上生成阶段二 L2/L3。
 
 ### 2. Ubuntu L3 执行模式
 
@@ -64,7 +64,7 @@
 - 完成后将当前 L3 从 `DOCS/阶段二：数据清洗/03_tasks/task/active/<功能组>/` 移到 `DOCS/阶段二：数据清洗/03_tasks/task/completed/<L1归档目录>/<功能组>/`，并在原 active 功能组目录为空时删除该空目录。
 - 禁止写 `DOCS/总执行日志.md`、`DOCS/阶段二：数据清洗/执行记录/`、阶段/场景 `当前进度.md`、共享 `执行记录.md`。
 - 执行前必须校验用户指定路径、实际读取路径、文件名编号和正文 `L3 编号` 一致；找不到或不一致时必须停止，不得改读同目录其他 L3。
-- 执行前必须确认当前分支是当前 L3 所属 Runtime 分支或 Service 场景分支；Ubuntu 禁止在 `main` 上执行 L3 或推送 `main`。
+- 执行前必须确认当前分支是从 `data_clean` 创建的当前 L3 三级短功能分支，或用户明确指定的阶段二维护分支；Ubuntu 禁止在 `main` 上执行 L3 或推送 `main`。
 - Service 场景 L3 的自动化验收不能替代最终场景验收；场景最终验收必须由用户本人运行 `./start_data_clean.sh --dev`。
 
 ## 常用目录
