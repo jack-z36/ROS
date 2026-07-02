@@ -1,0 +1,172 @@
+# L2-05 硬件执行栈功能组调度索引
+
+> [!info] 归属
+> - 功能组：`l2-05-hardware`
+> - 来源 L2：`DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-05-硬件执行栈.md`
+> - 本文件是调度索引，主 Agent 据此判断并行/串行；不随单个 L3 归档移动。
+
+> [!danger] 真机风险最高功能组
+> 本组直接接触 RM65 机械臂 + 大象夹爪。deploy_020/021/023 涉及真机驱动。必须严格遵守波次和前置条件。
+
+```yaml
+dispatch_index:
+  group: l2-05-hardware
+  branch: model_deploy
+  source_l2: DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-05-硬件执行栈.md
+  max_parallel_agents: 3
+  waves:
+    - wave: 1
+      parallel_group: l2-05-hardware-p1
+      tasks: [deploy_017, deploy_020, deploy_021]
+    - wave: 2
+      parallel_group: l2-05-hardware-p2
+      depends_on: [deploy_017]
+      tasks: [deploy_018, deploy_019]
+    - wave: 3
+      parallel_group: l2-05-hardware-p3
+      depends_on: [deploy_017, deploy_018, deploy_019, deploy_020, deploy_021]
+      tasks: [deploy_022]
+    - wave: 4
+      parallel_group: l2-05-hardware-p4
+      depends_on: [deploy_022]
+      tasks: [deploy_023]
+  tasks:
+    deploy_017:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_017_command_bridge骨架.md
+      title: command_bridge_sender_node 骨架
+      depends_on: []
+      robot_risk: none
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
+        modules:
+          - pi05.deploy.ros_nodes.command_bridge_sender_node
+        hardware_paths: []
+    deploy_018:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_018_bridge_ik预检.md
+      title: bridge IK 预检 + workspace
+      depends_on: [deploy_017]
+      robot_risk: low
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
+        modules:
+          - pi05.deploy.ros_nodes.command_bridge_sender_node
+        hardware_paths:
+          - rm65_sdk
+    deploy_019:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_019_bridge_gate与映射.md
+      title: bridge width→angle 映射 + gate
+      depends_on: [deploy_017]
+      robot_risk: low
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/command_bridge_sender_node.py
+        modules:
+          - pi05.deploy.ros_nodes.command_bridge_sender_node
+        hardware_paths: []
+    deploy_020:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_020_rm65_driver_node.md
+      title: rm65_driver_node（状态发布 + 命令执行）
+      depends_on: []
+      robot_risk: high
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/rm65_driver_node.py
+        modules:
+          - pi05.deploy.ros_nodes.rm65_driver_node
+        hardware_paths:
+          - rm65_arm_left
+          - rm65_arm_right
+          - rm65_sdk
+    deploy_021:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_021_elephant_gripper_node.md
+      title: elephant_gripper_node（状态发布 + 命令执行 + 标定）
+      depends_on: []
+      robot_risk: high
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/elephant_gripper_node.py
+        modules:
+          - pi05.deploy.ros_nodes.elephant_gripper_node
+        hardware_paths:
+          - elephant_gripper_left
+          - elephant_gripper_right
+          - gripper_modbus
+    deploy_022:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_022_launch与shadow_run全链路.md
+      title: 新 launch + shadow-run 全链路验证
+      depends_on: [deploy_017, deploy_018, deploy_019, deploy_020, deploy_021]
+      robot_risk: low
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/launch/pi05_rm65_deploy.launch.py
+        modules:
+          - deploy.launch
+        hardware_paths:
+          - rm65_arm_left
+          - rm65_arm_right
+          - elephant_gripper_left
+          - elephant_gripper_right
+    deploy_023:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-05-hardware/deploy_023_real_robot_smoke_test.md
+      title: real-robot smoke test（safe-run + 急停）
+      depends_on: [deploy_022]
+      robot_risk: critical
+      dispatch_status: blocked
+      blocked_reason: "必须 deploy_022 shadow-run 通过 + 标定完成 + bundle 就绪 + 急停就绪 + 人在场"
+      conflict_scope:
+        files: []
+        modules: []
+        hardware_paths:
+          - rm65_arm_left
+          - rm65_arm_right
+          - elephant_gripper_left
+          - elephant_gripper_right
+          - estop_physical
+          - deadman_physical
+```
+
+## 调度说明
+
+| wave | 任务 | 并行性 | 真机风险 | 说明 |
+|---|---|---|---|---|
+| 1 | deploy_017 ∥ deploy_020 ∥ deploy_021 | 可并行（3 个不同新文件） | 017=none, 020/021=high | bridge 骨架 + 两个硬件适配节点，新建不同文件无冲突。代码实现可无硬件完成（AST 验收）。 |
+| 2 | deploy_018 ∥ deploy_019 | 可并行（同文件不同方法，但同文件建议串行或同 Agent） | low | bridge 接入 IK + gate/映射。同改 command_bridge_sender_node.py。 |
+| 3 | deploy_022 | 单独 | low | 新 launch + shadow-run 全链路。依赖 wave1/2 全部完成。 |
+| 4 | deploy_023 | 单独 | **critical** | real-robot smoke test。**blocked**，必须满足 5 项前置条件。 |
+
+## 真机风险分级
+
+| L3 | 风险 | 原因 | 真机测试时机 |
+|---|---|---|---|
+| deploy_017 | none | 只发 command topic 无下游 | 无需真机 |
+| deploy_018 | low | IK 只查不执行 | deploy_022 shadow |
+| deploy_019 | low | gate 控制 shadow 不发 | deploy_022 shadow |
+| deploy_020 | **high** | movep_canfd 驱动机械臂 | deploy_023 real-robot |
+| deploy_021 | **high** | modbus 驱动夹爪 | deploy_023 real-robot |
+| deploy_022 | low | shadow gate 关不动 | 本身即 shadow |
+| deploy_023 | **critical** | safe-run 真机运动 | 本身即 real-robot |
+
+## deploy_023 的 blocked 解除条件
+
+必须全部满足：
+1. deploy_022 shadow-run 全链路通过
+2. width↔angle 标定完成（deploy_021 实测系数）
+3. 真模型 bundle 就绪（Q1，16D 训练）
+4. 物理急停就绪 + deadman 可用
+5. 人在场 + 主 Agent/用户授权
+
+## 全组完成标志
+
+deploy_023 smoke test 通过 = L2-05 硬件执行栈完成 = **阶段四模型部署改造全部完成**。
+
+## 与 L2-01~04 的关系
+
+L2-05 是独立子系统，通过 `/pi05/policy_action` topic 与 L2-01~04 解耦。L2-05 的 deploy_017~019/022 不依赖 L2-01~04 的代码完成（只需 topic 契约）。但 deploy_023（real-robot）需要真模型 bundle（L2-01~04 提供的 16D 语义）。
+
+## 回滚路径
+
+- bridge/驱动节点不启动 → policy_action 仍可独立 dry-run（L2-04 不受影响）
+- 切回旧 launch（pi05_picotele_mux）+ 旧 config + 旧 bundle（Q7 三件套）
+- 物理急停（运动中）

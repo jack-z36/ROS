@@ -1,0 +1,89 @@
+# L2-01 Types 层功能组调度索引
+
+> [!info] 归属
+> - 功能组：`l2-01-types`
+> - 来源 L2：`DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-01-Types层重构.md`
+> - 本文件是调度索引，主 Agent 据此判断并行/串行；不随单个 L3 归档移动。
+
+```yaml
+dispatch_index:
+  group: l2-01-types
+  branch: model_deploy
+  source_l2: DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-01-Types层重构.md
+  max_parallel_agents: 2
+  waves:
+    - wave: 1
+      parallel_group: l2-01-types-p1
+      tasks: [deploy_001]
+    - wave: 2
+      parallel_group: l2-01-types-p2
+      depends_on: [deploy_001]
+      tasks: [deploy_002, deploy_003]
+    - wave: 3
+      parallel_group: l2-01-types-p3
+      depends_on: [deploy_002, deploy_003]
+      tasks: [deploy_004]
+  tasks:
+    deploy_001:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_001_重构action_spec为TCP_width结构.md
+      title: 重构 action_spec 为 TCP+width 结构
+      depends_on: []
+      conflict_scope:
+        files:
+          - pi05_test/pi05/common/src/pi05/common/robot/action_spec.py
+        modules:
+          - pi05.common.robot.action_spec
+        config_keys: []
+    deploy_002:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_002_重构state_codec为TCP_width结构.md
+      title: 重构 state_codec 为 TCP+width 结构
+      depends_on: [deploy_001]
+      conflict_scope:
+        files:
+          - pi05_test/pi05/common/src/pi05/common/data/state_codec.py
+        modules:
+          - pi05.common.data.state_codec
+        config_keys: []
+    deploy_003:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_003_action_codec维度校验跟随.md
+      title: action_codec 维度校验跟随
+      depends_on: [deploy_001]
+      conflict_scope:
+        files:
+          - pi05_test/pi05/common/src/pi05/common/data/action_codec.py
+        modules:
+          - pi05.common.data.action_codec
+        config_keys: []
+    deploy_004:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_004_types层单测.md
+      title: Types 层单测覆盖
+      depends_on: [deploy_001, deploy_002, deploy_003]
+      conflict_scope:
+        files:
+          - pi05_test/pi05/common/tests/test_action_spec_tcp.py
+          - pi05_test/pi05/common/tests/test_state_codec_tcp.py
+        modules:
+          - tests.types_layer
+        config_keys: []
+```
+
+## 调度说明
+
+| wave | 任务 | 并行性 | 说明 |
+|---|---|---|---|
+| 1 | deploy_001 | 单独 | action_spec 是地基（定义 ACTION_DIM/STATE_DIM/TCP_POSE_DOF/GRIPPER_WIDTH_DOF 常量），必须最先。 |
+| 2 | deploy_002 ∥ deploy_003 | 可并行 | state_codec 和 action_codec 改不同文件，都只依赖 deploy_001，conflict_scope 无交集，可并行。 |
+| 3 | deploy_004 | 单独 | 单测依赖前三个全部完成。 |
+
+## 冲突检查
+
+- deploy_002（state_codec.py）与 deploy_003（action_codec.py）：**文件无交集**，可并行。
+- deploy_001（action_spec.py）与 deploy_002/003：**有依赖**（后者引用前者常量），不可并行，必须 wave1 先完成。
+
+## 全组完成标志
+
+deploy_004 pytest 通过 = L2-01 Types 层重构完成 = 可开始 L2-02（Config 层）。
+
+## 真机风险
+
+全组 robot_risk = none。Types 层纯数据结构，不触发真机。真机风险在 L2-05（硬件执行栈）。
