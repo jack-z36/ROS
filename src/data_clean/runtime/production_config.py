@@ -23,6 +23,16 @@ class ProductionConfigError(ValueError):
     """Raised when a normal-Web production config cannot be saved."""
 
 
+DEFAULT_WEB_FILE_MANAGEMENT = {
+    "rejected_mcap_dir": "/media/hit/D085-8696/数据清洗缺陷文件",
+    "completed_mcap_dir": "/media/hit/D085-8696/已完成清洗文件",
+    "artifact_retention": "production_cleanup",
+    "failed_artifact_policy": "failed_stage_input",
+    "space_estimate_multiplier": 4.0,
+    "space_safety_gb": 20.0,
+}
+
+
 @lru_cache(maxsize=1)
 def realman_sdk_status() -> dict[str, Any]:
     try:
@@ -71,6 +81,7 @@ def production_config_view(path: str | Path) -> dict[str, Any]:
             if hand in work_frames
         },
         "web_pipeline": _production_web_pipeline_view(raw.get("web_pipeline")),
+        "web_file_management": _production_web_file_management_view(raw.get("web_file_management")),
         "migrated_from_legacy": _uses_legacy_pose_units(raw),
     }
 
@@ -86,6 +97,7 @@ def validate_production_payload(payload: dict[str, Any]) -> dict[str, Any]:
         errors.append(_error("work_frames", "必须配置左右手工作坐标系。"))
         work_frames = {}
     web_pipeline = payload.get("web_pipeline")
+    web_file_management = payload.get("web_file_management")
 
     expected_base = {"left": "left_arm_base", "right": "right_arm_base"}
     for hand in ("left", "right"):
@@ -134,6 +146,7 @@ def validate_production_payload(payload: dict[str, Any]) -> dict[str, Any]:
             except (TypeError, ValueError) as exc:
                 errors.append(_error(f"work_frames.{hand}.rotation_euler_rad", str(exc)))
     errors.extend(_validate_web_pipeline_payload(web_pipeline))
+    errors.extend(_validate_web_file_management_payload(web_file_management))
     return {"valid": not errors, "errors": errors}
 
 
@@ -146,6 +159,7 @@ def save_production_config(path: str | Path, payload: dict[str, Any]) -> dict[st
     raw["camera_from_tcp"] = payload["camera_from_tcp"]
     raw["work_frames"] = payload["work_frames"]
     raw["web_pipeline"] = _normalize_web_pipeline_payload(payload.get("web_pipeline"))
+    raw["web_file_management"] = _normalize_web_file_management_payload(payload.get("web_file_management"))
     for hand in ("left", "right"):
         raw["work_frames"][hand]["hand"] = hand
         raw["work_frames"][hand]["base_frame_id"] = f"{hand}_arm_base"
@@ -239,6 +253,10 @@ def _read_yaml(path: Path) -> dict[str, Any]:
 
 def _production_web_pipeline_view(data: Any | None) -> dict[str, Any]:
     return _normalize_web_pipeline_payload(data)
+
+
+def _production_web_file_management_view(data: Any | None) -> dict[str, Any]:
+    return _normalize_web_file_management_payload(data)
 
 
 def _normalize_web_pipeline_payload(data: Any | None) -> dict[str, Any]:
@@ -344,6 +362,46 @@ def _validate_web_pipeline_payload(data: Any | None) -> list[dict[str, str]]:
         _normalize_web_pipeline_payload(data)
     except (ValueError, TypeError, LeRobotFeatureConfigError) as exc:
         return [_error("web_pipeline", str(exc))]
+    return []
+
+
+def _normalize_web_file_management_payload(data: Any | None) -> dict[str, Any]:
+    values = dict(DEFAULT_WEB_FILE_MANAGEMENT)
+    if isinstance(data, dict):
+        values.update(data)
+    rejected_dir = str(values.get("rejected_mcap_dir") or DEFAULT_WEB_FILE_MANAGEMENT["rejected_mcap_dir"]).strip()
+    completed_dir = str(values.get("completed_mcap_dir") or DEFAULT_WEB_FILE_MANAGEMENT["completed_mcap_dir"]).strip()
+    artifact_retention = str(values.get("artifact_retention") or "production_cleanup")
+    failed_policy = str(values.get("failed_artifact_policy") or "failed_stage_input")
+    if artifact_retention not in {"production_cleanup", "keep_all"}:
+        raise ValueError("web_file_management.artifact_retention 必须是 production_cleanup 或 keep_all")
+    if failed_policy not in {"failed_stage_input", "keep_all"}:
+        raise ValueError("web_file_management.failed_artifact_policy 必须是 failed_stage_input 或 keep_all")
+    multiplier = float(values.get("space_estimate_multiplier", DEFAULT_WEB_FILE_MANAGEMENT["space_estimate_multiplier"]))
+    safety_gb = float(values.get("space_safety_gb", DEFAULT_WEB_FILE_MANAGEMENT["space_safety_gb"]))
+    if not math.isfinite(multiplier) or multiplier <= 0:
+        raise ValueError("web_file_management.space_estimate_multiplier 必须大于 0")
+    if not math.isfinite(safety_gb) or safety_gb < 0:
+        raise ValueError("web_file_management.space_safety_gb 不得小于 0")
+    return {
+        "rejected_mcap_dir": rejected_dir,
+        "completed_mcap_dir": completed_dir,
+        "artifact_retention": artifact_retention,
+        "failed_artifact_policy": failed_policy,
+        "space_estimate_multiplier": multiplier,
+        "space_safety_gb": safety_gb,
+    }
+
+
+def _validate_web_file_management_payload(data: Any | None) -> list[dict[str, str]]:
+    if data is None:
+        return []
+    if not isinstance(data, dict):
+        return [_error("web_file_management", "必须是配置对象。")]
+    try:
+        _normalize_web_file_management_payload(data)
+    except (ValueError, TypeError) as exc:
+        return [_error("web_file_management", str(exc))]
     return []
 
 

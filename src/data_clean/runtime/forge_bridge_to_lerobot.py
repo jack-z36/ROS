@@ -138,6 +138,22 @@ def convert_forge_bridges_to_lerobot(
     )
     writer = LeRobotV3Writer(LeRobotV3WriterConfig(fps=fps))
     writer.write_dataset(iter(all_episodes), output_path, dataset_info=dataset_info)
+
+    # 相对时间戳后处理：Forge writer 写入的是 MCAP 绝对 Unix 时间戳（log_time/1e9），
+    # LeRobot v3 训练要求每个 episode 第一帧 timestamp = 0.0。这里按 episode 减去
+    # 本 episode 第一帧时间戳，原地重写 data/chunk-*/file-*.parquet（不改 forge 源码）。
+    from service.lerobot_timestamp_rebase import rebase_lerobot_timestamps
+
+    rebase_lerobot_timestamps(output_path)
+
+    # 图像 stats 补全：Forge writer 的 _STAT_FEATURES 只统计 state/action，跳过了
+    # video feature。LeRobot 训练要求 info.json 里每个 feature 都有 stats，否则
+    # 报 KeyError。这里在 writer 完成后解码视频，补全 observation.images.* 的每通道
+    # 统计（÷255 归一化），不改 forge 源码。
+    from service.lerobot_image_stats import augment_image_stats
+
+    augment_image_stats(output_path)
+
     return {
         "status": "success",
         "output_lerobot_v3": str(output_path),
