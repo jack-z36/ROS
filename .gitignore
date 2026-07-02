@@ -56,3 +56,13 @@ _tmp/
 *.egg-info/
 dist/
 DOCS/.obsidian/workspace.json
+asset/阶段二：数据清洗/dev_runs/scene1/20260702_094257_scene1_arm_base_pose_transform/artifacts/arm_base_tcp_pose_samples.json
+asset/阶段二：数据清洗/dev_runs/scene1/20260702_094257_scene1_arm_base_pose_transform/config/effective_config.yaml
+.gitignore
+.gitignore
+asset/阶段二：数据清洗/dev_runs/scene1/20260702_094257_scene1_frame_alignment_config/artifacts/frame_alignment_config.yaml
+.gitignore
+asset/阶段二：数据清洗/dev_runs/scene1/20260702_094257_scene1_frame_alignment_config/logs/run_log.json
+asset/阶段二：数据清洗/dev_runs/scene1/20260702_094257_scene1_frame_alignment_config/config/effective_config.yaml
+asset/阶段二：数据清洗/dev_runs/scene1/20260702_094257_scene1_arm_base_pose_transform/logs/run_log.json
+asset/阶段二：数据清洗/dev_runs/scene1/20260702_094257_scene1_frame_alignment_config/artifacts/frame_alignment_summary.json
