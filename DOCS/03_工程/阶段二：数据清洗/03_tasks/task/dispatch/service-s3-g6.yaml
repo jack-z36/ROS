@@ -1,0 +1,108 @@
+﻿dispatch_index:
+  group: service-s3-g6
+  branch: service-s3
+  source_l2: DOCS/03_工程/阶段二：数据清洗/02_service/场景三/L2能力模块/aligned MCAP 与 sidecar 写出器.md
+  max_parallel_agents: 2
+  waves:
+    - wave: 1
+      parallel_group: service-s3-g6-p1
+      depends_on: [service_s3_003, service_s3_015]
+      tasks: [service_s3_019]
+    - wave: 2
+      parallel_group: service-s3-g6-p2
+      depends_on: [service_s3_017, service_s3_019]
+      tasks: [service_s3_020]
+    - wave: 2
+      parallel_group: service-s3-g6-p2
+      depends_on: [service_s3_011, service_s3_012, service_s3_013, service_s3_019]
+      tasks: [service_s3_021]
+    - wave: 3
+      parallel_group: service-s3-g6-p3
+      depends_on: [service_s3_020, service_s3_021]
+      tasks: [service_s3_022]
+    - wave: 4
+      parallel_group: service-s3-g6-p4
+      depends_on: [service_s3_022]
+      tasks: [service_s3_023]
+  tasks:
+    service_s3_019:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s3-g6/service_s3_019_定义写出摘要与final报告补齐类型.md
+      title: 定义写出摘要与 final 报告补齐类型
+      depends_on: [service_s3_003, service_s3_015]
+      blocks: [service_s3_020, service_s3_021, service_s3_022]
+      conflict_scope:
+        files:
+          - src/data_clean/schemas/alignment_index.py
+          - src/data_clean/schemas/__init__.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.schemas
+        config_keys: []
+    service_s3_020:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s3-g6/service_s3_020_实现alignment_index与report_sidecar写出.md
+      title: 实现 alignment index 与 report sidecar 写出
+      depends_on: [service_s3_017, service_s3_019]
+      blocks: [service_s3_022, service_s3_023]
+      conflict_scope:
+        files:
+          - src/data_clean/repo/alignment_sidecar_writer.py
+          - src/data_clean/repo/__init__.py
+          - src/data_clean/service/aligned_mcap_writer.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.repo
+          - data_clean.service.aligned_mcap_writer
+        config_keys:
+          - scene3_alignment.output_dir
+    service_s3_021:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s3-g6/service_s3_021_实现aligned_MCAP最小写出与缺失字段跳过.md
+      title: 实现 aligned MCAP 最小写出与缺失字段跳过
+      depends_on: [service_s3_011, service_s3_012, service_s3_013, service_s3_019]
+      blocks: [service_s3_022, service_s3_023]
+      conflict_scope:
+        files:
+          - src/data_clean/repo/aligned_mcap_writer.py
+          - src/data_clean/repo/__init__.py
+          - src/data_clean/service/aligned_mcap_writer.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.repo
+          - data_clean.service.aligned_mcap_writer
+        config_keys:
+          - scene3_alignment.output_dir
+    service_s3_022:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s3-g6/service_s3_022_实现临时目录整体提交与失败摘要.md
+      title: 实现临时目录整体提交与失败摘要
+      depends_on: [service_s3_020, service_s3_021]
+      blocks: [service_s3_023]
+      conflict_scope:
+        files:
+          - src/data_clean/service/aligned_mcap_writer.py
+          - src/data_clean/runtime/
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.service.aligned_mcap_writer
+          - data_clean.runtime
+        config_keys:
+          - scene3_alignment.output_dir
+    service_s3_023:
+      file: DOCS/03_工程/阶段二：数据清洗/03_tasks/task/active/service-s3-g6/service_s3_023_接入场景三aligned_MCAP写出开发者检验项.md
+      title: 接入场景三 aligned MCAP 写出开发者检验项
+      depends_on: [service_s3_022]
+      blocks: []
+      conflict_scope:
+        files:
+          - start_data_clean.sh
+          - src/data_clean/runtime/scene3_aligned_mcap_write_check.py
+          - src/data_clean/ui/dev_menu.py
+          - src/data_clean/tests/
+          - src/data_clean/data_clean_architecture.md
+        modules:
+          - data_clean.runtime
+          - data_clean.ui
+        config_keys:
+          - scene3_alignment.output_dir

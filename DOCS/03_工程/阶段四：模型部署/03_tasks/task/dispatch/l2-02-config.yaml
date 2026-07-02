@@ -1,0 +1,117 @@
+# L2-02 Config 层功能组调度索引
+
+> [!info] 归属
+> - 功能组：`l2-02-config`
+> - 来源 L2：`DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-02-Config层重构.md`
+> - 本文件是调度索引，主 Agent 据此判断并行/串行；不随单个 L3 归档移动。
+
+```yaml
+dispatch_index:
+  group: l2-02-config
+  branch: model_deploy
+  source_l2: DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-02-Config层重构.md
+  max_parallel_agents: 1
+  waves:
+    - wave: 1
+      parallel_group: l2-02-config-p1
+      tasks: [deploy_005]
+    - wave: 2
+      parallel_group: l2-02-config-p2
+      depends_on: [deploy_005]
+      tasks: [deploy_006]
+    - wave: 3
+      parallel_group: l2-02-config-p3
+      depends_on: [deploy_006]
+      tasks: [deploy_007]
+    - wave: 4
+      parallel_group: l2-02-config-p4
+      depends_on: [deploy_005, deploy_006, deploy_007]
+      tasks: [deploy_008]
+  tasks:
+    deploy_005:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_005_重构observation_topic字段.md
+      title: 重构 observation topic 字段为鱼眼/TCP/gripper
+      depends_on: []
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py
+          - pi05_test/pi05/common/src/pi05/common/ros/topics.py
+        modules:
+          - pi05.deploy.config.schema
+          - pi05.common.ros.topics
+        config_keys:
+          - topics.observation
+    deploy_006:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_006_command重构与删BridgeMux.md
+      title: command topic 重构 + 删除 Bridge/Mux config
+      depends_on: [deploy_005]
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py
+          - pi05_test/pi05/common/src/pi05/common/ros/topics.py
+        modules:
+          - pi05.deploy.config.schema
+          - pi05.common.ros.topics
+        config_keys:
+          - topics.command
+          - topics.bridge_output
+          - topics.mux
+          - bridge
+          - mux
+    deploy_007:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_007_Runtime维度与SafetyConfig.md
+      title: RuntimeConfig 默认维度 + SafetyConfig 重构
+      depends_on: [deploy_006]
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/config/schema.py
+        modules:
+          - pi05.deploy.config.schema
+        config_keys:
+          - runtime.action_dim
+          - runtime.state_dim
+          - safety
+    deploy_008:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_008_deploy_yaml与单测.md
+      title: deploy.yaml 更新 + Config 层单测
+      depends_on: [deploy_005, deploy_006, deploy_007]
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/config/deploy.yaml
+          - pi05_test/pi05/deploy/tests/test_config_tcp_width.py
+        modules:
+          - tests.config_layer
+        config_keys:
+          - topics
+          - runtime.action_dim
+          - runtime.state_dim
+          - safety
+```
+
+## 调度说明
+
+| wave | 任务 | 并行性 | 说明 |
+|---|---|---|---|
+| 1 | deploy_005 | 单独 | observation 字段重构（schema.py + topics.py）。 |
+| 2 | deploy_006 | 单独 | command + 删 Bridge/Mux（同改 schema.py + topics.py）。 |
+| 3 | deploy_007 | 单独 | RuntimeConfig 维度 + SafetyConfig（同改 schema.py）。 |
+| 4 | deploy_008 | 单独 | deploy.yaml + 单测（验收前三者）。 |
+
+## 为什么串行（max_parallel_agents: 1）
+
+**关键决策**：deploy_005/006/007 都修改 `schema.py`（和 topics.py），`conflict_scope.files` 有交集。按调度元数据规则第 4 条「conflict_scope.files 有交集，不得并行分发」，必须串行。
+
+虽然三者改 schema.py 的不同部分（observation / command+bridge+mux / runtime+safety），理论上可以并行，但单文件并行改容易产生合并冲突和中间状态不一致。串行更安全。
+
+## 冲突检查
+
+- deploy_005/006/007：schema.py 有交集 → 串行。
+- deploy_008：改 deploy.yaml + 新建测试文件，与前三者文件无交集，但 depends_on 三者（需 schema 定型才能写配置和测试）。
+
+## 全组完成标志
+
+deploy_008 pytest 通过 = L2-02 Config 层重构完成 = 可开始 L2-03（数据装配 Service 层）。
+
+## 真机风险
+
+全组 robot_risk = none。Config 层不触发真机。真机风险在 L2-05。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stage4 L3 Orchestrator"
+  short_description: "Coordinate Stage 4 L3 execution and review."
+  default_prompt: "Use $stage4-l3-orchestrator to coordinate Stage 4 model_deploy L3 execution and acceptance cards."

@@ -1,0 +1,647 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>场景一：提取夹爪开合以及位姿转换 — 架构文档</title>
+  <style>
+    :root {
+      --bg: #fafaf9; --fg: #1c1b1a; --muted: #6b6964; --border: #e6e4e0;
+      --accent: #c96442; --surface: #ffffff; --code-bg: #f4f4f2;
+      --info: #2563eb; --warn: #d97706; --danger: #dc2626;
+      --sidebar-w: 260px; --toc-w: 220px;
+    }
+    [data-theme="dark"] {
+      --bg: #1a1a1a; --fg: #e8e6e1; --muted: #9a9890; --border: #333;
+      --accent: #e07a5f; --surface: #242424; --code-bg: #2a2a2a;
+      --info: #60a5fa; --warn: #fbbf24; --danger: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+    body { background: var(--bg); color: var(--fg); font: 15px/1.7 -apple-system, system-ui, "Segoe UI", sans-serif; }
+    .topbar { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .topbar .brand { font-weight: 700; font-size: 15px; }
+    .topbar .brand small { font-weight: 400; color: var(--muted); margin-left: 8px; }
+    .topbar-actions { display: flex; gap: 12px; align-items: center; }
+    .topbar-actions input { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); width: 240px; font: inherit; background: var(--bg); color: var(--fg); }
+    .theme-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; cursor: pointer; color: var(--fg); font-size: 14px; }
+    .version-badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--accent); color: #fff; }
+    .layout { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--toc-w); min-height: calc(100vh - 50px); }
+    @media (max-width: 1100px) { .layout { grid-template-columns: var(--sidebar-w) 1fr; } .toc { display: none; } }
+    @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+    .sidebar { padding: 20px 0; border-right: 1px solid var(--border); overflow-y: auto; font-size: 13px; position: sticky; top: 50px; height: calc(100vh - 50px); }
+    .sidebar .group { margin-bottom: 18px; }
+    .sidebar .group-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 16px 6px; font-weight: 600; }
+    .sidebar a { display: block; color: var(--fg); text-decoration: none; padding: 5px 16px; border-left: 3px solid transparent; }
+    .sidebar a:hover { background: var(--surface); }
+    .sidebar a.active { border-left-color: var(--accent); background: var(--surface); font-weight: 500; }
+    .sidebar a.sub { padding-left: 28px; font-size: 12px; }
+    article { padding: 40px 48px 80px; max-width: 820px; }
+    .crumbs { color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+    h1 { font-size: 32px; letter-spacing: -0.02em; margin: 0 0 10px; }
+    .lede { color: var(--muted); font-size: 16px; margin: 0 0 32px; line-height: 1.6; }
+    h2 { font-size: 22px; letter-spacing: -0.01em; margin: 48px 0 14px; padding-top: 16px; border-top: 1px solid var(--border); }
+    h2:first-of-type { border-top: none; padding-top: 0; }
+    h3 { font-size: 16px; margin: 24px 0 8px; font-weight: 600; }
+    h4 { font-size: 14px; margin: 16px 0 6px; font-weight: 600; color: var(--muted); }
+    p { margin: 10px 0; }
+    ul, ol { margin: 8px 0 8px 20px; }
+    li { margin: 4px 0; }
+    code { font-family: "Cascadia Code", "Fira Code", ui-monospace, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.88em; }
+    pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55; margin: 14px 0; position: relative; }
+    pre code { background: transparent; padding: 0; }
+    .code-lang { position: absolute; top: 6px; right: 10px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .copy-btn { position: absolute; top: 6px; right: 50px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer; color: var(--muted); }
+    .copy-btn:hover { color: var(--fg); }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+    th, td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+    th { background: var(--code-bg); font-weight: 600; font-size: 12px; }
+    .callout { border-radius: 8px; padding: 14px 18px; margin: 18px 0; font-size: 14px; border-left: 4px solid var(--accent); background: var(--surface); }
+    .callout.info { border-left-color: var(--info); }
+    .callout.warn { border-left-color: var(--warn); }
+    .callout.danger { border-left-color: var(--danger); }
+    .callout .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 4px; }
+    .callout.info .label { color: var(--info); }
+    .callout.warn .label { color: var(--warn); }
+    .callout.danger .label { color: var(--danger); }
+    .toc { padding: 40px 20px 24px; font-size: 12px; border-left: 1px solid var(--border); position: sticky; top: 50px; height: calc(100vh - 50px); overflow-y: auto; }
+    .toc .toc-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+    .toc a { display: block; color: var(--muted); text-decoration: none; padding: 3px 0; border-left: 2px solid transparent; padding-left: 10px; }
+    .toc a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+    .flow-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin: 20px 0; overflow-x: auto; }
+    .flow-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+    .flow-box { padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; text-align: center; }
+    .flow-box.input { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+    .flow-box.process { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .flow-box.output { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .flow-box.config { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+    .flow-arrow { color: var(--muted); font-size: 16px; }
+    [data-theme="dark"] .flow-box.input { background: #1e3a5f; color: #93c5fd; border-color: #2563eb; }
+    [data-theme="dark"] .flow-box.process { background: #451a03; color: #fcd34d; border-color: #d97706; }
+    [data-theme="dark"] .flow-box.output { background: #022c22; color: #6ee7b7; border-color: #059669; }
+    [data-theme="dark"] .flow-box.config { background: #1e1b4b; color: #c4b5fd; border-color: #7c3aed; }
+    .module-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 16px 0; }
+    .module-card h4 { margin: 0 0 8px; color: var(--accent); }
+    .module-card .meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .checklist { list-style: none; margin-left: 0; }
+    .checklist li::before { content: "\2610  "; }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge.p0 { background: #fee2e2; color: #991b1b; }
+    .badge.done { background: #d1fae5; color: #065f46; }
+    .badge.wip { background: #fef3c7; color: #92400e; }
+    .badge.pending { background: #e5e7eb; color: #374151; }
+    [data-theme="dark"] .badge.p0 { background: #450a0a; color: #fca5a5; }
+    [data-theme="dark"] .badge.done { background: #022c22; color: #6ee7b7; }
+    [data-theme="dark"] .badge.wip { background: #451a03; color: #fcd34d; }
+    [data-theme="dark"] .badge.pending { background: #374151; color: #d1d5db; }
+    .deprecated { text-decoration: line-through; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">阶段二 · 场景一<small>提取夹爪开合以及位姿转换</small></span>
+    <div class="topbar-actions">
+      <span class="version-badge">v1.0</span>
+      <input id="searchInput" placeholder="搜索 · Ctrl+K" />
+      <button class="theme-btn" id="themeToggle" title="切换主题">&#127769;</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <div class="group"><div class="group-label">概览</div>
+        <a href="#overview" class="active">场景一总览</a><a href="#background">背景信息</a><a href="#module-list">功能模块清单</a><a href="#data-flow">数据流图</a>
+      </div>
+      <div class="group"><div class="group-label">L2 能力模块</div>
+        <a href="#l2-01" class="sub">01 cleaned MCAP 契约稳定</a><a href="#l2-02" class="sub">02 夹爪开合配置生成</a><a href="#l2-03" class="sub">03 夹爪宽度提取</a><a href="#l2-04" class="sub">04 位姿转换配置生成</a><a href="#l2-05" class="sub">05 common frame 位姿转换</a><a href="#l2-06" class="sub">06 基础校验与输出契约检查</a>
+      </div>
+      <div class="group"><div class="group-label">L2 数据定义</div>
+        <a href="#d-cleaned" class="sub">CleanedMcap</a><a href="#d-scene1config" class="sub">Scene1Config</a><a href="#d-gripper-cal" class="sub">GripperCalibrationConfig</a><a href="#d-frame-align" class="sub">FrameAlignmentConfig</a><a href="#d-camera-tcp" class="sub">CameraFromTcpExtrinsic</a><a href="#d-common-camera" class="sub">CommonFrameCameraPose</a><a href="#d-common-tcp" class="sub">CommonFrameTcpPose</a><a href="#d-gripper-width" class="sub">GripperWidthSample</a><a href="#d-clean-report" class="sub">Scene1CleanReport</a><a href="#d-tcp-cam-dep" class="sub">TcpFromCameraExtrinsic (废弃)</a>
+      </div>
+      <div class="group"><div class="group-label">工程信息</div>
+        <a href="#output-files">输出程序与文件</a><a href="#constraints">执行约束</a><a href="#progress">当前进度</a><a href="#exec-log">执行记录摘要</a>
+      </div>
+    </nav>
+    <article id="article">
+      <div class="crumbs">阶段二 · 数据清洗 · Service · 场景一 · 架构文档</div>
+      <h1 id="overview">场景一：提取夹爪开合以及位姿转换</h1>
+      <p class="lede">从 raw MCAP 生成 cleaned MCAP，补齐夹爪宽度语义，并把左右 Baton Mini raw pose 转换到 common frame 下的相机 pose，为后续可靠性验证提供具备基础训练语义的数据。</p>
+      <div class="callout info"><div class="label">核心目标</div><p>把阶段一采集得到的 raw MCAP，从"硬件原始 topic 日志"推进为可继续处理的 cleaned MCAP。cleaned MCAP 至少应具备三类能力：保留原始多模态数据、补齐左右夹爪宽度语义、将左右 Baton Mini 局部坐标系下的 raw pose 统一到 common frame 下的相机 pose。</p></div>      <h2 id="background">背景信息</h2>
+      <h3>场景定位</h3>
+      <p>raw MCAP 是阶段一采集链路的原始产物，主要保存硬件 topic 日志。它包含图像、Baton Mini odometry、触觉等数据，但还没有完全具备后续训练数据所需的语义表达。</p>
+      <p>本场景存在的原因是：在进入滤波、异常值处理、IK 验证和时间对齐之前，必须先把 raw MCAP 转换为 cleaned MCAP，使数据具备统一的基础语义。</p>
+      <h3>输入数据形态</h3>
+      <p>raw MCAP 中主要包含：</p>
+      <ul>
+        <li>左右图像数据（<code>/gopro_left/image_raw</code>、<code>/gopro_right/image_raw</code>）</li>
+        <li>左右 Baton Mini 原始位姿数据（<code>/baton_mini_left/fast_odom</code>、<code>/baton_mini_right/fast_odom</code>）</li>
+        <li>左右触觉数据（<code>/pressure/left_hand/gripper_1</code> 等 4 个 topic）</li>
+      </ul>
+      <p>这些数据仍处在 topic 世界中，不直接区分 observation、action、episode 或 step。</p>
+      <h3>关键语义补齐</h3>
+      <h4>夹爪宽度</h4>
+      <p>夹爪宽度不是直接由独立传感器写入 MCAP 的训练字段。需要通过视觉标定或图像信息，生成左右夹爪宽度语义。该语义后续会进入 observation，并在 action 或 mask 生成时作为重要字段参与判断。</p>
+      <h4>common frame 相机位姿</h4>
+      <p>左右 Baton Mini 的 raw pose 分别处在各自局部坐标系中。为了让后续双臂数据能在同一空间下理解，必须将左右 raw pose 转换到统一的 <code>common_frame</code> 下。首版默认：</p>
+      <pre><code>common_frame = left_umi_start_frame</code><span class="code-lang">text</span></pre>
+      <p>TCP pose 可在后续由 common-frame 相机 pose 叠加相机到 TCP 的固定外参得到，不在本场景强行绑定。</p>
+      <h3>输出数据形态</h3>
+      <p>cleaned MCAP 应保留原始多模态数据，并补齐后续场景依赖的基础语义字段：图像字段、触觉字段、左右夹爪宽度、左右 common frame 相机 pose。同时应产生清洗报告和标定/转换参数。</p>
+      <div class="callout warn"><div class="label">风险与未知</div><ul>
+        <li>夹爪宽度提取依赖视觉标定质量，真实硬件条件会影响稳定性。</li>
+        <li>common frame 的定义需要保持一致，否则左右空间关系会失真。</li>
+        <li>Baton Mini 可能存在漂移，场景一只负责转换表达，不负责判断长期可靠性。</li>
+        <li>TCP 外参尚未在本场景固化，后续涉及机器人执行时需要继续明确。</li>
+      </ul></div>
+
+      <h2 id="module-list">功能模块清单</h2>
+      <p>场景一按"已有实现改造并纳入阶段二架构"的方式拆为 6 个 L2 功能模块，全部为 P0 优先级。</p>
+      <table>
+        <thead><tr><th>序号</th><th>功能模块</th><th>模块类别</th><th>一句话目标</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>cleaned MCAP 契约稳定</td><td>数据定义类</td><td>定义 CleanedMcap、Scene1Config、Scene1CleanReport 等下游可消费接口</td></tr>
+          <tr><td>2</td><td>夹爪开合配置生成</td><td>工具对接类</td><td>对接已有浏览器 GoPro 标定程序，生成 GripperCalibrationConfig</td></tr>
+          <tr><td>3</td><td>夹爪宽度提取</td><td>数据计算类</td><td>从 GoPro 图像和 GripperCalibrationConfig 生成左右归一化 GripperWidthSample</td></tr>
+          <tr><td>4</td><td>位姿转换配置生成</td><td>工具对接类</td><td>生成以单侧 UMI 初始坐标系为 common frame 的 FrameAlignmentConfig</td></tr>
+          <tr><td>5</td><td>common frame 位姿转换</td><td>数据计算类</td><td>用 FrameAlignmentConfig 把 raw pose 转换为 CommonFrameCameraPose 和 CommonFrameTcpPose</td></tr>
+          <tr><td>6</td><td>基础校验与输出契约检查</td><td>数据计算类</td><td>检查 raw topic、配置、输出 topic 数和消息数量，失败时形成可追溯原因</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="data-flow">数据流图</h2>
+      <div class="flow-diagram">
+        <div class="flow-row">
+          <div class="flow-box input">raw MCAP<br/><small>8 topics</small></div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box config">Scene1Config<br/><small>YAML 配置</small></div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box process">MCAP 批处理<br/><small>process_mcap.py</small></div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box output">cleaned MCAP<br/><small>10+ topics</small></div>
+        </div>
+        <div class="flow-row" style="margin-top: 12px;">
+          <div class="flow-box config">浏览器标定<br/><small>mcap_calibration_wizard.py</small></div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box config">GripperCalibrationConfig</div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box process">夹爪宽度提取<br/><small>gripper_extractor.py</small></div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box output">/gopro_*/gripper_width</div>
+        </div>
+        <div class="flow-row" style="margin-top: 12px;">
+          <div class="flow-box config">浏览器标定<br/><small>common frame 采样</small></div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box config">FrameAlignmentConfig<br/><small>start_from_common</small></div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box process">位姿转换<br/><small>tcp_transform.py</small></div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box output">camera_pose_common<br/>tcp_pose_common</div>
+        </div>
+        <div class="flow-row" style="margin-top: 12px;">
+          <div class="flow-box process">基础校验<br/><small>validator.py</small></div>
+          <span class="flow-arrow">&#8594;</span>
+          <div class="flow-box output">Scene1CleanReport<br/><small>清洗报告</small></div>
+        </div>
+      </div>      <h2>L2 能力模块详解</h2>
+      <div class="module-card" id="l2-01">
+        <h4>01 · cleaned MCAP 契约稳定 <span class="badge p0">P0</span></h4>
+        <div class="meta">数据定义类 · 来源：功能模块清单</div>
+        <p><strong>一句话目标：</strong>稳定场景一对场景二公开的 CleanedMcap、Scene1Config 和 Scene1CleanReport 契约。</p>
+        <p><strong>能力角色：</strong>把场景一从"已有脚本和局部实现"收敛成阶段二 Service 的稳定接口。只定义契约和任务边界，不直接改源码。</p>
+        <p><strong>当前修正：</strong>raw pose 必须保留或可追溯；common frame camera pose 和 common frame TCP pose 必须有独立、明确的输出语义。</p>
+        <p><strong>上游：</strong>raw MCAP 来自阶段一采集；GripperCalibrationConfig 来自浏览器 GoPro 标定程序；FrameAlignmentConfig 来自位姿转换配置生成模块。</p>
+        <p><strong>下游：</strong>场景二读取 CleanedMcap、Scene1Config、Scene1CleanReport；场景二优先消费 CommonFrameTcpPose。</p>
+        <h4>契约不变量</h4>
+        <table>
+          <thead><tr><th>项</th><th>不变量</th></tr></thead>
+          <tbody>
+            <tr><td>默认 cleaned 输出目录</td><td><code>asset/阶段二：数据清洗/dev/mcap_cleaned</code></td></tr>
+            <tr><td>raw pose</td><td>必须保留或可追溯</td></tr>
+            <tr><td>common_anchor</td><td>默认 <code>left</code></td></tr>
+            <tr><td>gripper width</td><td><code>std_msgs/msg/Float32</code>，归一化 <code>[0, 1]</code></td></tr>
+            <tr><td>pose 数量</td><td>raw/camera common/TCP common 数量必须一致</td></tr>
+            <tr><td>gripper 数量</td><td>gripper 消息数等于对应 image 帧数</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="module-card" id="l2-02">
+        <h4>02 · 夹爪开合配置生成 <span class="badge p0">P0</span></h4>
+        <div class="meta">工具对接类 · 现实代码入口：<code>src/data_clean/ui/mcap_calibration_wizard.py</code></div>
+        <p><strong>一句话目标：</strong>对接已有浏览器 GoPro 标定程序，生成夹爪宽度提取所需的 GripperCalibrationConfig。</p>
+        <p><strong>上游：</strong>终端启动脚本、左右 GoPro live image topic、用户在网页中点击两个点或完成 ArUco 采样流程。</p>
+        <p><strong>下游：</strong>生成 GripperCalibrationConfig → 写入 Scene1Config 的 <code>gripper_streams</code> 和 <code>calibration.gripper</code> → 被夹爪宽度提取读取。</p>
+        <div class="callout info"><div class="label">L3 约束</div><p>必须先确认现有网页是否支持"点击两个点"生成配置。如果现有实现只支持 ArUco 采样，应补齐最小点位采集接口，而不是重写整套 UI。</p></div>
+      </div>
+      <div class="module-card" id="l2-03">
+        <h4>03 · 夹爪宽度提取 <span class="badge p0">P0</span></h4>
+        <div class="meta">数据计算类</div>
+        <p><strong>一句话目标：</strong>从左右 GoPro 图像中检测 ArUco marker，生成 cleaned MCAP 中的左右 GripperWidthSample。</p>
+        <p><strong>上游：</strong>raw MCAP 中的 <code>/gopro_left/image_raw</code>、<code>/gopro_right/image_raw</code> 和 GripperCalibrationConfig。</p>
+        <p><strong>下游：</strong>CleanedMcap 中新增的 gripper topic 被场景二异常检测和后续 observation/action 构建依赖。</p>
+        <h4>计算规则</h4>
+        <table>
+          <thead><tr><th>规则</th><th>触发条件</th><th>计算方式</th><th>结果表达</th></tr></thead>
+          <tbody>
+            <tr><td>双 marker 直接计算</td><td>两个 marker 都检测到</td><td>两中心点欧氏距离</td><td>direct marker sample</td></tr>
+            <tr><td>单 marker 估计</td><td>只检测到一个 marker</td><td>marker 到图像中心线水平距离 × 2</td><td>single marker estimate</td></tr>
+            <tr><td>无 marker 缺失</td><td>未检测到目标 marker</td><td>该帧先留空，最终插值</td><td>interpolated sample</td></tr>
+            <tr><td>全流无有效 marker</td><td>整条 image stream 无有效样本</td><td>gripper stream 失败</td><td>failure_reason</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="module-card" id="l2-04">
+        <h4>04 · 位姿转换配置生成 <span class="badge p0">P0</span></h4>
+        <div class="meta">工具对接类</div>
+        <p><strong>一句话目标：</strong>生成以单侧 UMI 初始坐标系作为 common_frame 的 FrameAlignmentConfig。</p>
+        <p><strong>核心方案：</strong>首版不再额外定义桌面 <code>origin_frame</code>。默认 <code>common_anchor = left</code>，即 <code>common_frame = left_umi_start_frame</code>。</p>
+        <pre><code>当 common_anchor: left 时：
+T_common_left_camera(t) = T_left_start_left_camera(t)
+T_common_right_camera(t) = T_common_right_start * T_right_start_right_camera(t)
+T_common_tcp(t) = T_common_camera(t) * T_camera_tcp</code><span class="code-lang">text</span></pre>
+        <p><strong>上游：</strong>固定底座给出 <code>left_start_frame</code> 和 <code>right_start_frame</code> 的相对外参；需要左右 camera 到 TCP 的 CameraFromTcpExtrinsic。</p>
+        <p><strong>下游：</strong>common frame 位姿转换使用 FrameAlignmentConfig；CommonFrameCameraPose 和 CommonFrameTcpPose 被写入 cleaned/canonical 数据产物。</p>
+      </div>
+      <div class="module-card" id="l2-05">
+        <h4>05 · common frame 位姿转换 <span class="badge p0">P0</span></h4>
+        <div class="meta">数据计算类</div>
+        <p><strong>一句话目标：</strong>将左右 Baton Mini start frame 下的 raw pose 转换为 common frame 下的 camera pose 和 TCP pose。</p>
+        <p><strong>上游：</strong>raw MCAP 中的 <code>/baton_mini_left/fast_odom</code>、<code>/baton_mini_right/fast_odom</code> 和 FrameAlignmentConfig。</p>
+        <p><strong>下游：</strong>场景二优先按 CommonFrameTcpPose 消费位姿；CommonFrameCameraPose 用于调试和排查；raw pose 必须保留。</p>
+        <h4>计算规则（common_anchor: left）</h4>
+        <table>
+          <thead><tr><th>hand</th><th>计算</th></tr></thead>
+          <tbody>
+            <tr><td>left camera</td><td><code>T_common_left_camera(t) = T_left_start_left_camera(t)</code></td></tr>
+            <tr><td>right camera</td><td><code>T_common_right_camera(t) = T_common_right_start * T_right_start_right_camera(t)</code></td></tr>
+            <tr><td>left TCP</td><td><code>T_common_left_tcp(t) = T_common_left_camera(t) * T_left_camera_tcp</code></td></tr>
+            <tr><td>right TCP</td><td><code>T_common_right_tcp(t) = T_common_right_camera(t) * T_right_camera_tcp</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="module-card" id="l2-06">
+        <h4>06 · 基础校验与输出契约检查 <span class="badge p0">P0</span></h4>
+        <div class="meta">数据计算类</div>
+        <p><strong>一句话目标：</strong>在场景一运行前后检查 raw MCAP、Scene1Config 和 CleanedMcap 是否满足可交给场景二的最低契约。</p>
+        <p><strong>职责：</strong>阻止缺 topic、错 schema、配置冲突、输出数量不一致等问题静默进入场景二。</p>
+        <h4>计算规则</h4>
+        <table>
+          <thead><tr><th>规则</th><th>触发条件</th><th>判断方式</th><th>结果</th></tr></thead>
+          <tbody>
+            <tr><td>pose topic 必须存在</td><td>清洗前</td><td>inventory 包含 input_topic 且 message_count > 0</td><td>pass/fail</td></tr>
+            <tr><td>image topic 必须存在</td><td>清洗前</td><td>inventory 包含 image_topic 且 message_count > 0</td><td>pass/fail</td></tr>
+            <tr><td>gripper 输出 topic 不得冲突</td><td>清洗前</td><td>output_topic 不在 input inventory</td><td>pass/fail</td></tr>
+            <tr><td>raw pose 可追溯</td><td>清洗后</td><td>raw pose topic 保留或存在 raw 备份</td><td>pass/fail</td></tr>
+            <tr><td>common pose 数量一致</td><td>清洗后</td><td>raw_count = camera_common_count = tcp_common_count</td><td>pass/fail</td></tr>
+            <tr><td>gripper 数量等于 image 帧数</td><td>清洗后</td><td>frame_count = gripper_count</td><td>pass/fail</td></tr>
+          </tbody>
+        </table>
+      </div>      <h2>L2 数据定义详解</h2>
+      <h3 id="d-cleaned">CleanedMcap</h3>
+      <p>场景一从 raw MCAP 生成的 cleaned MCAP 数据产物，保留原始多模态 topic，并补齐夹爪宽度、common frame camera pose 和 common frame TCP pose。它是场景二可靠性验证的直接输入，仍是 MCAP topic 世界，不是 episode/step/observation/action 世界。</p>
+      <table>
+        <thead><tr><th>内容</th><th>契约</th></tr></thead>
+        <tbody>
+          <tr><td>文件位置</td><td><code>asset/阶段二：数据清洗/dev/mcap_cleaned/*.mcap</code></td></tr>
+          <tr><td>原始 topic</td><td>默认保留 raw MCAP 中的原始 topic 和消息顺序</td></tr>
+          <tr><td>raw pose topic</td><td><code>/baton_mini_left/fast_odom</code>、<code>/baton_mini_right/fast_odom</code> 必须可追溯保留</td></tr>
+          <tr><td>camera common pose</td><td>CommonFrameCameraPose，由 FrameAlignmentConfig 转换得到</td></tr>
+          <tr><td>TCP common pose</td><td>CommonFrameTcpPose，由 camera common pose 叠加 CameraFromTcpExtrinsic 得到</td></tr>
+          <tr><td>左右 gripper topic</td><td><code>/gopro_left/gripper_width</code>、<code>/gopro_right/gripper_width</code></td></tr>
+          <tr><td>gripper payload</td><td>每帧图像对应一个归一化 GripperWidthSample</td></tr>
+        </tbody>
+      </table>
+      <div class="callout danger"><div class="label">有效性规则</div><ul>
+        <li>raw MCAP 不得被原地覆盖。</li>
+        <li>raw pose 必须保留或在报告中有可追溯来源，不能只留下转换后 pose。</li>
+        <li>camera common pose 和 TCP common pose 消息数量必须与输入 pose topic 数量一致。</li>
+        <li>gripper topic 消息数量必须等于对应 image topic 图像帧数。</li>
+      </ul></div>
+
+      <h3 id="d-scene1config">Scene1Config</h3>
+      <p>场景一清洗所需配置的总契约，覆盖 batch 输入输出、gripper 标定、frame alignment、pose stream 和标定状态。</p>
+      <table>
+        <thead><tr><th>配置块</th><th>字段</th><th>现实含义</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="2"><code>batch</code></td><td><code>input_dir</code></td><td>raw MCAP 输入目录</td></tr>
+          <tr><td><code>output_dir</code></td><td>cleaned MCAP 输出目录</td></tr>
+          <tr><td><code>gripper_streams</code></td><td><code>image_topic</code>, <code>output_topic</code>, <code>marker_*</code>, <code>gripper_max</code></td><td>GripperCalibrationConfig 字段</td></tr>
+          <tr><td rowspan="3"><code>frame_alignment</code></td><td><code>common_anchor</code></td><td>默认 <code>left</code>，即 <code>common_frame = left_umi_start_frame</code></td></tr>
+          <tr><td><code>pose_streams</code></td><td>raw pose 输入和 common pose 输出 topic</td></tr>
+          <tr><td><code>extrinsics</code></td><td><code>common_from_*_start</code>, <code>camera_from_*_tcp</code></td></tr>
+          <tr><td><code>calibration</code></td><td><code>gripper</code>, <code>frame_alignment</code></td><td>左右夹爪和位姿转换配置状态</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="d-gripper-cal">GripperCalibrationConfig</h3>
+      <p>夹爪开合提取所需的标定配置，来源于浏览器 GoPro 标定工具，用于把图像中的 marker 几何关系映射为归一化夹爪宽度。</p>
+      <table>
+        <thead><tr><th>字段</th><th>类型</th><th>现实含义</th></tr></thead>
+        <tbody>
+          <tr><td><code>hand</code></td><td>enum</td><td><code>left</code> 或 <code>right</code></td></tr>
+          <tr><td><code>image_topic</code></td><td>string</td><td>GoPro 图像输入 topic</td></tr>
+          <tr><td><code>output_topic</code></td><td>string</td><td>gripper width 输出 topic</td></tr>
+          <tr><td><code>aruco_dict</code></td><td>string</td><td>ArUco 字典</td></tr>
+          <tr><td><code>marker_id_0</code>, <code>marker_id_1</code></td><td>integer</td><td>夹爪两侧 marker id</td></tr>
+          <tr><td><code>marker_min</code>, <code>marker_max</code></td><td>float</td><td>关闭/张开状态对应的 marker 像素距离</td></tr>
+          <tr><td><code>gripper_max</code></td><td>float</td><td>物理最大开合宽度</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="d-frame-align">FrameAlignmentConfig</h3>
+      <p>场景一位姿转换配置契约，用于把左右 Baton Mini raw pose 转换到同一个 common frame。首版 common frame 直接选择单侧 UMI 的初始坐标系，默认是 <code>left_umi_start_frame</code>。</p>
+      <pre><code>frame_alignment:
+  common_anchor: left
+  pose_streams:
+    left:
+      input_topic: /baton_mini_left/fast_odom
+      output_camera_pose_common: /baton_mini_left/camera_pose_common
+      output_tcp_pose_common: /baton_mini_left/tcp_pose_common
+    right:
+      input_topic: /baton_mini_right/fast_odom
+      output_camera_pose_common: /baton_mini_right/camera_pose_common
+      output_tcp_pose_common: /baton_mini_right/tcp_pose_common
+  extrinsics:
+    common_from_left_start:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    common_from_right_start:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    camera_from_left_tcp:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    camera_from_right_tcp:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_xyzw: [0.0, 0.0, 0.0, 1.0]</code><span class="code-lang">yaml</span></pre>
+
+      <h3 id="d-camera-tcp">CameraFromTcpExtrinsic</h3>
+      <p>TCP 坐标系在 Baton Mini 相机坐标系下的固定外参，用于把 common frame 下的 camera pose 转换为 common frame 下的 TCP pose。</p>
+      <pre><code>T_common_tcp(t) = T_common_camera(t) * T_camera_tcp</code><span class="code-lang">text</span></pre>
+      <p>配置字段统一使用 <code>camera_from_left_tcp</code>、<code>camera_from_right_tcp</code>。四元数必须是单位四元数，单位必须是 m。左右 TCP 外参必须分别配置。</p>
+
+      <h3 id="d-common-camera">CommonFrameCameraPose</h3>
+      <p>左右 Baton Mini 相机在 common frame 下的位姿表达。由 raw MCAP 中 Baton Mini start frame 下的相机 pose 经过 FrameAlignmentConfig 转换得到。</p>
+      <table>
+        <thead><tr><th>字段</th><th>类型</th><th>现实含义</th></tr></thead>
+        <tbody>
+          <tr><td><code>x, y, z</code></td><td>float</td><td>common frame 下相机位置</td></tr>
+          <tr><td><code>qx, qy, qz, qw</code></td><td>float</td><td>common frame 下相机姿态四元数，顺序为 xyzw</td></tr>
+          <tr><td><code>source_topic</code></td><td>string</td><td>原 pose topic，如 <code>/baton_mini_left/fast_odom</code></td></tr>
+          <tr><td><code>output_topic</code></td><td>string</td><td>配置中的 camera common pose 输出 topic</td></tr>
+          <tr><td><code>common_anchor</code></td><td>string</td><td><code>left</code> 或 <code>right</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="d-common-tcp">CommonFrameTcpPose</h3>
+      <p>左右夹爪 TCP 在 common frame 下的位姿表达，是场景二位姿滤波、异常检测和后续 IK 的优先输入。</p>
+      <pre><code>T_common_tcp(t) = T_common_camera(t) * T_camera_tcp</code><span class="code-lang">text</span></pre>
+      <table>
+        <thead><tr><th>字段</th><th>类型</th><th>现实含义</th></tr></thead>
+        <tbody>
+          <tr><td><code>x, y, z</code></td><td>float</td><td>common frame 下 TCP 位置</td></tr>
+          <tr><td><code>qx, qy, qz, qw</code></td><td>float</td><td>common frame 下 TCP 姿态四元数，xyzw</td></tr>
+          <tr><td><code>source_camera_pose</code></td><td>string</td><td>来源 camera common pose topic 或字段</td></tr>
+          <tr><td><code>tcp_extrinsic_source</code></td><td>string</td><td>TCP 外参来源</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="d-gripper-width">GripperWidthSample</h3>
+      <p>场景一从 GoPro 图像中估计出的单帧夹爪宽度样本。对应 cleaned MCAP 中 <code>/gopro_left/gripper_width</code> 或 <code>/gopro_right/gripper_width</code> 的 <code>std_msgs/msg/Float32</code> payload。</p>
+      <table>
+        <thead><tr><th>字段</th><th>类型</th><th>现实含义</th></tr></thead>
+        <tbody>
+          <tr><td><code>value</code></td><td>float</td><td>归一化夹爪宽度，范围 <code>[0, 1]</code></td></tr>
+          <tr><td><code>log_time</code></td><td>integer</td><td>与来源图像消息相同的 MCAP log time</td></tr>
+          <tr><td><code>publish_time</code></td><td>integer</td><td>与来源图像消息相同的 publish time</td></tr>
+          <tr><td><code>source_image_topic</code></td><td>string</td><td>来源图像 topic</td></tr>
+          <tr><td><code>output_topic</code></td><td>string</td><td>输出夹爪宽度 topic</td></tr>
+          <tr><td><code>source_method</code></td><td>enum</td><td><code>direct_marker</code> / <code>single_marker_estimate</code> / <code>interpolated</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="d-clean-report">Scene1CleanReport</h3>
+      <p>场景一清洗结果的机器可读报告契约，用于解释一个 raw MCAP 如何生成对应的 CleanedMcap。</p>
+      <table>
+        <thead><tr><th>字段</th><th>类型</th><th>现实含义</th></tr></thead>
+        <tbody>
+          <tr><td><code>input_file</code></td><td>string</td><td>raw MCAP 路径</td></tr>
+          <tr><td><code>output_file</code></td><td>string</td><td>CleanedMcap 路径</td></tr>
+          <tr><td><code>status</code></td><td>enum</td><td><code>success</code> / <code>failed</code> / <code>skipped</code></td></tr>
+          <tr><td><code>config_path</code></td><td>string</td><td>使用的 Scene1Config 文件路径</td></tr>
+          <tr><td><code>input_topic_count</code></td><td>integer</td><td>输入 MCAP topic 数</td></tr>
+          <tr><td><code>output_topic_count</code></td><td>integer</td><td>输出 MCAP topic 数</td></tr>
+          <tr><td><code>pose_topics</code></td><td>list</td><td>raw/camera common/TCP common pose 消息数量和 payload 语义</td></tr>
+          <tr><td><code>gripper_topics</code></td><td>list</td><td>每个 gripper topic 的图像帧数、输出数、缺失帧和插值帧</td></tr>
+          <tr><td><code>raw_pose_retention</code></td><td>string</td><td>raw pose 保留或备份策略</td></tr>
+          <tr><td><code>common_anchor</code></td><td>string</td><td>FrameAlignmentConfig 使用的 common anchor</td></tr>
+          <tr><td><code>failure_reason</code></td><td>string/null</td><td>失败或跳过原因</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="d-tcp-cam-dep"><span class="deprecated">TcpFromCameraExtrinsic</span>（已废弃）</h3>
+      <div class="callout danger"><div class="label">已废弃</div><p>该名称容易被误解为 <code>T_tcp_camera</code>，与场景一实际计算需要的 <code>T_camera_tcp</code> 相反。后续配置和 L3 必须使用 <strong>CameraFromTcpExtrinsic</strong>，字段名为 <code>camera_from_left_tcp</code>、<code>camera_from_right_tcp</code>。本文件仅保留为旧链接兼容。</p></div>      <h2 id="output-files">输出程序与文件</h2>
+      <h3>配置文件</h3>
+      <table>
+        <thead><tr><th>类型</th><th>路径</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>场景一主配置</td><td><code>config/data_clean/data_clean_calibrated.yaml</code></td><td>浏览器标定向导写回的主配置</td></tr>
+          <tr><td>夹爪配置</td><td><code>gripper_streams</code> / GripperCalibrationConfig</td><td>由浏览器 GoPro 标定程序生成</td></tr>
+          <tr><td>位姿转换配置</td><td><code>frame_alignment</code> / FrameAlignmentConfig</td><td>目标契约，默认 <code>common_anchor: left</code></td></tr>
+          <tr><td>旧位姿配置</td><td><code>config/data_clean/data_clean_left_transform.yaml</code><br/><code>config/data_clean/data_clean_right_transform.yaml</code></td><td>旧 <code>start_from_common</code> 文件，只作为迁移输入</td></tr>
+        </tbody>
+      </table>
+      <h3>程序入口</h3>
+      <table>
+        <thead><tr><th>程序 / 模块</th><th>路径</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>浏览器标定向导</td><td><code>src/data_clean/ui/mcap_calibration_wizard.py</code></td><td>启动浏览器、显示左右 GoPro 画面、采样/点击并写回配置</td></tr>
+          <tr><td>MCAP 批处理入口</td><td><code>src/data_clean/cli/process_mcap.py</code></td><td>场景一批处理命令入口</td></tr>
+          <tr><td>配置加载</td><td><code>src/data_clean/config/mcap_process_config.py</code></td><td>支持 GripperCalibrationConfig 和 FrameAlignmentConfig</td></tr>
+          <tr><td>夹爪宽度提取</td><td><code>src/data_clean/service/gripper_extractor.py</code></td><td>根据夹爪配置生成 gripper width</td></tr>
+          <tr><td>位姿转换</td><td><code>src/data_clean/service/tcp_transform.py</code></td><td>改造为 FrameAlignmentConfig</td></tr>
+          <tr><td>MCAP 写出</td><td><code>src/data_clean/service/mcap_io.py</code></td><td>保留 raw pose 并写出 common camera/TCP pose</td></tr>
+        </tbody>
+      </table>
+      <h3>输出数据</h3>
+      <table>
+        <thead><tr><th>输出</th><th>路径 / topic</th><th>契约</th></tr></thead>
+        <tbody>
+          <tr><td>cleaned MCAP</td><td><code>asset/阶段二：数据清洗/dev/mcap_cleaned/*.mcap</code></td><td>CleanedMcap</td></tr>
+          <tr><td>raw pose</td><td><code>/baton_mini_left/fast_odom</code>、<code>/baton_mini_right/fast_odom</code></td><td>必须保留或可追溯</td></tr>
+          <tr><td>common camera pose</td><td>配置中的 <code>output_camera_pose_common</code></td><td>CommonFrameCameraPose</td></tr>
+          <tr><td>common TCP pose</td><td>配置中的 <code>output_tcp_pose_common</code></td><td>CommonFrameTcpPose</td></tr>
+          <tr><td>gripper width</td><td><code>/gopro_left/gripper_width</code>、<code>/gopro_right/gripper_width</code></td><td>GripperWidthSample，<code>std_msgs/msg/Float32</code>，归一化 <code>[0, 1]</code></td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn"><div class="label">需要改造的现实差异</div><ul>
+        <li>当前代码和旧文档仍存在 <code>start_from_common</code> 和替换 pose payload 的历史语义。</li>
+        <li>新契约要求 raw pose 保留，common frame pose 和 TCP pose 有明确输出语义。</li>
+        <li>新位姿配置默认 <code>common_frame = left_umi_start_frame</code>，不再额外定义桌面 <code>origin_frame</code>。</li>
+        <li>浏览器配置生成器已经存在，后续 L3 只做接口对接和输出字段收敛。</li>
+      </ul></div>
+
+      <h2 id="constraints">执行约束</h2>
+      <h3>环境约束</h3>
+      <ul>
+        <li>默认使用 <code>.conda-envs/data-clean/bin/python</code>。</li>
+        <li>不应依赖系统 Python 里的 OpenCV、MCAP 或 ROS2 Python 包状态。</li>
+        <li>不应要求用户手工设置长 <code>PYTHONPATH</code>，应通过 <code>./start_data_clean.sh</code> 完成。</li>
+      </ul>
+      <h3>配置边界</h3>
+      <ul>
+        <li>启动配置优先级：命令行 <code>--config</code> 或 <code>DATA_CLEAN_CONFIG</code> &gt; <code>data_clean_calibrated.yaml</code> &gt; <code>data_clean_smoke_test.yaml</code>。</li>
+        <li><code>batch.input_dir</code> 默认指向 <code>mcap</code>；<code>batch.output_dir</code> 默认指向 <code>mcap_cleaned</code>。</li>
+        <li>不应把左右手 Baton Mini 的正式 transform 写成同一套顶层 <code>transform</code>；必须通过 <code>pose_streams[].transform_file</code> 分别引用左右手配置文件。</li>
+      </ul>
+      <h3>清洗行为约束</h3>
+      <ul>
+        <li>默认清洗最近 1 个文件。"最近 N 个"按 MCAP 文件名中的时间从新到旧选择。</li>
+        <li>如果某个文件失败，应删除该文件对应的半成品输出。</li>
+        <li><code>DATA_CLEAN_RAW_JSON=1</code> 应只输出原始 JSON，不能混入中文提示。</li>
+        <li><code>config_is_calibrated</code> 只有在 <code>gripper.left/right</code> 和 <code>common_frame.left/right</code> 四项均完成时才能返回 true。</li>
+        <li>标定中心不得依赖 OpenCV GUI 窗口；画面预览、夹爪标定和 common frame 标定应通过本地浏览器页面完成。</li>
+        <li>common frame 标定必须订阅对应 pose stream 的实时 Baton Mini odometry，并把稳定采样结果写入对应手的 <code>start_from_common</code>。</li>
+      </ul>
+      <h3>验收边界</h3>
+      <div class="callout danger"><div class="label">不能算作最终完成的情况</div><ul>
+        <li>只跑通 <code>--dry-run</code>，但没有跑通过真实清洗。</li>
+        <li>只清洗一个测试 MCAP，却声称全部数据已完成清洗。</li>
+        <li>终端输出可读，但输出 MCAP 没有验证 topic 数或新增 topic。</li>
+        <li>使用测试 common frame/ArUco 参数，却没有明确提醒用户这些参数未真实标定。</li>
+        <li>仅用普通采集 MCAP 估算闭合/张开范围，而没有使用实时 GoPro 标定中心采集真实完全闭合/完全张开状态。</li>
+      </ul></div>      <h2 id="progress">当前进度</h2>
+      <h3>已完成</h3>
+      <h4>程序一：数据清洗程序 <span class="badge done">已完成</span></h4>
+      <ul>
+        <li>梳理 <code>src/data_clean</code> 功能：位姿 topic 的 common frame 相机位姿变换、GoPro 图像中的 ArUco 夹爪宽度提取、输出 MCAP 保留原始 topic 并新增 gripper width topic。</li>
+        <li>建立独立 conda 环境 <code>.conda-envs/data-clean</code>，修复 MCAP zstandard 解压、Octopus schema 缩进兼容、OpenCV ArUco segfault 等问题。</li>
+        <li>完成交互式启动器 <code>./start_data_clean.sh</code> 和 <code>core.mcap_clean_launcher</code>。</li>
+        <li>已验证：dry-run、latest、all、workers auto、raw JSON 模式、配置错误提示。</li>
+      </ul>
+      <h4>程序二：夹爪配置自动生成程序 <span class="badge done">已完成</span></h4>
+      <ul>
+        <li>已实现实时 GoPro 标定中心：<code>./start_data_clean.sh --calibrate</code>，交互菜单 <code>c</code>，新模块 <code>core.mcap_calibration_wizard</code>。</li>
+        <li>浏览器页面实时显示当前手 GoPro 画面，实时夹爪宽度标定，浏览器 common frame 位姿标定。</li>
+        <li>通过实时 Baton Mini odometry 采样写入 <code>start_from_common</code>。</li>
+        <li>已新增 GoPro-only 启动入口 <code>./start_gopro_only.sh</code>。</li>
+      </ul>
+      <h3>正在处理</h3>
+      <h4>程序三：坐标系配置生成程序 <span class="badge wip">进行中</span></h4>
+      <ul>
+        <li>最新方案：用户在浏览器中点击左右 common frame 标定，程序读取实时 Baton Mini odometry，保存对应手 <code>start_from_common</code>。</li>
+        <li>本轮先输出 common frame 下的相机位姿，不叠加相机到 TCP 的 offset。</li>
+      </ul>
+      <h3>未完成</h3>
+      <ul class="checklist">
+        <li>程序三已完成代码改造，仍需真实硬件标定验收。</li>
+        <li>左右 <code>start_from_common</code> 目前仍为 identity 测试值。</li>
+        <li>未使用实时 GoPro 标定中心生成正式 <code>config/data_clean_calibrated.yaml</code>。</li>
+        <li>未完成全部 49 个 MCAP 的正式清洗验收。</li>
+        <li>未验证清洗后 MCAP 是否满足后续训练、分析或回放程序的最终格式要求。</li>
+      </ul>
+      <h3>风险</h3>
+      <div class="callout warn"><div class="label">风险项</div><ul>
+        <li>当前 <code>config/data_clean_smoke_test.yaml</code> 名称仍带 <code>smoke_test</code>，但被作为默认配置使用。</li>
+        <li><code>overwrite: true</code> 会覆盖已有同名输出，正式数据管理时需要谨慎。</li>
+        <li>默认并行 6 个文件可能对磁盘和内存造成压力。</li>
+        <li>不要把原始输入目录放到 <code>mcap_cleaned</code> 里面。</li>
+        <li>common frame 标定需要浏览器页面和实时 Baton Mini odometry。</li>
+      </ul></div>
+      <h3>下次优先事项</h3>
+      <ol>
+        <li>集中精力完成程序三：坐标系配置生成程序。</li>
+        <li>确认左右 GoPro 已连接、供电、HDMI 输入正常。</li>
+        <li>运行实时标定中心：<code>./start_data_clean.sh --calibrate</code></li>
+        <li>用 <code>--dry-run --all --workers auto</code> 复核全量计划。</li>
+        <li>用小批量命令验证稳定性：<code>--latest 3 --workers 3</code></li>
+        <li>执行全部清洗：<code>--all --workers auto</code></li>
+      </ol>
+
+      <h2 id="exec-log">执行记录摘要</h2>
+      <h3>2026-05-13：重做 common frame 位姿标定与转换配置</h3>
+      <p>替换旧 TCP offset 点选逻辑，将位姿转换改为 common frame 相机位姿转换。配置文件保存 <code>start_from_common</code>，清洗时按 <code>T_common_camera(t) = inverse(T_start_common) * T_start_camera(t)</code> 转换。浏览器 HTML 包含左右 common frame 标定入口，不再包含 TCP 点选入口。</p>
+      <h3>2026-05-03：浏览器版实时 GoPro 标定中心实现</h3>
+      <p>重构标定向导为基于标准库 <code>ThreadingHTTPServer</code> 的本地标定服务，默认从 <code>127.0.0.1:8765</code> 开始自动寻找空闲端口。新增内嵌 HTML/CSS/JS 页面，页面只显示当前手单画面。夹爪标定流程由浏览器按钮控制，TCP 点选改为浏览器截图点选。</p>
+      <h3>2026-05-03：交互式启动器实现</h3>
+      <p>新增 <code>src/data_clean/core/mcap_clean_launcher.py</code>，将 <code>start_data_clean.sh</code> 简化为薄包装。支持交互菜单、dry-run、最近 N 个、全部、workers auto、raw JSON 模式、动态进度显示、中文摘要。</p>
+      <h3>2026-05-03：独立 conda 环境建立</h3>
+      <p>下载并安装 Miniconda，创建独立环境 <code>.conda-envs/data-clean</code>（Python 3.12），安装 numpy、scipy、PyYAML、zstandard、opencv-contrib-python-headless、mcap、mcap-ros2-support。验证 cv2.aruco.detectMarkers 不再 segfault。</p>
+      <h3>2026-05-03：首次 smoke test 成功</h3>
+      <p>输入 topic 数：8 &#8594; 输出 topic 数：10（+2 个 gripper width topic）。左/右 Baton 位姿消息数保持一致。左/右 GoPro 图像帧各 547 帧，生成对应 gripper width 各 547 条。</p>
+      <h3>2026-05-03：场景一文档体系建立</h3>
+      <p>创建场景一目录和固定五类文档：目标描述、背景信息、执行约束、执行记录、当前进度。同时更新 AGENTS.md 和 public_rules.md 索引。</p>
+    </article>
+
+    <aside class="toc" id="toc">
+      <div class="toc-label">On this page</div>
+      <a href="#overview" class="active">场景一总览</a>
+      <a href="#background">背景信息</a>
+      <a href="#module-list">功能模块清单</a>
+      <a href="#data-flow">数据流图</a>
+      <a href="#l2-01">01 cleaned MCAP 契约稳定</a>
+      <a href="#l2-02">02 夹爪开合配置生成</a>
+      <a href="#l2-03">03 夹爪宽度提取</a>
+      <a href="#l2-04">04 位姿转换配置生成</a>
+      <a href="#l2-05">05 common frame 位姿转换</a>
+      <a href="#l2-06">06 基础校验与输出契约检查</a>
+      <a href="#d-cleaned">CleanedMcap</a>
+      <a href="#d-scene1config">Scene1Config</a>
+      <a href="#d-gripper-cal">GripperCalibrationConfig</a>
+      <a href="#d-frame-align">FrameAlignmentConfig</a>
+      <a href="#d-camera-tcp">CameraFromTcpExtrinsic</a>
+      <a href="#d-common-camera">CommonFrameCameraPose</a>
+      <a href="#d-common-tcp">CommonFrameTcpPose</a>
+      <a href="#d-gripper-width">GripperWidthSample</a>
+      <a href="#d-clean-report">Scene1CleanReport</a>
+      <a href="#d-tcp-cam-dep">TcpFromCameraExtrinsic (废弃)</a>
+      <a href="#output-files">输出程序与文件</a>
+      <a href="#constraints">执行约束</a>
+      <a href="#progress">当前进度</a>
+      <a href="#exec-log">执行记录摘要</a>
+    </aside>
+  </div>
+
+  <script>
+    const themeBtn = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') { html.setAttribute('data-theme', 'dark'); themeBtn.textContent = '\u2600\uFE0F'; }
+    themeBtn.addEventListener('click', () => {
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? '' : 'dark');
+      themeBtn.textContent = isDark ? '\uD83C\uDF19' : '\u2600\uFE0F';
+      localStorage.setItem('theme', isDark ? '' : 'dark');
+    });
+    const headings = document.querySelectorAll('h1[id], h2[id], h3[id], .module-card[id]');
+    const sidebarLinks = document.querySelectorAll('.sidebar a[href^="#"]');
+    const tocLinks = document.querySelectorAll('.toc a[href^="#"]');
+    const allLinks = [...sidebarLinks, ...tocLinks];
+    function activateLink(id) { allLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id)); }
+    const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) activateLink(entry.target.id); }); }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+    headings.forEach(h => observer.observe(h));
+    document.querySelectorAll('pre').forEach(pre => {
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = '\u590D\u5236';
+      btn.addEventListener('click', () => {
+        const code = pre.querySelector('code');
+        navigator.clipboard.writeText(code ? code.textContent : pre.textContent.replace(/\u590D\u5236$/, '').trim());
+        btn.textContent = '\u5DF2\u590D\u5236!';
+        setTimeout(() => { btn.textContent = '\u590D\u5236'; }, 1500);
+      });
+      pre.appendChild(btn);
+    });
+    document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.getElementById('searchInput').focus(); } });
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      if (!q) { document.querySelectorAll('article > *, article .module-card, article h2, article h3, article h4, article p, article table, article ul, article ol, article pre, article .callout').forEach(el => el.style.display = ''); return; }
+      const article = document.getElementById('article');
+      const sections = article.querySelectorAll('h2, .module-card');
+      sections.forEach(s => {
+        const text = s.textContent.toLowerCase() + (s.nextElementSibling ? s.nextElementSibling.textContent.toLowerCase() : '');
+        s.style.display = text.includes(q) ? '' : 'none';
+        if (s.style.display === 'none' && s.nextElementSibling) { let next = s.nextElementSibling; while (next && !next.matches('h2, .module-card')) { next.style.display = 'none'; next = next.nextElementSibling; } }
+      });
+    });
+  </script>
+</body>
+</html>
