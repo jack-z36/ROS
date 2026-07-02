@@ -1,0 +1,108 @@
+# L2-04 action 处理与发布层功能组调度索引
+
+> [!info] 归属
+> - 功能组：`l2-04-publish`
+> - 来源 L2：`DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-04-action处理与发布层.md`
+> - 本文件是调度索引，主 Agent 据此判断并行/串行；不随单个 L3 归档移动。
+
+```yaml
+dispatch_index:
+  group: l2-04-publish
+  branch: model_deploy
+  source_l2: DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/L2-04-action处理与发布层.md
+  max_parallel_agents: 2
+  waves:
+    - wave: 1
+      parallel_group: l2-04-publish-p1
+      depends_on_external: [deploy_001, deploy_007, deploy_010]
+      tasks: [deploy_013, deploy_014]
+    - wave: 2
+      parallel_group: l2-04-publish-p2
+      depends_on: [deploy_014]
+      tasks: [deploy_015]
+    - wave: 3
+      parallel_group: l2-04-publish-p3
+      depends_on: [deploy_013, deploy_014, deploy_015]
+      tasks: [deploy_016]
+  tasks:
+    deploy_013:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_013_safety_guard改造.md
+      title: safety_guard 改造为 policy-action 通用检查
+      depends_on: [deploy_001, deploy_007]
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/runtime/safety_guard.py
+        modules:
+          - pi05.deploy.runtime.safety_guard
+        config_keys:
+          - safety
+    deploy_014:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_014_deploy_node发布侧改造.md
+      title: deploy_node 发布侧改造
+      depends_on: [deploy_001, deploy_010]
+      must_run_after: [deploy_010]
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
+        modules:
+          - pi05.deploy.ros_nodes.pi05_vla_deploy_node
+        config_keys:
+          - topics.command
+    deploy_015:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_015_publish_metrics增强.md
+      title: _publish_metrics 字段增强
+      depends_on: [deploy_014]
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py
+          - pi05_test/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py
+        modules:
+          - pi05.deploy.ros_nodes.pi05_vla_deploy_node
+          - pi05.deploy.runtime.shared_buffer
+        config_keys: []
+    deploy_016:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-publish/deploy_016_单测与shadow_run验证.md
+      title: L2-04 单测与 shadow-run 验证
+      depends_on: [deploy_013, deploy_014, deploy_015]
+      robot_risk: dry-run-only
+      conflict_scope:
+        files:
+          - pi05_test/pi05/deploy/tests/test_safety_guard_tcp.py
+          - pi05_test/pi05/deploy/tests/test_publish_dry_run.py
+        modules:
+          - tests.publish
+        config_keys: []
+```
+
+## 调度说明
+
+| wave | 任务 | 并行性 | 说明 |
+|---|---|---|---|
+| 1 | deploy_013 ∥ deploy_014 | 可并行 | 改不同文件（safety_guard.py vs deploy_node.py），conflict_scope 无交集。都依赖 L2-01(deploy_001)/L2-02(deploy_007)。deploy_014 额外依赖 deploy_010（同文件订阅侧先完成）。 |
+| 2 | deploy_015 | 单独 | 改 deploy_node.py（metrics 部分）+ shared_buffer.py，与 deploy_014 同 deploy_node.py，必须串行（014 先）。 |
+| 3 | deploy_016 | 单独 | 单测 + shadow-run 验证，依赖前三者。 |
+
+## 跨 L2 依赖说明
+
+- `depends_on_external: [deploy_001, deploy_007, deploy_010]`：deploy_001（ACTION_DIM=16/BimanualAction）、deploy_007（SafetyConfig TCP/width）、deploy_010（deploy_node 订阅侧，deploy_014 的同文件前置）。
+
+## 与 L2-03 的协调（关键）
+
+deploy_014（本组）改 deploy_node.py 发布侧，deploy_010（L2-03）改 deploy_node.py 订阅侧。同一文件两半：
+- **必须串行**（deploy_010 先归档，deploy_014 后做），或主 Agent 安排同一 Agent 顺序完成两半。
+- deploy_014 的 `must_run_after: [deploy_010]` 明确标注。
+
+## 全组完成标志
+
+deploy_016 pytest 通过 = L2-04 action 处理与发布层完成 = 可开始 L2-05（硬件执行栈，真机风险最高）。
+
+## 真机风险
+
+deploy_016 为 dry-run-only/shadow-run 逻辑层（mock + stub，不接真机）。其余 L3 为 none。真机风险在 L2-05。
+
+## shadow-run 语义说明
+
+L2-04 完成后，Pi05 节点能在 shadow-run 下发布 `/pi05/policy_action`（16D），但 bridge（L2-05）未启动，所以：
+- policy_action 有输出（Pi05 侧通了）
+- 无下游消费（不动真机）
+这正是 shadow-run 的语义。L2-05 完成后，bridge 接 policy_action，shadow-run 下 bridge gate 关闭仍不动真机；safe-run 才动真机。

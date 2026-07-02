@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Knowledge from Commits"
+  short_description: "Update knowledge docs from Git commits"
+  default_prompt: "Use $update-knowledge-from-commits to analyze the latest relevant commit and update knowledge documents."
