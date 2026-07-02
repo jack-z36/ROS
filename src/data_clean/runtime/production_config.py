@@ -24,8 +24,10 @@ class ProductionConfigError(ValueError):
 
 
 DEFAULT_WEB_FILE_MANAGEMENT = {
+    "health_audited_mcap_dir": "/media/hit/D085-8696/已通过健康审计文件",
     "rejected_mcap_dir": "/media/hit/D085-8696/数据清洗缺陷文件",
     "completed_mcap_dir": "/media/hit/D085-8696/已完成清洗文件",
+    "cleaning_failed_mcap_dir": "/media/hit/D085-8696/清洗失败文件",
     "artifact_retention": "production_cleanup",
     "failed_artifact_policy": "failed_stage_input",
     "space_estimate_multiplier": 4.0,
@@ -417,8 +419,14 @@ def _normalize_web_file_management_payload(data: Any | None) -> dict[str, Any]:
     values = dict(DEFAULT_WEB_FILE_MANAGEMENT)
     if isinstance(data, dict):
         values.update(data)
+    health_audited_dir = str(
+        values.get("health_audited_mcap_dir") or DEFAULT_WEB_FILE_MANAGEMENT["health_audited_mcap_dir"]
+    ).strip()
     rejected_dir = str(values.get("rejected_mcap_dir") or DEFAULT_WEB_FILE_MANAGEMENT["rejected_mcap_dir"]).strip()
     completed_dir = str(values.get("completed_mcap_dir") or DEFAULT_WEB_FILE_MANAGEMENT["completed_mcap_dir"]).strip()
+    cleaning_failed_dir = str(
+        values.get("cleaning_failed_mcap_dir") or DEFAULT_WEB_FILE_MANAGEMENT["cleaning_failed_mcap_dir"]
+    ).strip()
     artifact_retention = str(values.get("artifact_retention") or "production_cleanup")
     failed_policy = str(values.get("failed_artifact_policy") or "failed_stage_input")
     if artifact_retention not in {"production_cleanup", "keep_all"}:
@@ -432,8 +440,10 @@ def _normalize_web_file_management_payload(data: Any | None) -> dict[str, Any]:
     if not math.isfinite(safety_gb) or safety_gb < 0:
         raise ValueError("web_file_management.space_safety_gb 不得小于 0")
     return {
+        "health_audited_mcap_dir": health_audited_dir,
         "rejected_mcap_dir": rejected_dir,
         "completed_mcap_dir": completed_dir,
+        "cleaning_failed_mcap_dir": cleaning_failed_dir,
         "artifact_retention": artifact_retention,
         "failed_artifact_policy": failed_policy,
         "space_estimate_multiplier": multiplier,

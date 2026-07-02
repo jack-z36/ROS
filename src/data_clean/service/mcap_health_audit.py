@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,7 @@ from schemas.mcap_health_audit import (
     HealthAuditResult,
     HealthAuditSummary,
     HealthStatus,
+    MoveInputFileResult,
     MoveRejectedResult,
     RejectGroup,
     RejectReason,
@@ -47,7 +49,8 @@ def audit_mcap_health_file(
     """Audit whether a raw MCAP can enter the normal Web cleaning pipeline."""
 
     path = Path(mcap_path).expanduser().resolve()
-    size = path.stat().st_size if path.exists() else 0
+    stat = path.stat() if path.exists() else None
+    size = stat.st_size if stat is not None else 0
     try:
         with path.open("rb") as handle:
             summary = make_reader(handle).get_summary()
@@ -227,6 +230,67 @@ def move_rejected_files(
     return moves
 
 
+def move_audited_files(
+    results: list[HealthAuditResult] | list[dict[str, Any]],
+    *,
+    health_audited_root: str | Path,
+    rejected_root: str | Path,
+) -> list[MoveInputFileResult]:
+    """Move eligible files to the health-audited root and rejected files to defect groups."""
+
+    healthy_root = Path(health_audited_root).expanduser().resolve()
+    rejected_base = Path(rejected_root).expanduser().resolve()
+    moves: list[MoveInputFileResult] = []
+    for item in results:
+        data = item.to_dict() if isinstance(item, HealthAuditResult) else item
+        source = Path(str(data.get("input_path") or "")).expanduser().resolve()
+        status = str(data.get("precheck_status") or "")
+        if status == HealthStatus.ELIGIBLE.value:
+            group = "health_audited"
+            target_dir = healthy_root
+        elif status == HealthStatus.REJECTED.value:
+            parts = data.get("reject_dir_parts") or [RejectGroup.OTHER.value]
+            group = str(data.get("reject_group") or RejectGroup.OTHER.value)
+            target_dir = rejected_base.joinpath(*(str(part) for part in parts if str(part)))
+        else:
+            continue
+        target = _non_overwriting_target(target_dir / source.name)
+        if not source.exists():
+            moves.append(
+                MoveInputFileResult(
+                    source_path=str(source),
+                    target_path=str(target),
+                    group=group,
+                    moved=False,
+                    reason="source_missing",
+                )
+            )
+            continue
+        try:
+            target_dir.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(source), str(target))
+            moves.append(
+                MoveInputFileResult(
+                    source_path=str(source),
+                    target_path=str(target),
+                    group=group,
+                    moved=True,
+                    reason="moved",
+                )
+            )
+        except Exception as exc:  # noqa: BLE001 - report per-file move failures.
+            moves.append(
+                MoveInputFileResult(
+                    source_path=str(source),
+                    target_path=str(target),
+                    group=group,
+                    moved=False,
+                    reason=f"{type(exc).__name__}: {exc}",
+                )
+            )
+    return moves
+
+
 def _result(
     path: Path,
     *,
@@ -246,6 +310,12 @@ def _result(
         name=path.name,
         size=size,
         precheck_status=status,
+        mtime_ns=path.stat().st_mtime_ns if path.exists() else 0,
+        modified_at=(
+            datetime.fromtimestamp(path.stat().st_mtime).isoformat(timespec="seconds")
+            if path.exists()
+            else None
+        ),
         reject_group=group.value if group is not None else None,
         reject_reason=reason.value if reason is not None else None,
         reject_dir_parts=dir_parts or (),
