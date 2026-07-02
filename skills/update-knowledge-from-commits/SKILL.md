@@ -1,6 +1,6 @@
 ---
 name: update-knowledge-from-commits
-description: Analyze Git commits in this ROS project and update stable DOCS/01_知识 knowledge documents. Use when the user asks to update the knowledge base from commits, refresh knowledge docs after development, derive knowledge changes from the latest commit, or maintain stage knowledge from Git history. By default, analyze the latest non-maintenance commit, update knowledge docs when stable semantics changed, and create a local docs(knowledge) commit; do not push.
+description: Analyze Git commits in this ROS project and update stable DOCS/01_知识 knowledge documents. Use when the user asks to update the knowledge base from commits, refresh knowledge docs after development, derive knowledge changes from the latest commit, or maintain stage knowledge from Git history. By default, analyze the latest non-maintenance commit, update knowledge docs when stable semantics changed, create a local docs(knowledge) commit, then sync the docs update from docs_maintaining to the repository's long-lived branches when Git preflight is clean.
 ---
 
 # Update Knowledge From Commits
@@ -31,7 +31,7 @@ Also skip commits whose subject contains:
 
 If the user provides an explicit commit range, use that range instead.
 
-After successful knowledge updates, create a local commit. Do not push.
+After successful knowledge updates, create a local commit, then sync that docs update across long-lived project branches according to `DOCS/02_约束/Git协作/Git操作规则.md`.
 
 ## Preflight
 
@@ -42,6 +42,11 @@ After successful knowledge updates, create a local commit. Do not push.
 5. Stop if the working tree has unrelated uncommitted changes.
    - Allowed pre-existing changes are only files under `skills/update-knowledge-from-commits/` when the user is editing this skill itself.
    - For normal skill use, require a clean working tree before editing knowledge docs.
+6. Before branch sync, also verify:
+   - remote is `origin`
+   - remote URL is `https://github.com/jack-z36/ROS.git`
+   - Git user is `jack-z36 <jack-z36@users.noreply.github.com>`
+   - local branch tips are not behind their configured upstreams
 
 ## Commit Inspection
 
@@ -93,7 +98,7 @@ If any other file would need changes, stop and report the required follow-up ins
    - selected commit or range
    - affected stage(s)
    - target knowledge files
-   - whether a local commit will be created
+   - whether a local commit and branch sync will be created
 2. Update the relevant knowledge docs.
 3. Verify:
    - referenced `DOCS/...` and `src/...` paths exist
@@ -110,6 +115,44 @@ docs(knowledge): update from commit <short_sha>
 
 Use the selected target commit short SHA. For an explicit multi-commit range, use the range end short SHA.
 
+## Branch Sync
+
+After creating the local `docs(knowledge)` commit, sync the resulting docs update from `docs_maintaining` to long-lived project branches.
+
+Target branches:
+
+- `data_collection`
+- `data_clean`
+- `model_deploy`
+- `main`
+
+Do not automatically sync to:
+
+- `backup/*`
+- `feat/*`
+- `fix/*`
+- `docs/*`
+- `chore/*`
+- `spike/*`
+- branches without an `origin/*` upstream
+
+Sync procedure:
+
+1. Ensure the knowledge commit exists on `docs_maintaining`.
+2. For each target branch, run `git fetch origin`, switch to the branch, and run `git pull --ff-only`.
+3. Merge `docs_maintaining` with `git merge --no-ff docs_maintaining`.
+4. If there is no effective change because the branch already contains the docs update, do not create an empty merge commit.
+5. Push each successfully updated target branch to `origin`.
+6. Return to `docs_maintaining` and push it to `origin`.
+
+Stop and report without resolving automatically if any branch has:
+
+- remote divergence or non-fast-forward pull failure
+- merge conflict
+- dirty worktree unrelated to the sync
+- missing target branch or missing upstream
+- required push rejection
+
 ## Output
 
 After completion, report:
@@ -118,6 +161,7 @@ After completion, report:
 - updated knowledge files
 - excluded changes and why
 - local commit SHA, or `no commit created`
+- branch sync results for `docs_maintaining`, `data_collection`, `data_clean`, `model_deploy`, and `main`
 - any remaining worktree changes
 
 ## Project Conventions
