@@ -57,7 +57,7 @@ from schemas.lerobot_features import (
 from service.mcap_io import process_mcap_file
 from service.mcap_health_audit import (
     audit_mcap_health_files,
-    move_rejected_files,
+    move_audited_files,
     summarize_health_results,
 )
 from service.mcap_file_management import (
@@ -88,6 +88,7 @@ DEFAULT_OUTPUT_PARENT = STAGE2_ASSET_ROOT / "prod/exports/lerobot"
 SIDECAR_ROOT = STAGE2_ASSET_ROOT / "dev/debug/web_jobs"
 PRESETS_DIR = WORKSPACE_DIR / "config/data_clean/presets"
 BATON_AUDIT_DIRNAME = "baton_pose_audits"
+HEALTH_AUDIT_DIRNAME = "mcap_health_audits"
 DEFAULT_GLOBAL_WORKERS = 6
 CLIENT_DISCONNECT_ERRORS = (BrokenPipeError, ConnectionAbortedError, ConnectionResetError)
 
@@ -348,6 +349,7 @@ class DataCleanWebApp:
         self.run_root = run_root
         self.jobs_dir = run_root / "jobs"
         self.baton_audits_dir = run_root / BATON_AUDIT_DIRNAME
+        self.health_audits_dir = run_root / HEALTH_AUDIT_DIRNAME
         self.settings_path = run_root / "settings.json"
         self.intermediate_root = self._resolve_intermediate_root(run_root)
         self.staging_dir = self.intermediate_root / "outputs/staging"
@@ -359,6 +361,7 @@ class DataCleanWebApp:
         self.cancel_events: dict[str, threading.Event] = {}
         self.baton_audit_tasks: dict[str, dict[str, Any]] = {}
         self.baton_move_tasks: dict[str, dict[str, Any]] = {}
+        self.health_audit_tasks: dict[str, dict[str, Any]] = {}
         self.visualizer_processes: list[subprocess.Popen[str]] = []
         self.gripper_calibration_process: subprocess.Popen[str] | None = None
         self.gripper_calibration_url: str | None = None
@@ -453,11 +456,19 @@ class DataCleanWebApp:
         config = self.load_config()
         settings = self._settings()
         readiness = self.production_readiness()
+        file_management = self.web_file_management()
         return {
             "running": running,
             "recent": recent,
             "settings": {
-                "last_input_dir": settings.get("last_input_dir", config.batch.input_dir),
+                "last_input_dir": settings.get(
+                    "last_input_dir",
+                    file_management.get("health_audited_mcap_dir", config.batch.input_dir),
+                ),
+                "health_audited_mcap_dir": file_management.get("health_audited_mcap_dir", ""),
+                "rejected_mcap_dir": file_management.get("rejected_mcap_dir", ""),
+                "completed_mcap_dir": file_management.get("completed_mcap_dir", ""),
+                "cleaning_failed_mcap_dir": file_management.get("cleaning_failed_mcap_dir", ""),
                 "last_output_dir": settings.get("last_output_dir", str(DEFAULT_OUTPUT_PARENT)),
                 "default_dataset_name": _suggest_dataset_name(
                     _safe_path(settings.get("last_output_dir", str(DEFAULT_OUTPUT_PARENT))),
@@ -742,6 +753,287 @@ class DataCleanWebApp:
             "mode": "file_listing_only",
         }
         return {"input_dir": str(input_dir), "files": files, "count": len(files), "precheck_summary": summary}
+
+    def start_health_audit(self, payload: dict[str, Any]) -> dict[str, Any]:
+        input_dir = _safe_path(str(payload.get("input_dir", "")))
+        raw_files = payload.get("files", [])
+        selected = self._normalize_selected_files(raw_files)
+        if not selected and not raw_files and input_dir.is_dir():
+            selected = sorted(input_dir.glob("*.mcap"), key=lambda p: p.name)
+        if not selected:
+            raise ValueError("no selected MCAP files")
+
+        file_management = self.web_file_management()
+        health_dir = _safe_path(str(payload.get("health_audited_mcap_dir") or file_management["health_audited_mcap_dir"]))
+        rejected_dir = _safe_path(str(payload.get("rejected_mcap_dir") or file_management["rejected_mcap_dir"]))
+        audit_id = _job_id()
+        task = self._new_baton_task(
+            audit_id=audit_id,
+            operation="health_audit",
+            total=len(selected),
+            classified_dir=str(health_dir),
+        )
+        task["rejected_dir"] = str(rejected_dir)
+        with self.lock:
+            self.health_audit_tasks[audit_id] = task
+        thread = threading.Thread(
+            target=self._run_health_audit_task,
+            args=(
+                audit_id,
+                selected,
+                {
+                    "input_dir": str(input_dir),
+                    "health_audited_mcap_dir": str(health_dir),
+                    "rejected_mcap_dir": str(rejected_dir),
+                },
+            ),
+            daemon=True,
+        )
+        thread.start()
+        return {"audit_id": audit_id, "task": self._public_baton_task(task)}
+
+    def health_audit_status(self, audit_id: str) -> dict[str, Any]:
+        with self.lock:
+            task = self.health_audit_tasks.get(audit_id)
+            if task is not None:
+                payload = {"task": self._public_baton_task(task)}
+                if task.get("status") == "succeeded" and task.get("record"):
+                    payload["record"] = task["record"]
+                return payload
+        try:
+            record = self.get_health_audit(audit_id)
+        except KeyError:
+            return {
+                "task": self._public_baton_task(
+                    {
+                        "audit_id": audit_id,
+                        "operation": "health_audit",
+                        "status": "failed",
+                        "progress": 0,
+                        "total": 0,
+                        "done": 0,
+                        "current_file": None,
+                        "started_at": None,
+                        "finished_at": _now_iso(),
+                        "failure_reason": "任务已中断，请重新开始健康审计。",
+                    }
+                )
+            }
+        return {
+            "task": self._public_baton_task(
+                {
+                    "audit_id": audit_id,
+                    "operation": "health_audit",
+                    "status": "succeeded",
+                    "progress": 100,
+                    "total": int(record.get("summary", {}).get("total", len(record.get("results", [])))),
+                    "done": int(record.get("summary", {}).get("total", len(record.get("results", [])))),
+                    "current_file": None,
+                    "started_at": record.get("created_at"),
+                    "finished_at": record.get("updated_at"),
+                    "failure_reason": None,
+                    "classified_dir": record.get("health_audited_mcap_dir"),
+                }
+            ),
+            "record": record,
+        }
+
+    def get_health_audit(self, audit_id: str) -> dict[str, Any]:
+        path = self.health_audits_dir / f"{audit_id}.json"
+        if not path.exists():
+            raise KeyError(audit_id)
+        data = _read_json(path, None)
+        if not isinstance(data, dict):
+            raise ValueError("health_audit_record_invalid")
+        return data
+
+    def _run_health_audit_task(self, audit_id: str, selected: list[Path], options: dict[str, Any]) -> None:
+        results: list[dict[str, Any]] = []
+        moves: list[dict[str, Any]] = []
+        try:
+            config = self.load_config(input_dir=options["input_dir"], output_dir=str(DEFAULT_OUTPUT_PARENT))
+            lerobot_features = self._lerobot_features_for_health_audit()
+            total = len(selected)
+            for index, path in enumerate(selected):
+                self._update_baton_task(
+                    self.health_audit_tasks,
+                    audit_id,
+                    current_file=path.name,
+                    current_path=str(path),
+                )
+                result = audit_mcap_health_files(
+                    [path],
+                    config=config,
+                    lerobot_features=lerobot_features,
+                    include_pose_audit=True,
+                )[0].to_dict()
+                move_result = move_audited_files(
+                    [result],
+                    health_audited_root=options["health_audited_mcap_dir"],
+                    rejected_root=options["rejected_mcap_dir"],
+                )[0].to_dict()
+                if move_result.get("moved") and move_result.get("target_path"):
+                    result["audited_path"] = move_result["target_path"]
+                    result["target_path"] = move_result["target_path"]
+                results.append(result)
+                moves.append(move_result)
+                self._update_baton_task(
+                    self.health_audit_tasks,
+                    audit_id,
+                    done=index + 1,
+                    progress=int((index + 1) / total * 100) if total else 100,
+                )
+            summary = summarize_health_results(results).to_dict()
+            record = {
+                "audit_id": audit_id,
+                "status": "moved",
+                "created_at": self.health_audit_tasks[audit_id]["started_at"],
+                "updated_at": _now_iso(),
+                "input_dir": options["input_dir"],
+                "health_audited_mcap_dir": options["health_audited_mcap_dir"],
+                "rejected_mcap_dir": options["rejected_mcap_dir"],
+                "summary": {
+                    **summary,
+                    "moved_count": sum(1 for item in moves if item.get("moved")),
+                    "move_failed_count": sum(1 for item in moves if not item.get("moved")),
+                },
+                "results": results,
+                "move_results": moves,
+                "report_path": str(self.health_audits_dir / f"{audit_id}.json"),
+            }
+            self.health_audits_dir.mkdir(parents=True, exist_ok=True)
+            _write_json_atomic(self.health_audits_dir / f"{audit_id}.json", record)
+            self._finish_baton_task(self.health_audit_tasks, audit_id, "succeeded", record=record)
+        except Exception as exc:  # noqa: BLE001
+            self._finish_baton_task(
+                self.health_audit_tasks,
+                audit_id,
+                "failed",
+                failure_reason=f"{type(exc).__name__}: {exc}",
+            )
+
+    def _health_gate_for_files(self, files: list[Path]) -> dict[str, Any]:
+        file_management = self.web_file_management()
+        health_root = _safe_path(str(file_management["health_audited_mcap_dir"]))
+        failed_root = _safe_path(str(file_management["cleaning_failed_mcap_dir"]))
+        records = {**self._health_audit_records_by_target(), **self._archived_retry_records_by_target()}
+        items: list[dict[str, Any]] = []
+        accepted: list[Path] = []
+        for path in files:
+            path = path.resolve()
+            record = records.get(str(path))
+            ok, reason = self._health_gate_item(path, health_root, failed_root, record)
+            stat = path.stat() if path.exists() else None
+            item = {
+                "path": str(path),
+                "name": path.name,
+                "allowed": ok,
+                "reason": reason,
+                "audit_record": record,
+                "size": stat.st_size if stat else 0,
+                "mtime_ns": stat.st_mtime_ns if stat else 0,
+            }
+            items.append(item)
+            if ok:
+                accepted.append(path)
+        return {
+            "health_audited_mcap_dir": str(health_root),
+            "cleaning_failed_mcap_dir": str(failed_root),
+            "allowed": len(accepted) == len(files) and bool(files),
+            "accepted_count": len(accepted),
+            "rejected_count": len(files) - len(accepted),
+            "items": items,
+            "accepted_paths": accepted,
+        }
+
+    def _health_gate_item(
+        self,
+        path: Path,
+        health_root: Path,
+        failed_root: Path,
+        record: dict[str, Any] | None,
+    ) -> tuple[bool, str]:
+        if not path.exists():
+            return False, "文件不存在。"
+        in_allowed_root = False
+        for root in (health_root, failed_root):
+            try:
+                path.relative_to(root)
+                in_allowed_root = True
+            except ValueError:
+                pass
+        if not in_allowed_root:
+            return False, f"文件不在已通过健康审计目录或清洗失败重试目录：{health_root} / {failed_root}"
+        if record is None:
+            return False, "没有找到匹配的健康审计记录。"
+        if record.get("precheck_status") != "eligible":
+            return False, "审计记录不是 eligible。"
+        stat = path.stat()
+        if int(record.get("size") or -1) != stat.st_size:
+            return False, "文件大小与健康审计记录不一致。"
+        if int(record.get("mtime_ns") or -1) != stat.st_mtime_ns:
+            return False, "文件修改时间与健康审计记录不一致。"
+        return True, "ok"
+
+    def _health_audit_records_by_target(self) -> dict[str, dict[str, Any]]:
+        records: dict[str, dict[str, Any]] = {}
+        self.health_audits_dir.mkdir(parents=True, exist_ok=True)
+        for path in sorted(self.health_audits_dir.glob("*.json"), key=lambda p: p.stat().st_mtime):
+            data = _read_json(path, None)
+            if not isinstance(data, dict):
+                continue
+            moves = {
+                str(move.get("source_path")): str(move.get("target_path"))
+                for move in data.get("move_results", [])
+                if move.get("moved") and move.get("target_path")
+            }
+            for result in data.get("results", []):
+                if not isinstance(result, dict):
+                    continue
+                target = result.get("target_path") or result.get("audited_path") or moves.get(str(result.get("input_path")))
+                if not target:
+                    continue
+                enriched = dict(result)
+                enriched["target_path"] = str(Path(str(target)).expanduser().resolve())
+                enriched["audit_id"] = data.get("audit_id")
+                enriched["report_path"] = data.get("report_path")
+                records[enriched["target_path"]] = enriched
+        return records
+
+    def _archived_retry_records_by_target(self) -> dict[str, dict[str, Any]]:
+        records: dict[str, dict[str, Any]] = {}
+        self.jobs_dir.mkdir(parents=True, exist_ok=True)
+        for path in sorted(self.jobs_dir.glob("*.json"), key=lambda p: p.stat().st_mtime):
+            job = _read_json(path, None)
+            if not isinstance(job, dict):
+                continue
+            for item in job.get("files", []):
+                if not isinstance(item, dict):
+                    continue
+                target = item.get("archived_input_path")
+                if not target or item.get("status") != "failed":
+                    continue
+                target_path = Path(str(target)).expanduser().resolve()
+                if not target_path.exists():
+                    continue
+                stat = target_path.stat()
+                records[str(target_path)] = {
+                    "input_path": item.get("input_path"),
+                    "target_path": str(target_path),
+                    "name": target_path.name,
+                    "size": stat.st_size,
+                    "mtime_ns": stat.st_mtime_ns,
+                    "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds"),
+                    "precheck_status": item.get("precheck_status") or "eligible",
+                    "reject_group": item.get("reject_group"),
+                    "reject_reason": item.get("reject_reason"),
+                    "reject_dir_parts": item.get("reject_dir_parts") or [],
+                    "topic_counts": item.get("topic_counts") or {},
+                    "read_error": item.get("read_error"),
+                    "pose_audit": item.get("pose_audit"),
+                    "source_job_id": job.get("job_id"),
+                }
+        return records
 
     def preview_baton_pose_audit(self, payload: dict[str, Any]) -> dict[str, Any]:
         input_dir = _safe_path(str(payload.get("input_dir", "")))
@@ -1102,25 +1394,8 @@ class DataCleanWebApp:
         output_parent = _safe_path(str(payload.get("output_dir", "")), DEFAULT_OUTPUT_PARENT)
         raw_files = payload.get("files", [])
         selected = self._normalize_selected_files(raw_files)
-        scanned = self._normalize_selected_files(payload.get("scan_files", []))
-        audit_paths = self._unique_paths([*selected, *scanned])
-        selected_set = {str(path.resolve()) for path in selected}
-        audit_results = self._health_audit_files(
-            audit_paths,
-            input_dir=input_dir,
-            output_parent=output_parent,
-            include_pose_audit=False,
-        )
-        selected_audit_results = [
-            item for item in audit_results if item.get("input_path") in selected_set
-        ]
-        precheck_summary = summarize_health_results(selected_audit_results).to_dict()
-        scanned_precheck_summary = summarize_health_results(audit_results).to_dict()
-        eligible = [
-            Path(item["input_path"])
-            for item in selected_audit_results
-            if item.get("precheck_status") == "eligible" and item.get("input_path") in selected_set
-        ]
+        gate = self._health_gate_for_files(selected)
+        eligible = gate["accepted_paths"]
         total_size = sum(path.stat().st_size if path.exists() else 0 for path in eligible)
         requested_name = payload.get("dataset_name") or _default_dataset_name()
         dataset_name = _suggest_dataset_name(output_parent, str(requested_name))
@@ -1159,10 +1434,7 @@ class DataCleanWebApp:
                 {"input_path": str(path), "size": path.stat().st_size if path.exists() else 0}
                 for path in eligible
             ],
-            "precheck_summary": precheck_summary,
-            "scanned_precheck_summary": scanned_precheck_summary,
-            "precheck_results": audit_results,
-            "will_move_rejected_files": scanned_precheck_summary["rejected_count"],
+            "health_gate": {key: value for key, value in gate.items() if key != "accepted_paths"},
             "space_estimate": space_estimate,
             "effective_workers": space_estimate["effective_workers"],
             "conflicts": [
@@ -1184,9 +1456,6 @@ class DataCleanWebApp:
         selected = self._normalize_selected_files(payload.get("files", []))
         if not selected:
             raise ValueError("no selected MCAP files")
-        scanned = self._normalize_selected_files(payload.get("scan_files", []))
-        audit_paths = self._unique_paths([*selected, *scanned])
-        selected_set = {str(path.resolve()) for path in selected}
         output_parent.mkdir(parents=True, exist_ok=True)
         dataset_name = _safe_name(str(payload.get("dataset_name") or _default_dataset_name()))
         dataset_dir = output_parent / dataset_name
@@ -1221,47 +1490,29 @@ class DataCleanWebApp:
             bridge_mode=bridge_mode,
             formal_manual_override_confirmed=True,
         )
-        selected_audit_results = self._health_audit_files(
-            selected,
-            input_dir=input_dir,
-            output_parent=output_parent,
-            include_pose_audit=True,
-        )
-        unselected_scan_paths = [
-            path for path in audit_paths if str(path.resolve()) not in selected_set
-        ]
-        unselected_audit_results = self._health_audit_files(
-            unselected_scan_paths,
-            input_dir=input_dir,
-            output_parent=output_parent,
-            include_pose_audit=False,
-        )
-        audit_results = [*selected_audit_results, *unselected_audit_results]
-        precheck_summary = summarize_health_results(audit_results).to_dict()
-        moved_rejected = move_rejected_files(audit_results, file_management["rejected_mcap_dir"])
-        precheck_report_path = effective.snapshot_path.parent / "precheck_report.json"
-        precheck_report = {
+        gate = self._health_gate_for_files(selected)
+        gate_failures = [item for item in gate["items"] if not item.get("allowed")]
+        gate_report_path = effective.snapshot_path.parent / "health_gate_report.json"
+        gate_report = {
             "created_at": _now_iso(),
             "input_dir": str(input_dir),
-            "rejected_root": file_management["rejected_mcap_dir"],
-            "summary": precheck_summary,
-            "results": audit_results,
-            "move_results": [item.to_dict() for item in moved_rejected],
+            "health_audited_mcap_dir": gate["health_audited_mcap_dir"],
+            "cleaning_failed_mcap_dir": gate["cleaning_failed_mcap_dir"],
+            "items": gate["items"],
         }
-        _write_json_atomic(precheck_report_path, precheck_report)
-        eligible_results = [
-            item
-            for item in audit_results
-            if item.get("precheck_status") == "eligible" and item.get("input_path") in selected_set
-        ]
-        if not eligible_results:
-            raise ValueError(f"没有可清洗 MCAP；缺陷文件已按原因移动，报告：{precheck_report_path}")
-        selected_eligible_raw_size = sum(int(item.get("size") or 0) for item in eligible_results)
-        requested_workers = self._requested_workers(payload.get("workers", "auto"), len(eligible_results))
+        _write_json_atomic(gate_report_path, gate_report)
+        if gate_failures:
+            details = "；".join(f"{item['name']}: {item['reason']}" for item in gate_failures[:5])
+            raise ValueError(f"清洗入口只允许健康审计目录内且记录匹配的 MCAP：{details}。报告：{gate_report_path}")
+        eligible_paths = gate["accepted_paths"]
+        if not eligible_paths:
+            raise ValueError(f"没有可清洗 MCAP。报告：{gate_report_path}")
+        selected_eligible_raw_size = sum(path.stat().st_size if path.exists() else 0 for path in eligible_paths)
+        requested_workers = self._requested_workers(payload.get("workers", "auto"), len(eligible_paths))
         space_estimate = self._space_estimate(
             eligible_raw_size=selected_eligible_raw_size,
-            eligible_file_count=len(eligible_results),
-            max_file_size=max((int(item.get("size") or 0) for item in eligible_results), default=0),
+            eligible_file_count=len(eligible_paths),
+            max_file_size=max((path.stat().st_size for path in eligible_paths if path.exists()), default=0),
             requested_workers=requested_workers,
             intermediate_root=intermediate_root,
             file_management=file_management,
@@ -1282,8 +1533,9 @@ class DataCleanWebApp:
             self.staging_dir.mkdir(parents=True, exist_ok=True)
 
         files = []
-        for audit in eligible_results:
-            input_path = Path(audit["input_path"])
+        audit_records_by_path = {str(item["path"]): item.get("audit_record") or {} for item in gate["items"]}
+        for input_path in eligible_paths:
+            audit = audit_records_by_path.get(str(input_path.resolve()), {})
             files.append(
                 {
                     "name": input_path.name,
@@ -1345,12 +1597,14 @@ class DataCleanWebApp:
             "workers": workers,
             "effective_workers": workers,
             "conflict_policy": conflict_policy,
-            "precheck_report_path": str(precheck_report_path),
-            "moved_rejected_files": [item.to_dict() for item in moved_rejected],
+            "health_gate_report_path": str(gate_report_path),
+            "moved_rejected_files": [],
             "moved_completed_files": [],
             "moved_failed_input_files": [],
             "completed_mcap_dir": file_management["completed_mcap_dir"],
             "rejected_mcap_dir": file_management["rejected_mcap_dir"],
+            "cleaning_failed_mcap_dir": file_management["cleaning_failed_mcap_dir"],
+            "health_audited_mcap_dir": file_management["health_audited_mcap_dir"],
             "artifact_retention": file_management["artifact_retention"],
             "failed_artifact_policy": file_management["failed_artifact_policy"],
             "space_estimate": space_estimate,
@@ -1764,7 +2018,7 @@ class DataCleanWebApp:
         ]
 
         completed_moves = move_completed_mcap_files(completed_inputs, job.get("completed_mcap_dir", ""))
-        failed_moves = move_failed_mcap_files(failed_inputs, job.get("rejected_mcap_dir", ""))
+        failed_moves = move_failed_mcap_files(failed_inputs, job.get("cleaning_failed_mcap_dir", ""))
         job["moved_completed_files"] = [item.to_dict() for item in completed_moves]
         job["moved_failed_input_files"] = [item.to_dict() for item in failed_moves]
         self._hydrate_archived_input_paths(job)
@@ -2283,10 +2537,12 @@ class DataCleanWebApp:
             if job is None:
                 raise KeyError(job_id)
             failed = [item for item in job.get("files", []) if item.get("status") == "failed"]
+            retry_paths = [Path(str(item.get("archived_input_path") or item["input_path"])) for item in failed]
+            retry_parents = {str(path.parent) for path in retry_paths}
             return {
                 "draft": {
                     "remark": f"重跑失败文件: {job_id}",
-                    "input_dir": job.get("input_dir", ""),
+                    "input_dir": next(iter(retry_parents)) if len(retry_parents) == 1 else job.get("input_dir", ""),
                     "output_dir": job.get("output_parent", job.get("output_dir", "")),
                     "dataset_name": _suggest_dataset_name(
                         _safe_path(job.get("output_parent", job.get("output_dir", "")), DEFAULT_OUTPUT_PARENT),
@@ -2296,8 +2552,8 @@ class DataCleanWebApp:
                     "preset_name": job.get("preset_name", ""),
                     "config_overrides": job.get("config_overrides", {}),
                     "files": [
-                        {"path": item.get("archived_input_path") or item["input_path"], "name": item["name"]}
-                        for item in failed
+                        {"path": str(path), "name": path.name}
+                        for path in retry_paths
                     ],
                 }
             }
@@ -2367,6 +2623,12 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/filesystem":
                 query = parse_qs(parsed.query)
                 self._send_json(self.app_state.filesystem(query.get("path", ["/"])[0]))
+            elif parsed.path.startswith("/api/health-audit/") and parsed.path.endswith("/status"):
+                audit_id = parsed.path.split("/")[3]
+                self._send_json(self.app_state.health_audit_status(audit_id))
+            elif parsed.path.startswith("/api/health-audit/"):
+                audit_id = parsed.path.split("/")[3]
+                self._send_json(self.app_state.get_health_audit(audit_id))
             elif parsed.path.startswith("/api/baton-pose-audit/") and parsed.path.endswith("/move/status"):
                 audit_id = parsed.path.split("/")[3]
                 self._send_json(self.app_state.baton_pose_move_status(audit_id))
@@ -2403,6 +2665,8 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(self.app_state.open_gripper_calibration())
             elif parsed.path == "/api/input-files/scan":
                 self._send_json(self.app_state.scan_input_files(payload))
+            elif parsed.path == "/api/health-audit/start":
+                self._send_json(self.app_state.start_health_audit(payload))
             elif parsed.path == "/api/baton-pose-audit/start":
                 self._send_json(self.app_state.start_baton_pose_audit(payload))
             elif parsed.path.startswith("/api/baton-pose-audit/") and parsed.path.endswith("/move/start"):
@@ -2588,6 +2852,7 @@ INDEX_HTML = r"""<!doctype html>
   <h1>数据清洗网页交互</h1>
   <nav>
     <button id="nav-dashboard" onclick="showPage('dashboard')">看板</button>
+    <button id="nav-audit" onclick="showPage('audit')">健康审计</button>
     <button id="nav-create" onclick="showPage('create')">新建任务</button>
     <button id="nav-config" onclick="showPage('config')">配置中心</button>
     <button id="nav-history" onclick="showPage('history')">历史记录</button>
@@ -2612,7 +2877,7 @@ INDEX_HTML = r"""<!doctype html>
 <div id="confirm-modal" class="modal"><div class="modal-card" id="confirm-body"></div></div>
 <script>
 let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), auditFiles:[], auditSelected:new Set(), auditPreview:null, auditTask:null, auditMoveTask:null, auditPollTimer:null, currentJob:null, jobTab:'quality', trajectory:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null}, dirTarget:null, dirPath:'/', preview:null, retryDraft:null, productionConfig:null};
-const statusText = {running:'运行中', succeeded:'成功', partial_failed:'部分失败', failed:'失败', cancelled:'已取消', cancelling:'取消中', waiting:'等待', success:'成功', warning:'成功但有警告', skipped:'跳过', unchecked:'未审计', eligible:'健康', rejected:'缺陷', unit_consistent_likely:'正常', unit_mismatch_suspected:'单位疑似不统一', missing_pose_topic:'缺少位姿 topic', pose_value_invalid_suspected:'位姿值异常', decode_failed:'读取失败', normal:'正常', unit_mismatch:'单位异常', other_issue:'其他异常'};
+const statusText = {running:'运行中', succeeded:'成功', partial_failed:'部分失败', failed:'失败', cancelled:'已取消', cancelling:'取消中', waiting:'等待', success:'成功', warning:'成功但有警告', skipped:'跳过', moved:'已移动', unchecked:'未审计', eligible:'健康', rejected:'缺陷', unit_consistent_likely:'正常', unit_mismatch_suspected:'单位疑似不统一', missing_pose_topic:'缺少位姿 topic', pose_value_invalid_suspected:'位姿值异常', decode_failed:'读取失败', normal:'正常', unit_mismatch:'单位异常', other_issue:'其他异常'};
 async function api(path, opts={}) {
   const res = await fetch(path, {headers:{'Content-Type':'application/json'}, ...opts});
   const data = await res.json();
@@ -2629,11 +2894,12 @@ function showPage(page) {
     const pageEl = document.getElementById(`page-${id}`);
     if (pageEl) pageEl.classList.toggle('hidden', id !== page);
   }
-  for (const id of ['dashboard','create','config','history']) {
+  for (const id of ['dashboard','audit','create','config','history']) {
     const navEl = document.getElementById(`nav-${id}`);
     if (navEl) navEl.classList.toggle('active', id === page);
   }
   if (page === 'dashboard') loadDashboard();
+  if (page === 'audit') renderAudit();
   if (page === 'create') renderCreate();
   if (page === 'config') loadProductionConfig();
   if (page === 'history') loadHistory();
@@ -2647,7 +2913,7 @@ function renderDashboard() {
   const running = d.running.map(jobCard).join('') || '<p class="muted">当前没有运行中的任务。</p>';
   const recent = d.recent.map(jobRow).join('') || '<tr><td class="muted">暂无历史</td></tr>';
   document.getElementById('page-dashboard').innerHTML = `
-    <div class="card row"><div><h2>任务看板</h2><p class="muted">正常模式只展示生产交互；开发者检验请使用 <code>./start_data_clean.sh --dev</code>。</p></div><button class="primary right" onclick="showPage('create')">新建清洗任务</button></div>
+    <div class="card row"><div><h2>任务看板</h2><p class="muted">正常模式先做健康审计，再从健康目录启动正式清洗；开发者检验请使用 <code>./start_data_clean.sh --dev</code>。</p></div><button onclick="showPage('audit')">健康审计</button><button class="primary" onclick="showPage('create')">新建清洗任务</button></div>
     <div class="card"><h3>运行中的批次</h3>${running}</div>
     <div class="card"><h3>最近历史</h3><table><tbody>${recent}</tbody></table></div>`;
 }
@@ -2660,7 +2926,7 @@ function jobRow(job) {
 }
 function renderCreate() {
   const s = state.dashboard?.settings || {};
-  const input = state.retryDraft?.input_dir || s.last_input_dir || '';
+  const input = state.retryDraft?.input_dir || s.health_audited_mcap_dir || s.last_input_dir || '';
   const output = state.retryDraft?.output_dir || s.last_output_dir || '';
   const intermediate = s.intermediate_root || '';
   const datasetName = state.retryDraft?.dataset_name || s.default_dataset_name || '';
@@ -2705,23 +2971,20 @@ function renderCreate() {
 }
 function renderAudit() {
   const s = state.dashboard?.settings || {};
-  const input = document.getElementById('audit-input-dir')?.value || s.last_input_dir || '/home/hit/下载/mcap';
-  const classified = document.getElementById('audit-classified-dir')?.value || `${input.replace(/\/$/,'')}/_baton_pose_classified`;
+  const input = document.getElementById('audit-input-dir')?.value || '/media/hit/D085-8696/mcap';
+  const healthDir = document.getElementById('audit-health-dir')?.value || s.health_audited_mcap_dir || '';
+  const rejectedDir = document.getElementById('audit-rejected-dir')?.value || s.rejected_mcap_dir || '';
   const disabled = auditBusy() ? 'disabled' : '';
   document.getElementById('page-audit').innerHTML = `
     <div class="split">
       <div class="card">
-        <h2>Baton Mini 位姿审计</h2>
-        <p class="muted">检查 raw MCAP 中左右 Baton Mini 位姿 topic 的 xyz 和四元数数值，按左右量级是否统一给文件分类。审计不会移动文件；只有确认移动后才会改动 MCAP 位置。</p>
-        <label>输入目录</label><div class="row"><input id="audit-input-dir" value="${escapeHtml(input)}" oninput="auditInputChanged()" ${disabled}><button onclick="openDirModal('audit-input')" ${disabled}>浏览</button></div>
-        <label>分类目标目录</label><div class="row"><input id="audit-classified-dir" value="${escapeHtml(classified)}" ${disabled}><button onclick="openDirModal('audit-classified')" ${disabled}>浏览</button></div>
-        <label>左手位姿 topic</label><input id="audit-left-topic" value="/baton_mini_left/fast_odom" ${disabled}>
-        <label>右手位姿 topic</label><input id="audit-right-topic" value="/baton_mini_right/fast_odom" ${disabled}>
-        <details><summary>高级参数</summary>
-          <label>每侧最大采样数</label><input id="audit-max-samples" value="1000" ${disabled}>
-          <p class="muted">页面固定展示前 3 条原始位姿；完整统计写入审计 JSON。</p>
-        </details>
-        <div class="row" style="margin-top:14px"><button id="audit-scan-btn" class="primary" onclick="scanAuditFiles()" ${disabled}>扫描 MCAP</button><button id="audit-start-btn" onclick="runBatonAudit()" ${disabled}>开始审计</button></div>
+        <h2>健康审计</h2>
+        <p class="muted">正式清洗前先对 raw MCAP 做完整健康审计。审计会读取 MCAP summary、相机/位姿/触觉/schema，并执行 Baton 位姿采样；完成后自动移动文件。</p>
+        <label>原始待审计目录</label><div class="row"><input id="audit-input-dir" value="${escapeHtml(input)}" ${disabled}><button onclick="openDirModal('audit-input')" ${disabled}>浏览</button></div>
+        <label>健康 MCAP 目录</label><div class="row"><input id="audit-health-dir" value="${escapeHtml(healthDir)}" ${disabled}><button onclick="openDirModal('audit-health')" ${disabled}>浏览</button></div>
+        <label>缺陷 MCAP 目录</label><div class="row"><input id="audit-rejected-dir" value="${escapeHtml(rejectedDir)}" ${disabled}><button onclick="openDirModal('audit-rejected')" ${disabled}>浏览</button></div>
+        <div class="warnbox" style="margin-top:12px">开始审计后会立即移动文件：健康文件进入健康目录，缺陷文件进入缺陷目录下的中文分类子目录；同名文件不会覆盖。</div>
+        <div class="row" style="margin-top:14px"><button id="audit-scan-btn" class="primary" onclick="scanAuditFiles()" ${disabled}>扫描 MCAP</button><button id="audit-start-btn" onclick="runHealthAudit()" ${disabled}>开始健康审计并移动</button></div>
       </div>
       <div class="card">
         <div class="row"><h2>文件选择</h2><button class="right" onclick="scanAuditFiles()" ${disabled}>刷新</button></div>
@@ -2732,11 +2995,6 @@ function renderAudit() {
     <div id="audit-result"></div>`;
   renderAuditFileTable();
   renderAuditResult();
-}
-function auditInputChanged() {
-  const input = document.getElementById('audit-input-dir')?.value || '';
-  const classified = document.getElementById('audit-classified-dir');
-  if (classified && input) classified.value = `${input.replace(/\/$/,'')}/_baton_pose_classified`;
 }
 async function scanAuditFiles() {
   if (auditBusy()) return;
@@ -2760,49 +3018,47 @@ function renderAuditFileTable() {
 function toggleAuditFile(path, checked) { if (auditBusy()) return; checked ? state.auditSelected.add(path) : state.auditSelected.delete(path); renderAuditFileTable(); }
 function selectAuditAll(on) { if (auditBusy()) return; state.auditFiles.forEach(f => on ? state.auditSelected.add(f.path) : state.auditSelected.delete(f.path)); renderAuditFileTable(); }
 function invertAuditSelection() { if (auditBusy()) return; state.auditFiles.forEach(f => state.auditSelected.has(f.path) ? state.auditSelected.delete(f.path) : state.auditSelected.add(f.path)); renderAuditFileTable(); }
-async function runBatonAudit() {
+async function runHealthAudit() {
   const files = [...state.auditSelected].map(path => ({path}));
   if (!files.length) { alert('请选择至少一个 MCAP 文件。'); return; }
   if (auditBusy()) return;
   const payload = {
     input_dir:document.getElementById('audit-input-dir').value,
-    classified_dir:document.getElementById('audit-classified-dir').value,
-    left_topic:document.getElementById('audit-left-topic').value,
-    right_topic:document.getElementById('audit-right-topic').value,
-    max_samples:Number(document.getElementById('audit-max-samples').value || 1000),
+    health_audited_mcap_dir:document.getElementById('audit-health-dir').value,
+    rejected_mcap_dir:document.getElementById('audit-rejected-dir').value,
     files,
   };
   state.auditPreview = null;
   state.auditMoveTask = null;
-  setNotice('正在审计 Baton Mini 位姿 topic...', 'notice');
-  const data = await api('/api/baton-pose-audit/start', {method:'POST', body:JSON.stringify(payload)});
+  setNotice('正在执行健康审计并移动 MCAP...', 'notice');
+  const data = await api('/api/health-audit/start', {method:'POST', body:JSON.stringify(payload)});
   state.auditTask = data.task;
   renderAuditResult();
   renderAuditFileTable();
-  pollBatonAudit(data.task.audit_id);
+  pollHealthAudit(data.task.audit_id);
 }
-async function pollBatonAudit(auditId) {
+async function pollHealthAudit(auditId) {
   clearAuditPoll();
   state.auditPollTimer = setInterval(async () => {
     try {
-      const data = await api(`/api/baton-pose-audit/${auditId}/status`);
+      const data = await api(`/api/health-audit/${auditId}/status`);
       state.auditTask = data.task;
       if (data.task.status === 'succeeded') {
         clearAuditPoll();
         state.auditPreview = data.record;
         state.auditTask = null;
-        setNotice('位姿审计完成。请先查看分类结果，再决定是否移动。');
+        setNotice('健康审计完成，文件已按配置目录移动。');
         renderAuditFileTable();
       } else if (data.task.status === 'failed') {
         clearAuditPoll();
-        setNotice(`位姿审计失败：${escapeHtml(data.task.failure_reason || '')}`, 'warnbox');
+        setNotice(`健康审计失败：${escapeHtml(data.task.failure_reason || '')}`, 'warnbox');
         renderAuditFileTable();
       }
       renderAuditResult();
     } catch (error) {
       clearAuditPoll();
-      state.auditTask = {status:'failed', failure_reason:'任务已中断，请重新开始审计。', progress:0, done:0, total:0, operation:'audit'};
-      setNotice('位姿审计任务已中断，请重新开始审计。', 'warnbox');
+      state.auditTask = {status:'failed', failure_reason:'任务已中断，请重新开始审计。', progress:0, done:0, total:0, operation:'health_audit'};
+      setNotice('健康审计任务已中断，请重新开始审计。', 'warnbox');
       renderAuditFileTable();
       renderAuditResult();
     }
@@ -2821,23 +3077,21 @@ function renderAuditResult() {
   }
   const audit = state.auditPreview;
   if (!audit) {
-    host.innerHTML = '<div class="card"><h3>审计结果</h3><p class="muted">扫描并选择 MCAP 后，点击“开始审计”。</p></div>';
+    host.innerHTML = '<div class="card"><h3>审计结果</h3><p class="muted">扫描并选择 MCAP 后，点击“开始健康审计并移动”。</p></div>';
     return;
   }
   const summary = audit.summary || {};
-  const counts = summary.status_counts || {};
-  const moveCounts = summary.move_group_counts || {};
-  const warning = summary.has_unit_mismatch ? `<div class="warnbox"><b>发现单位疑似不统一：</b>${counts.unit_mismatch_suspected || 0} 个 MCAP 将归入 unit_mismatch。</div>` : '';
-  const moved = (audit.move_results || []).length > 0;
-  const rows = (audit.results || []).map(item => auditResultRow(item, audit.move_results || [])).join('');
+  const rejectCounts = summary.reject_counts || {};
+  const rejectText = Object.entries(rejectCounts).map(([k,v]) => `${escapeHtml(k)} ${v}`).join('，') || '无';
+  const rows = (audit.results || []).map(item => healthAuditResultRow(item, audit.move_results || [])).join('');
   host.innerHTML = `<div class="card">
-    <div class="row"><div><h3>审计结果</h3><p class="path">${escapeHtml(audit.report_path || '')}</p></div>${badge(audit.status || 'success')}<button class="primary right" onclick="openAuditMoveConfirm()" ${moved || auditBusy()?'disabled':''}>确认移动分类</button></div>
-    ${warning}
-    <p><b>文件：</b>${summary.total || 0} 个 <b>正常：</b>${moveCounts.normal || 0} <b>单位异常：</b>${moveCounts.unit_mismatch || 0} <b>其他异常：</b>${moveCounts.other_issue || 0}</p>
-    <p><b>分类目录：</b><span class="path">${escapeHtml(audit.classified_dir || '')}</span></p>
-    <p class="muted">${escapeHtml(summary.unit_note || '')}</p>
-    ${moved ? `<div class="notice">已移动 ${summary.moved_count || 0} 个文件，失败 ${summary.move_failed_count || 0} 个。</div>` : ''}
-    <table><thead><tr><th>文件</th><th>分类</th><th>移动目录</th><th>左右数量</th><th>median / p95 比值</th><th>左手统计</th><th>右手统计</th><th>前 3 条原始位姿</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="row"><div><h3>健康审计结果</h3><p class="path">${escapeHtml(audit.report_path || '')}</p></div>${badge(audit.status || 'success')}</div>
+    <p><b>文件：</b>${summary.total || 0} 个 <b>健康：</b>${summary.eligible_count || 0} <b>缺陷：</b>${summary.rejected_count || 0}</p>
+    <p><b>健康目录：</b><span class="path">${escapeHtml(audit.health_audited_mcap_dir || '')}</span></p>
+    <p><b>缺陷目录：</b><span class="path">${escapeHtml(audit.rejected_mcap_dir || '')}</span></p>
+    <p><b>缺陷分类：</b>${rejectText}</p>
+    <div class="notice">已移动 ${summary.moved_count || 0} 个文件，失败 ${summary.move_failed_count || 0} 个。正式清洗只允许从健康目录选择审计记录匹配的文件。</div>
+    <table><thead><tr><th>文件</th><th>健康状态</th><th>分类/原因</th><th>移动结果</th><th>关键 topic</th><th>位姿审计</th></tr></thead><tbody>${rows}</tbody></table>
   </div>`;
 }
 function progressCard(task, title) {
@@ -2854,6 +3108,21 @@ function auditBusy() {
 function clearAuditPoll() {
   if (state.auditPollTimer) clearInterval(state.auditPollTimer);
   state.auditPollTimer = null;
+}
+function healthAuditResultRow(item, moves) {
+  const move = moves.find(m => m.source_path === item.input_path);
+  const counts = item.topic_counts || {};
+  const countText = Object.entries(counts).filter(([,v]) => Number(v) > 0).slice(0,8).map(([k,v]) => `${k.split('/').pop()}:${v}`).join(' · ');
+  const pose = item.pose_audit || {};
+  const moveText = move ? `${move.moved ? '已移动' : '失败'} -> ${move.target_path || ''} ${move.reason || ''}` : '-';
+  return `<tr>
+    <td><b>${escapeHtml(item.name)}</b><br><span class="path">${escapeHtml(item.input_path)}</span></td>
+    <td>${badge(item.precheck_status || 'unchecked')}</td>
+    <td>${escapeHtml(item.reject_group || '健康')}<br><span class="muted">${escapeHtml(item.reject_reason || '')}</span></td>
+    <td><span class="path">${escapeHtml(moveText)}</span></td>
+    <td><span class="path">${escapeHtml(countText || '-')}</span></td>
+    <td>${pose.status ? badge(pose.status) : '<span class="muted">-</span>'}<br><span class="muted">${escapeHtml(pose.reason || '')}</span></td>
+  </tr>`;
 }
 function auditResultRow(item, moves) {
   const move = moves.find(m => m.source_path === item.input_path);
@@ -2880,54 +3149,6 @@ function fmtNum(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return '-';
   return Math.abs(n) >= 100 ? n.toFixed(3) : n.toPrecision(6);
-}
-function openAuditMoveConfirm() {
-  if (auditBusy()) return;
-  const audit = state.auditPreview;
-  if (!audit) return;
-  const counts = audit.summary?.move_group_counts || {};
-  document.getElementById('confirm-body').innerHTML = `<h2>确认移动分类</h2><p>将把 ${audit.results.length} 个 MCAP 移动到：</p><p class="path">${escapeHtml(document.getElementById('audit-classified-dir').value)}</p><p>normal：${counts.normal || 0}，unit_mismatch：${counts.unit_mismatch || 0}，other_issue：${counts.other_issue || 0}</p><div class="warnbox">移动会改变原始 MCAP 文件位置；同名文件不会覆盖，会自动追加后缀。</div><div class="row"><button class="primary" onclick="moveAuditFiles()">确认移动</button><button onclick="closeConfirm()">取消</button></div>`;
-  document.getElementById('confirm-modal').classList.add('open');
-}
-async function moveAuditFiles() {
-  const audit = state.auditPreview;
-  if (!audit) return;
-  if (auditBusy()) return;
-  const payload = {audit_id:audit.audit_id, classified_dir:document.getElementById('audit-classified-dir').value};
-  const data = await api(`/api/baton-pose-audit/${audit.audit_id}/move/start`, {method:'POST', body:JSON.stringify(payload)});
-  state.auditMoveTask = data.task;
-  closeConfirm();
-  setNotice('正在移动分类 MCAP...', 'notice');
-  renderAuditResult();
-  renderAuditFileTable();
-  pollBatonAuditMove(audit.audit_id);
-}
-async function pollBatonAuditMove(auditId) {
-  clearAuditPoll();
-  state.auditPollTimer = setInterval(async () => {
-    try {
-      const data = await api(`/api/baton-pose-audit/${auditId}/move/status`);
-      state.auditMoveTask = data.task;
-      if (data.task.status === 'succeeded') {
-        clearAuditPoll();
-        state.auditPreview = data.record;
-        state.auditMoveTask = null;
-        setNotice('位姿审计分类移动完成。');
-        renderAuditFileTable();
-      } else if (data.task.status === 'failed') {
-        clearAuditPoll();
-        setNotice(`移动分类失败：${escapeHtml(data.task.failure_reason || '')}`, 'warnbox');
-        renderAuditFileTable();
-      }
-      renderAuditResult();
-    } catch (error) {
-      clearAuditPoll();
-      state.auditMoveTask = {status:'failed', failure_reason:'任务已中断，请重新开始审计。', progress:0, done:0, total:0, operation:'move'};
-      setNotice('移动分类任务已中断，请重新开始审计。', 'warnbox');
-      renderAuditFileTable();
-      renderAuditResult();
-    }
-  }, 500);
 }
 async function loadProductionConfig() {
   state.productionConfig = await api('/api/production-config');
@@ -2992,8 +3213,10 @@ function productionFileManagementFields(value) {
   const fm = value || {};
   return `<div class="config-grid">
     <div class="config-section"><h3>缺陷文件与保留策略</h3>
+      <label>已通过健康审计 MCAP 目录</label><input data-production="web_file_management.health_audited_mcap_dir" data-production-type="text" value="${escapeHtml(fm.health_audited_mcap_dir || '')}">
       <label>缺陷 MCAP 归集目录</label><input data-production="web_file_management.rejected_mcap_dir" data-production-type="text" value="${escapeHtml(fm.rejected_mcap_dir || '')}">
       <label>已完成清洗 MCAP 归档目录</label><input data-production="web_file_management.completed_mcap_dir" data-production-type="text" value="${escapeHtml(fm.completed_mcap_dir || '')}">
+      <label>清洗失败 MCAP 归档目录</label><input data-production="web_file_management.cleaning_failed_mcap_dir" data-production-type="text" value="${escapeHtml(fm.cleaning_failed_mcap_dir || '')}">
       <label>中间产物保留策略</label><select data-production="web_file_management.artifact_retention" data-production-type="text"><option value="production_cleanup" ${fm.artifact_retention==='production_cleanup'?'selected':''}>production_cleanup</option><option value="keep_all" ${fm.artifact_retention==='keep_all'?'selected':''}>keep_all</option></select>
       <label>失败文件保留策略</label><select data-production="web_file_management.failed_artifact_policy" data-production-type="text"><option value="failed_stage_input" ${fm.failed_artifact_policy==='failed_stage_input'?'selected':''}>failed_stage_input</option><option value="keep_all" ${fm.failed_artifact_policy==='keep_all'?'selected':''}>keep_all</option></select>
     </div>
@@ -3012,7 +3235,7 @@ function renderProductionConfig() {
   <div class="card"><div class="row"><div><h3>夹爪开合标定</h3><p class="muted">通过 GoPro 实时画面与 ArUco 自动采样生成，无需手工编辑底层 marker 参数。</p></div><button class="primary right" onclick="openGripperCalibration()">自动生成 / 重新标定</button></div><div class="row">${badge(gripper.left?'success':'warning')} 左手夹爪 ${gripper.left?'已配置':'缺失'} ${badge(gripper.right?'success':'warning')} 右手夹爪 ${gripper.right?'已配置':'缺失'}</div></div>
   <div class="card"><h3>左右臂 base 位姿转换</h3><p class="muted">人工填写：平移使用 mm，机械臂 base 旋转使用欧拉角 rad。Baton Mini 原始位姿、Runtime 换算结果和最终机械臂 TCP 输出的位置统一使用 m。</p><div class="config-grid">${handCard('left')}${handCard('right')}</div></div>
   <div class="card"><h3>滤波参数</h3><p class="muted">保存后作为生产默认值影响后续任务；已运行任务保留自己的 config snapshot。</p>${productionFilterFields(web)}</div>
-  <div class="card"><h3>批量稳定与文件管理</h3><p class="muted">新建任务会先执行健康审计；缺陷 MCAP 自动迁移，成功样本按生产策略清理大中间产物。</p>${productionFileManagementFields(fileManagement)}</div>
+  <div class="card"><h3>批量稳定与文件管理</h3><p class="muted">健康审计在独立页面执行并移动 MCAP；正式清洗只接收健康目录中审计记录匹配的文件，成功和失败原始文件分别归档到配置目录。</p>${productionFileManagementFields(fileManagement)}</div>
   <div class="card"><h3>LeRobot 维度定义</h3><p class="muted">候选字段来自当前 aligned MCAP。TCP pose 为必选；action 固定使用下一帧 t+1 绝对目标。</p>${productionLerobotFields(web)}</div>
   <div class="card"><div id="production-errors"></div><button class="primary" onclick="saveProductionConfig()">校验并保存正式配置</button></div>`;
 }
@@ -3192,27 +3415,21 @@ async function scanFiles() {
   const inputDir = document.getElementById('input-dir').value;
   const data = await api('/api/input-files/scan', {method:'POST', body:JSON.stringify({input_dir:inputDir})});
   state.files = data.files;
-  state.selected = new Set(data.files.filter(f => f.precheck_status !== 'rejected').map(f => f.path));
+  state.selected = new Set(data.files.map(f => f.path));
   renderFileTable();
   await previewJob();
 }
 function renderFileTable() {
   const q = (document.getElementById('file-search')?.value || '').toLowerCase();
   const files = state.files.filter(f => f.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
-  const countText = f => {
-    const counts = f.topic_counts || {};
-    const keys = ['/gopro_left/image_raw','/gopro_right/image_raw','/baton_mini_left/fast_odom','/baton_mini_right/fast_odom','/pressure/left_hand/gripper_1','/pressure/left_hand/gripper_2','/pressure/right_hand/gripper_1','/pressure/right_hand/gripper_2'];
-    return keys.filter(k => counts[k] != null).map(k => `${k.split('/').pop()}:${counts[k]}`).join(' · ');
-  };
   const rows = files.map(f => {
-    const rejected = f.precheck_status === 'rejected';
-    return `<tr><td><input type="checkbox" ${state.selected.has(f.path)?'checked':''} ${rejected?'disabled':''} onchange="toggleFile('${jsEscape(f.path)}', this.checked)"></td><td>${escapeHtml(f.name)}</td><td>${f.size_text}</td><td>${f.modified_at}</td><td>${badge(f.precheck_status || 'waiting')}</td><td>${escapeHtml(f.reject_group || '健康')}</td><td>${escapeHtml(f.reject_reason || '')}<br><span class="path">${escapeHtml(countText(f))}</span></td></tr>`;
+    return `<tr><td><input type="checkbox" ${state.selected.has(f.path)?'checked':''} onchange="toggleFile('${jsEscape(f.path)}', this.checked)"></td><td>${escapeHtml(f.name)}</td><td>${f.size_text}</td><td>${f.modified_at}</td></tr>`;
   }).join('');
-  document.getElementById('file-table').innerHTML = `<table><thead><tr><th></th><th>名称</th><th>大小</th><th>修改时间</th><th>健康状态</th><th>分类</th><th>原因 / 关键计数</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">未扫描到 .mcap 文件</td></tr>'}</tbody></table>`;
+  document.getElementById('file-table').innerHTML = `<table><thead><tr><th></th><th>名称</th><th>大小</th><th>修改时间</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">未扫描到 .mcap 文件</td></tr>'}</tbody></table>`;
 }
 function toggleFile(path, checked) { checked ? state.selected.add(path) : state.selected.delete(path); previewJob(); }
-function selectAll(on) { state.files.forEach(f => { if (f.precheck_status !== 'rejected') on ? state.selected.add(f.path) : state.selected.delete(f.path); }); renderFileTable(); previewJob(); }
-function invertSelection() { state.files.forEach(f => { if (f.precheck_status !== 'rejected') state.selected.has(f.path) ? state.selected.delete(f.path) : state.selected.add(f.path); }); renderFileTable(); previewJob(); }
+function selectAll(on) { state.files.forEach(f => { on ? state.selected.add(f.path) : state.selected.delete(f.path); }); renderFileTable(); previewJob(); }
+function invertSelection() { state.files.forEach(f => state.selected.has(f.path) ? state.selected.delete(f.path) : state.selected.add(f.path)); renderFileTable(); previewJob(); }
 async function previewJob() {
   const files = [...state.selected].map(path => ({path}));
   const payload = {input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, intermediate_dir:(document.getElementById('intermediate-dir')?.value || ''), workers:document.getElementById('workers')?.value || 'auto', dataset_name:document.getElementById('dataset-name')?.value || '', files, scan_files:state.files.map(f => ({path:f.path}))};
@@ -3224,11 +3441,16 @@ async function previewJob() {
   }
   const conflictText = p.conflicts.map(c => `<li class="path">${escapeHtml(c.type)}: ${escapeHtml(c.path)}</li>`).join('');
   const ready = p.production_readiness || {ready:false,missing_items:[]};
-  const pre = p.precheck_summary || {}, space = p.space_estimate || {};
+  const gate = p.health_gate || {}, space = p.space_estimate || {};
+  const gateFailures = (gate.items || []).filter(item => !item.allowed);
+  const gateFailureText = gateFailures.slice(0,5).map(item => `<li><span class="path">${escapeHtml(item.name || item.path)}</span>：${escapeHtml(item.reason || '')}</li>`).join('');
+  const gateBox = gate.allowed
+    ? `<div class="notice">健康目录门禁通过：${gate.accepted_count || 0} 个文件来自 <span class="path">${escapeHtml(gate.health_audited_mcap_dir || '')}</span>，且审计记录 size/mtime 匹配。</div>`
+    : `<div class="warnbox">健康目录门禁未通过：可清洗 ${gate.accepted_count || 0} / 已选 ${(gate.items || []).length}。正式清洗只允许健康审计目录内且记录匹配的 MCAP。${gateFailureText ? `<ul>${gateFailureText}</ul>` : ''}</div>`;
   const spaceDetail = `并发峰值 ${escapeHtml(space.active_peak_text || '-')} + 聚合前暂存 ${escapeHtml(space.retained_batch_text || '-')} + safety ${escapeHtml(String(space.safety_gb ?? '-'))} GiB`;
   const spaceBox = space.enough ? `<div class="notice">中间产物空间：可用 ${escapeHtml(space.available_text || '')}，估算需要 ${escapeHtml(space.required_text || '')}（${spaceDetail}）；有效 worker ${p.effective_workers}</div>` : `<div class="warnbox">中间产物空间不足：可用 ${escapeHtml(space.available_text || '')}，估算需要 ${escapeHtml(space.required_text || '')}（${spaceDetail}）。建议至少拆成 ${space.suggested_batch_count || 2} 批。</div>`;
-  const canStart = ready.ready && p.file_count > 0 && space.enough;
-  document.getElementById('preview-box').innerHTML = `<hr><p><b>已选择：</b>${p.selected_count} 个；<b>可清洗：</b>${p.file_count} 个，${p.total_size_text}</p><p><b>健康审计：</b>eligible ${pre.eligible_count || 0}，rejected ${pre.rejected_count || 0}；启动时将移动缺陷文件 ${p.will_move_rejected_files || 0} 个</p>${spaceBox}<p><b>最终 dataset：</b><span class="path">${escapeHtml(p.dataset_dir)}</span></p><p><b>sidecar：</b><span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p><b>生产链路：</b>左右 arm-base TCP 绝对位姿</p><p><b>冲突：</b>${p.conflicts.length} 个目录</p>${conflictText ? `<ul>${conflictText}</ul>` : ''}${ready.ready?'':`<div class="warnbox">生产配置未就绪：${(ready.missing_items||[]).map(escapeHtml).join('、')}。<button onclick="showPage('config')">进入配置中心</button></div>`}<button class="primary" onclick="openConfirm()" ${canStart?'':'disabled'}>开始清洗</button>`;
+  const canStart = ready.ready && gate.allowed && p.file_count > 0 && space.enough;
+  document.getElementById('preview-box').innerHTML = `<hr><p><b>已选择：</b>${p.selected_count} 个；<b>可清洗：</b>${p.file_count} 个，${p.total_size_text}</p>${gateBox}${spaceBox}<p><b>最终 dataset：</b><span class="path">${escapeHtml(p.dataset_dir)}</span></p><p><b>sidecar：</b><span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p><b>生产链路：</b>左右 arm-base TCP 绝对位姿</p><p><b>冲突：</b>${p.conflicts.length} 个目录</p>${conflictText ? `<ul>${conflictText}</ul>` : ''}${ready.ready?'':`<div class="warnbox">生产配置未就绪：${(ready.missing_items||[]).map(escapeHtml).join('、')}。<button onclick="showPage('config')">进入配置中心</button></div>`}<button class="primary" onclick="openConfirm()" ${canStart?'':'disabled'}>开始清洗</button>`;
 }
 function openConfirm() {
   const p = state.preview;
@@ -3236,7 +3458,7 @@ function openConfirm() {
   const conflicts = p.conflicts.map(c => `<li class="path">${escapeHtml(c.type)}: ${escapeHtml(c.path)}</li>`).join('');
   const space = p.space_estimate || {};
   const spaceDetail = `并发峰值 ${escapeHtml(space.active_peak_text || '-')} + 聚合前暂存 ${escapeHtml(space.retained_batch_text || '-')} + safety ${escapeHtml(String(space.safety_gb ?? '-'))} GiB`;
-  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>缺陷文件：启动时自动移动 ${p.will_move_rejected_files || 0} 个，并写入 precheck_report.json</p><p>中间产物空间：可用 ${escapeHtml(space.available_text || '')}，估算需要 ${escapeHtml(space.required_text || '')}（${spaceDetail}）</p><p>生产链路：左右 arm-base TCP 绝对位姿</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')} -> 实际 ${p.effective_workers}</p>${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div id="submit-status"></div><div class="row"><button id="confirm-submit" class="primary" onclick="submitJob()">确认启动</button><button id="confirm-cancel" onclick="closeConfirm()">取消</button></div>`;
+  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>健康目录门禁：${p.health_gate?.accepted_count || 0} 个文件已通过审计记录匹配</p><p>中间产物空间：可用 ${escapeHtml(space.available_text || '')}，估算需要 ${escapeHtml(space.required_text || '')}（${spaceDetail}）</p><p>生产链路：左右 arm-base TCP 绝对位姿</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')} -> 实际 ${p.effective_workers}</p>${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div id="submit-status"></div><div class="row"><button id="confirm-submit" class="primary" onclick="submitJob()">确认启动</button><button id="confirm-cancel" onclick="closeConfirm()">取消</button></div>`;
   document.getElementById('confirm-modal').classList.add('open');
 }
 function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); }
@@ -3247,7 +3469,7 @@ async function submitJob() {
   const submit = document.getElementById('confirm-submit'), cancel = document.getElementById('confirm-cancel'), status = document.getElementById('submit-status');
   if (submit) submit.disabled = true;
   if (cancel) cancel.disabled = true;
-  if (status) status.innerHTML = '<div class="notice">正在创建任务：执行最终预检、归集缺陷文件并写入任务快照...</div>';
+  if (status) status.innerHTML = '<div class="notice">正在创建任务：校验健康审计记录、空间估算并写入任务快照...</div>';
   try {
     const data = await api('/api/jobs', {method:'POST', body:JSON.stringify(payload)});
     closeConfirm();
@@ -3654,7 +3876,8 @@ function dirInputId(target) {
   if (target === 'output') return 'output-dir';
   if (target === 'intermediate') return 'intermediate-dir';
   if (target === 'audit-input') return 'audit-input-dir';
-  if (target === 'audit-classified') return 'audit-classified-dir';
+  if (target === 'audit-health') return 'audit-health-dir';
+  if (target === 'audit-rejected') return 'audit-rejected-dir';
   return 'input-dir';
 }
 function openDirModal(target) { state.dirTarget = target; const raw = document.getElementById(dirInputId(target)).value || '/'; loadDir(raw); document.getElementById('dir-modal').classList.add('open'); }
@@ -3673,7 +3896,7 @@ function selectCurrentDir() {
   closeDirModal();
   if (state.dirTarget === 'input') scanFiles();
   else if (state.dirTarget === 'output') previewJob();
-  else if (state.dirTarget === 'audit-input') { auditInputChanged(); scanAuditFiles(); }
+  else if (state.dirTarget === 'audit-input') scanAuditFiles();
 }
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function jsEscape(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
