@@ -37,6 +37,7 @@ from repo.config.mcap_process_config import (
 from runtime.forge_bridge_check import run_forge_bridge_check
 from runtime.forge_bridge_to_lerobot import convert_forge_bridges_to_lerobot
 from runtime.production_config import (
+    DEFAULT_WEB_FILE_MANAGEMENT,
     production_config_view,
     production_readiness,
     save_production_config,
@@ -54,6 +55,15 @@ from schemas.lerobot_features import (
     tcp_pose_offsets,
 )
 from service.mcap_io import process_mcap_file
+from service.mcap_health_audit import (
+    audit_mcap_health_files,
+    move_rejected_files,
+    summarize_health_results,
+)
+from service.mcap_file_management import (
+    move_completed_mcap_files,
+    move_failed_mcap_files,
+)
 from service.baton_pose_audit import (
     DEFAULT_LEFT_TOPIC,
     DEFAULT_MAX_SAMPLES,
@@ -79,6 +89,15 @@ SIDECAR_ROOT = STAGE2_ASSET_ROOT / "dev/debug/web_jobs"
 PRESETS_DIR = WORKSPACE_DIR / "config/data_clean/presets"
 BATON_AUDIT_DIRNAME = "baton_pose_audits"
 DEFAULT_GLOBAL_WORKERS = 6
+CLIENT_DISCONNECT_ERRORS = (BrokenPipeError, ConnectionAbortedError, ConnectionResetError)
+
+# 中间产物（cleaned/MCAP_A/aligned/forge_ready）存放根目录配置。
+# 解析优先级：settings.json 的 intermediate_root > 环境变量 > 默认 run_root（向后兼容）。
+# 环境变量让换电脑/CI 无需改代码即可重定向中间产物到大盘，避免系统盘被写满。
+INTERMEDIATE_ROOT_ENV = "DATA_CLEAN_INTERMEDIATE_ROOT"
+INTERMEDIATE_FREE_GB_WARNING = 20      # 低于此值在新建任务页提示空间不足风险
+INTERMEDIATE_FREE_GB_REJECT = 10        # 低于此值在建任务时直接拒绝，避免跑到一半 Errno 28
+BYTES_PER_GB = 1024 ** 3
 STAGE_NAMES = [
     "夹爪提取",
     "位姿转换",
@@ -152,6 +171,10 @@ def _json_default(value: Any) -> Any:
     if isinstance(value, Path):
         return str(value)
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
+def _is_no_space_error(exc: BaseException) -> bool:
+    return isinstance(exc, OSError) and getattr(exc, "errno", None) == 28
 
 
 def _read_json(path: Path, fallback: Any) -> Any:
@@ -325,8 +348,10 @@ class DataCleanWebApp:
         self.run_root = run_root
         self.jobs_dir = run_root / "jobs"
         self.baton_audits_dir = run_root / BATON_AUDIT_DIRNAME
-        self.staging_dir = run_root / "outputs/staging"
         self.settings_path = run_root / "settings.json"
+        self.intermediate_root = self._resolve_intermediate_root(run_root)
+        self.staging_dir = self.intermediate_root / "outputs/staging"
+        self.staging_dir.mkdir(parents=True, exist_ok=True)
         self.lock = threading.RLock()
         self.global_workers = max(1, global_workers)
         self.worker_budget = threading.BoundedSemaphore(self.global_workers)
@@ -350,13 +375,43 @@ class DataCleanWebApp:
                 data["finished_at"] = _now_iso()
                 data["failure_reason"] = "服务重启后任务进程已不存在，请用失败文件重新创建任务。"
                 data["notification"] = "服务重启后已停止未完成任务。"
+                for item in data.get("files", []):
+                    if item.get("status") == "running":
+                        item["status"] = "failed"
+                        item["failure_reason"] = data["failure_reason"]
+                    elif item.get("status") == "waiting":
+                        item["status"] = "skipped"
+                        item["failure_reason"] = "service_restarted_before_start"
                 for stage in data.get("stages", []):
                     if stage.get("status") in {"running", "waiting"}:
-                        stage["status"] = "failed"
+                        stage["status"] = "failed" if stage.get("status") == "running" else "skipped"
                         stage["failure_reason"] = data["failure_reason"]
-                        break
                 _write_json_atomic(path, data)
             self.jobs[data["job_id"]] = data
+
+    def _resolve_intermediate_root(self, run_root: Path) -> Path:
+        """Resolve the root directory for intermediate products (cleaned/MCAP_A/aligned/forge_ready).
+
+        Priority: settings.json ``intermediate_root`` > env ``DATA_CLEAN_INTERMEDIATE_ROOT`` > ``run_root``.
+        Keeping ``run_root`` as the fallback preserves the original behavior, so unconfigured deployments
+        are not broken; the create-task page nudges users to point this at a large disk.
+        """
+        configured = self._settings().get("intermediate_root")
+        if configured:
+            return Path(configured).expanduser()
+        env_value = os.environ.get(INTERMEDIATE_ROOT_ENV, "").strip()
+        if env_value:
+            return Path(env_value).expanduser()
+        return run_root
+
+    @staticmethod
+    def _disk_free_gb(path: Path) -> float:
+        """Return available disk space (GB) at ``path``, creating it first if needed."""
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+            return os.statvfs(path).f_bavail * os.statvfs(path).f_frsize / (1024 ** 3)
+        except OSError:
+            return 0.0
 
     def _save_job(self, job: dict[str, Any]) -> None:
         job["progress"] = _job_progress(job)
@@ -368,15 +423,19 @@ class DataCleanWebApp:
         data = _read_json(self.settings_path, {})
         return data if isinstance(data, dict) else {}
 
-    def _save_settings(self, input_dir: str, output_dir: str) -> None:
-        _write_json_atomic(
-            self.settings_path,
-            {
-                "last_input_dir": input_dir,
-                "last_output_dir": output_dir,
-                "updated_at": _now_iso(),
-            },
-        )
+    def _save_settings(
+        self,
+        input_dir: str,
+        output_dir: str,
+        intermediate_root: str | None = None,
+    ) -> None:
+        merged = self._settings()
+        merged["last_input_dir"] = input_dir
+        merged["last_output_dir"] = output_dir
+        if intermediate_root is not None:
+            merged["intermediate_root"] = intermediate_root
+        merged["updated_at"] = _now_iso()
+        _write_json_atomic(self.settings_path, merged)
 
     def load_config(self, *, input_dir: str | None = None, output_dir: str | None = None, workers: int | None = None) -> AppConfig:
         return load_app_config(
@@ -406,6 +465,9 @@ class DataCleanWebApp:
                 ),
                 "sidecar_root": str(SIDECAR_ROOT),
                 "global_workers": self.global_workers,
+                "intermediate_root": str(self.intermediate_root),
+                "staging_root": str(self.staging_dir),
+                "staging_disk_free_gb": round(self._disk_free_gb(self.staging_dir), 1),
             },
             "calibration": _calibration_info(config),
             "production_readiness": readiness,
@@ -426,6 +488,122 @@ class DataCleanWebApp:
 
     def production_readiness(self) -> dict[str, Any]:
         return production_readiness(self.config_path)
+
+    def web_file_management(self) -> dict[str, Any]:
+        return production_config_view(self.config_path).get(
+            "web_file_management",
+            dict(DEFAULT_WEB_FILE_MANAGEMENT),
+        )
+
+    def _lerobot_features_for_health_audit(self) -> dict[str, Any]:
+        return production_config_view(self.config_path).get("web_pipeline", {}).get("lerobot_features", {})
+
+    def _health_audit_files(
+        self,
+        paths: list[Path],
+        *,
+        input_dir: Path,
+        output_parent: Path,
+        include_pose_audit: bool,
+    ) -> list[dict[str, Any]]:
+        config = self.load_config(input_dir=str(input_dir), output_dir=str(output_parent))
+        results = audit_mcap_health_files(
+            paths,
+            config=config,
+            lerobot_features=self._lerobot_features_for_health_audit(),
+            include_pose_audit=include_pose_audit,
+        )
+        return [result.to_dict() for result in results]
+
+    def _space_estimate(
+        self,
+        *,
+        eligible_raw_size: int,
+        eligible_file_count: int,
+        max_file_size: int,
+        requested_workers: int,
+        intermediate_root: Path,
+        file_management: dict[str, Any],
+    ) -> dict[str, Any]:
+        multiplier = float(file_management.get("space_estimate_multiplier", 4.0))
+        safety_gb = float(file_management.get("space_safety_gb", 20.0))
+        retention = str(file_management.get("artifact_retention", "production_cleanup"))
+        free_gb = self._disk_free_gb(intermediate_root)
+        free_bytes = int(free_gb * BYTES_PER_GB)
+        safety_bytes = int(safety_gb * BYTES_PER_GB)
+        file_count = max(1, int(eligible_file_count or 1))
+        requested_active_workers = max(1, min(int(requested_workers or 1), file_count))
+        average_file_size = max(1, eligible_raw_size // file_count)
+        peak_file_size = max(1, int(max_file_size or average_file_size))
+        per_worker_peak_bytes = int(peak_file_size * multiplier)
+        retained_batch_bytes = int(eligible_raw_size * 1.0) if retention == "production_cleanup" else 0
+
+        if retention == "production_cleanup":
+            estimate_mode = "production_cleanup_peak"
+            worker_reserve_bytes = safety_bytes + retained_batch_bytes
+            if free_bytes <= worker_reserve_bytes:
+                space_workers = 0
+            else:
+                space_workers = max(1, int((free_bytes - worker_reserve_bytes) // max(1, per_worker_peak_bytes)))
+            effective_workers = max(0, min(requested_active_workers, space_workers))
+            active_workers_for_estimate = effective_workers if effective_workers > 0 else 1
+            active_peak_bytes = per_worker_peak_bytes * active_workers_for_estimate
+            requested_active_peak_bytes = per_worker_peak_bytes * requested_active_workers
+            requested_required_bytes = requested_active_peak_bytes + retained_batch_bytes + safety_bytes
+            required_bytes = active_peak_bytes + retained_batch_bytes + safety_bytes
+        else:
+            estimate_mode = "keep_all_cumulative"
+            active_peak_bytes = int(eligible_raw_size * multiplier)
+            requested_active_peak_bytes = active_peak_bytes
+            required_bytes = active_peak_bytes + safety_bytes
+            requested_required_bytes = required_bytes
+            space_workers = requested_active_workers if free_bytes >= required_bytes else 0
+            effective_workers = requested_active_workers if free_bytes >= required_bytes else 0
+            active_workers_for_estimate = requested_active_workers
+        enough = effective_workers > 0 and free_bytes >= required_bytes
+        recommended_batch_size = 0
+        if multiplier > 0 and free_bytes > safety_bytes:
+            per_file_required = peak_file_size * multiplier + average_file_size
+            recommended_batch_size = max(1, int((free_bytes - safety_bytes) // max(1, per_file_required)))
+        suggested_batch_count = 1
+        if requested_required_bytes > 0 and free_bytes > 0 and free_bytes < requested_required_bytes:
+            suggested_batch_count = int(requested_required_bytes // max(1, free_bytes) + 1)
+        return {
+            "estimate_mode": estimate_mode,
+            "intermediate_root": str(intermediate_root),
+            "eligible_raw_size": eligible_raw_size,
+            "eligible_raw_size_text": _format_size(eligible_raw_size),
+            "eligible_file_count": eligible_file_count,
+            "max_file_size": max_file_size,
+            "max_file_size_text": _format_size(max_file_size),
+            "multiplier": multiplier,
+            "safety_gb": safety_gb,
+            "active_workers_for_estimate": active_workers_for_estimate,
+            "active_peak_bytes": active_peak_bytes,
+            "active_peak_text": _format_size(active_peak_bytes),
+            "requested_active_peak_bytes": requested_active_peak_bytes,
+            "requested_active_peak_text": _format_size(requested_active_peak_bytes),
+            "retained_batch_bytes": retained_batch_bytes,
+            "retained_batch_text": _format_size(retained_batch_bytes),
+            "required_bytes": required_bytes,
+            "required_text": _format_size(required_bytes),
+            "requested_required_bytes": requested_required_bytes,
+            "requested_required_text": _format_size(requested_required_bytes),
+            "available_gb": round(free_gb, 1),
+            "available_bytes": free_bytes,
+            "available_text": _format_size(free_bytes),
+            "enough": enough,
+            "requested_workers": requested_workers,
+            "space_worker_limit": space_workers,
+            "effective_workers": effective_workers,
+            "recommended_batch_size": recommended_batch_size,
+            "suggested_batch_count": suggested_batch_count,
+        }
+
+    def _requested_workers(self, raw_value: Any, file_count: int) -> int:
+        if raw_value in (None, "", "auto"):
+            return min(self.global_workers, max(1, file_count))
+        return max(1, min(int(raw_value), self.global_workers, max(1, file_count)))
 
     def gripper_calibration_status(self) -> dict[str, Any]:
         process = self.gripper_calibration_process
@@ -532,7 +710,8 @@ class DataCleanWebApp:
         input_dir = _safe_path(str(payload.get("input_dir", "")))
         files: list[dict[str, Any]] = []
         if input_dir.is_dir():
-            for path in sorted(input_dir.glob("*.mcap"), key=lambda p: p.stat().st_mtime, reverse=True):
+            paths = sorted(input_dir.glob("*.mcap"), key=lambda p: p.stat().st_mtime, reverse=True)
+            for path in paths:
                 stat = path.stat()
                 files.append(
                     {
@@ -543,9 +722,26 @@ class DataCleanWebApp:
                         "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds"),
                         "status": "waiting",
                         "selected": True,
+                        "precheck_status": "unchecked",
+                        "reject_group": None,
+                        "reject_reason": None,
+                        "reject_dir_parts": [],
+                        "topic_counts": {},
+                        "read_error": None,
+                        "pose_audit": None,
                     }
                 )
-        return {"input_dir": str(input_dir), "files": files, "count": len(files)}
+        summary = {
+            "total": len(files),
+            "eligible_count": 0,
+            "rejected_count": 0,
+            "raw_total_size": sum(int(item.get("size") or 0) for item in files),
+            "eligible_raw_size": 0,
+            "rejected_raw_size": 0,
+            "reject_counts": {},
+            "mode": "file_listing_only",
+        }
+        return {"input_dir": str(input_dir), "files": files, "count": len(files), "precheck_summary": summary}
 
     def preview_baton_pose_audit(self, payload: dict[str, Any]) -> dict[str, Any]:
         input_dir = _safe_path(str(payload.get("input_dir", "")))
@@ -906,10 +1102,26 @@ class DataCleanWebApp:
         output_parent = _safe_path(str(payload.get("output_dir", "")), DEFAULT_OUTPUT_PARENT)
         raw_files = payload.get("files", [])
         selected = self._normalize_selected_files(raw_files)
-        total_size = 0
-        for input_path in selected:
-            size = input_path.stat().st_size if input_path.exists() else 0
-            total_size += size
+        scanned = self._normalize_selected_files(payload.get("scan_files", []))
+        audit_paths = self._unique_paths([*selected, *scanned])
+        selected_set = {str(path.resolve()) for path in selected}
+        audit_results = self._health_audit_files(
+            audit_paths,
+            input_dir=input_dir,
+            output_parent=output_parent,
+            include_pose_audit=False,
+        )
+        selected_audit_results = [
+            item for item in audit_results if item.get("input_path") in selected_set
+        ]
+        precheck_summary = summarize_health_results(selected_audit_results).to_dict()
+        scanned_precheck_summary = summarize_health_results(audit_results).to_dict()
+        eligible = [
+            Path(item["input_path"])
+            for item in selected_audit_results
+            if item.get("precheck_status") == "eligible" and item.get("input_path") in selected_set
+        ]
+        total_size = sum(path.stat().st_size if path.exists() else 0 for path in eligible)
         requested_name = payload.get("dataset_name") or _default_dataset_name()
         dataset_name = _suggest_dataset_name(output_parent, str(requested_name))
         dataset_dir = output_parent / dataset_name
@@ -917,6 +1129,18 @@ class DataCleanWebApp:
         bridge_mode = "formal"
         config = self.load_config(input_dir=str(input_dir), output_dir=str(output_parent))
         readiness = self.production_readiness()
+        file_management = self.web_file_management()
+        intermediate_raw = str(payload.get("intermediate_dir", "")).strip()
+        intermediate_root = _safe_path(intermediate_raw) if intermediate_raw else self.intermediate_root
+        requested_workers = self._requested_workers(payload.get("workers", "auto"), max(1, len(eligible)))
+        space_estimate = self._space_estimate(
+            eligible_raw_size=total_size,
+            eligible_file_count=len(eligible),
+            max_file_size=max((path.stat().st_size for path in eligible if path.exists()), default=0),
+            requested_workers=requested_workers,
+            intermediate_root=intermediate_root,
+            file_management=file_management,
+        )
         return {
             "input_dir": str(input_dir),
             "output_dir": str(output_parent),
@@ -927,13 +1151,20 @@ class DataCleanWebApp:
             "dataset_dir_exists": dataset_dir.exists(),
             "sidecar_dir_exists": sidecar_dir.exists(),
             "mode": bridge_mode,
-            "file_count": len(selected),
+            "selected_count": len(selected),
+            "file_count": len(eligible),
             "total_size": total_size,
             "total_size_text": _format_size(total_size),
             "targets": [
                 {"input_path": str(path), "size": path.stat().st_size if path.exists() else 0}
-                for path in selected
+                for path in eligible
             ],
+            "precheck_summary": precheck_summary,
+            "scanned_precheck_summary": scanned_precheck_summary,
+            "precheck_results": audit_results,
+            "will_move_rejected_files": scanned_precheck_summary["rejected_count"],
+            "space_estimate": space_estimate,
+            "effective_workers": space_estimate["effective_workers"],
             "conflicts": [
                 {"path": str(path), "type": kind}
                 for path, kind in ((dataset_dir, "dataset"), (sidecar_dir, "sidecar"))
@@ -953,21 +1184,32 @@ class DataCleanWebApp:
         selected = self._normalize_selected_files(payload.get("files", []))
         if not selected:
             raise ValueError("no selected MCAP files")
+        scanned = self._normalize_selected_files(payload.get("scan_files", []))
+        audit_paths = self._unique_paths([*selected, *scanned])
+        selected_set = {str(path.resolve()) for path in selected}
         output_parent.mkdir(parents=True, exist_ok=True)
         dataset_name = _safe_name(str(payload.get("dataset_name") or _default_dataset_name()))
         dataset_dir = output_parent / dataset_name
         sidecar_dir = SIDECAR_ROOT / f"{dataset_name}_data_clean_sidecar"
         bridge_mode = "formal"
-        worker_limit = payload.get("workers", "auto")
-        if worker_limit in (None, "", "auto"):
-            workers = min(self.global_workers, max(1, len(selected)))
-        else:
-            workers = max(1, min(int(worker_limit), self.global_workers, len(selected)))
         conflict_policy = str(payload.get("conflict_policy", "overwrite"))
         if conflict_policy not in {"overwrite", "skip"}:
             raise ValueError("conflict_policy must be overwrite or skip")
         if conflict_policy == "skip" and (dataset_dir.exists() or sidecar_dir.exists()):
             raise ValueError("dataset or sidecar already exists; choose overwrite or use a new dataset name")
+
+        file_management = self.web_file_management()
+        intermediate_raw = str(payload.get("intermediate_dir", "")).strip()
+        intermediate_root = self.intermediate_root
+        if intermediate_raw:
+            intermediate_root = _safe_path(intermediate_raw)
+            intermediate_root.mkdir(parents=True, exist_ok=True)
+            free_gb = self._disk_free_gb(intermediate_root)
+            if free_gb < INTERMEDIATE_FREE_GB_REJECT:
+                raise ValueError(
+                    f"中间产物目录 {intermediate_root} 所在磁盘仅剩 {free_gb:.1f}G，"
+                    f"低于 {INTERMEDIATE_FREE_GB_REJECT}G 阈值，请选择更大的磁盘。"
+                )
 
         job_id = _job_id()
         effective = build_web_job_effective_config(
@@ -979,8 +1221,69 @@ class DataCleanWebApp:
             bridge_mode=bridge_mode,
             formal_manual_override_confirmed=True,
         )
+        selected_audit_results = self._health_audit_files(
+            selected,
+            input_dir=input_dir,
+            output_parent=output_parent,
+            include_pose_audit=True,
+        )
+        unselected_scan_paths = [
+            path for path in audit_paths if str(path.resolve()) not in selected_set
+        ]
+        unselected_audit_results = self._health_audit_files(
+            unselected_scan_paths,
+            input_dir=input_dir,
+            output_parent=output_parent,
+            include_pose_audit=False,
+        )
+        audit_results = [*selected_audit_results, *unselected_audit_results]
+        precheck_summary = summarize_health_results(audit_results).to_dict()
+        moved_rejected = move_rejected_files(audit_results, file_management["rejected_mcap_dir"])
+        precheck_report_path = effective.snapshot_path.parent / "precheck_report.json"
+        precheck_report = {
+            "created_at": _now_iso(),
+            "input_dir": str(input_dir),
+            "rejected_root": file_management["rejected_mcap_dir"],
+            "summary": precheck_summary,
+            "results": audit_results,
+            "move_results": [item.to_dict() for item in moved_rejected],
+        }
+        _write_json_atomic(precheck_report_path, precheck_report)
+        eligible_results = [
+            item
+            for item in audit_results
+            if item.get("precheck_status") == "eligible" and item.get("input_path") in selected_set
+        ]
+        if not eligible_results:
+            raise ValueError(f"没有可清洗 MCAP；缺陷文件已按原因移动，报告：{precheck_report_path}")
+        selected_eligible_raw_size = sum(int(item.get("size") or 0) for item in eligible_results)
+        requested_workers = self._requested_workers(payload.get("workers", "auto"), len(eligible_results))
+        space_estimate = self._space_estimate(
+            eligible_raw_size=selected_eligible_raw_size,
+            eligible_file_count=len(eligible_results),
+            max_file_size=max((int(item.get("size") or 0) for item in eligible_results), default=0),
+            requested_workers=requested_workers,
+            intermediate_root=intermediate_root,
+            file_management=file_management,
+        )
+        if not space_estimate["enough"]:
+            raise ValueError(
+                "中间产物空间不足："
+                f"{space_estimate['intermediate_root']} 可用 {space_estimate['available_text']}，"
+                f"估算至少需要 {space_estimate['required_text']} "
+                f"(raw {space_estimate['eligible_raw_size_text']} * {space_estimate['multiplier']:.1f}"
+                f" + safety {space_estimate['safety_gb']:.1f}G)。"
+                f"建议至少拆成 {space_estimate['suggested_batch_count']} 批。"
+            )
+        workers = max(1, int(space_estimate["effective_workers"]))
+        if intermediate_raw:
+            self.intermediate_root = intermediate_root
+            self.staging_dir = intermediate_root / "outputs/staging"
+            self.staging_dir.mkdir(parents=True, exist_ok=True)
+
         files = []
-        for input_path in selected:
+        for audit in eligible_results:
+            input_path = Path(audit["input_path"])
             files.append(
                 {
                     "name": input_path.name,
@@ -999,6 +1302,18 @@ class DataCleanWebApp:
                     "finished_at": None,
                     "duration_ms": None,
                     "report": None,
+                    **{
+                        key: audit.get(key)
+                        for key in (
+                            "precheck_status",
+                            "reject_group",
+                            "reject_reason",
+                            "reject_dir_parts",
+                            "topic_counts",
+                            "read_error",
+                            "pose_audit",
+                        )
+                    },
                 }
             )
         job = {
@@ -1026,8 +1341,19 @@ class DataCleanWebApp:
             "manual_calibration_override": effective.manual_calibration_override,
             "formal_manual_override_confirmed": True,
             "run_endpoint": str(payload.get("run_endpoint", "full")),
+            "requested_workers": requested_workers,
             "workers": workers,
+            "effective_workers": workers,
             "conflict_policy": conflict_policy,
+            "precheck_report_path": str(precheck_report_path),
+            "moved_rejected_files": [item.to_dict() for item in moved_rejected],
+            "moved_completed_files": [],
+            "moved_failed_input_files": [],
+            "completed_mcap_dir": file_management["completed_mcap_dir"],
+            "rejected_mcap_dir": file_management["rejected_mcap_dir"],
+            "artifact_retention": file_management["artifact_retention"],
+            "failed_artifact_policy": file_management["failed_artifact_policy"],
+            "space_estimate": space_estimate,
             "calibration": _calibration_info(self.load_config(input_dir=str(input_dir), output_dir=str(output_parent))),
             "stages": _new_stages(),
             "files": files,
@@ -1041,7 +1367,11 @@ class DataCleanWebApp:
         with self.lock:
             self.cancel_events[job_id] = threading.Event()
             self._save_job(job)
-            self._save_settings(str(input_dir), str(output_parent))
+            self._save_settings(
+                str(input_dir),
+                str(output_parent),
+                intermediate_root=str(self.intermediate_root) if intermediate_raw else None,
+            )
         thread = threading.Thread(target=self._run_job, args=(job_id,), daemon=True)
         thread.start()
         return {"job": self._public_job(job)}
@@ -1058,6 +1388,17 @@ class DataCleanWebApp:
             if path.is_file() and path.suffix == ".mcap":
                 selected.append(path)
         return selected
+
+    def _unique_paths(self, paths: list[Path]) -> list[Path]:
+        seen: set[str] = set()
+        unique: list[Path] = []
+        for path in paths:
+            key = str(path.resolve())
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append(path)
+        return unique
 
     def _run_job(self, job_id: str) -> None:
         with self.lock:
@@ -1161,6 +1502,7 @@ class DataCleanWebApp:
                     else:
                         self._publish_path(job, dataset_staging, Path(job["dataset_dir"]), backup_root)
                         self._publish_path(job, sidecar_staging, Path(job["sidecar_dir"]), backup_root)
+                        self._cleanup_after_publish_success(job)
                 else:
                     self._mark_stage(job, 5, "skipped", "没有成功 bridge episodes，未运行最终数据集评估。")
 
@@ -1175,15 +1517,13 @@ class DataCleanWebApp:
                 else:
                     job["status"] = "succeeded"
                     job["notification"] = "批次数据集构建完成。"
+                self._archive_input_files_after_job(job)
                 self._discard_backups(job)
         except Exception as exc:  # noqa: BLE001 - preserve job summary for the UI.
             job["status"] = "failed"
-            job["failure_reason"] = f"{type(exc).__name__}: {exc}"
+            job["failure_reason"] = self._job_exception_message(job, exc)
             job["notification"] = "任务失败，已回滚本批次已发布产物。"
-            for index, stage in enumerate(job["stages"]):
-                if stage.get("status") in {"running", "waiting"}:
-                    self._mark_stage(job, index, "failed", job["failure_reason"])
-                    break
+            self._settle_job_after_exception(job, job["failure_reason"])
             self._rollback_job(job)
         finally:
             job["finished_at"] = _now_iso()
@@ -1207,10 +1547,10 @@ class DataCleanWebApp:
             "bridge_dir": sidecar_root / "04_forge_bridge" / stem,
             "logs_dir": sidecar_root / "logs" / stem,
         }
-        for path in paths.values():
-            path.mkdir(parents=True, exist_ok=True)
         with self.worker_budget:
             try:
+                for path in paths.values():
+                    path.mkdir(parents=True, exist_ok=True)
                 if cancel_event.is_set():
                     return
                 self._update_file(job, item, status="running", started_at=_now_iso())
@@ -1218,12 +1558,15 @@ class DataCleanWebApp:
                 if cancel_event.is_set():
                     return
                 mcap_a_result = self.run_scene2_mcap_a_for_file(job, item, cleaned_mcap, paths)
+                self._cleanup_after_stage_success(job, item, "scene2")
                 if cancel_event.is_set():
                     return
                 aligned_result = self.run_scene3_alignment_for_file(job, item, mcap_a_result, paths)
+                self._cleanup_after_stage_success(job, item, "scene3")
                 if cancel_event.is_set():
                     return
                 bridge_result = self.run_forge_bridge_for_file(job, item, aligned_result, paths)
+                self._cleanup_after_stage_success(job, item, "bridge")
                 outputs = bridge_result.get("outputs", {})
                 self._update_file(
                     job,
@@ -1245,12 +1588,14 @@ class DataCleanWebApp:
                     running_keys = ["scene1"]
                 for key in running_keys:
                     stage_statuses[key] = "failed"
+                failed_stage = running_keys[-1]
+                self._cleanup_after_file_failure(job, item, failed_stage)
                 self._update_file(
                     job,
                     item,
                     status="failed",
                     included_in_dataset=False,
-                    failure_reason=f"{type(exc).__name__}: {exc}",
+                    failure_reason=self._file_exception_message(job, exc),
                 )
             finally:
                 self._update_file(
@@ -1375,6 +1720,108 @@ class DataCleanWebApp:
             raise RuntimeError(_first_error(result) or "forge_bridge_failed")
         self._mark_file_stage(job, item, "bridge", "success", "数据格式转换")
         return result
+
+    def _production_cleanup_enabled(self, job: dict[str, Any]) -> bool:
+        return job.get("artifact_retention", "production_cleanup") == "production_cleanup"
+
+    def _failed_stage_input_policy_enabled(self, job: dict[str, Any]) -> bool:
+        return job.get("failed_artifact_policy", "failed_stage_input") == "failed_stage_input"
+
+    def _cleanup_after_stage_success(self, job: dict[str, Any], item: dict[str, Any], stage: str) -> None:
+        if not self._production_cleanup_enabled(job):
+            return
+        outputs = item.setdefault("stage_outputs", {})
+        if stage == "scene2":
+            self._delete_artifact_file(outputs, "cleaned_mcap", "cleaned_mcap_removed")
+        elif stage == "scene3":
+            self._delete_artifact_file(outputs, "mcap_a", "mcap_a_removed")
+        elif stage == "bridge":
+            self._delete_artifact_file(outputs, "aligned_mcap", "aligned_mcap_removed")
+
+    def _cleanup_after_publish_success(self, job: dict[str, Any]) -> None:
+        if not self._production_cleanup_enabled(job):
+            return
+        for item in job.get("files", []):
+            if item.get("included_in_dataset"):
+                outputs = item.setdefault("stage_outputs", {})
+                self._delete_artifact_file(outputs, "forge_ready_mcap", "forge_ready_mcap_removed")
+
+    def _archive_input_files_after_job(self, job: dict[str, Any]) -> None:
+        if job.get("status") not in {"succeeded", "partial_failed", "failed"}:
+            return
+        if job.get("moved_completed_files") or job.get("moved_failed_input_files"):
+            return
+
+        completed_inputs = [
+            item["input_path"]
+            for item in job.get("files", [])
+            if item.get("included_in_dataset") and item.get("status") in {"success", "warning"}
+        ]
+        failed_inputs = [
+            item["input_path"]
+            for item in job.get("files", [])
+            if item.get("status") == "failed" and not item.get("included_in_dataset")
+        ]
+
+        completed_moves = move_completed_mcap_files(completed_inputs, job.get("completed_mcap_dir", ""))
+        failed_moves = move_failed_mcap_files(failed_inputs, job.get("rejected_mcap_dir", ""))
+        job["moved_completed_files"] = [item.to_dict() for item in completed_moves]
+        job["moved_failed_input_files"] = [item.to_dict() for item in failed_moves]
+        self._hydrate_archived_input_paths(job)
+
+    def _hydrate_archived_input_paths(self, job: dict[str, Any]) -> None:
+        moved_by_source: dict[str, str] = {}
+        for move in [*job.get("moved_completed_files", []), *job.get("moved_failed_input_files", [])]:
+            if move.get("moved") and move.get("target_path"):
+                moved_by_source[str(move.get("source_path"))] = str(move.get("target_path"))
+        for item in job.get("files", []):
+            target = moved_by_source.get(str(item.get("input_path")))
+            if target:
+                item["archived_input_path"] = target
+
+    def _cleanup_after_file_failure(self, job: dict[str, Any], item: dict[str, Any], failed_stage: str) -> None:
+        if not self._production_cleanup_enabled(job) or not self._failed_stage_input_policy_enabled(job):
+            return
+        outputs = item.setdefault("stage_outputs", {})
+        if failed_stage == "scene1":
+            self._delete_artifact_file(outputs, "cleaned_mcap", "cleaned_mcap_removed")
+        elif failed_stage == "scene3":
+            self._delete_artifact_file(outputs, "cleaned_mcap", "cleaned_mcap_removed")
+        elif failed_stage == "bridge":
+            self._delete_artifact_file(outputs, "cleaned_mcap", "cleaned_mcap_removed")
+            self._delete_artifact_file(outputs, "mcap_a", "mcap_a_removed")
+
+    def _delete_artifact_file(self, outputs: dict[str, Any], key: str, removed_key: str) -> None:
+        raw = outputs.get(key)
+        if not raw:
+            return
+        path = Path(str(raw))
+        try:
+            if path.exists() and path.is_file():
+                path.unlink()
+                outputs[removed_key] = True
+        except OSError as exc:
+            outputs[f"{removed_key}_error"] = f"{type(exc).__name__}: {exc}"
+
+    def _job_exception_message(self, job: dict[str, Any], exc: BaseException) -> str:
+        if not _is_no_space_error(exc):
+            return f"{type(exc).__name__}: {exc}"
+        estimate = job.get("space_estimate") or {}
+        return (
+            f"容量失败：中间产物目录 {estimate.get('intermediate_root') or self.staging_dir} 空间不足；"
+            f"可用 {estimate.get('available_text', '未知')}，估算需要 {estimate.get('required_text', '未知')}。"
+            f"原始错误：{type(exc).__name__}: {exc}"
+        )
+
+    def _file_exception_message(self, job: dict[str, Any], exc: BaseException) -> str:
+        if not _is_no_space_error(exc):
+            return f"{type(exc).__name__}: {exc}"
+        estimate = job.get("space_estimate") or {}
+        return (
+            f"容量失败：中间产物目录 {estimate.get('intermediate_root') or self.staging_dir} 空间不足；"
+            f"可用 {estimate.get('available_text', '未知')}，估算需要 {estimate.get('required_text', '未知')}。"
+            f"原始错误：{type(exc).__name__}: {exc}"
+        )
 
     def convert_successful_bridges_to_dataset(self, *, bridge_dirs: list[str], output_dir: Path, fps: float) -> dict[str, Any]:
         return convert_forge_bridges_to_lerobot(
@@ -1766,6 +2213,27 @@ class DataCleanWebApp:
             item.update(updates)
             self._save_job(job)
 
+    def _settle_job_after_exception(self, job: dict[str, Any], reason: str) -> None:
+        for item in job.get("files", []):
+            status = item.get("status", "waiting")
+            if status == "running":
+                item["status"] = "failed"
+                item["included_in_dataset"] = False
+                item["failure_reason"] = reason
+                for key, stage_status in item.setdefault("stage_statuses", {}).items():
+                    if stage_status == "running":
+                        item["stage_statuses"][key] = "failed"
+            elif status == "waiting":
+                item["status"] = "skipped"
+                item["included_in_dataset"] = False
+                item["failure_reason"] = "job_failed_before_start"
+                item.setdefault("stage_statuses", {})
+        for index, stage in enumerate(job.get("stages", [])):
+            if stage.get("status") == "running":
+                self._mark_stage(job, index, "failed", reason)
+            elif stage.get("status") == "waiting":
+                self._mark_stage(job, index, "skipped", "任务已失败，后续阶段未执行。")
+
     def _aggregate_file_stages(self, job: dict[str, Any]) -> None:
         summaries = {
             "scene1": "raw MCAP -> cleaned MCAP 完成情况",
@@ -1827,7 +2295,10 @@ class DataCleanWebApp:
                     "bridge_mode": job.get("bridge_mode", "format-only"),
                     "preset_name": job.get("preset_name", ""),
                     "config_overrides": job.get("config_overrides", {}),
-                    "files": [{"path": item["input_path"], "name": item["name"]} for item in failed],
+                    "files": [
+                        {"path": item.get("archived_input_path") or item["input_path"], "name": item["name"]}
+                        for item in failed
+                    ],
                 }
             }
 
@@ -1913,8 +2384,10 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(self.app_state.get_job(job_id))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not_found")
+        except CLIENT_DISCONNECT_ERRORS:
+            return
         except Exception as exc:  # noqa: BLE001
-            self._send_error(HTTPStatus.BAD_REQUEST, str(exc))
+            self._send_bad_request(str(exc))
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
@@ -1954,8 +2427,10 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(self.app_state.open_visualizer(job_id))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not_found")
+        except CLIENT_DISCONNECT_ERRORS:
+            return
         except Exception as exc:  # noqa: BLE001
-            self._send_error(HTTPStatus.BAD_REQUEST, str(exc))
+            self._send_bad_request(str(exc))
 
     def do_DELETE(self) -> None:
         parsed = urlparse(self.path)
@@ -1965,8 +2440,10 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(self.app_state.delete_history(job_id))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not_found")
+        except CLIENT_DISCONNECT_ERRORS:
+            return
         except Exception as exc:  # noqa: BLE001
-            self._send_error(HTTPStatus.BAD_REQUEST, str(exc))
+            self._send_bad_request(str(exc))
 
     def _read_payload(self) -> dict[str, Any]:
         length = int(self.headers.get("Content-Length", "0"))
@@ -2001,6 +2478,12 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def _send_bad_request(self, message: str) -> None:
+        try:
+            self._send_error(HTTPStatus.BAD_REQUEST, message)
+        except CLIENT_DISCONNECT_ERRORS:
+            return
 
 
 INDEX_HTML = r"""<!doctype html>
@@ -2106,7 +2589,6 @@ INDEX_HTML = r"""<!doctype html>
   <nav>
     <button id="nav-dashboard" onclick="showPage('dashboard')">看板</button>
     <button id="nav-create" onclick="showPage('create')">新建任务</button>
-    <button id="nav-audit" onclick="showPage('audit')">位姿审计</button>
     <button id="nav-config" onclick="showPage('config')">配置中心</button>
     <button id="nav-history" onclick="showPage('history')">历史记录</button>
   </nav>
@@ -2130,7 +2612,7 @@ INDEX_HTML = r"""<!doctype html>
 <div id="confirm-modal" class="modal"><div class="modal-card" id="confirm-body"></div></div>
 <script>
 let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), auditFiles:[], auditSelected:new Set(), auditPreview:null, auditTask:null, auditMoveTask:null, auditPollTimer:null, currentJob:null, jobTab:'quality', trajectory:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null}, dirTarget:null, dirPath:'/', preview:null, retryDraft:null, productionConfig:null};
-const statusText = {running:'运行中', succeeded:'成功', partial_failed:'部分失败', failed:'失败', cancelled:'已取消', cancelling:'取消中', waiting:'等待', success:'成功', warning:'成功但有警告', skipped:'跳过', unit_consistent_likely:'正常', unit_mismatch_suspected:'单位疑似不统一', missing_pose_topic:'缺少位姿 topic', pose_value_invalid_suspected:'位姿值异常', decode_failed:'读取失败', normal:'正常', unit_mismatch:'单位异常', other_issue:'其他异常'};
+const statusText = {running:'运行中', succeeded:'成功', partial_failed:'部分失败', failed:'失败', cancelled:'已取消', cancelling:'取消中', waiting:'等待', success:'成功', warning:'成功但有警告', skipped:'跳过', unchecked:'未审计', eligible:'健康', rejected:'缺陷', unit_consistent_likely:'正常', unit_mismatch_suspected:'单位疑似不统一', missing_pose_topic:'缺少位姿 topic', pose_value_invalid_suspected:'位姿值异常', decode_failed:'读取失败', normal:'正常', unit_mismatch:'单位异常', other_issue:'其他异常'};
 async function api(path, opts={}) {
   const res = await fetch(path, {headers:{'Content-Type':'application/json'}, ...opts});
   const data = await res.json();
@@ -2143,11 +2625,16 @@ function setNotice(text, kind='notice') { document.getElementById('notice').inne
 function showPage(page) {
   if (page !== 'job') stopTrajectoryPlayback();
   state.page = page;
-  for (const id of ['dashboard','create','audit','config','job','history']) document.getElementById(`page-${id}`).classList.toggle('hidden', id !== page);
-  for (const id of ['dashboard','create','audit','config','history']) document.getElementById(`nav-${id}`).classList.toggle('active', id === page);
+  for (const id of ['dashboard','create','audit','config','job','history']) {
+    const pageEl = document.getElementById(`page-${id}`);
+    if (pageEl) pageEl.classList.toggle('hidden', id !== page);
+  }
+  for (const id of ['dashboard','create','config','history']) {
+    const navEl = document.getElementById(`nav-${id}`);
+    if (navEl) navEl.classList.toggle('active', id === page);
+  }
   if (page === 'dashboard') loadDashboard();
   if (page === 'create') renderCreate();
-  if (page === 'audit') renderAudit();
   if (page === 'config') loadProductionConfig();
   if (page === 'history') loadHistory();
 }
@@ -2175,12 +2662,16 @@ function renderCreate() {
   const s = state.dashboard?.settings || {};
   const input = state.retryDraft?.input_dir || s.last_input_dir || '';
   const output = state.retryDraft?.output_dir || s.last_output_dir || '';
+  const intermediate = s.intermediate_root || '';
   const datasetName = state.retryDraft?.dataset_name || s.default_dataset_name || '';
   const remark = state.retryDraft?.remark || '';
   const ready = state.dashboard?.production_readiness || {ready:false, missing_items:['正在读取生产配置']};
   const readinessBox = ready.ready
     ? '<div class="notice" style="margin-top:14px">生产配置已就绪：任务将使用左右 arm-base TCP 位姿构建训练数据集。</div>'
     : `<div class="warnbox" style="margin-top:14px">生产配置未就绪：${(ready.missing_items || []).map(escapeHtml).join('、')}。<br><button onclick="showPage('config')">进入配置中心</button></div>`;
+  const freeGb = typeof s.staging_disk_free_gb === 'number' ? s.staging_disk_free_gb : null;
+  const diskWarn = (freeGb === null || freeGb >= 20) ? ''
+    : `<div class="warnbox" style="margin-top:8px">中间产物目录所在磁盘仅剩 ${freeGb}G，多文件并发可能空间不足；建议更换为更大容量的磁盘或降低 worker 数。</div>`;
   document.getElementById('page-create').innerHTML = `
     <div class="split">
       <div class="card">
@@ -2189,10 +2680,12 @@ function renderCreate() {
         <label>数据集名称</label><input id="dataset-name" value="${escapeHtml(datasetName)}" oninput="previewJob()" placeholder="YYYYMMDD_HH">
         <label>输入目录</label><div class="row"><input id="input-dir" value="${escapeHtml(input)}"><button onclick="openDirModal('input')">浏览</button></div>
         <label>输出父目录（LeRobot export）</label><div class="row"><input id="output-dir" value="${escapeHtml(output)}" oninput="previewJob()"><button onclick="openDirModal('output')">浏览</button></div>
+        <label>中间产物目录（建议大容量磁盘）</label><div class="row"><input id="intermediate-dir" value="${escapeHtml(intermediate)}" placeholder="留空则使用默认位置" oninput="previewJob()"><button onclick="openDirModal('intermediate')">浏览</button></div>
+        ${diskWarn}
         ${readinessBox}
         <details><summary>高级设置</summary>
           <label>运行终点</label><select id="run-endpoint"><option value="full">完整批次数据集构建</option></select>
-          <label>当前批次 worker</label><input id="workers" value="auto" placeholder="auto 或正整数">
+          <label>当前批次 worker</label><input id="workers" value="auto" placeholder="auto 或正整数" oninput="previewJob()">
         </details>
         <div class="row" style="margin-top:14px"><button onclick="scanFiles()" class="primary">扫描 MCAP</button></div>
       </div>
@@ -2495,15 +2988,31 @@ function productionLerobotFields(web) {
     <div class="config-section"><h3>action（固定 t+1 绝对量）</h3><table><thead><tr><th>启用</th><th>段落</th><th>顺序</th></tr></thead><tbody>${lerobotFeatureRows('action_segments', features.action_segments)}</tbody></table></div>
   </div>`;
 }
+function productionFileManagementFields(value) {
+  const fm = value || {};
+  return `<div class="config-grid">
+    <div class="config-section"><h3>缺陷文件与保留策略</h3>
+      <label>缺陷 MCAP 归集目录</label><input data-production="web_file_management.rejected_mcap_dir" data-production-type="text" value="${escapeHtml(fm.rejected_mcap_dir || '')}">
+      <label>已完成清洗 MCAP 归档目录</label><input data-production="web_file_management.completed_mcap_dir" data-production-type="text" value="${escapeHtml(fm.completed_mcap_dir || '')}">
+      <label>中间产物保留策略</label><select data-production="web_file_management.artifact_retention" data-production-type="text"><option value="production_cleanup" ${fm.artifact_retention==='production_cleanup'?'selected':''}>production_cleanup</option><option value="keep_all" ${fm.artifact_retention==='keep_all'?'selected':''}>keep_all</option></select>
+      <label>失败文件保留策略</label><select data-production="web_file_management.failed_artifact_policy" data-production-type="text"><option value="failed_stage_input" ${fm.failed_artifact_policy==='failed_stage_input'?'selected':''}>failed_stage_input</option><option value="keep_all" ${fm.failed_artifact_policy==='keep_all'?'selected':''}>keep_all</option></select>
+    </div>
+    <div class="config-section"><h3>空间保护</h3>
+      <label>空间估算倍数</label><input data-production="web_file_management.space_estimate_multiplier" value="${escapeHtml(String(fm.space_estimate_multiplier ?? 4.0))}">
+      <label>安全余量 GB</label><input data-production="web_file_management.space_safety_gb" value="${escapeHtml(String(fm.space_safety_gb ?? 20))}">
+    </div>
+  </div>`;
+}
 function renderProductionConfig() {
   const data = state.productionConfig, ready = data.readiness || {};
-  const camera = data.camera_from_tcp || {}, work = data.work_frames || {}, sdk = ready.sdk || {}, web = data.web_pipeline || {};
+  const camera = data.camera_from_tcp || {}, work = data.work_frames || {}, sdk = ready.sdk || {}, web = data.web_pipeline || {}, fileManagement = data.web_file_management || {};
   const handCard = hand => `<div class="config-section"><h3>${hand==='left'?'左臂':'右臂'}</h3><p class="muted">目标 base frame：<b>${hand}_arm_base</b></p><h4>相机到夹爪 TCP 外参</h4>${productionPoseFields(`camera_from_tcp.${hand}`, camera[hand])}<h4>工作坐标系在机械臂 base 下的位姿</h4>${productionWorkFields(hand, work[hand])}</div>`;
   const gripper = ready.gripper || {};
   document.getElementById('page-config').innerHTML = `<div class="card"><div class="row"><div><h2>配置中心</h2><p class="path">${escapeHtml(data.config_path || '')}</p></div>${ready.ready?badge('success'):badge('warning')}<span>RealMan SDK：${sdk.ready?'已就绪 '+escapeHtml(sdk.version || ''):'不可用'}</span></div>${ready.ready?'<div class="notice">生产配置已就绪。</div>':`<div class="warnbox">仍需处理：${(ready.missing_items || []).map(escapeHtml).join('、')}</div>`}</div>
   <div class="card"><div class="row"><div><h3>夹爪开合标定</h3><p class="muted">通过 GoPro 实时画面与 ArUco 自动采样生成，无需手工编辑底层 marker 参数。</p></div><button class="primary right" onclick="openGripperCalibration()">自动生成 / 重新标定</button></div><div class="row">${badge(gripper.left?'success':'warning')} 左手夹爪 ${gripper.left?'已配置':'缺失'} ${badge(gripper.right?'success':'warning')} 右手夹爪 ${gripper.right?'已配置':'缺失'}</div></div>
   <div class="card"><h3>左右臂 base 位姿转换</h3><p class="muted">人工填写：平移使用 mm，机械臂 base 旋转使用欧拉角 rad。Baton Mini 原始位姿、Runtime 换算结果和最终机械臂 TCP 输出的位置统一使用 m。</p><div class="config-grid">${handCard('left')}${handCard('right')}</div></div>
   <div class="card"><h3>滤波参数</h3><p class="muted">保存后作为生产默认值影响后续任务；已运行任务保留自己的 config snapshot。</p>${productionFilterFields(web)}</div>
+  <div class="card"><h3>批量稳定与文件管理</h3><p class="muted">新建任务会先执行健康审计；缺陷 MCAP 自动迁移，成功样本按生产策略清理大中间产物。</p>${productionFileManagementFields(fileManagement)}</div>
   <div class="card"><h3>LeRobot 维度定义</h3><p class="muted">候选字段来自当前 aligned MCAP。TCP pose 为必选；action 固定使用下一帧 t+1 绝对目标。</p>${productionLerobotFields(web)}</div>
   <div class="card"><div id="production-errors"></div><button class="primary" onclick="saveProductionConfig()">校验并保存正式配置</button></div>`;
 }
@@ -2513,8 +3022,9 @@ function productionPayload() {
     camera_from_tcp: state.productionConfig?.camera_from_tcp || {left:{translation_mm:[]},right:{translation_mm:[]}},
     work_frames: {left:{...defaultWorkFrames.left, ...(state.productionConfig?.work_frames?.left || {})}, right:{...defaultWorkFrames.right, ...(state.productionConfig?.work_frames?.right || {})}},
     web_pipeline: state.productionConfig?.web_pipeline || {},
+    web_file_management: state.productionConfig?.web_file_management || {},
   }));
-  document.querySelectorAll('[data-production]').forEach(input => setNested(result, input.dataset.production, input.value === '' ? null : Number(input.value)));
+  document.querySelectorAll('[data-production]').forEach(input => setNested(result, input.dataset.production, input.value === '' ? null : (input.dataset.productionType === 'text' ? input.value : Number(input.value))));
   result.web_pipeline ||= {};
   result.web_pipeline.lerobot_features ||= {};
   ['state_segments','action_segments'].forEach(kind => {
@@ -2683,22 +3193,30 @@ async function scanFiles() {
   const inputDir = document.getElementById('input-dir').value;
   const data = await api('/api/input-files/scan', {method:'POST', body:JSON.stringify({input_dir:inputDir})});
   state.files = data.files;
-  state.selected = new Set(data.files.map(f => f.path));
+  state.selected = new Set(data.files.filter(f => f.precheck_status !== 'rejected').map(f => f.path));
   renderFileTable();
   await previewJob();
 }
 function renderFileTable() {
   const q = (document.getElementById('file-search')?.value || '').toLowerCase();
   const files = state.files.filter(f => f.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
-  const rows = files.map(f => `<tr><td><input type="checkbox" ${state.selected.has(f.path)?'checked':''} onchange="toggleFile('${jsEscape(f.path)}', this.checked)"></td><td>${escapeHtml(f.name)}</td><td>${f.size_text}</td><td>${f.modified_at}</td><td>${badge(f.status || 'waiting')}</td></tr>`).join('');
-  document.getElementById('file-table').innerHTML = `<table><thead><tr><th></th><th>名称</th><th>大小</th><th>修改时间</th><th>状态</th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="muted">未扫描到 .mcap 文件</td></tr>'}</tbody></table>`;
+  const countText = f => {
+    const counts = f.topic_counts || {};
+    const keys = ['/gopro_left/image_raw','/gopro_right/image_raw','/baton_mini_left/fast_odom','/baton_mini_right/fast_odom','/pressure/left_hand/gripper_1','/pressure/left_hand/gripper_2','/pressure/right_hand/gripper_1','/pressure/right_hand/gripper_2'];
+    return keys.filter(k => counts[k] != null).map(k => `${k.split('/').pop()}:${counts[k]}`).join(' · ');
+  };
+  const rows = files.map(f => {
+    const rejected = f.precheck_status === 'rejected';
+    return `<tr><td><input type="checkbox" ${state.selected.has(f.path)?'checked':''} ${rejected?'disabled':''} onchange="toggleFile('${jsEscape(f.path)}', this.checked)"></td><td>${escapeHtml(f.name)}</td><td>${f.size_text}</td><td>${f.modified_at}</td><td>${badge(f.precheck_status || 'waiting')}</td><td>${escapeHtml(f.reject_group || '健康')}</td><td>${escapeHtml(f.reject_reason || '')}<br><span class="path">${escapeHtml(countText(f))}</span></td></tr>`;
+  }).join('');
+  document.getElementById('file-table').innerHTML = `<table><thead><tr><th></th><th>名称</th><th>大小</th><th>修改时间</th><th>健康状态</th><th>分类</th><th>原因 / 关键计数</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">未扫描到 .mcap 文件</td></tr>'}</tbody></table>`;
 }
 function toggleFile(path, checked) { checked ? state.selected.add(path) : state.selected.delete(path); previewJob(); }
-function selectAll(on) { state.files.forEach(f => on ? state.selected.add(f.path) : state.selected.delete(f.path)); renderFileTable(); previewJob(); }
-function invertSelection() { state.files.forEach(f => state.selected.has(f.path) ? state.selected.delete(f.path) : state.selected.add(f.path)); renderFileTable(); previewJob(); }
+function selectAll(on) { state.files.forEach(f => { if (f.precheck_status !== 'rejected') on ? state.selected.add(f.path) : state.selected.delete(f.path); }); renderFileTable(); previewJob(); }
+function invertSelection() { state.files.forEach(f => { if (f.precheck_status !== 'rejected') state.selected.has(f.path) ? state.selected.delete(f.path) : state.selected.add(f.path); }); renderFileTable(); previewJob(); }
 async function previewJob() {
   const files = [...state.selected].map(path => ({path}));
-  const payload = {input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, dataset_name:document.getElementById('dataset-name')?.value || '', files};
+  const payload = {input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, intermediate_dir:(document.getElementById('intermediate-dir')?.value || ''), workers:document.getElementById('workers')?.value || 'auto', dataset_name:document.getElementById('dataset-name')?.value || '', files, scan_files:state.files.map(f => ({path:f.path}))};
   if (!files.length || !payload.output_dir) { document.getElementById('preview-box').innerHTML = '<p class="muted">请选择文件和输出目录。</p>'; return; }
   state.preview = await api('/api/jobs/preview', {method:'POST', body:JSON.stringify(payload)});
   const p = state.preview;
@@ -2707,23 +3225,40 @@ async function previewJob() {
   }
   const conflictText = p.conflicts.map(c => `<li class="path">${escapeHtml(c.type)}: ${escapeHtml(c.path)}</li>`).join('');
   const ready = p.production_readiness || {ready:false,missing_items:[]};
-  document.getElementById('preview-box').innerHTML = `<hr><p><b>已选择：</b>${p.file_count} 个，${p.total_size_text}</p><p><b>最终 dataset：</b><span class="path">${escapeHtml(p.dataset_dir)}</span></p><p><b>sidecar：</b><span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p><b>生产链路：</b>左右 arm-base TCP 绝对位姿</p><div class="warnbox">建议先在“位姿审计”页面检查左右 Baton Mini 原始位姿单位是否一致；该检查只提示，不阻止清洗。</div><p><b>冲突：</b>${p.conflicts.length} 个目录</p>${conflictText ? `<ul>${conflictText}</ul>` : ''}${ready.ready?'':`<div class="warnbox">生产配置未就绪：${(ready.missing_items||[]).map(escapeHtml).join('、')}。<button onclick="showPage('config')">进入配置中心</button></div>`}<button class="primary" onclick="openConfirm()" ${ready.ready?'':'disabled'}>开始清洗</button>`;
+  const pre = p.precheck_summary || {}, space = p.space_estimate || {};
+  const spaceDetail = `并发峰值 ${escapeHtml(space.active_peak_text || '-')} + 聚合前暂存 ${escapeHtml(space.retained_batch_text || '-')} + safety ${escapeHtml(String(space.safety_gb ?? '-'))} GiB`;
+  const spaceBox = space.enough ? `<div class="notice">中间产物空间：可用 ${escapeHtml(space.available_text || '')}，估算需要 ${escapeHtml(space.required_text || '')}（${spaceDetail}）；有效 worker ${p.effective_workers}</div>` : `<div class="warnbox">中间产物空间不足：可用 ${escapeHtml(space.available_text || '')}，估算需要 ${escapeHtml(space.required_text || '')}（${spaceDetail}）。建议至少拆成 ${space.suggested_batch_count || 2} 批。</div>`;
+  const canStart = ready.ready && p.file_count > 0 && space.enough;
+  document.getElementById('preview-box').innerHTML = `<hr><p><b>已选择：</b>${p.selected_count} 个；<b>可清洗：</b>${p.file_count} 个，${p.total_size_text}</p><p><b>健康审计：</b>eligible ${pre.eligible_count || 0}，rejected ${pre.rejected_count || 0}；启动时将移动缺陷文件 ${p.will_move_rejected_files || 0} 个</p>${spaceBox}<p><b>最终 dataset：</b><span class="path">${escapeHtml(p.dataset_dir)}</span></p><p><b>sidecar：</b><span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p><b>生产链路：</b>左右 arm-base TCP 绝对位姿</p><p><b>冲突：</b>${p.conflicts.length} 个目录</p>${conflictText ? `<ul>${conflictText}</ul>` : ''}${ready.ready?'':`<div class="warnbox">生产配置未就绪：${(ready.missing_items||[]).map(escapeHtml).join('、')}。<button onclick="showPage('config')">进入配置中心</button></div>`}<button class="primary" onclick="openConfirm()" ${canStart?'':'disabled'}>开始清洗</button>`;
 }
 function openConfirm() {
   const p = state.preview;
   if (!p) return;
   const conflicts = p.conflicts.map(c => `<li class="path">${escapeHtml(c.type)}: ${escapeHtml(c.path)}</li>`).join('');
-  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>生产链路：左右 arm-base TCP 绝对位姿</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')}</p>${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div class="row"><button class="primary" onclick="submitJob()">确认启动</button><button onclick="closeConfirm()">取消</button></div>`;
+  const space = p.space_estimate || {};
+  const spaceDetail = `并发峰值 ${escapeHtml(space.active_peak_text || '-')} + 聚合前暂存 ${escapeHtml(space.retained_batch_text || '-')} + safety ${escapeHtml(String(space.safety_gb ?? '-'))} GiB`;
+  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>缺陷文件：启动时自动移动 ${p.will_move_rejected_files || 0} 个，并写入 precheck_report.json</p><p>中间产物空间：可用 ${escapeHtml(space.available_text || '')}，估算需要 ${escapeHtml(space.required_text || '')}（${spaceDetail}）</p><p>生产链路：左右 arm-base TCP 绝对位姿</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')} -> 实际 ${p.effective_workers}</p>${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div id="submit-status"></div><div class="row"><button id="confirm-submit" class="primary" onclick="submitJob()">确认启动</button><button id="confirm-cancel" onclick="closeConfirm()">取消</button></div>`;
   document.getElementById('confirm-modal').classList.add('open');
 }
 function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); }
 async function submitJob() {
   const policy = document.getElementById('conflict-policy').value;
   if (policy === 'skip') { closeConfirm(); return; }
-  const payload = {remark:document.getElementById('remark').value, dataset_name:document.getElementById('dataset-name').value, input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, run_endpoint:document.getElementById('run-endpoint').value, workers:document.getElementById('workers').value || 'auto', conflict_policy:policy, files:[...state.selected].map(path=>({path}))};
-  const data = await api('/api/jobs', {method:'POST', body:JSON.stringify(payload)});
-  closeConfirm();
-  openJob(data.job.job_id);
+  const payload = {remark:document.getElementById('remark').value, dataset_name:document.getElementById('dataset-name').value, input_dir:document.getElementById('input-dir').value, output_dir:document.getElementById('output-dir').value, intermediate_dir:(document.getElementById('intermediate-dir')?.value || ''), run_endpoint:document.getElementById('run-endpoint').value, workers:document.getElementById('workers').value || 'auto', conflict_policy:policy, files:[...state.selected].map(path=>({path})), scan_files:state.files.map(f => ({path:f.path}))};
+  const submit = document.getElementById('confirm-submit'), cancel = document.getElementById('confirm-cancel'), status = document.getElementById('submit-status');
+  if (submit) submit.disabled = true;
+  if (cancel) cancel.disabled = true;
+  if (status) status.innerHTML = '<div class="notice">正在创建任务：执行最终预检、归集缺陷文件并写入任务快照...</div>';
+  try {
+    const data = await api('/api/jobs', {method:'POST', body:JSON.stringify(payload)});
+    closeConfirm();
+    openJob(data.job.job_id);
+  } catch (error) {
+    if (submit) submit.disabled = false;
+    if (cancel) cancel.disabled = false;
+    if (status) status.innerHTML = `<div class="warnbox">启动失败：${escapeHtml(error.message || String(error))}</div>`;
+    setNotice(`启动失败：${escapeHtml(error.message || String(error))}`, 'warnbox');
+  }
 }
 async function openJob(id) {
   if (state.currentJob && state.currentJob.job_id !== id) {
@@ -2839,8 +3374,8 @@ function fmtPct(value) {
   return Number.isFinite(n) ? `${(n*100).toFixed(1)}%` : '-';
 }
 function renderFilesTab(j) {
-  const rows = j.files.map(f => `<tr><td>${escapeHtml(f.name)}</td><td>${badge(f.status)}</td><td>${f.included_in_dataset ? '是' : '否'}</td><td>${f.episode_count || 0}</td><td>${escapeHtml(f.current_stage || '-')}</td><td class="path">${escapeHtml(f.stage_outputs?.aligned_mcap || f.stage_outputs?.cleaned_mcap || '')}</td><td>${escapeHtml(f.failure_reason || f.warning || (f.quality_warnings || []).join('；'))}</td></tr>`).join('');
-  return `<div class="card"><h3>逐文件状态</h3><table><thead><tr><th>文件</th><th>状态</th><th>纳入</th><th>episode</th><th>阶段</th><th>阶段产物</th><th>原因/警告</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const rows = j.files.map(f => `<tr><td>${escapeHtml(f.name)}</td><td>${badge(f.status)}</td><td>${escapeHtml(f.precheck_status || '-')}</td><td>${f.included_in_dataset ? '是' : '否'}</td><td>${f.episode_count || 0}</td><td>${escapeHtml(f.current_stage || '-')}</td><td class="path">${escapeHtml(f.stage_outputs?.aligned_mcap || f.stage_outputs?.mcap_a || f.stage_outputs?.cleaned_mcap || '')}</td><td class="path">${escapeHtml(f.archived_input_path || '')}</td><td>${escapeHtml(f.failure_reason || f.warning || (f.quality_warnings || []).join('；'))}</td></tr>`).join('');
+  return `<div class="card"><h3>逐文件状态</h3><table><thead><tr><th>文件</th><th>状态</th><th>预检</th><th>纳入</th><th>episode</th><th>阶段</th><th>阶段产物</th><th>原始文件归档</th><th>原因/警告</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function renderTrajectoryTab() {
   const t = state.trajectory;
@@ -3118,6 +3653,7 @@ async function deleteHistory(id) { if (!confirm('只删除历史摘要，不删�
 function dirInputId(target) {
   if (target === 'input') return 'input-dir';
   if (target === 'output') return 'output-dir';
+  if (target === 'intermediate') return 'intermediate-dir';
   if (target === 'audit-input') return 'audit-input-dir';
   if (target === 'audit-classified') return 'audit-classified-dir';
   return 'input-dir';
