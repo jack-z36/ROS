@@ -43,9 +43,8 @@ config/data_clean/presets/*.yaml
 # 阶段二测试（代码 + 结果 + fixture）
 src/data_clean/tests/
 
-# 阶段二数据产物
-asset/阶段二：数据清洗/dev/
-asset/阶段二：数据清洗/prod/
+# 数据产物（真实数据不入 git）
+asset/
 
 # 临时目录
 _tmp/
