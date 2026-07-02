@@ -5,7 +5,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from schemas.mcap_health_audit import MoveInputFileResult, RejectGroup
+from schemas.mcap_health_audit import MoveInputFileResult
 
 
 def move_completed_mcap_files(
@@ -17,9 +17,9 @@ def move_completed_mcap_files(
 
 def move_failed_mcap_files(
     input_paths: list[str | Path],
-    rejected_root: str | Path,
+    failed_root: str | Path,
 ) -> list[MoveInputFileResult]:
-    return _move_files(input_paths, Path(rejected_root) / RejectGroup.OTHER.value, "failed_cleaning")
+    return _move_files(input_paths, Path(failed_root), "failed_cleaning")
 
 
 def _move_files(

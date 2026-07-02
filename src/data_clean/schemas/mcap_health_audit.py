@@ -42,6 +42,8 @@ class HealthAuditResult:
     name: str
     size: int
     precheck_status: HealthStatus
+    mtime_ns: int = 0
+    modified_at: str | None = None
     reject_group: str | None = None
     reject_reason: str | None = None
     reject_dir_parts: tuple[str, ...] = ()
