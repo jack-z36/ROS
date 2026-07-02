@@ -14,6 +14,19 @@
 - 左右 arm-base TCP pose topic 可输出。
 - RealMan SDK Algo 可用。
 - Web job 使用正式生产配置并写出配置快照。
+- 输入 MCAP 通过生产前健康审计，或有明确的 rejected / retry 分类依据。
+- LeRobotDataset v3 的 timestamp 按 episode 重基准，避免把 MCAP 绝对时间直接暴露给训练。
+- LeRobotDataset v3 的图像 feature 有完整 stats，确保训练侧能按 feature contract 加载。
+
+## 生产前后处理边界
+
+MCAP health audit、LeRobot timestamp rebase 和图像 stats 补全都属于生产 readiness 相关语义，但它们不是同一层能力：
+
+- MCAP health audit 面向输入资格，判断 raw MCAP 是否适合进入生产清洗链路。
+- timestamp rebase 面向最终 LeRobotDataset v3，要求每个 episode 的第一帧 timestamp 归零，并保留帧间真实时间间隔。
+- 图像 stats 补全面向 LeRobot feature contract，要求 `info.json` 中声明的视频 feature 在 `stats.json` 中也有对应统计。
+
+这些判断应服务于“能否进入训练前复查”，而不是被简化成 UI 按钮状态或单个 smoke test 结果。
 
 ## 与 format-only 的区别
 
