@@ -1,4 +1,4 @@
-﻿# rm65_driver_node 命令执行契约
+# rm65_driver_node 命令执行契约
 
 关联总契约：[[TO-BE Contract#指令桥接与发送节点|指令桥接与发送节点]]
 
