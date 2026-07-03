@@ -77,7 +77,9 @@ git push -u origin feat/model_deploy/<topic>
 
 ## Gate 后合入流程
 
-当且仅当所属功能 Gate 通过后，AI 可以自动执行以下同步流程：
+当且仅当所属功能 Gate 通过 **且 人类验收签字通过** 后，AI 可以自动执行以下同步流程。
+
+人类验收关卡规则见 `DOCS/02_约束/工作流/阶段四开发工作流/attachments/人类验收关卡规则.md`。合入前必须检查 `05_acceptance/<l2>/验收结果.md` 的「人类验收」段：未填写或勾选「不通过」时，停止合入并向用户报告。
 
 ```bash
 git status --short --branch
@@ -95,6 +97,7 @@ git push origin --delete feat/model_deploy/<topic>
 出现以下任一情况时，停止自动同步并向用户报告：
 
 - 功能 Gate 未通过，或对应验收结果未记录通过结论。
+- 人类验收未签字、勾选「不通过」或缺少用户名/日期（见人类验收关卡规则）。
 - 当前分支不是对应三级功能分支，或该分支不是从 `model_deploy` 开出。
 - `model_deploy` 远端领先、本地分叉或 `pull --ff-only` 失败。
 - `git merge --no-ff` 产生冲突。
