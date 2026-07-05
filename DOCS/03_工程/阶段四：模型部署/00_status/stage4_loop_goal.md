@@ -14,23 +14,27 @@
 
 ## 当前子目标
 
-当前无真机循环目标是推进阶段四软件侧闭环到 `deploy_022`：
+当前循环目标已经重置为新版 ACT 功能闭环 L2 主线：
 
 ```text
-L2-01 Types
-→ L2-02 Config
-→ L2-03 Assembly
-→ L2-04 Publish
-→ L2-05 Hardware deploy_017 至 deploy_022
+l2-01-external-contract
+→ l2-02-observation-snapshot
+→ l2-03-act-inference
+→ l2-04-action-smoothing
+→ l2-05-safety-guard
+→ l2-06-action-publisher
+→ l2-07-control-loop
 ```
 
-`deploy_023` real-robot smoke test 不属于当前无真机自动循环的执行目标。它必须保持 blocked，直到真机、安全、标定、bundle 和人工授权条件全部满足。
+旧 `l2-01-types`、`l2-02-config`、`l2-03-assembly`、`l2-04-publish`、`l2-05-hardware` 以及 `deploy_022` / `deploy_023` 目标作废，只能作为 legacy 历史参考。
+
+当前最近子目标是：为 `l2-01-external-contract` 生成新版 L2 设计目录、dispatch、验收卡片和 acceptance 目录，然后再进入 L3 执行。
 
 ## 完成边界
 
 当前循环完成的最小标准：
 
-- `deploy_022` shadow-run 全链路通过或形成可解释环境阻塞。
-- `deploy_023` blocked 条件、真机交接条件和风险控制记录完整。
-- L2 Gate 结论能说明哪些能力已本地验证，哪些留给真机阶段。
-
+- 7 个新版功能闭环 L2 均按顺序完成 L2 Gate。
+- 每个 L2 均具备人类验收记录。
+- 每个 L2 的 L3 均来自新版 active / dispatch / cards / acceptance 路径。
+- 旧 layer-based L2 不再作为循环恢复、调度或合入依据。

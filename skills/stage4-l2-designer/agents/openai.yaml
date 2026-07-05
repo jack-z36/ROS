@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stage4 L2 Designer"
+  short_description: "Design Stage 4 L2 module outputs."
+  default_prompt: "Use $stage4-l2-designer to produce the fixed Stage 4 L2 design outputs for one ACT deployment module."

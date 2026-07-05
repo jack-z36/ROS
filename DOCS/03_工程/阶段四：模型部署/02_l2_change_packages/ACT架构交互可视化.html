@@ -1,0 +1,1302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACT 部署程序 · L2 功能模块协作可视化（人类消费版）</title>
+  <style>
+    :root {
+      --bg: #f5f2ea;
+      --panel: #fffdfa;
+      --ink: #1f2933;
+      --muted: #667085;
+      --line: #c9d0da;
+      --config: #c95f2b;
+      --obs: #187a75;
+      --runtime: #3957a4;
+      --model: #7549a6;
+      --safety: #a33f4f;
+      --output: #30724b;
+      --ctrl: #b8860b;
+      --metrics: #996c19;
+      --external: #475467;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+    }
+
+    .page {
+      width: min(1420px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 20px 0 28px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    h1 { margin: 0; font-size: 23px; line-height: 1.25; font-weight: 760; }
+    .subtitle { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .note {
+      max-width: 400px;
+      border: 1px solid #ddd6ca;
+      border-radius: 8px;
+      background: #fff8ed;
+      padding: 10px 12px;
+      color: #4b5563;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .tabs label {
+      display: inline-flex; align-items: center; min-height: 38px;
+      border: 1px solid #c7c0b6; border-radius: 8px; background: #fffdfa;
+      padding: 8px 12px; color: #344054; font-size: 13px; font-weight: 720; cursor: pointer;
+    }
+
+    #view-overview:checked ~ .tabs label[for="view-overview"],
+    #view-data:checked ~ .tabs label[for="view-data"],
+    #view-control:checked ~ .tabs label[for="view-control"],
+    #view-failure:checked ~ .tabs label[for="view-failure"],
+    #view-metrics:checked ~ .tabs label[for="view-metrics"],
+    #view-boundary:checked ~ .tabs label[for="view-boundary"] {
+      background: #253247; border-color: #253247; color: white;
+      box-shadow: 0 10px 24px rgba(31, 41, 51, 0.16);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 246px minmax(0, 1fr) 296px;
+      gap: 14px; align-items: start;
+    }
+
+    .card {
+      border: 1px solid #ddd6ca; border-radius: 8px;
+      background: var(--panel); box-shadow: 0 12px 28px rgba(31, 41, 51, 0.08);
+    }
+
+    .side, .explain { padding: 14px; }
+    .label { margin: 0 0 10px; color: #475467; font-size: 12px; font-weight: 780; text-transform: uppercase; }
+
+    .module {
+      border: 1px solid #ddd6ca; border-left: 6px solid var(--runtime);
+      border-radius: 8px; background: #fffdfa; padding: 9px 10px; margin-bottom: 7px;
+    }
+    .module b { display: block; font-size: 12.5px; line-height: 1.3; }
+    .module span { display: block; margin-top: 3px; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+
+    .module.config  { border-left-color: var(--config); }
+    .module.obs     { border-left-color: var(--obs); }
+    .module.model   { border-left-color: var(--model); }
+    .module.smooth  { border-left-color: var(--runtime); }
+    .module.safety  { border-left-color: var(--safety); }
+    .module.output  { border-left-color: var(--output); }
+    .module.ctrl    { border-left-color: var(--ctrl); }
+
+    .views { min-height: 780px; overflow: hidden; }
+    .panel { display: none; padding: 16px; }
+
+    #view-overview:checked ~ .layout .overview,
+    #view-data:checked ~ .layout .dataflow,
+    #view-control:checked ~ .layout .control,
+    #view-failure:checked ~ .layout .failure,
+    #view-metrics:checked ~ .layout .metrics,
+    #view-boundary:checked ~ .layout .boundary { display: block; }
+
+    .panel-head {
+      display: flex; justify-content: space-between; gap: 14px;
+      align-items: start; margin-bottom: 10px;
+    }
+    .panel h2 { margin: 0; font-size: 18px; line-height: 1.3; }
+    .panel p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+
+    .legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 12px; color: #475467; font-size: 12px; line-height: 1.2; }
+    .legend span { display: inline-flex; gap: 6px; align-items: center; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--runtime); }
+
+    .figure {
+      border: 1px solid #e2ddd5; border-radius: 8px;
+      background:
+        linear-gradient(#edf0f3 1px, transparent 1px),
+        linear-gradient(90deg, #edf0f3 1px, transparent 1px),
+        #ffffff;
+      background-size: 34px 34px;
+      overflow: auto;
+    }
+
+    svg { display: block; width: 100%; height: auto; }
+
+    .node rect.box {
+      fill: white; stroke: #b8c0cd; stroke-width: 1.6;
+    }
+    .node .band { stroke: none; }
+    .node text.title { fill: var(--ink); font-size: 13px; font-weight: 750; }
+    .node text.sub { fill: var(--muted); font-size: 11px; font-weight: 700; }
+
+    /* 边样式：data / control / queue / topic / metrics / failure */
+    .edge { fill: none; stroke-width: 2; marker-end: url(#arrow); }
+    .edge.data    { stroke: #6b7280; }
+    .edge.control { stroke: #344054; stroke-dasharray: 7 5; }
+    .edge.queue   { stroke: var(--model); stroke-dasharray: 3 5; }
+    .edge.topic   { stroke: var(--output); }
+    .edge.failure { stroke: var(--safety); }
+    .edge.metrics { stroke: var(--metrics); }
+    .edge.loop    { stroke: #9aa4b2; stroke-dasharray: 2 6; }
+
+    .edge-label {
+      fill: #354152; font-size: 11.5px; font-weight: 720;
+      paint-order: stroke; stroke: #fffdfa; stroke-width: 4px; stroke-linejoin: round;
+    }
+
+    .swim { fill: rgba(57, 87, 164, 0.04); stroke: #e2ddd5; stroke-width: 1; }
+    .swim-title { fill: #667085; font-size: 12px; font-weight: 780; }
+
+    .branch-label { fill: #354152; font-size: 11.5px; font-weight: 760; paint-order: stroke; stroke: #fffdfa; stroke-width: 4px; stroke-linejoin: round; }
+
+    .explain h2 { margin: 0; font-size: 18px; }
+
+    /* ===== 模块边界卡片 ===== */
+    .b-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+    }
+    .b-card {
+      border: 1px solid #ddd6ca;
+      border-left: 6px solid var(--runtime);
+      border-radius: 8px;
+      background: #fffdfa;
+      overflow: hidden;
+    }
+    .b-card.config  { border-left-color: var(--config); }
+    .b-card.obs     { border-left-color: var(--obs); }
+    .b-card.model   { border-left-color: var(--model); }
+    .b-card.smooth  { border-left-color: var(--runtime); }
+    .b-card.safety  { border-left-color: var(--safety); }
+    .b-card.output  { border-left-color: var(--output); }
+    .b-card.ctrl    { border-left-color: var(--ctrl); }
+
+    .b-card > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 12px;
+      position: relative;
+    }
+    .b-card > summary::-webkit-details-marker { display: none; }
+    .b-card > summary::after {
+      content: "展开 ▾";
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 11.5px;
+      font-weight: 720;
+    }
+    .b-card[open] > summary::after { content: "收起 ▴"; }
+    .b-card > summary > b {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 760;
+      line-height: 1.3;
+    }
+    .b-card > summary > span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      padding-right: 56px;
+    }
+    .b-body {
+      padding: 0 12px 12px;
+      border-top: 1px dashed #e2ddd5;
+      padding-top: 10px;
+    }
+    .b-body h4 {
+      margin: 8px 0 4px;
+      font-size: 11px;
+      font-weight: 780;
+      text-transform: uppercase;
+      color: #475467;
+      letter-spacing: 0.3px;
+    }
+    .b-body h4:first-child { margin-top: 0; }
+    .b-body ul, .b-body .b-io {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #4b5563;
+    }
+    .b-body ul { padding-left: 16px; }
+    .b-body .b-io {
+      background: #f7f4ec;
+      border-radius: 4px;
+      padding: 5px 8px;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-size: 11.5px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .b-body .b-do li { color: #2f6d43; }
+    .b-body .b-dont li { color: #8a3a3a; }
+    .explain h3 { margin: 16px 0 7px; color: #344054; font-size: 12px; font-weight: 780; text-transform: uppercase; }
+    .explain p, .explain li { color: #475467; font-size: 13px; line-height: 1.55; }
+    .explain ul { margin: 0; padding-left: 18px; }
+    .pill {
+      display: inline-flex; margin-top: 8px; border-radius: 999px;
+      background: var(--ctrl); color: white; padding: 5px 9px; font-size: 12px; font-weight: 780;
+    }
+
+    @media (max-width: 1100px) {
+      header, .layout { grid-template-columns: 1fr; }
+      .note { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>ACT 部署程序 · L2 功能模块协作可视化（人类消费版）</h1>
+        <p class="subtitle">7 个 L2 功能模块如何协作：L2-01 提供契约地基，L2-07 ControlLoop 中央调度，L2-02~L2-06 完成观测→推理→平滑→安全→输出的运行时闭环。</p>
+      </div>
+      <div class="note">本 HTML 是人类理解入口，刻意降低信息密度。模块边界以 <code>01_L1_ACT功能模块边界.md</code> 为准，模块协作以 <code>02_L1_ACT功能模块协作架构.md</code> 为准；HTML 与 MD 冲突时以 MD 为准。</div>
+    </header>
+
+    <input id="view-overview" name="view" type="radio" checked>
+    <input id="view-data" name="view" type="radio">
+    <input id="view-control" name="view" type="radio">
+    <input id="view-failure" name="view" type="radio">
+    <input id="view-metrics" name="view" type="radio">
+    <input id="view-boundary" name="view" type="radio">
+
+    <nav class="tabs" aria-label="架构视图">
+      <label for="view-overview">总览：模块协作</label>
+      <label for="view-data">宏观数据流</label>
+      <label for="view-control">ControlLoop 调控</label>
+      <label for="view-failure">失败传播</label>
+      <label for="view-metrics">Metrics / status</label>
+      <label for="view-boundary">模块边界</label>
+    </nav>
+
+    <main class="layout">
+      <aside class="card side">
+        <p class="label">L2 功能模块</p>
+        <div class="module config"><b>L2-01 参数与契约</b><span>DeployConfig / 16D spec / bundle contract</span></div>
+        <div class="module obs"><b>L2-02 Observation</b><span>ROS topics → ObservationSnapshot → latest_observation</span></div>
+        <div class="module model"><b>L2-03 ACT 推理</b><span>InferenceRequest → ActionChunk (N,16)</span></div>
+        <div class="module smooth"><b>L2-04 Chunk 平滑</b><span>常规直取；切换边界才 smoothstep blend</span></div>
+        <div class="module safety"><b>L2-05 Safety</b><span>raw action → SafetyResult</span></div>
+        <div class="module output"><b>L2-06 输出适配</b><span>safe action → /act/policy_action, /act/command/*</span></div>
+        <div class="module ctrl"><b>L2-07 ControlLoop</b><span>tick() 中央总控 · 调度而非加工</span></div>
+
+        <p class="label" style="margin-top:14px">关系类型</p>
+        <div class="legend" style="justify-content:flex-start">
+          <span><i class="dot" style="background:#6b7280"></i>data</span>
+          <span><i class="dot" style="background:#344054"></i>control</span>
+          <span><i class="dot" style="background:var(--model)"></i>queue</span>
+          <span><i class="dot" style="background:var(--output)"></i>topic</span>
+          <span><i class="dot" style="background:var(--metrics)"></i>metrics</span>
+          <span><i class="dot" style="background:var(--safety)"></i>failure</span>
+        </div>
+      </aside>
+
+      <section class="card views">
+        <!-- ============ 总览：模块协作 ============ -->
+        <section class="panel overview">
+          <div class="panel-head">
+            <div>
+              <h2>总览：7 个 L2 如何协作</h2>
+              <p>L2-07 ControlLoop 居中调度；L2-01 提供配置契约地基；L2-02 持续刷新观测；L2-03 后台推理；L2-04 在 chunk 切换边界做平滑（常规 tick 直接取 active 动作）；L2-05 安全检查；L2-06 发布命令。</p>
+            </div>
+            <div class="legend">
+              <span><i class="dot" style="background:var(--config)"></i>L2-01</span>
+              <span><i class="dot" style="background:var(--obs)"></i>L2-02</span>
+              <span><i class="dot" style="background:var(--model)"></i>L2-03</span>
+              <span><i class="dot" style="background:var(--runtime)"></i>L2-04</span>
+              <span><i class="dot" style="background:var(--safety)"></i>L2-05</span>
+              <span><i class="dot" style="background:var(--output)"></i>L2-06</span>
+              <span><i class="dot" style="background:var(--ctrl)"></i>L2-07</span>
+            </div>
+          </div>
+          <div class="figure">
+            <svg viewBox="0 0 1080 620" role="img" aria-label="ACT 总览架构图" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#475567"></path>
+                </marker>
+              </defs>
+
+              <!-- L2-01 (左上) -->
+              <g class="node">
+                <rect class="box" x="40" y="50" width="200" height="84"></rect>
+                <rect class="band" x="40" y="50" width="7" height="84" fill="var(--config)"></rect>
+                <text class="title" x="58" y="76">L2-01 参数与契约</text>
+                <text class="sub" x="58" y="97">DeployConfig</text>
+                <text class="sub" x="58" y="115">StateSpec / ActionSpec (16D)</text>
+              </g>
+
+              <!-- L2-02 (左中) -->
+              <g class="node">
+                <rect class="box" x="40" y="230" width="200" height="84"></rect>
+                <rect class="band" x="40" y="230" width="7" height="84" fill="var(--obs)"></rect>
+                <text class="title" x="58" y="256">L2-02 Observation</text>
+                <text class="sub" x="58" y="277">ObservationCollector</text>
+                <text class="sub" x="58" y="295">→ latest_observation</text>
+              </g>
+
+              <!-- 外部传感器 (左下) -->
+              <g class="node">
+                <rect class="box" x="40" y="430" width="200" height="56"></rect>
+                <rect class="band" x="40" y="430" width="7" height="56" fill="var(--external)"></rect>
+                <text class="title" x="58" y="456">ROS observation topics</text>
+                <text class="sub" x="58" y="476">images + arm + gripper</text>
+              </g>
+
+              <!-- L2-07 ControlLoop (中央) -->
+              <g class="node">
+                <rect class="box" x="420" y="250" width="240" height="100"></rect>
+                <rect class="band" x="420" y="250" width="240" height="30" fill="var(--ctrl)"></rect>
+                <text class="title" x="540" y="270" fill="white" text-anchor="middle">L2-07 ControlLoop</text>
+                <text class="title" x="540" y="312" text-anchor="middle" font-size="14">tick() 中央总控</text>
+                <text class="sub" x="540" y="332" text-anchor="middle">调度而非加工</text>
+              </g>
+
+              <!-- L2-03 ACT 推理 (右上) -->
+              <g class="node">
+                <rect class="box" x="840" y="70" width="200" height="84"></rect>
+                <rect class="band" x="840" y="70" width="7" height="84" fill="var(--model)"></rect>
+                <text class="title" x="858" y="96">L2-03 ACT 推理</text>
+                <text class="sub" x="858" y="117">InferenceWorker</text>
+                <text class="sub" x="858" y="135">→ ActionChunk (N,16)</text>
+              </g>
+
+              <!-- L2-04 Chunk 平滑 (中下偏左) -->
+              <g class="node">
+                <rect class="box" x="280" y="470" width="200" height="100"></rect>
+                <rect class="band" x="280" y="470" width="7" height="100" fill="var(--runtime)"></rect>
+                <text class="title" x="298" y="496">L2-04 Chunk 平滑</text>
+                <text class="sub" x="298" y="516">常规：直取 active[cursor]</text>
+                <text class="sub" x="298" y="534">边界：smoothstep blend</text>
+                <text class="sub" x="298" y="552">→ raw action (16,)</text>
+              </g>
+
+              <!-- L2-05 Safety (中下) -->
+              <g class="node">
+                <rect class="box" x="540" y="470" width="170" height="100"></rect>
+                <rect class="band" x="540" y="470" width="7" height="100" fill="var(--safety)"></rect>
+                <text class="title" x="558" y="496">L2-05 Safety</text>
+                <text class="sub" x="558" y="516">SafetyGuard</text>
+                <text class="sub" x="558" y="534">NaN/delta/quaternion</text>
+                <text class="sub" x="558" y="552">→ SafetyResult</text>
+              </g>
+
+              <!-- L2-06 输出 (右下) -->
+              <g class="node">
+                <rect class="box" x="770" y="470" width="200" height="100"></rect>
+                <rect class="band" x="770" y="470" width="7" height="100" fill="var(--output)"></rect>
+                <text class="title" x="788" y="496">L2-06 输出适配</text>
+                <text class="sub" x="788" y="516">publisher + bridge</text>
+                <text class="sub" x="788" y="534">shadow / gate 守卫</text>
+                <text class="sub" x="788" y="552">→ /act/command/*</text>
+              </g>
+
+              <!-- ===== 边 ===== -->
+
+              <!-- L2-01 → L2-02 (垂直向下) -->
+              <path class="edge data" d="M140 134 L140 230"></path>
+              <text class="edge-label" x="148" y="186">spec / codec</text>
+
+              <!-- L2-01 → L2-07 (右下斜) -->
+              <path class="edge data" d="M240 92 C330 92 360 180 420 270"></path>
+              <text class="edge-label" x="300" y="160">config</text>
+
+              <!-- L2-01 → L2-03 (顶部弧线，绕过 L2-07) -->
+              <path class="edge data" d="M240 70 C500 30 700 30 840 80"></path>
+              <text class="edge-label" x="520" y="38">bundle / normalizer</text>
+
+              <!-- L2-01 → L2-06 (底部长弧) -->
+              <path class="edge data" d="M140 134 C140 180 200 410 770 500"></path>
+              <text class="edge-label" x="120" y="380">topic/bridge config</text>
+
+              <!-- 外部传感器 → L2-02 (垂直向上) -->
+              <path class="edge topic" d="M140 430 L140 314"></path>
+              <text class="edge-label" x="148" y="376">topics</text>
+
+              <!-- L2-02 → L2-07 (右) -->
+              <path class="edge data" d="M240 272 C320 272 360 282 420 295"></path>
+              <text class="edge-label" x="300" y="266">latest_obs</text>
+
+              <!-- L2-07 → L2-03 (右上，request queue) -->
+              <path class="edge queue" d="M660 270 C740 220 790 160 840 130"></path>
+              <text class="edge-label" x="730" y="195">request</text>
+
+              <!-- L2-03 → L2-07 (左下，ActionChunk) -->
+              <path class="edge queue" d="M840 140 C770 200 720 250 660 310"></path>
+              <text class="edge-label" x="720" y="280">ActionChunk</text>
+
+              <!-- L2-07 → L2-04 (左下，control call) -->
+              <path class="edge control" d="M460 350 C420 400 380 440 360 470"></path>
+              <text class="edge-label" x="362" y="415">取 raw</text>
+
+              <!-- L2-04 → L2-05 (右) -->
+              <path class="edge data" d="M480 520 L540 520"></path>
+              <text class="edge-label" x="496" y="512">raw</text>
+
+              <!-- L2-05 → L2-06 (右) -->
+              <path class="edge data" d="M710 520 L770 520"></path>
+              <text class="edge-label" x="722" y="512">safe</text>
+
+              <!-- L2-07 → L2-06 (control publish，从右上绕到 L2-06 顶) -->
+              <path class="edge control" d="M620 350 C660 410 740 450 800 470"></path>
+              <text class="edge-label" x="700" y="430">publish</text>
+            </svg>
+          </div>
+        </section>
+
+        <!-- ============ 宏观数据流 ============ -->
+        <section class="panel dataflow">
+          <div class="panel-head">
+            <div>
+              <h2>宏观数据流：外部数据如何变成执行器命令</h2>
+              <p>只看关键 RAM 对象的流转和所有权。InferenceRequest 是 ControlLoop 发出的异步请求（不是模型 batch）；ActionChunk 是动作块（不是单步 action）；raw single action 经 SafetyGuard 后直接交给 L2-06 发布。</p>
+            </div>
+            <div class="legend">
+              <span><i class="dot" style="background:#6b7280"></i>data</span>
+              <span><i class="dot" style="background:#344054"></i>control</span>
+              <span><i class="dot" style="background:var(--model)"></i>queue</span>
+              <span><i class="dot" style="background:var(--output)"></i>topic</span>
+            </div>
+          </div>
+          <div class="figure">
+            <svg viewBox="0 0 1080 660" role="img" aria-label="宏观数据流图" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#475567"></path>
+                </marker>
+              </defs>
+
+              <!-- swimlanes -->
+              <rect class="swim" x="20" y="40" width="1040" height="70" rx="6"></rect>
+              <text class="swim-title" x="36" y="62">外部静态输入</text>
+              <rect class="swim" x="20" y="130" width="1040" height="120" rx="6"></rect>
+              <text class="swim-title" x="36" y="152">观测进入 RAM</text>
+              <rect class="swim" x="20" y="270" width="1040" height="120" rx="6"></rect>
+              <text class="swim-title" x="36" y="292">模型与动作块</text>
+              <rect class="swim" x="20" y="410" width="1040" height="80" rx="6"></rect>
+              <text class="swim-title" x="36" y="432">单步动作加工</text>
+              <rect class="swim" x="20" y="510" width="1040" height="120" rx="6"></rect>
+              <text class="swim-title" x="36" y="532">外部输出</text>
+
+              <!-- 外部静态输入 -->
+              <g class="node">
+                <rect class="box" x="60" y="60" width="170" height="40"></rect>
+                <rect class="band" x="60" y="60" width="7" height="40" fill="var(--external)"></rect>
+                <text class="title" x="78" y="85">deploy.yaml</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="280" y="60" width="170" height="40"></rect>
+                <rect class="band" x="280" y="60" width="7" height="40" fill="var(--external)"></rect>
+                <text class="title" x="298" y="85">ACT bundle</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="510" y="60" width="200" height="40"></rect>
+                <rect class="band" x="510" y="60" width="7" height="40" fill="var(--config)"></rect>
+                <text class="title" x="528" y="85">DeployConfig (L2-01)</text>
+              </g>
+
+              <!-- 观测 -->
+              <g class="node">
+                <rect class="box" x="60" y="160" width="170" height="70"></rect>
+                <rect class="band" x="60" y="160" width="7" height="70" fill="var(--external)"></rect>
+                <text class="title" x="78" y="184">/act/observation/*</text>
+                <text class="sub" x="78" y="202">images + arm</text>
+                <text class="sub" x="78" y="218">+ gripper</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="290" y="160" width="180" height="70"></rect>
+                <rect class="band" x="290" y="160" width="7" height="70" fill="var(--obs)"></rect>
+                <text class="title" x="308" y="184">ObservationCollector</text>
+                <text class="sub" x="308" y="202">L2-02 · 16D</text>
+                <text class="sub" x="308" y="218">encoded_state</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="540" y="160" width="180" height="70"></rect>
+                <rect class="band" x="540" y="160" width="7" height="70" fill="var(--obs)"></rect>
+                <text class="title" x="558" y="184">ObservationSnapshot</text>
+                <text class="sub" x="558" y="202">L2-02 owns</text>
+                <text class="sub" x="558" y="218">images + state</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="800" y="160" width="220" height="70"></rect>
+                <rect class="band" x="800" y="160" width="7" height="70" fill="var(--ctrl)"></rect>
+                <text class="title" x="818" y="184">latest_observation</text>
+                <text class="sub" x="818" y="202">SharedBuffer</text>
+                <text class="sub" x="818" y="218">latest-only</text>
+              </g>
+
+              <!-- 模型与动作块 -->
+              <g class="node">
+                <rect class="box" x="60" y="300" width="180" height="70"></rect>
+                <rect class="band" x="60" y="300" width="7" height="70" fill="var(--ctrl)"></rect>
+                <text class="title" x="78" y="324">InferenceRequest</text>
+                <text class="sub" x="78" y="342">L2-07 创建</text>
+                <text class="sub" x="78" y="358">不是模型 batch</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="290" y="300" width="180" height="70"></rect>
+                <rect class="band" x="290" y="300" width="7" height="70" fill="var(--model)"></rect>
+                <text class="title" x="308" y="324">InferenceWorker</text>
+                <text class="sub" x="308" y="342">L2-03 · ACT batch</text>
+                <text class="sub" x="308" y="358">→ policy.predict</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="540" y="300" width="180" height="70"></rect>
+                <rect class="band" x="540" y="300" width="7" height="70" fill="var(--model)"></rect>
+                <text class="title" x="558" y="324">ActionChunk (N,16)</text>
+                <text class="sub" x="558" y="342">L2-03 owns</text>
+                <text class="sub" x="558" y="358">chunk_result_queue</text>
+              </g>
+
+              <!-- 单步动作加工 -->
+              <g class="node">
+                <rect class="box" x="100" y="430" width="200" height="50"></rect>
+                <rect class="band" x="100" y="430" width="7" height="50" fill="var(--runtime)"></rect>
+                <text class="title" x="118" y="454">L2-04 raw single action (16,)</text>
+                <text class="sub" x="118" y="470">条件：直取 / 边界 blend</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="380" y="430" width="200" height="50"></rect>
+                <rect class="band" x="380" y="430" width="7" height="50" fill="var(--safety)"></rect>
+                <text class="title" x="398" y="454">L2-05 SafetyResult</text>
+                <text class="sub" x="398" y="470">safe action</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="660" y="430" width="200" height="50"></rect>
+                <rect class="band" x="660" y="430" width="7" height="50" fill="var(--output)"></rect>
+                <text class="title" x="678" y="454">L2-06 publisher / bridge</text>
+                <text class="sub" x="678" y="470">shadow / gate 守卫</text>
+              </g>
+
+              <!-- 外部输出 -->
+              <g class="node">
+                <rect class="box" x="80" y="560" width="200" height="50"></rect>
+                <rect class="band" x="80" y="560" width="7" height="50" fill="var(--output)"></rect>
+                <text class="title" x="98" y="584">/act/policy_action</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="340" y="560" width="260" height="50"></rect>
+                <rect class="band" x="340" y="560" width="7" height="50" fill="var(--output)"></rect>
+                <text class="title" x="358" y="584">/act/command/{arm,gripper}/*</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="660" y="560" width="220" height="50"></rect>
+                <rect class="band" x="660" y="560" width="7" height="50" fill="var(--output)"></rect>
+                <text class="title" x="678" y="584">/act/command/status</text>
+              </g>
+
+              <!-- ===== 边（精确起止） ===== -->
+              <!-- 静态输入内部 -->
+              <path class="edge data" d="M230 80 L280 80"></path>
+              <path class="edge data" d="M450 80 L510 80"></path>
+
+              <!-- 静态 → 观测/模型 -->
+              <path class="edge data" d="M610 100 L610 160"></path>
+              <path class="edge data" d="M365 100 L365 160"></path>
+              <path class="edge data" d="M145 100 L145 160"></path>
+
+              <!-- 观测行内部 -->
+              <path class="edge topic" d="M230 195 L290 195"></path>
+              <text class="edge-label" x="240" y="188">topic</text>
+              <path class="edge data" d="M470 195 L540 195"></path>
+              <path class="edge data" d="M720 195 L800 195"></path>
+              <text class="edge-label" x="735" y="188">write latest</text>
+
+              <!-- latest_observation → InferenceRequest (control: create，斜线) -->
+              <path class="edge control" d="M800 230 C700 260 400 280 240 305"></path>
+              <text class="edge-label" x="470" y="280">control: read → create</text>
+
+              <!-- InferenceRequest → InferenceWorker (queue) -->
+              <path class="edge queue" d="M240 335 L290 335"></path>
+              <text class="edge-label" x="245" y="328">queue</text>
+              <path class="edge data" d="M470 335 L540 335"></path>
+
+              <!-- ActionChunk → raw action (control: collect, 斜线下) -->
+              <path class="edge queue" d="M600 370 C500 400 300 410 200 430"></path>
+              <text class="edge-label" x="380" y="408">control: collect</text>
+
+              <!-- 单步加工内部 -->
+              <path class="edge data" d="M300 455 L380 455"></path>
+              <text class="edge-label" x="312" y="448">raw</text>
+              <path class="edge data" d="M580 455 L660 455"></path>
+              <text class="edge-label" x="596" y="448">safe</text>
+
+              <!-- 输出 topic -->
+              <path class="edge topic" d="M760 480 L760 540 L470 540 L470 560"></path>
+              <path class="edge topic" d="M740 480 L740 560"></path>
+              <path class="edge topic" d="M780 480 L780 540 L770 540 L770 560"></path>
+            </svg>
+          </div>
+        </section>
+
+        <!-- ============ ControlLoop 调控（核心重做：纵向 + 条件分叉） ============ -->
+        <section class="panel control">
+          <div class="panel-head">
+            <div>
+              <h2>ControlLoop.tick()：每一轮调度什么</h2>
+              <p>tick 是中央总控：读状态、调服务、做发布决策，<b>不亲自做数学加工</b>。第 ④ 步取 raw action 是<b>条件分叉</b>——多数 tick 直接取 active 动作；只有 chunk 切换边界（cursor≥execute_horizon 或 chunk 用尽，且有 pending）才走 smoothstep blend。任何环节不可用都汇入 fallback。</p>
+            </div>
+            <div class="legend">
+              <span><i class="dot" style="background:#344054"></i>正常调度</span>
+              <span><i class="dot" style="background:var(--runtime)"></i>raw 分叉</span>
+              <span><i class="dot" style="background:var(--safety)"></i>fallback</span>
+              <span><i class="dot" style="background:#9aa4b2"></i>loop</span>
+            </div>
+          </div>
+          <div class="figure">
+            <svg viewBox="0 0 1140 800" role="img" aria-label="ControlLoop tick 调度图" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#475567"></path>
+                </marker>
+              </defs>
+
+              <!-- ===== 主流程纵向（左侧 x=60-300，中心 180）===== -->
+
+              <!-- ① TickStart -->
+              <g class="node">
+                <rect class="box" x="60" y="30" width="240" height="56"></rect>
+                <rect class="band" x="60" y="30" width="7" height="56" fill="var(--ctrl)"></rect>
+                <text class="title" x="78" y="55">① TickStart</text>
+                <text class="sub" x="78" y="74">control_timer 触发 · now=monotonic</text>
+              </g>
+
+              <!-- ② CollectChunkResult -->
+              <g class="node">
+                <rect class="box" x="60" y="116" width="240" height="56"></rect>
+                <rect class="band" x="60" y="116" width="7" height="56" fill="var(--ctrl)"></rect>
+                <text class="title" x="78" y="141">② CollectChunkResult</text>
+                <text class="sub" x="78" y="160">读 chunk_result_queue → pending</text>
+              </g>
+
+              <!-- ③ UpdateChunkState -->
+              <g class="node">
+                <rect class="box" x="60" y="202" width="240" height="56"></rect>
+                <rect class="band" x="60" y="202" width="7" height="56" fill="var(--ctrl)"></rect>
+                <text class="title" x="78" y="227">③ UpdateChunkState</text>
+                <text class="sub" x="78" y="246">冷启动直接激活；否则保持 active</text>
+              </g>
+
+              <!-- ④ ReadObservation -->
+              <g class="node">
+                <rect class="box" x="60" y="288" width="240" height="56"></rect>
+                <rect class="band" x="60" y="288" width="7" height="56" fill="var(--obs)"></rect>
+                <text class="title" x="78" y="313">④ ReadObservation</text>
+                <text class="sub" x="78" y="332">latest_observation(max_age_s)</text>
+              </g>
+
+              <!-- ⑤ MaybeSubmitInference -->
+              <g class="node">
+                <rect class="box" x="60" y="374" width="240" height="56"></rect>
+                <rect class="band" x="60" y="374" width="7" height="56" fill="var(--ctrl)"></rect>
+                <text class="title" x="78" y="399">⑤ MaybeSubmitInference</text>
+                <text class="sub" x="78" y="418">cursor≥阈值 且无 pending request → 提交</text>
+              </g>
+
+              <!-- ⑥ SelectRawAction（条件分叉节点，加大） -->
+              <g class="node">
+                <rect class="box" x="60" y="460" width="240" height="96"></rect>
+                <rect class="band" x="60" y="460" width="7" height="96" fill="var(--runtime)"></rect>
+                <text class="title" x="78" y="485">⑥ SelectRawAction</text>
+                <text class="sub" x="78" y="504">条件分叉，见下方 A / B</text>
+                <text class="sub" x="78" y="522">无可用 action → fallback</text>
+                <text class="sub" x="78" y="540">→ raw single action (16,)</text>
+              </g>
+
+              <!-- A 路径（常规，左下分支） -->
+              <g class="node">
+                <rect class="box" x="350" y="460" width="220" height="50"></rect>
+                <rect class="band" x="350" y="460" width="7" height="50" fill="var(--runtime)"></rect>
+                <text class="title" x="368" y="482">A 常规（多数 tick）</text>
+                <text class="sub" x="368" y="500">直取 active.actions[cursor++]</text>
+              </g>
+
+              <!-- B 路径（边界，右下分支） -->
+              <g class="node">
+                <rect class="box" x="610" y="460" width="240" height="50"></rect>
+                <rect class="band" x="610" y="460" width="7" height="50" fill="var(--model)"></rect>
+                <text class="title" x="628" y="482">B 边界（chunk 切换时）</text>
+                <text class="sub" x="628" y="500">smoothstep(last_cmd, next[cursor])</text>
+              </g>
+
+              <!-- B 触发条件说明框 -->
+              <g class="node">
+                <rect class="box" x="610" y="525" width="240" height="58" fill="#fbf6ea" stroke="#d8cdb6"></rect>
+                <text class="sub" x="624" y="544" fill="#7a6233">触发条件：</text>
+                <text class="sub" x="624" y="560" fill="#7a6233">cursor ≥ execute_horizon</text>
+                <text class="sub" x="624" y="575" fill="#7a6233">或 chunk 用尽，且有 pending</text>
+              </g>
+
+              <!-- ⑦ SafetyCheck -->
+              <g class="node">
+                <rect class="box" x="60" y="616" width="240" height="56"></rect>
+                <rect class="band" x="60" y="616" width="7" height="56" fill="var(--safety)"></rect>
+                <text class="title" x="78" y="641">⑦ SafetyCheck</text>
+                <text class="sub" x="78" y="660">调 L2-05 SafetyGuard → SafetyResult</text>
+              </g>
+
+              <!-- ⑧ PublishAction -->
+              <g class="node">
+                <rect class="box" x="60" y="702" width="240" height="56"></rect>
+                <rect class="band" x="60" y="702" width="7" height="56" fill="var(--output)"></rect>
+                <text class="title" x="78" y="727">⑧ PublishAction</text>
+                <text class="sub" x="78" y="746">调 L2-06 发布 / 发送</text>
+              </g>
+
+              <!-- ===== 右侧 FallbackDecision（大块） ===== -->
+              <g class="node">
+                <rect class="box" x="880" y="288" width="240" height="330"></rect>
+                <rect class="band" x="880" y="288" width="240" height="30" fill="var(--safety)"></rect>
+                <text class="title" x="1000" y="308" fill="white" text-anchor="middle">FallbackDecision</text>
+                <text class="sub" x="898" y="340">各失败点汇入：</text>
+                <text class="sub" x="898" y="360">· observation 缺/过期</text>
+                <text class="sub" x="898" y="378">· 无可用 action</text>
+                <text class="sub" x="898" y="396">· SafetyResult reject</text>
+                <text class="sub" x="898" y="414">· 推理 error / chunk 非法</text>
+                <text class="sub" x="898" y="446">降级策略：</text>
+                <text class="sub" x="898" y="466">· hold last action</text>
+                <text class="sub" x="898" y="484">· safe_stop</text>
+                <text class="sub" x="898" y="502">· status-only</text>
+                <text class="sub" x="898" y="534">→ 记录 fallback_count</text>
+                <text class="sub" x="898" y="552">→ 更新 /act/status</text>
+                <text class="sub" x="898" y="570">→ 经 PublishAction 输出</text>
+                <text class="sub" x="898" y="600">不伪装成功</text>
+              </g>
+
+              <!-- ===== 主流程纵向边 ===== -->
+              <path class="edge control" d="M180 86 L180 116"></path>
+              <path class="edge control" d="M180 172 L180 202"></path>
+              <path class="edge control" d="M180 258 L180 288"></path>
+              <path class="edge control" d="M180 344 L180 374"></path>
+              <path class="edge control" d="M180 430 L180 460"></path>
+              <path class="edge control" d="M180 556 L180 616"></path>
+              <path class="edge topic" d="M180 672 L180 702"></path>
+              <text class="edge-label" x="188" y="690">safe</text>
+
+              <!-- ⑥ SelectRawAction 分叉到 A / B -->
+              <path class="edge data" d="M300 490 L350 485"></path>
+              <text class="branch-label" x="308" y="478">多数</text>
+              <path class="edge data" d="M300 508 C430 540 540 540 610 485"></path>
+              <text class="branch-label" x="430" y="555">边界</text>
+
+              <!-- A / B 汇聚回主线（到 SafetyCheck） -->
+              <path class="edge data" d="M460 510 C460 580 300 600 240 616"></path>
+              <text class="branch-label" x="270" y="595">raw</text>
+              <path class="edge data" d="M730 510 C730 580 400 605 240 620"></path>
+
+              <!-- ===== 失败分支：主流程右侧 → FallbackDecision 左侧 ===== -->
+              <!-- ④ ReadObservation → Fallback -->
+              <path class="edge failure" d="M300 316 L880 316"></path>
+              <text class="edge-label" x="500" y="308">stale / missing</text>
+
+              <!-- ⑥ SelectRawAction → Fallback (no action) -->
+              <path class="edge failure" d="M300 530 C600 530 750 460 880 430"></path>
+              <text class="edge-label" x="560" y="510">no usable action</text>
+
+              <!-- ⑦ SafetyCheck → Fallback (reject) -->
+              <path class="edge failure" d="M300 644 C560 644 700 560 880 470"></path>
+              <text class="edge-label" x="540" y="638">reject</text>
+
+              <!-- ===== Fallback → PublishAction (hold/stop) ===== -->
+              <path class="edge failure" d="M880 600 C700 680 450 720 300 730"></path>
+              <text class="edge-label" x="560" y="705">hold / safe_stop</text>
+
+              <!-- ===== loop 回环（走最左侧边距）===== -->
+              <path class="edge loop" d="M60 730 L20 730 L20 58 L60 58"></path>
+              <text class="edge-label" x="28" y="395" transform="rotate(-90 28 395)">next tick</text>
+            </svg>
+          </div>
+        </section>
+
+        <!-- ============ 失败传播 ============ -->
+        <section class="panel failure">
+          <div class="panel-head">
+            <div>
+              <h2>失败传播：每类失败如何被暴露</h2>
+              <p>失败不隐藏：配置非法阻断启动；观测/推理/chunk/safety 问题进入 fallback（hold/safe_stop/status-only）；hardware gate 关闭只 shadow；bridge/driver 失败写入 command status。</p>
+            </div>
+            <div class="legend">
+              <span><i class="dot" style="background:var(--safety)"></i>失败源</span>
+              <span><i class="dot" style="background:var(--metrics)"></i>状态/指标</span>
+              <span><i class="dot" style="background:var(--output)"></i>外部输出</span>
+            </div>
+          </div>
+          <div class="figure">
+            <svg viewBox="0 0 1080 620" role="img" aria-label="失败传播图" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#475567"></path>
+                </marker>
+              </defs>
+
+              <!-- 失败源（左列） -->
+              <g class="node">
+                <rect class="box" x="40" y="40" width="240" height="56"></rect>
+                <rect class="band" x="40" y="40" width="7" height="56" fill="var(--config)"></rect>
+                <text class="title" x="58" y="64">配置 / bundle contract 非法</text>
+                <text class="sub" x="58" y="82">L2-01 · 缺字段/维度不符</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="124" width="240" height="56"></rect>
+                <rect class="band" x="40" y="124" width="7" height="56" fill="var(--obs)"></rect>
+                <text class="title" x="58" y="148">observation 缺字段 / 过期</text>
+                <text class="sub" x="58" y="166">L2-02 / L2-07</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="208" width="240" height="56"></rect>
+                <rect class="band" x="40" y="208" width="7" height="56" fill="var(--model)"></rect>
+                <text class="title" x="58" y="232">推理失败 / timeout</text>
+                <text class="sub" x="58" y="250">L2-03 · inference_error</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="292" width="240" height="56"></rect>
+                <rect class="band" x="40" y="292" width="7" height="56" fill="var(--runtime)"></rect>
+                <text class="title" x="58" y="316">chunk shape / age 非法</text>
+                <text class="sub" x="58" y="334">L2-04 · discard</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="376" width="240" height="56"></rect>
+                <rect class="band" x="40" y="376" width="7" height="56" fill="var(--safety)"></rect>
+                <text class="title" x="58" y="400">SafetyResult rejected</text>
+                <text class="sub" x="58" y="418">L2-05</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="460" width="240" height="56"></rect>
+                <rect class="band" x="40" y="460" width="7" height="56" fill="var(--output)"></rect>
+                <text class="title" x="58" y="484">hardware gate / bridge / driver</text>
+                <text class="sub" x="58" y="502">L2-06</text>
+              </g>
+
+              <!-- 中间处理 -->
+              <g class="node">
+                <rect class="box" x="400" y="40" width="200" height="56"></rect>
+                <rect class="band" x="400" y="40" width="7" height="56" fill="var(--safety)"></rect>
+                <text class="title" x="418" y="64">阻止启动</text>
+                <text class="sub" x="418" y="82">不进入运行循环</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="400" y="208" width="200" height="140"></rect>
+                <rect class="band" x="400" y="208" width="7" height="140" fill="var(--ctrl)"></rect>
+                <text class="title" x="418" y="232">ControlLoop fallback</text>
+                <text class="sub" x="418" y="256">· hold last action</text>
+                <text class="sub" x="418" y="276">· safe_stop</text>
+                <text class="sub" x="418" y="296">· status-only</text>
+                <text class="sub" x="418" y="316">· fallback_count</text>
+                <text class="sub" x="418" y="336">不伪装成功</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="400" y="460" width="200" height="56"></rect>
+                <rect class="band" x="400" y="460" width="7" height="56" fill="var(--output)"></rect>
+                <text class="title" x="418" y="484">shadow only</text>
+                <text class="sub" x="418" y="502">sent_to_driver=false</text>
+              </g>
+
+              <!-- 右侧汇总 -->
+              <g class="node">
+                <rect class="box" x="780" y="160" width="240" height="56"></rect>
+                <rect class="band" x="780" y="160" width="7" height="56" fill="var(--metrics)"></rect>
+                <text class="title" x="798" y="184">/act/status</text>
+                <text class="sub" x="798" y="202">normal/waiting/fallback/blocked</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="780" y="260" width="240" height="56"></rect>
+                <rect class="band" x="780" y="260" width="7" height="56" fill="var(--metrics)"></rect>
+                <text class="title" x="798" y="284">/act/metrics</text>
+                <text class="sub" x="798" y="302">每环节计数与延迟</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="780" y="460" width="240" height="56"></rect>
+                <rect class="band" x="780" y="460" width="7" height="56" fill="var(--output)"></rect>
+                <text class="title" x="798" y="484">/act/command/status</text>
+                <text class="sub" x="798" y="502">failure_reason</text>
+              </g>
+
+              <!-- 边 -->
+              <path class="edge failure" d="M280 68 L400 68"></path>
+              <path class="edge failure" d="M280 152 C340 180 360 240 400 260"></path>
+              <path class="edge failure" d="M280 236 L400 236"></path>
+              <path class="edge failure" d="M280 320 C340 310 360 300 400 290"></path>
+              <path class="edge failure" d="M280 404 C340 360 360 320 400 300"></path>
+              <path class="edge failure" d="M280 488 L400 488"></path>
+
+              <path class="edge metrics" d="M600 260 C680 240 740 220 780 195"></path>
+              <path class="edge metrics" d="M600 290 C680 290 740 290 780 290"></path>
+              <path class="edge failure" d="M600 488 L780 488"></path>
+            </svg>
+          </div>
+        </section>
+
+        <!-- ============ Metrics / status ============ -->
+        <section class="panel metrics">
+          <div class="panel-head">
+            <div>
+              <h2>Metrics / status：所有 L2 共同贡献</h2>
+              <p>Metrics 不是某个 L2 的私有输出。每个 L2 贡献运行事件，由 L2-07 统一汇总到 RuntimeMetrics，再发布为 /act/status、/act/metrics；L2-06 额外发布硬件发送链路的 /act/command/status。</p>
+            </div>
+            <div class="legend">
+              <span><i class="dot" style="background:var(--metrics)"></i>metrics</span>
+              <span><i class="dot" style="background:var(--output)"></i>topic</span>
+            </div>
+          </div>
+          <div class="figure">
+            <svg viewBox="0 0 1080 580" role="img" aria-label="Metrics 汇总图" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#475567"></path>
+                </marker>
+              </defs>
+
+              <!-- 各 L2 metrics 来源 -->
+              <g class="node">
+                <rect class="box" x="40" y="40" width="240" height="50"></rect>
+                <rect class="band" x="40" y="40" width="7" height="50" fill="var(--obs)"></rect>
+                <text class="title" x="58" y="62">L2-02 observation</text>
+                <text class="sub" x="58" y="80">ready / missing / stale_count</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="110" width="240" height="50"></rect>
+                <rect class="band" x="40" y="110" width="7" height="50" fill="var(--model)"></rect>
+                <text class="title" x="58" y="132">L2-03 inference</text>
+                <text class="sub" x="58" y="150">count / latency / error_count</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="180" width="240" height="50"></rect>
+                <rect class="band" x="40" y="180" width="7" height="50" fill="var(--runtime)"></rect>
+                <text class="title" x="58" y="202">L2-04 chunk / blend</text>
+                <text class="sub" x="58" y="220">switch / discarded / blend_active</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="250" width="240" height="50"></rect>
+                <rect class="band" x="40" y="250" width="7" height="50" fill="var(--safety)"></rect>
+                <text class="title" x="58" y="272">L2-05 safety</text>
+                <text class="sub" x="58" y="290">rejected_count / last_reason</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="320" width="240" height="50"></rect>
+                <rect class="band" x="40" y="320" width="7" height="50" fill="var(--output)"></rect>
+                <text class="title" x="58" y="342">L2-06 publish / command</text>
+                <text class="sub" x="58" y="360">published / sent_to_driver</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="40" y="390" width="240" height="50"></rect>
+                <rect class="band" x="40" y="390" width="7" height="50" fill="var(--ctrl)"></rect>
+                <text class="title" x="58" y="412">L2-07 control / fallback</text>
+                <text class="sub" x="58" y="430">fallback / cursor / request_pending</text>
+              </g>
+
+              <!-- RuntimeMetrics 中央 -->
+              <g class="node">
+                <rect class="box" x="420" y="200" width="200" height="100"></rect>
+                <rect class="band" x="420" y="200" width="7" height="100" fill="var(--metrics)"></rect>
+                <text class="title" x="438" y="226">RuntimeMetrics</text>
+                <text class="sub" x="438" y="250">owned by L2-07</text>
+                <text class="sub" x="438" y="270">各模块贡献事件</text>
+                <text class="sub" x="438" y="290">统一汇总</text>
+              </g>
+
+              <!-- 发布 topic -->
+              <g class="node">
+                <rect class="box" x="780" y="170" width="220" height="50"></rect>
+                <rect class="band" x="780" y="170" width="7" height="50" fill="var(--metrics)"></rect>
+                <text class="title" x="798" y="192">/act/status</text>
+                <text class="sub" x="798" y="210">人类判断可用性</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="780" y="260" width="220" height="50"></rect>
+                <rect class="band" x="780" y="260" width="7" height="50" fill="var(--metrics)"></rect>
+                <text class="title" x="798" y="282">/act/metrics</text>
+                <text class="sub" x="798" y="300">工程调试每环节</text>
+              </g>
+              <g class="node">
+                <rect class="box" x="780" y="350" width="220" height="50"></rect>
+                <rect class="band" x="780" y="350" width="7" height="50" fill="var(--output)"></rect>
+                <text class="title" x="798" y="372">/act/command/status</text>
+                <text class="sub" x="798" y="390">硬件发送链路</text>
+              </g>
+
+              <!-- 各 L2 → RuntimeMetrics -->
+              <path class="edge metrics" d="M280 65 C350 130 390 210 420 225"></path>
+              <path class="edge metrics" d="M280 135 C350 170 390 220 420 235"></path>
+              <path class="edge metrics" d="M280 205 C340 220 390 245 420 250"></path>
+              <path class="edge metrics" d="M280 275 C340 270 390 260 420 255"></path>
+              <path class="edge metrics" d="M280 345 C350 320 390 280 420 260"></path>
+              <path class="edge metrics" d="M280 415 C360 360 390 290 420 265"></path>
+
+              <!-- RuntimeMetrics → status / metrics topic -->
+              <path class="edge topic" d="M620 230 C690 215 740 200 780 195"></path>
+              <path class="edge topic" d="M620 270 C690 275 740 282 780 285"></path>
+              <!-- L2-06 → command status -->
+              <path class="edge topic" d="M280 345 C450 360 650 365 780 370"></path>
+            </svg>
+          </div>
+        </section>
+
+        <!-- ============ 模块边界卡片 ============ -->
+        <section class="panel boundary">
+          <div class="panel-head">
+            <div>
+              <h2>模块边界：每个 L2 的职责契约</h2>
+              <p>点击卡片查看每个模块的功能定义、输入、输出、负责和不负责内容。详细信息以 <code>01_L1_ACT功能模块边界.md</code> 为准。</p>
+            </div>
+          </div>
+          <div class="b-grid">
+
+            <details class="b-card config">
+              <summary><b>L2-01 外部参数加载与契约校验</b><span>加载外部静态参数并校验，形成配置/规格/契约对象</span></summary>
+              <div class="b-body">
+                <h4>输入</h4>
+                <div class="b-io">deploy.yaml · manifest.json · normalizers.json · experiment_config.yaml · checkpoint 路径</div>
+                <h4>输出</h4>
+                <div class="b-io">DeployConfig · state/action 16D 规格 · bundle/normalizer contract · runtime/safety/topic 配置</div>
+                <h4 class="b-do">负责</h4>
+                <ul>
+                  <li>固定 state/action 的 16D 维度、段序、值域</li>
+                  <li>固定 /act/* topic 名</li>
+                  <li>固定 runtime/safety 参数（hz、chunk、fallback、TCP 限制等）</li>
+                  <li>校验 bundle 交付物完整性</li>
+                </ul>
+                <h4 class="b-dont">不负责</h4>
+                <ul>
+                  <li>不订阅 ROS topic</li>
+                  <li>不加载 ACT 权重或前向推理</li>
+                  <li>不启动控制循环</li>
+                  <li>不发送硬件命令</li>
+                </ul>
+                <h4>代码层</h4>
+                <div class="b-io">types / config / repo / config_files</div>
+              </div>
+            </details>
+
+            <details class="b-card obs">
+              <summary><b>L2-02 ObservationSnapshot 组装</b><span>从传感器 topic 组装完整、新鲜的观测快照</span></summary>
+              <div class="b-body">
+                <h4>输入</h4>
+                <div class="b-io">/act/observation/image/* · /act/observation/arm/*_tcp_pose · /act/observation/gripper/*_state</div>
+                <h4>输出</h4>
+                <div class="b-io">ObservationSnapshot(images, state, encoded_state(16,), captured_at_s) → SharedBuffer.latest_observation</div>
+                <h4 class="b-do">负责</h4>
+                <ul>
+                  <li>创建 observation topic 订阅入口</li>
+                  <li>ROS 图像 → tensor 预处理</li>
+                  <li>字段齐全性与新鲜度检查</li>
+                  <li>调用 state codec 生成 16D encoded_state</li>
+                  <li>写入 latest-only buffer</li>
+                </ul>
+                <h4 class="b-dont">不负责</h4>
+                <ul>
+                  <li>不调用 ACT 模型</li>
+                  <li>不生成/消费 action_chunk</li>
+                  <li>不决定是否发起推理</li>
+                  <li>不做硬件命令发送</li>
+                </ul>
+                <h4>代码层</h4>
+                <div class="b-io">service / runtime / ui / tests</div>
+              </div>
+            </details>
+
+            <details class="b-card model">
+              <summary><b>L2-03 ACT ActionChunk 推理</b><span>把 ObservationSnapshot 加工成 ACT 动作块</span></summary>
+              <div class="b-body">
+                <h4>输入</h4>
+                <div class="b-io">ObservationSnapshot · DeployConfig · ACT bundle · normalizers.json · experiment_config.yaml</div>
+                <h4>输出</h4>
+                <div class="b-io">ActionChunk(actions(chunk_size,16), obs_time, ready_time, action_dt, request_id) → chunk_result_queue</div>
+                <h4 class="b-do">负责</h4>
+                <ul>
+                  <li>ObservationSnapshot → ACT batch 映射</li>
+                  <li>state normalize / action unnormalize</li>
+                  <li>加载 ACT policy runtime</li>
+                  <li>统一推理接口 predict_action_chunk</li>
+                  <li>提供 fake-policy 路径供本地验收</li>
+                </ul>
+                <h4 class="b-dont">不负责</h4>
+                <ul>
+                  <li>不负责 ROS callback</li>
+                  <li>不负责 snapshot 是否齐全</li>
+                  <li>不负责 chunk 时间对齐与平滑</li>
+                  <li>不负责 safety 检查和 topic 发布</li>
+                </ul>
+                <h4>代码层</h4>
+                <div class="b-io">repo / service / runtime / tests</div>
+              </div>
+            </details>
+
+            <details class="b-card smooth">
+              <summary><b>L2-04 ActionChunk 平滑融合</b><span>选当前 tick 的单步 raw action；切换边界做 smoothstep blend</span></summary>
+              <div class="b-body">
+                <h4>输入</h4>
+                <div class="b-io">active/pending ActionChunk · now · control_hz · execute_horizon · prefetch_steps · blend_steps</div>
+                <h4>输出</h4>
+                <div class="b-io">raw single action (16,) · chunk 状态更新 · chunk switch/discarded metrics</div>
+                <h4 class="b-do">负责</h4>
+                <ul>
+                  <li>管理 active/pending chunk 生命周期</li>
+                  <li>chunk shape/时效性/数值合法性检查</li>
+                  <li>aligned_index(now) 时间对齐</li>
+                  <li>常规 tick 直取；切换边界 smoothstep blend</li>
+                  <li>丢弃过期或非法 chunk</li>
+                </ul>
+                <h4 class="b-dont">不负责</h4>
+                <ul>
+                  <li>不生成 observation</li>
+                  <li>不调用 ACT 模型</li>
+                  <li>不做 safety 检查</li>
+                  <li>不发布 ROS topic 或发送执行器命令</li>
+                  <li>不决定何时提交推理请求（属于 L2-07）</li>
+                </ul>
+                <h4>代码层</h4>
+                <div class="b-io">runtime / tests</div>
+              </div>
+            </details>
+
+            <details class="b-card safety">
+              <summary><b>L2-05 单步 Action 安全检查</b><span>对 raw action 做部署侧通用安全检查</span></summary>
+              <div class="b-body">
+                <h4>输入</h4>
+                <div class="b-io">raw single action (16,) · latest ObservationSnapshot · previous safe action · SafetyConfig</div>
+                <h4>输出</h4>
+                <div class="b-io">SafetyResult(action | None, accepted, reason)</div>
+                <h4 class="b-do">负责</h4>
+                <ul>
+                  <li>action shape=16 检查</li>
+                  <li>NaN / Inf 检查</li>
+                  <li>quaternion 归一化检查</li>
+                  <li>gripper width ∈ [0,1] 检查</li>
+                  <li>TCP 单步位移/姿态变化限幅</li>
+                  <li>按配置返回 reject/clamp/hold/safe-stop</li>
+                </ul>
+                <h4 class="b-dont">不负责</h4>
+                <ul>
+                  <li>不产生 raw action</li>
+                  <li>不管理 chunk 生命周期</li>
+                  <li>不发布 /act/policy_action</li>
+                  <li>不调用硬件 SDK</li>
+                  <li>不做 workspace/IK/急停等硬件级检查（属于 L2-06）</li>
+                </ul>
+                <h4>代码层</h4>
+                <div class="b-io">service / tests</div>
+              </div>
+            </details>
+
+            <details class="b-card output">
+              <summary><b>L2-06 执行器 Topic 适配发送</b><span>把 safe action 转成执行器可消费的 topic 消息</span></summary>
+              <div class="b-body">
+                <h4>输入</h4>
+                <div class="b-io">safe single action (16,) · /act/policy_action · latest arm/gripper state · BridgeConfig/HardwareConfig</div>
+                <h4>输出</h4>
+                <div class="b-io">/act/policy_action · /act/command/arm/*_target · /act/command/gripper/*_target · /act/command/status</div>
+                <h4 class="b-do">负责</h4>
+                <ul>
+                  <li>发布/适配 /act/policy_action</li>
+                  <li>16D action 拆为 left/right TCP + left/right gripper</li>
+                  <li>构造 PoseStamped 目标，gripper width → angle</li>
+                  <li>硬件发送前检查：workspace/IK/gate/deadman/急停</li>
+                  <li>输出 command status（action_id/safety_ok/sent_to_driver/failure_reason）</li>
+                  <li>支持 shadow-run，默认不触发真机</li>
+                </ul>
+                <h4 class="b-dont">不负责</h4>
+                <ul>
+                  <li>不调用 ACT 模型</li>
+                  <li>不管理 action chunk</li>
+                  <li>不决定何时 tick</li>
+                  <li>不替代 L2-05 的通用安全检查</li>
+                  <li>不在无授权时执行 real-robot smoke test</li>
+                </ul>
+                <h4>代码层</h4>
+                <div class="b-io">ui / service / launch / tests</div>
+              </div>
+            </details>
+
+            <details class="b-card ctrl">
+              <summary><b>L2-07 ControlLoop 中央运行调度</b><span>按 control_hz 周期调度各 service，是中央总控而非加工函数</span></summary>
+              <div class="b-body">
+                <h4>输入</h4>
+                <div class="b-io">DeployConfig · latest_observation · inference_request_queue · chunk_result_queue · chunk smoother · SafetyGuard · publisher/bridge</div>
+                <h4>输出</h4>
+                <div class="b-io">InferenceRequest · safe action 或 fallback 输出（交 L2-06 发布）· status/metrics</div>
+                <h4 class="b-do">负责</h4>
+                <ul>
+                  <li>按 control_hz 周期运行 tick</li>
+                  <li>读取 latest observation</li>
+                  <li>决定是否提交 InferenceRequest（prefetch 策略）</li>
+                  <li>收集 ActionChunk，调 L2-04 取 raw action</li>
+                  <li>调 L2-05 安全检查，调 L2-06 发布</li>
+                  <li>处理 fallback：无 observation/chunk 过期/safety 拒绝/推理失败</li>
+                  <li>更新 metrics 和 status</li>
+                </ul>
+                <h4 class="b-dont">不负责</h4>
+                <ul>
+                  <li>不直接解析配置文件</li>
+                  <li>不直接预处理图像</li>
+                  <li>不直接构造 ACT batch 或前向推理</li>
+                  <li>不直接实现硬件 SDK 细节</li>
+                  <li>不把 service 逻辑塞进 tick() 内部</li>
+                </ul>
+                <h4>代码层</h4>
+                <div class="b-io">runtime / ui / tests/integration</div>
+              </div>
+            </details>
+
+          </div>
+        </section>
+      </section>
+
+      <aside class="card explain">
+        <h2>阅读方式</h2>
+        <span class="pill">Human View</span>
+        <h3>先看什么</h3>
+        <ul>
+          <li>先看"总览"，确认 ControlLoop 是中央总控，L2-01 是契约地基。</li>
+          <li>再看"宏观数据流"，确认外部数据如何变成执行器命令。</li>
+          <li>重点看"ControlLoop 调控"：tick 每轮 8 步，第 ⑥ 步取 raw action 是条件分叉——常规直取 vs 边界 blend。</li>
+          <li>最后看"失败传播"和"Metrics / status"。</li>
+        </ul>
+        <h3>L2-04 平滑的触发条件</h3>
+        <ul>
+          <li><b>常规（多数 tick）</b>：直接取 active_chunk.actions[cursor]，cursor 自增。</li>
+          <li><b>边界 blend</b>：cursor ≥ execute_horizon 或 chunk 用尽，且有 pending_chunk 时，用 smoothstep 在 last_command 与新 chunk 之间做 blend_steps 步混合。</li>
+          <li>冷启动 / blend_steps≤0 / 无 last_command：硬切，不 blend。</li>
+        </ul>
+        <h3>关键不变量</h3>
+        <ul>
+          <li>tick() 是中央调度器，不吞并 L2-02~L2-06 的实现。</li>
+          <li>L2-04 只管理 chunk 生命周期和平滑，不做安全检查。</li>
+          <li>L2-05 只做 policy-action 通用安全检查，不做硬件级检查。</li>
+          <li>真机发送必须经 shadow-run / gate / command_status。</li>
+        </ul>
+        <h3>不要把它当成什么</h3>
+        <ul>
+          <li>不是 L3 任务生成依据。</li>
+          <li>不是字段级契约或完整配置 schema。</li>
+          <li>不是 Pi0.5 源码盘点（Pi0.5 仅作为参考）。</li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

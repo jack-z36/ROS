@@ -7,24 +7,30 @@
 | 目录 | 用途 | 读取条件 |
 |---|---|---|
 | `00_status/` | Ralph / OpenCode 循环状态上下文 | 启动或恢复阶段四循环工程时读取 |
-| `01_contracts/` | 阶段四接口契约和数据约定 | 需要确认模型部署输入输出、topic、shape 或兼容边界 |
-| `02_l2_change_packages/` | L2 改造工作包 | 需要理解或规划阶段四 L2 范围 |
+| `01_contracts/` | 阶段四接口契约和数据约定参考库，不是当前 L2/L3 拆解权威 | 需要补充确认输入输出、topic、shape 或兼容边界时按需读取 |
+| `02_l2_change_packages/` | 当前 L1/L2 权威工作包；包含 L1 任务文档、L1 功能模块边界、L1 功能模块协作架构、人类可视化 HTML 和新版功能闭环 L2 设计目录 | 需要理解或规划阶段四 L2 范围 |
 | `03_tasks/` | L3 任务、dispatch 与验收卡片 | 执行、调度或验收阶段四 L3 |
 | `04_debug/` | 阶段四 debug 工程记录 | 定位阶段四异常或测试失败 |
 | `05_acceptance/` | L2 Gate 运行验收材料 + 人类验收清单与签字 | 汇总 L2 验收、检查自动同步前置条件（含人类验收关卡） |
 | `pi05_old/` | 旧实现参考材料 | 用户明确要求对照旧实现时读取 |
 
-> [!note] ACT / Pi0.5 双契约并存
-> `01_contracts/` 下当前两套契约并存：
-> - **ACT 版（第一版主线）**：`ACT部署契约.md`、`ACT Contract Delta.md`、`ACT模型训练交付物契约.md`。
-> - **Pi0.5 版（历史保留）**：`TO-BE Contract.md`、`Contract Delta.md`、`模型训练交付物契约.md`。
-> 硬件相关契约（command_bridge / rm65 / elephant_gripper / fisheye_camera / tactile_sensor 节点契约）与模型无关，两套共用。
+> [!warning] 当前权威主线
+> 当前 ACT 第一版不再以 `AS-IS / TO-BE / Contract Delta` 聚类 L2。当前权威入口是：
+> - `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
+> - `02_l2_change_packages/00_L1_ACT部署程序任务文档.md`（任务管理）
+> - `02_l2_change_packages/01_L1_ACT功能模块边界.md`（模块边界，Agent 权威）
+> - `02_l2_change_packages/02_L1_ACT功能模块协作架构.md`（模块协作，Agent 权威）
+> - `02_l2_change_packages/ACT架构交互可视化.html`（人类可视化）
+> - 当前新版 L2 设计目录。
+>
+> `01_contracts/` 下契约只作为参考语义库。`ACT Contract Delta.md` 和旧 Pi0.5 Contract Delta 不得作为 L2/L3 生成权威。
 | `ralph_stage4_prompt.md` | OpenCode 主 Agent 启动引导 | 每次 Ralph / OpenCode 阶段四循环最初加载 |
-| `目标描述框架.md` | 阶段四目标描述框架 | 需要确认阶段四目标表达边界 |
+| `目标描述框架.md` | 旧 Contract Delta 目标描述方法，当前仅作历史参考 | 用户明确要求对照旧规划方法时读取 |
 
 ## 默认不读
 
 - `pi05_old/` 默认不作为上下文入口。
 - `03_tasks/_archived_pi05/` 是已废弃的 Pi0.5 版 L2/L3/dispatch 归档，除非用户明确要求对照旧规划，否则不读。
+- `02_l2_change_packages/_legacy_layer_based_act/`、`03_tasks/_legacy_layer_based_act/`、`05_acceptance/_legacy_layer_based_act/` 是旧 layer-based ACT 产物隔离区，默认不读。
 - `04_debug/` 只在 Debug / Bugfix 任务中按需读取。
 - 阶段四循环工程启动时只从 `ralph_stage4_prompt.md`、循环工程加载规则和 `00_status/` 恢复状态，不默认读取全部 L3 正文。

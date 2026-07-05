@@ -16,15 +16,20 @@
 
 | L2 | Dispatch | 摘要 |
 |---|---|---|
-| l2-01-types | `03_tasks/task/dispatch/l2-01-types.yaml` | 全组已标记 `synced` |
-| l2-02-config | `03_tasks/task/dispatch/l2-02-config.yaml` | 全组已标记 `synced` |
-| l2-03-assembly | `03_tasks/task/dispatch/l2-03-assembly.yaml` | 4 个 L3 均已 `committed-local`（`0a75f77`+`4c8080d`）；deploy_009/010/011 `PASS_LOCAL`，deploy_012 `BLOCKED_ENV`（torch 缺失）；Gate 不通过，待 torch 环境重跑 012 放行 |
-| l2-04-publish | `03_tasks/task/dispatch/l2-04-publish.yaml` | 等待 L2-03 Gate |
-| l2-05-hardware | `03_tasks/task/dispatch/l2-05-hardware.yaml` | 等待 L2-04 Gate；`deploy_023` 默认 blocked |
+| `l2-01-external-contract` | `03_tasks/task/dispatch/l2-01-external-contract.yaml` | 未生成；需先完成新版 L2 设计和 L3 生成 |
+| `l2-02-observation-snapshot` | `03_tasks/task/dispatch/l2-02-observation-snapshot.yaml` | 未生成；等待 L2-01 Gate |
+| `l2-03-act-inference` | `03_tasks/task/dispatch/l2-03-act-inference.yaml` | 未生成；等待 L2-02 Gate |
+| `l2-04-action-smoothing` | `03_tasks/task/dispatch/l2-04-action-smoothing.yaml` | 未生成；等待 L2-03 Gate |
+| `l2-05-safety-guard` | `03_tasks/task/dispatch/l2-05-safety-guard.yaml` | 未生成；等待 L2-04 Gate |
+| `l2-06-action-publisher` | `03_tasks/task/dispatch/l2-06-action-publisher.yaml` | 未生成；等待 L2-05 Gate |
+| `l2-07-control-loop` | `03_tasks/task/dispatch/l2-07-control-loop.yaml` | 未生成；等待 L2-06 Gate |
+
+> [!warning] 旧调度作废
+> 旧 layer-based dispatch 已隔离到 `03_tasks/_legacy_layer_based_act/`，不得作为当前调度来源。
 
 ## 维护规则
 
 - L3 调度状态的权威来源是各 L2 dispatch。
 - 主 Agent 每轮结束时应根据 dispatch 和验收结果更新本摘要。
 - 如果本摘要与 dispatch 冲突，以 dispatch 为准。
-
+- 旧 `l2-01-types` 等 ID 不得重新写入当前摘要，除非位于明确废弃说明中。

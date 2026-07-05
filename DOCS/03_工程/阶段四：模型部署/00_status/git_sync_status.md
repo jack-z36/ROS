@@ -14,16 +14,18 @@
 
 ## 状态表
 
-> [!warning] 2026-07-03 重置说明
-> 原表记录的是 Pi0.5 版 L2 的提交/merge 状态（l2-01/l2-02 声称已合入）。第一版切换为 ACT 后，旧 L2/L3 已归档，5 个 L2 全部针对 ACT 从零重写，提交状态全部重置。原 Pi0.5 的 commit 记录保留在 Git 历史中，但不再作为当前主线依据。
+> [!warning] 2026-07-05 重置说明
+> 旧 layer-based L2 Git 状态作废。当前只记录新版 7 个功能闭环 L2 的提交、push 和 merge 状态。旧 `l2-01-types` 等分支不得作为当前合入依据。
 
 | 范围 | 三级分支 | 本地提交 | push 状态 | merge 状态 | 备注 |
 |---|---|---|---|---|---|
-| l2-01-types | `feat/model_deploy/l2-01-types` | 待记录 | 待记录 | 未合入 | ACT 版，未开始 |
-| l2-02-config | `feat/model_deploy/l2-02-config` | 待记录 | 待记录 | 未合入 | ACT 版，未开始 |
-| l2-03-assembly | `feat/model_deploy/l2-03-assembly` | 待记录 | 待记录 | 未合入 | ACT 版，未开始 |
-| l2-04-publish | `feat/model_deploy/l2-04-publish` | 待记录 | 待记录 | 未合入 | ACT 版，未开始 |
-| l2-05-hardware | `feat/model_deploy/l2-05-hardware` | 待记录 | 待记录 | 未合入 | ACT 版，未开始 |
+| `l2-01-external-contract` | `feat/model_deploy/l2-01-external-contract` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-01，未开始 |
+| `l2-02-observation-snapshot` | `feat/model_deploy/l2-02-observation-snapshot` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-02，未开始 |
+| `l2-03-act-inference` | `feat/model_deploy/l2-03-act-inference` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-03，未开始 |
+| `l2-04-action-smoothing` | `feat/model_deploy/l2-04-action-smoothing` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-04，未开始 |
+| `l2-05-safety-guard` | `feat/model_deploy/l2-05-safety-guard` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-05，未开始 |
+| `l2-06-action-publisher` | `feat/model_deploy/l2-06-action-publisher` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-06，未开始 |
+| `l2-07-control-loop` | `feat/model_deploy/l2-07-control-loop` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-07，未开始 |
 
 ## 合入前置条件
 
@@ -33,6 +35,8 @@
 3. 无 Git 阻断条件（冲突、分叉、超大文件等）。
 
 规则见 `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md` 和 `DOCS/02_约束/工作流/阶段四开发工作流/attachments/人类验收关卡规则.md`。
+
+旧 layer-based L2 分支只允许作为历史参考，不得写入当前状态表或作为自动合入目标。
 
 ## Push 失败记录格式
 

@@ -4,7 +4,7 @@
 
 - 阶段：阶段四：模型部署
 - 任务模式：阶段四 L2 / L3 执行、模型部署代码和工程文档协作
-- 适用对象：`model_deploy` 二级长期分支、阶段四三级功能分支、`src/model_deploy/pi05/` 和阶段四工程文档
+- 适用对象：`model_deploy` 二级长期分支、阶段四三级功能分支、`src/model_deploy/act/` 和阶段四工程文档
 - 不适用对象：阶段二数据清洗分支、`main` 稳定分支合并流程
 
 使用本文件前，必须先读取：
@@ -109,12 +109,18 @@ git push origin --delete feat/model_deploy/<topic>
 
 允许提交：
 
-- `src/model_deploy/pi05/` 下本功能明确允许的源码、配置、脚本或测试。
-- `DOCS/03_工程/阶段四：模型部署/` 下本功能的任务文件、验收结果和工程记录。
+- `src/model_deploy/act/` 下本 L3 明确允许的源码、配置、launch、脚本或测试。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<new-l2>/` 设计文档。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<new-l2>/` 任务文件。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/dispatch/<new-l2>.yaml` dispatch。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/cards/<new-l2>/` 验收卡片。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/05_acceptance/<new-l2>/` 验收结果、脚本和日志。
 - `DOCS/02_约束/` 下本次明确要求维护的约束、模板或工作流文件。
 
 禁止提交：
 
+- `src/model_deploy/pi05/`、`DOCS/03_工程/阶段四：模型部署/pi05_old/` 或其他 Pi0.5 历史源码作为 L3 修改落点；Pi0.5 只能作为只读参考。
+- `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/_legacy_layer_based_act/`、`03_tasks/_legacy_layer_based_act/`、`05_acceptance/_legacy_layer_based_act/` 下的旧 layer-based ACT 产物，除非当前任务明确是文档归档、迁移或降权维护。
 - ROS 构建产物：`build/`、`install/`、`log/`
 - Python 缓存和测试缓存：`__pycache__/`、`*.pyc`、`.pytest_cache/`
 - 本地环境、私有配置、下载缓存、模型权重和大型数据产物
