@@ -1,0 +1,47 @@
+# Test files
+*_test.py
+test_*.py
+tests/
+*_spec.py
+*_tests.py
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.so
+*.dylib
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# Logs
+*.log
+logs/
+
+# Checkpoints and outputs
+outputs/
+*.ckpt
+*.pt
+*.pth
+
+# Data
+data/raw/
+data/interim/

@@ -1,0 +1,202 @@
+{
+  "tour": {
+    "title": "A Guided Tour of the PI05 VLA Codebase",
+    "subtitle": "From project overview to deployment — understanding Pi0.5 Vision-Language-Action in 6 stops",
+    "description": "This tour walks you through the PI05 project in the order a new developer should encounter it: starting with the README's high-level orientation, then drilling down into the configuration contract, the model architecture, the training pipeline, the deployment runtime, and finally the runtime configuration that ties it all together. Each stop builds on the previous one, mirroring the data flow from dataset → training → bundle → inference.",
+    "estimatedTotalMinutes": 45,
+    "difficulty": "intermediate",
+    "prerequisites": [
+      "Basic understanding of PyTorch and neural network fine-tuning",
+      "Familiarity with ROS2 nodes and topics",
+      "Comfortable reading Python dataclasses and YAML configs"
+    ],
+    "tags": ["VLA", "Pi0.5", "robotics", "LoRA", "ROS2", "fine-tuning", "deployment"],
+    "languageNotes": "All generated text is in English. Technical terms (LoRA, ROS2, VLA, dataclass) appear in their standard English form.",
+    "languageLesson": "This codebase uses idiomatic Python with ROS2 integration patterns. Key vocabulary: 'bundle' (packaged model + normalizers), 'deploy mapping' (typed config deserialization), 'ControlLoop' (real-time inference scheduler), 'ObservationSnapshot' (frozen sensor frame), 'action codec' (discretized action encoding/decoding)."
+  },
+  "stops": [
+    {
+      "stopId": "stop-01-readme",
+      "sequence": 1,
+      "title": "Project Overview and Entry Point",
+      "subtitle": "Understanding the PI05 landscape",
+      "description": "Start here. The README is the single source of truth for the project's purpose, directory layout, and quick start commands. Reading it first gives you a mental map of where everything lives before you dive into code. Pay special attention to the three-pillar layout: `common/` (shared library), `train/` (LoRA fine-tuning), and `deploy/` (ROS2 inference runtime). Notice how the README's quick start flows from installation → training → deployment — the same arc this tour follows.",
+      "filePath": "README.md",
+      "layer": "layer:infrastructure",
+      "language": "Markdown",
+      "concepts": [
+        "Three-pillar architecture: common / train / deploy",
+        "Editable pip install pattern for monorepo packages",
+        "CLI entry points for training and deployment",
+        "Config-driven workflows (train configs vs deploy configs)"
+      ],
+      "activities": [
+        "Read the 'Layout' section and map each directory to its purpose",
+        "Trace the quick start: install → train → deploy — note where configs appear at each step",
+        "Identify which scripts wrap training vs which wrap deployment",
+        "Check the ROS2 source commands — the deployment path is ROS2-gated"
+      ],
+      "questionsForReflection": [
+        "Why does deployment require `source /opt/ros/jazzy/setup.bash` but training does not?",
+        "What does 'bundle' mean in the context of `_deploy_from_mapping()`?"
+      ],
+      "estimatedMinutes": 5,
+      "completionCriteria": "You can explain the three-pillar layout and the data flow from training to deployment at a high level."
+    },
+    {
+      "stopId": "stop-02-schema",
+      "sequence": 2,
+      "title": "Configuration Schema: The Contract That Ties Everything Together",
+      "subtitle": "How typed configs define the system boundaries",
+      "description": "The configuration schema in `common/config/schema.py` is the typed contract shared between training and deployment. If you understand this file, you understand the data that flows through every pipeline stage. The two key classes are `ExperimentConfig` (consumed by the training engine) and `DeployConfig` (consumed by the deployment runtime). Both use Python dataclasses with `@dataclass` decorators and are deserialized via the `from_mapping()` generic factory — a pattern that appears everywhere in this codebase. The schema defines not just model paths and hyperparameters, but ROS topic names, safety thresholds, action encoding parameters, and normalization statistics. Changes here ripple through every other layer.",
+      "filePath": "common/src/pi05/common/config/schema.py",
+      "layer": "layer:common-config",
+      "language": "Python",
+      "concepts": [
+        "Typed configuration with Python dataclasses",
+        "ExperimentConfig (train side) vs DeployConfig (deploy side)",
+        "The `from_mapping()` generic factory and `@dataclass` deserialization",
+        "Config as a cross-layer contract — same schema, different consumers",
+        "Defaults vs overrides from YAML → dict → typed object"
+      ],
+      "activities": [
+        "Find `ExperimentConfig` and list its fields — which belong to training? which to data?",
+        "Find `DeployConfig` — notice which fields overlap with `ExperimentConfig` and which are deployment-specific",
+        "Trace how `from_mapping()` is called — what YAML keys map to what dataclass fields?",
+        "Look for nested config classes (e.g., model config, safety config) — how deep does the nesting go?"
+      ],
+      "questionsForReflection": [
+        "Why does the graph show `ExperimentConfig` connected to both `trainer.py` and `builder.py`?",
+        "What happens if you add a new field to `DeployConfig` but forget to update the deploy YAML?"
+      ],
+      "estimatedMinutes": 10,
+      "completionCriteria": "You can explain the difference between ExperimentConfig and DeployConfig, and describe how a YAML file becomes a typed config object via `from_mapping()`."
+    },
+    {
+      "stopId": "stop-03-model-builder",
+      "sequence": 3,
+      "title": "Model Builder: Constructing Pi0.5 with LoRA Adapters",
+      "subtitle": "How the neural network is assembled and loaded",
+      "description": "The model builder in `common/model/builder.py` is where the Pi0.5 architecture is instantiated and LoRA adapters are injected. This file bridges the config schema and the actual PyTorch `nn.Module`. It reads the model configuration from `ExperimentConfig`, loads the pretrained Pi0.5 backbone, wraps linear layers with LoRA rank-adaptation matrices, and returns a model ready for either training (with LoRA weights trainable) or deployment (with frozen weights + loaded LoRA checkpoint). Key patterns include: `lora.mark_only_lora_as_trainable()` for parameter-efficient fine-tuning, and the separation of the vision encoder and action head as distinct sub-modules. This is also where device placement (CPU/GPU) and dtype conversion happen.",
+      "filePath": "common/src/pi05/common/model/builder.py",
+      "layer": "layer:common-model",
+      "language": "Python",
+      "concepts": [
+        "Pi0.5 architecture: vision encoder + language model backbone + action head",
+        "LoRA (Low-Rank Adaptation) — why only adapter weights are trained",
+        "`lora.mark_only_lora_as_trainable()` pattern",
+        "Model loading: pretrained weights → LoRA injection → checkpoint restore",
+        "Device and dtype management (CPU/GPU, float32/float16/bfloat16)"
+      ],
+      "activities": [
+        "Find where `lora.mark_only_lora_as_trainable()` is called — what does it freeze?",
+        "Trace the model creation flow: config → load pretrained → inject LoRA → return",
+        "Identify the vision encoder and action head — how are they connected to the backbone?",
+        "Look for checkpoint loading logic — does it load full weights or just LoRA adapters?"
+      ],
+      "questionsForReflection": [
+        "Why does fine-tuning only LoRA weights (≈1–2% of parameters) work well for robotic manipulation?",
+        "What would need to change to swap the vision encoder for a different architecture?"
+      ],
+      "estimatedMinutes": 10,
+      "completionCriteria": "You can describe the three major components of Pi0.5, explain why LoRA is used, and point to where the model is assembled."
+    },
+    {
+      "stopId": "stop-04-trainer",
+      "sequence": 4,
+      "title": "Training Engine: The Fine-Tuning Loop",
+      "subtitle": "How data becomes a trained LoRA checkpoint",
+      "description": "The training engine in `train/engine/trainer.py` is the orchestrator of the LoRA fine-tuning process. It consumes an `ExperimentConfig`, instantiates the model via the builder, sets up dataloaders from the LeRobot dataset, and runs the training loop with logging, checkpointing, and evaluation. This file is where the abstract config meets real data: it reads the dataset path from config, applies normalization from the bundle's normalizers, computes the action/state codec transforms, and iterates over batches. Key patterns: the `train()` function sets up wandb/tensorboard logging, gradient accumulation, learning rate scheduling, and periodic checkpoint saves. The evaluation loop runs at configurable intervals and logs action prediction metrics.",
+      "filePath": "train/src/pi05/train/engine/trainer.py",
+      "layer": "layer:train-engine",
+      "language": "Python",
+      "concepts": [
+        "Training loop structure: setup → epoch loop → batch loop → logging → checkpoint",
+        "LeRobot dataset integration and DataLoader configuration",
+        "Gradient accumulation and mixed-precision training",
+        "Checkpoint strategy: LoRA-only weights (small) vs full model (large)",
+        "Evaluation loop: compute action prediction error on held-out episodes"
+      ],
+      "activities": [
+        "Find the main training loop — identify the 'one batch step' function",
+        "Trace how the model builder is called: config → builder → model → optimizer",
+        "Locate checkpoint save/load logic — are checkpoints full state dicts or LoRA-only?",
+        "Find the evaluation loop — what metric is computed to measure action prediction quality?"
+      ],
+      "questionsForReflection": [
+        "Why does the training engine import from `pi05.common.model.builder` but not directly from `pi05.deploy`?",
+        "How does the training loop know which camera images to use as input?"
+      ],
+      "estimatedMinutes": 10,
+      "completionCriteria": "You can outline the training loop structure, explain what gets saved in a checkpoint, and describe how the evaluation phase works."
+    },
+    {
+      "stopId": "stop-05-deploy-node",
+      "sequence": 5,
+      "title": "Deployment Node: ROS2 Inference Runtime",
+      "subtitle": "From trained weights to real-robot actions",
+      "description": "The deploy node in `deploy/ros_nodes/pi05_vla_deploy_node.py` is the ROS2 node that runs the VLA inference loop on the robot. It's the production face of the trained model. This node loads the deployment bundle (model weights + normalizers + config), sets up ROS2 topic subscribers for camera images and robot state, runs the model in inference mode, and publishes action commands. The runtime architecture decomposes into five internal components: `InferenceWorker` (GPU-bound model forward pass), `ObservationCollector` (synchronizes multi-camera + state observations), `ControlLoop` (schedules inference at a fixed rate), `SharedBuffer` (thread-safe handoff between collector and worker), and `SafetyGuard` (joint limits, velocity checks, emergency stop). Understanding this node means understanding the full observation → inference → action pipeline in a real-time ROS2 context.",
+      "filePath": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "layer": "layer:deploy-runtime",
+      "language": "Python",
+      "concepts": [
+        "ROS2 node lifecycle: on_configure → on_activate → on_deactivate",
+        "Five internal components: InferenceWorker, ObservationCollector, ControlLoop, SharedBuffer, SafetyGuard",
+        "Observation → Inference → Action pipeline flow",
+        "Thread-safe handoff with SharedBuffer (producer-consumer pattern)",
+        "Safety constraints: joint limits, velocity thresholds, emergency stop"
+      ],
+      "activities": [
+        "Identify the ROS2 topic subscriptions — which topics are inputs? which are outputs?",
+        "Trace the pipeline: how does a camera image travel from ROS topic → model → action command?",
+        "Find the `ControlLoop` — what rate does it run at? how does it handle missed deadlines?",
+        "Look at `SafetyGuard` — what conditions trigger a safety stop?"
+      ],
+      "questionsForReflection": [
+        "Why is SharedBuffer necessary? What problem does it solve that a simple queue wouldn't?",
+        "What happens to the robot if the inference worker takes longer than the control loop period?"
+      ],
+      "estimatedMinutes": 10,
+      "completionCriteria": "You can trace the full observation → inference → action pipeline and explain the role of each of the five internal runtime components."
+    },
+    {
+      "stopId": "stop-06-deploy-config",
+      "sequence": 6,
+      "title": "Deployment Configuration: Connecting Config to Runtime",
+      "subtitle": "How the YAML file becomes a running system",
+      "description": "The final stop examines `deploy/config/deploy.yaml`, the YAML configuration that drives the deployment runtime. This file is the concrete instantiation of the `DeployConfig` schema you saw in Stop 2. It specifies the model bundle path, ROS topic names for cameras and joint states, inference parameters (model dtype, control frequency), and safety thresholds. Reading this file with the schema in mind reveals how the abstract typed config maps to real hardware: a `camera_topics` list here becomes the `ObservationCollector`'s subscription list; `safety.joint_velocity_max` becomes the `SafetyGuard`'s clipping threshold. The deploy.yaml is the human-accessible control surface for the entire deployment runtime — change it to swap models, reconfigure cameras, or adjust safety margins without touching code.",
+      "filePath": "deploy/config/deploy.yaml",
+      "layer": "layer:infrastructure",
+      "language": "YAML",
+      "concepts": [
+        "YAML → typed config via `_deploy_from_mapping()` pipeline",
+        "Topic-to-component mapping: YAML keys control runtime behavior",
+        "Bundle path resolution (model weights + normalizers + metadata)",
+        "Safety threshold overrides (joint limits, velocity limits, timeout)",
+        "Config as the single point of change for deployment tuning"
+      ],
+      "activities": [
+        "Map each YAML key to a field in `DeployConfig` — which keys are required? which have defaults?",
+        "Find the `bundle_path` — what does the bundle directory contain?",
+        "Trace the `camera_topics` — how do these names end up as ROS2 subscriptions in the deploy node?",
+        "Examine the safety section — what happens when a joint velocity exceeds `joint_velocity_max`?"
+      ],
+      "questionsForReflection": [
+        "What's the difference between setting a safety threshold here vs hardcoding it in a SafetyGuard class?",
+        "If you wanted to deploy a different model checkpoint, which single value in this file would you change?"
+      ],
+      "estimatedMinutes": 5,
+      "completionCriteria": "You can explain how each section of deploy.yaml maps to a runtime component, and describe the path from YAML key to the typed DeployConfig field."
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2026-07-04",
+    "projectName": "PI05 Project",
+    "projectRoot": "/home/hit/ROS/DOCS/03_工程/阶段四：模型部署/pi05_old/pi05_test/pi05",
+    "totalFiles": 6,
+    "totalStops": 6,
+    "tourType": "breadth-first guided learning",
+    "entryPoint": "README.md",
+    "structureNote": "The tour follows the README's narrative arc (install → train → deploy) but grounds each concept in actual source files. Stops 2-3 establish the shared library ('common'), stop 4 covers training, and stops 5-6 cover deployment. This mirrors the dependency graph: deploy depends on common, train depends on common, but deploy and train are independent of each other."
+  }
+}

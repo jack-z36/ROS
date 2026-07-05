@@ -1,0 +1,314 @@
+{
+  "$schema": "https://raw.githubusercontent.com/understand-anything/schemas/main/layers.schema.json",
+  "projectName": "PI05 — Pi0.5 VLA Robot Learning Suite",
+  "projectDescription": "Standalone repository for PI0.5 Vision-Language-Action (VLA) dataset preparation, LoRA fine-tuning, export, and deployment for bimanual robotic manipulation using PyTorch, LeRobot, ROS 2 Jazzy, PEFT, and Accelerate.",
+  "layers": [
+    {
+      "id": "infrastructure",
+      "name": "Infrastructure & Build",
+      "description": "Non-Python project scaffolding: YAML configuration files, shell scripts, ROS 2 launch files, documentation, and CI/packaging assets. These files are consumed by tools and entry points but do not define runtime behavior themselves.",
+      "color": "#8B8B8B",
+      "rank": 0,
+      "files": [
+        "common/config/paths.yaml",
+        "common/config/runtime.yaml",
+        "deploy/config/deploy.yaml",
+        "deploy/launch/pi05_picotele_mux.launch.py",
+        "deploy/scripts/run_inference.sh",
+        "deploy/scripts/run_bridge.sh",
+        "deploy/scripts/run_command_mux.sh",
+        "deploy/scripts/package_model.sh",
+        "train/config/train.yaml",
+        "train/config/lora.yaml",
+        "train/config/data.yaml",
+        "train/config/lora_vtla_stage1.yaml",
+        "train/scripts/prepare_dataset.sh",
+        "train/scripts/train_lora.sh",
+        "train/scripts/export_policy.sh",
+        "train/scripts/test_dataloader.py",
+        "train/scripts/smoke_test.py",
+        "README.md",
+        "DEPLOY_REPRODUCE.md"
+      ]
+    },
+    {
+      "id": "common-config",
+      "name": "Common: Config Schema",
+      "description": "Typed YAML config schema shared by training and deployment. Defines ExperimentConfig, LoraConfig, DataConfig, TrainingConfig, and related dataclasses with from_mapping() factories. The only dependency is pi05.common.utils.paths for PROJECT_ROOT resolution.",
+      "color": "#4A90D9",
+      "rank": 10,
+      "files": [
+        "common/src/pi05/common/config/__init__.py",
+        "common/src/pi05/common/config/schema.py"
+      ],
+      "dependsOn": ["common-utils"]
+    },
+    {
+      "id": "common-utils",
+      "name": "Common: Utilities",
+      "description": "Project path resolution and sys.path bootstrapping. Provides PROJECT_ROOT, COMMON_SRC_ROOT, TRAIN_SRC_ROOT, DEPLOY_SRC_ROOT constants and bootstrap_project_paths() for non-installed entry points. Has zero internal project dependencies.",
+      "color": "#6BA3E8",
+      "rank": 5,
+      "files": [
+        "common/src/pi05/common/utils/__init__.py",
+        "common/src/pi05/common/utils/paths.py"
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "common-robot",
+      "name": "Common: Robot Specification",
+      "description": "Robot action layout contracts shared by training and deployment. Defines ARM_DOF, ACTION_DIM (14), STATE_DIM (26), ARM_JOINT_NAMES, BimanualAction dataclass with split/assemble helpers, and JointLimitSpec for per-joint safety clamping. Depends only on NumPy.",
+      "color": "#5BA3A0",
+      "rank": 15,
+      "files": [
+        "common/src/pi05/common/robot/__init__.py",
+        "common/src/pi05/common/robot/action_spec.py",
+        "common/src/pi05/common/robot/joint_limits.py"
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "common-ros",
+      "name": "Common: ROS Topic Definitions",
+      "description": "Frozen dataclasses (Pi05CommandTopics, Pi05ObservationTopics) defining the canonical ROS 2 topic paths under the /pi05_vla namespace. Zero project dependencies — pure string constants and a topic joining helper.",
+      "color": "#7B68AE",
+      "rank": 12,
+      "files": [
+        "common/src/pi05/common/ros/__init__.py",
+        "common/src/pi05/common/ros/topics.py"
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "common-data",
+      "name": "Common: Data Codecs & Normalization",
+      "description": "Shared data pipeline components: action encoding/decoding (ensure_action_vector, split_action), state encoding (BimanualState, encode_bimanual_state, 26-D vector contract), min-max normalization to [-1,1] with Q99.5 statistics via LeRobotDataset, and deterministic image preprocessing (resize_crop/resize_pad to CHW float tensors). Core dependency for both training data loading and deployment observation assembly.",
+      "color": "#3CB371",
+      "rank": 20,
+      "files": [
+        "common/src/pi05/common/data/__init__.py",
+        "common/src/pi05/common/data/action_codec.py",
+        "common/src/pi05/common/data/state_codec.py",
+        "common/src/pi05/common/data/normalization.py",
+        "common/src/pi05/common/data/image_preprocess.py"
+      ],
+      "dependsOn": ["common-robot"]
+    },
+    {
+      "id": "common-model",
+      "name": "Common: Model Builder",
+      "description": "Pi0.5 policy construction with LoRA adapter wrapping. build_pi05_with_lora loads a pretrained PI0.5 checkpoint (default: lerobot/pi05_base), configures LoRA via PEFT (rank, alpha, dropout, target_modules), and returns the wrapped nn.Module. Uses PI05Config, PI05Policy from vendored LeRobot reference. Depends on ExperimentConfig for model/pretrained/lora hyperparameters.",
+      "color": "#DAA520",
+      "rank": 25,
+      "files": [
+        "common/src/pi05/common/model/__init__.py",
+        "common/src/pi05/common/model/builder.py"
+      ],
+      "dependsOn": ["common-config"]
+    },
+    {
+      "id": "common-bundle",
+      "name": "Common: Bundle I/O",
+      "description": "Deploy bundle export and loading. export_deploy_bundle packages LoRA adapter weights, experiment config, normalizer statistics, and tactile preprocess metadata into a portable directory structure. Load side resolves the bundle at deployment time. Bridges the training output format to the deployment input format.",
+      "color": "#CD853F",
+      "rank": 30,
+      "files": [
+        "common/src/pi05/common/runtime/__init__.py",
+        "common/src/pi05/common/runtime/bundle.py"
+      ],
+      "dependsOn": ["common-config", "common-data"]
+    },
+    {
+      "id": "deploy-config",
+      "name": "Deploy: Config Schema",
+      "description": "Deployment-specific YAML config schema. Defines DeployConfig, BundleConfig, RuntimeConfig (inference_hz, control_hz, chunk_size, device, dtype, safety limits), SafetyConfig, CameraConfig, BridgeConfig, MuxConfig, and ROS topic bindings. Separate from ExperimentConfig — deployment only needs runtime/ROS settings plus bundle path.",
+      "color": "#E8913A",
+      "rank": 35,
+      "files": [
+        "deploy/src/pi05/deploy/config/__init__.py",
+        "deploy/src/pi05/deploy/config/schema.py"
+      ],
+      "dependsOn": ["common-ros"]
+    },
+    {
+      "id": "deploy-models",
+      "name": "Deploy: Policy Loader",
+      "description": "Bundle-only Pi0.5 policy runtime for deployment. Pi05PolicyRuntime loads a prebuilt model + LoRA adapters from safetensors, attaches pre/post processors from LeRobot, initializes normalizers, and optionally compiles the model with torch.compile. Bridges common.model.builder (training-side construction) into a deployable runtime object.",
+      "color": "#E6A84D",
+      "rank": 40,
+      "files": [
+        "deploy/src/pi05/deploy/models/__init__.py",
+        "deploy/src/pi05/deploy/models/policy_loader.py"
+      ],
+      "dependsOn": ["common-model", "common-bundle", "deploy-config"]
+    },
+    {
+      "id": "deploy-runtime",
+      "name": "Deploy: Runtime Infrastructure",
+      "description": "Core real-time runtime components for VLA inference deployment. Includes: SharedBuffer (thread-safe LatestQueue-based handoff of InferenceRequest/ActionChunk/ObservationSnapshot between collector and inference threads), InferenceWorker (async background thread polling policy), ControlLoop (high-rate action consumer with smoothstep blending, fallback, and time alignment), ObservationCollector (multi-callback ROS message assembly into BimanualState), and SafetyGuard (joint limit clamping, delta rate limiting, stale observation detection). This is the central runtime fabric.",
+      "color": "#E07040",
+      "rank": 45,
+      "files": [
+        "deploy/src/pi05/deploy/runtime/__init__.py",
+        "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+        "deploy/src/pi05/deploy/runtime/inference_worker.py",
+        "deploy/src/pi05/deploy/runtime/control_loop.py",
+        "deploy/src/pi05/deploy/runtime/observation_collector.py",
+        "deploy/src/pi05/deploy/runtime/safety_guard.py"
+      ],
+      "dependsOn": ["common-data", "common-robot", "deploy-config"]
+    },
+    {
+      "id": "deploy-ros-nodes",
+      "name": "Deploy: ROS 2 Nodes",
+      "description": "ROS 2 Jazzy nodes implementing the deployment pipeline. Pi05VlaDeployNode: main orchestrator — subscribes to camera/proprioception topics, runs the inference pipeline, publishes command topics. Pi05BridgeNode: adapts /pi05_vla/command topics to downstream VLA candidate topics with deadman signal generation. CommandMuxNode: teleop/VLA command arbitration multiplexer that gates which source drives the physical robot. All nodes use MultiThreadedExecutor.",
+      "color": "#CC3333",
+      "rank": 50,
+      "files": [
+        "deploy/src/pi05/deploy/ros_nodes/__init__.py",
+        "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+        "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+        "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py"
+      ],
+      "dependsOn": ["deploy-runtime", "deploy-models", "deploy-config", "common-data"]
+    },
+    {
+      "id": "deploy-ros-compat",
+      "name": "Deploy: ROS Compatibility Wrapper",
+      "description": "Thin backward-compatibility wrapper in pi05.deploy.ros that re-exports main() from pi05.deploy.ros_nodes.pi05_vla_deploy_node. Exists to support legacy imports or alternate entry point discovery without changing the canonical node location.",
+      "color": "#CC6666",
+      "rank": 52,
+      "files": [
+        "deploy/src/pi05/deploy/ros/__init__.py",
+        "deploy/src/pi05/deploy/ros/policy_node.py"
+      ],
+      "dependsOn": ["deploy-ros-nodes"]
+    },
+    {
+      "id": "deploy-cli",
+      "name": "Deploy: CLI Entry Points",
+      "description": "Thin console_scripts entry points that bootstrap project paths and launch ROS 2 nodes. deploy_ros.py -> Pi05VlaDeployNode, bridge_ros.py -> Pi05BridgeNode, command_mux_ros.py -> CommandMuxNode. Each calls bootstrap_project_paths() first, then defers to the corresponding ros_node main().",
+      "color": "#DD7755",
+      "rank": 55,
+      "files": [
+        "deploy/src/pi05/deploy/cli/__init__.py",
+        "deploy/src/pi05/deploy/cli/deploy_ros.py",
+        "deploy/src/pi05/deploy/cli/bridge_ros.py",
+        "deploy/src/pi05/deploy/cli/command_mux_ros.py"
+      ],
+      "dependsOn": ["deploy-ros-nodes", "common-utils"]
+    },
+    {
+      "id": "train-data",
+      "name": "Train: Dataset",
+      "description": "LeRobot-backed PyTorch Dataset for Pi0.5 offline training. Pi05LeRobotDataset wraps LeRobotDataset with action chunking (default 30-step windows), optional online ColorJitter augmentation, identity-normalized image pipeline (avoids double normalization with PI0.5 internal [-1,1] mapping), and per-sample tensor assembly.",
+      "color": "#5B8C5A",
+      "rank": 60,
+      "files": [
+        "train/src/pi05/train/data/__init__.py",
+        "train/src/pi05/train/data/dataset.py"
+      ],
+      "dependsOn": ["common-data"]
+    },
+    {
+      "id": "train-engine",
+      "name": "Train: Engine",
+      "description": "Core training engine for LoRA fine-tuning. Components: trainer.py (main training loop with gradient accumulation, logging, checkpointing, bundle export after training), builders.py (optimizer AdamW + cosine scheduler + dataloader construction with normalizer bootstrap), batches.py (key remapping from local dataset format to LeRobot PI0.5 preprocessor schema), checkpoints.py (epoch adapter save/load, final adapter extraction, Accelerate state resume). The trainer depends on common.runtime.bundle for post-training export.",
+      "color": "#3A7D44",
+      "rank": 65,
+      "files": [
+        "train/src/pi05/train/engine/__init__.py",
+        "train/src/pi05/train/engine/trainer.py",
+        "train/src/pi05/train/engine/builders.py",
+        "train/src/pi05/train/engine/batches.py",
+        "train/src/pi05/train/engine/checkpoints.py"
+      ],
+      "dependsOn": ["common-model", "common-bundle", "common-data", "common-config", "train-data", "train-utils"]
+    },
+    {
+      "id": "train-utils",
+      "name": "Train: Utilities",
+      "description": "Training support utilities: logging configuration (Accelerate-compatible basicConfig), seed reproducibility (wrapper around accelerate.utils.set_seed), TensorBoard process lifecycle management (automatic launch, port conflict detection, reuse detection via ps inspection). Used by the training CLI and engine.",
+      "color": "#6A9C6A",
+      "rank": 58,
+      "files": [
+        "train/src/pi05/train/utils/__init__.py",
+        "train/src/pi05/train/utils/logging.py",
+        "train/src/pi05/train/utils/seed.py",
+        "train/src/pi05/train/utils/tensorboard.py"
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "train-cli",
+      "name": "Train: CLI Entry Points",
+      "description": "Thin console_scripts entry points for training workflows. train.py: loads ExperimentConfig, bootstraps paths, defers to trainer.train_from_config(). export_bundle.py: loads config, resolves adapter/output directories, calls common.runtime.bundle.export_deploy_bundle() to create deployable artifacts from a finished training run.",
+      "color": "#4A8B4A",
+      "rank": 70,
+      "files": [
+        "train/src/pi05/train/cli/__init__.py",
+        "train/src/pi05/train/cli/train.py",
+        "train/src/pi05/train/cli/export_bundle.py"
+      ],
+      "dependsOn": ["common-config", "common-utils", "train-engine"]
+    },
+    {
+      "id": "tests",
+      "name": "Tests",
+      "description": "Unit and integration tests for the PI05 project. Currently includes deploy config validation tests and training config schema tests.",
+      "color": "#9B59B6",
+      "rank": 80,
+      "files": [
+        "tests/deploy/test_deploy_config.py",
+        "tests/train/test_config.py"
+      ],
+      "dependsOn": ["deploy-config", "common-config"]
+    }
+  ],
+  "layerDependencies": [
+    {"from": "common-config", "to": "common-utils", "description": "ExperimentConfig.load() calls bootstrap_project_paths for path resolution"},
+    {"from": "common-data", "to": "common-robot", "description": "action_codec imports BimanualAction, ACTION_DIM; state_codec imports ARM_DOF, STATE_DIM"},
+    {"from": "common-model", "to": "common-config", "description": "build_pi05_with_lora reads ExperimentConfig for LoRA hyperparameters"},
+    {"from": "common-bundle", "to": "common-config", "description": "export_deploy_bundle writes ExperimentConfig into bundle"},
+    {"from": "common-bundle", "to": "common-data", "description": "export_deploy_bundle uses ActionStateNormalizer for stats persistence"},
+    {"from": "deploy-config", "to": "common-ros", "description": "DeployConfig includes DeployTopics with Pi05CommandTopics and Pi05ObservationTopics"},
+    {"from": "deploy-models", "to": "common-model", "description": "policy_loader uses build_pi05_with_lora from common.model.builder"},
+    {"from": "deploy-models", "to": "common-bundle", "description": "policy_loader uses load_bundle_manifest, load_bundle_normalizers"},
+    {"from": "deploy-models", "to": "deploy-config", "description": "Pi05PolicyRuntime is configured from DeployConfig fields"},
+    {"from": "deploy-runtime", "to": "common-data", "description": "safety_guard uses ensure_action_vector, split_action from action_codec"},
+    {"from": "deploy-runtime", "to": "common-robot", "description": "control_loop uses BimanualAction; safety_guard uses JointLimitSpec"},
+    {"from": "deploy-runtime", "to": "deploy-config", "description": "SafetyGuard reads SafetyConfig; runtime components read RuntimeConfig"},
+    {"from": "deploy-ros-nodes", "to": "deploy-runtime", "description": "Pi05VlaDeployNode instantiates ControlLoop, InferenceWorker, ObservationCollector, SafetyGuard, SharedBuffer"},
+    {"from": "deploy-ros-nodes", "to": "deploy-models", "description": "Pi05VlaDeployNode calls load_policy_runtime to build Pi05PolicyRuntime"},
+    {"from": "deploy-ros-nodes", "to": "deploy-config", "description": "All three ROS nodes load DeployConfig at startup"},
+    {"from": "deploy-ros-compat", "to": "deploy-ros-nodes", "description": "policy_node.py re-exports main() from pi05_vla_deploy_node"},
+    {"from": "deploy-cli", "to": "deploy-ros-nodes", "description": "CLI entry points import and call ros_nodes main() functions"},
+    {"from": "deploy-cli", "to": "common-utils", "description": "CLI entry points call bootstrap_project_paths() before node launch"},
+    {"from": "train-data", "to": "common-data", "description": "Pi05LeRobotDataset imports normalization module for normalizer bootstrap"},
+    {"from": "train-engine", "to": "common-model", "description": "trainer imports build_pi05_with_lora, get_pi05_policy_config"},
+    {"from": "train-engine", "to": "common-bundle", "description": "trainer calls export_deploy_bundle after training completes"},
+    {"from": "train-engine", "to": "common-config", "description": "trainer._train_epoch reads TrainingConfig fields"},
+    {"from": "train-engine", "to": "common-data", "description": "builders uses build_state_action_normalizers from normalization module"},
+    {"from": "train-engine", "to": "train-data", "description": "builders imports Pi05LeRobotDataset from train.data.dataset"},
+    {"from": "train-engine", "to": "train-utils", "description": "trainer uses logging, seed, tensorboard utilities"},
+    {"from": "train-cli", "to": "common-config", "description": "CLI entry points call load_experiment_config"},
+    {"from": "train-cli", "to": "common-utils", "description": "CLI entry points call bootstrap_project_paths()"},
+    {"from": "train-cli", "to": "train-engine", "description": "train.py imports and calls trainer.train_from_config()"},
+    {"from": "tests", "to": "deploy-config", "description": "test_deploy_config.py validates DeployConfig schema"},
+    {"from": "tests", "to": "common-config", "description": "test_config.py validates ExperimentConfig schema"}
+  ],
+  "notes": {
+    "architecturalPattern": "Layered with two top-level consumers (train and deploy) sharing a common core library. The common layer grows upward from primitive utilities through robot specs, data codecs, model construction, to bundle I/O. Deploy and Train each add their own config, runtime/engine, CLI, and ROS/test layers on top. The bundle (common.runtime.bundle) is the formal bridge: exported by train after training and consumed by deploy at startup.",
+    "keyInsights": [
+      "The common layer is NOT flat — it has its own internal layering: utils -> robot -> data -> config -> model -> bundle, with clear upward dataflow.",
+      "Deploy runtime is the most complex layer — it implements a multi-threaded real-time pipeline (collector -> shared buffer -> inference worker -> control loop) with explicit safety gating.",
+      "The bundle I/O module (common.runtime.bundle) is the only cross-cutting bridge between train and deploy — the formal artifact handoff point.",
+      "Training and deployment configs are intentionally separate schemas (ExperimentConfig vs DeployConfig) to decouple training-specific hyperparameters from runtime/ROS settings.",
+      "There are exactly 3 ROS nodes launched as separate processes: Pi05VlaDeployNode (policy inference), Pi05BridgeNode (command adaptation), CommandMuxNode (teleop/VLA arbitration).",
+      "The safety layer (SafetyGuard + SafetyConfig + JointLimitSpec) is embedded in the deploy runtime and applies before any command publication — it is NOT in the common layer.",
+      "Zero circular dependencies detected between packages — all imports flow unidirectionally from train/deploy downward into common."
+    ],
+    "layerDependencyRule": "Files in a layer may import from any layer with a lower rank value. No layer should import from a layer with a higher rank value (no upward dependencies). Cross-package imports between Train and Deploy at the same rank are forbidden — the bundle artifact is the only intended bridge."
+  }
+}

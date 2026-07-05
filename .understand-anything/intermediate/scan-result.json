@@ -1,0 +1,785 @@
+{
+  "projectName": "pi05",
+  "projectDescription": "PI0.5 VLA (Vision-Language-Action) robotics package for model deployment, training, and inference on Octopus robot",
+  "languages": [
+    "markdown",
+    "python",
+    "shell",
+    "udev",
+    "unknown",
+    "yaml"
+  ],
+  "frameworks": [
+    "ROS2",
+    "PyTorch",
+    "LeRobot"
+  ],
+  "files": [
+    {
+      "path": ".gitignore",
+      "language": "unknown",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 32,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "CLAUDE.md",
+      "language": "markdown",
+      "sizeLines": 7,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "cleanup_ros_residue.sh",
+      "language": "shell",
+      "sizeLines": 193,
+      "fileCategory": "code"
+    },
+    {
+      "path": "config/99-hwk-pressure.rules",
+      "language": "udev",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "config/all_sensor_nodes.yaml",
+      "language": "yaml",
+      "sizeLines": 113,
+      "fileCategory": "config"
+    },
+    {
+      "path": "config/data_clean/data_clean_calibrated.yaml",
+      "language": "yaml",
+      "sizeLines": 172,
+      "fileCategory": "config"
+    },
+    {
+      "path": "config/data_clean/data_clean_left_transform.yaml",
+      "language": "yaml",
+      "sizeLines": 10,
+      "fileCategory": "config"
+    },
+    {
+      "path": "config/data_clean/data_clean_right_transform.yaml",
+      "language": "yaml",
+      "sizeLines": 10,
+      "fileCategory": "config"
+    },
+    {
+      "path": "config/data_clean/data_clean_smoke_test.yaml",
+      "language": "yaml",
+      "sizeLines": 96,
+      "fileCategory": "config"
+    },
+    {
+      "path": "config/data_clean/templates/web_pipeline_preset.example.yaml",
+      "language": "yaml",
+      "sizeLines": 15,
+      "fileCategory": "config"
+    },
+    {
+      "path": "config/hardware_identity_map.yaml",
+      "language": "yaml",
+      "sizeLines": 74,
+      "fileCategory": "config"
+    },
+    {
+      "path": "config/store/data_clean_calibrated.yaml.20260503_165743.bak",
+      "language": "unknown",
+      "sizeLines": 102,
+      "fileCategory": "code"
+    },
+    {
+      "path": "init.sh",
+      "language": "shell",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "launch/all_sensor_nodes.launch.py",
+      "language": "python",
+      "sizeLines": 239,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/all_sensor_status.py",
+      "language": "python",
+      "sizeLines": 585,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/configure_octopus_scanner.py",
+      "language": "python",
+      "sizeLines": 77,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/hardware_identity_scan.py",
+      "language": "python",
+      "sizeLines": 532,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/hwk_pressure_usb_recover.sh",
+      "language": "shell",
+      "sizeLines": 172,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/hwk_query_device_info.py",
+      "language": "python",
+      "sizeLines": 305,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/init_data_clean_dev.sh",
+      "language": "shell",
+      "sizeLines": 148,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/start_gopro_only.py",
+      "language": "python",
+      "sizeLines": 139,
+      "fileCategory": "code"
+    },
+    {
+      "path": "skills/stage4-l3-orchestrator/SKILL.md",
+      "language": "markdown",
+      "sizeLines": 149,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "skills/stage4-l3-orchestrator/agents/openai.yaml",
+      "language": "yaml",
+      "sizeLines": 4,
+      "fileCategory": "config"
+    },
+    {
+      "path": "skills/stage4-l3-orchestrator/references/acceptance_modes.md",
+      "language": "markdown",
+      "sizeLines": 31,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py",
+      "language": "python",
+      "sizeLines": 149,
+      "fileCategory": "code"
+    },
+    {
+      "path": "skills/stage4-l3-orchestrator/scripts/validate_stage4_l3_cards.py",
+      "language": "python",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "skills/update-knowledge-from-commits/SKILL.md",
+      "language": "markdown",
+      "sizeLines": 173,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "skills/update-knowledge-from-commits/agents/openai.yaml",
+      "language": "yaml",
+      "sizeLines": 4,
+      "fileCategory": "config"
+    },
+    {
+      "path": "skills/update-routes-from-commits/SKILL.md",
+      "language": "markdown",
+      "sizeLines": 179,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "skills/update-routes-from-commits/agents/openai.yaml",
+      "language": "yaml",
+      "sizeLines": 4,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/model_deploy/gripper_ctrl.py",
+      "language": "python",
+      "sizeLines": 95,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/DEPLOY_REPRODUCE.md",
+      "language": "markdown",
+      "sizeLines": 206,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "src/model_deploy/pi05/README.md",
+      "language": "markdown",
+      "sizeLines": 72,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/config/paths.yaml",
+      "language": "yaml",
+      "sizeLines": 20,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/config/runtime.yaml",
+      "language": "yaml",
+      "sizeLines": 12,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/config/__init__.py",
+      "language": "python",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/config/schema.py",
+      "language": "python",
+      "sizeLines": 462,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/data/__init__.py",
+      "language": "python",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/data/action_codec.py",
+      "language": "python",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/data/image_preprocess.py",
+      "language": "python",
+      "sizeLines": 76,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/data/normalization.py",
+      "language": "python",
+      "sizeLines": 310,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py",
+      "language": "python",
+      "sizeLines": 60,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/model/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/model/builder.py",
+      "language": "python",
+      "sizeLines": 355,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/robot/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py",
+      "language": "python",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/robot/joint_limits.py",
+      "language": "python",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/ros/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/ros/topics.py",
+      "language": "python",
+      "sizeLines": 69,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/runtime/__init__.py",
+      "language": "python",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/runtime/bundle.py",
+      "language": "python",
+      "sizeLines": 184,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/utils/__init__.py",
+      "language": "python",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/common/src/pi05/common/utils/paths.py",
+      "language": "python",
+      "sizeLines": 68,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/config/deploy.yaml",
+      "language": "yaml",
+      "sizeLines": 123,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/launch/pi05_picotele_mux.launch.py",
+      "language": "python",
+      "sizeLines": 414,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/scripts/package_model.sh",
+      "language": "shell",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/scripts/run_bridge.sh",
+      "language": "shell",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/scripts/run_command_mux.sh",
+      "language": "shell",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/scripts/run_inference.sh",
+      "language": "shell",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/service/README.md",
+      "language": "markdown",
+      "sizeLines": 13,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/cli/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/cli/bridge_ros.py",
+      "language": "python",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/cli/command_mux_ros.py",
+      "language": "python",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/cli/deploy_ros.py",
+      "language": "python",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/config/__init__.py",
+      "language": "python",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py",
+      "language": "python",
+      "sizeLines": 561,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/models/__init__.py",
+      "language": "python",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/models/policy_loader.py",
+      "language": "python",
+      "sizeLines": 246,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/ros/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/ros/policy_node.py",
+      "language": "python",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/command_mux_node.py",
+      "language": "python",
+      "sizeLines": 267,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+      "language": "python",
+      "sizeLines": 128,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "language": "python",
+      "sizeLines": 274,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/control_loop.py",
+      "language": "python",
+      "sizeLines": 348,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/inference_worker.py",
+      "language": "python",
+      "sizeLines": 91,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py",
+      "language": "python",
+      "sizeLines": 154,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/safety_guard.py",
+      "language": "python",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "language": "python",
+      "sizeLines": 242,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/tests/deploy/test_deploy_config.py",
+      "language": "python",
+      "sizeLines": 270,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/tests/train/test_config.py",
+      "language": "python",
+      "sizeLines": 144,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/config/data.yaml",
+      "language": "yaml",
+      "sizeLines": 30,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/config/lora.yaml",
+      "language": "yaml",
+      "sizeLines": 87,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/config/lora_vtla_stage1.yaml",
+      "language": "yaml",
+      "sizeLines": 87,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/config/train.yaml",
+      "language": "yaml",
+      "sizeLines": 18,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/scripts/export_policy.sh",
+      "language": "shell",
+      "sizeLines": 54,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/scripts/prepare_dataset.sh",
+      "language": "shell",
+      "sizeLines": 77,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/scripts/smoke_test.py",
+      "language": "python",
+      "sizeLines": 246,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/scripts/test_dataloader.py",
+      "language": "python",
+      "sizeLines": 140,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/scripts/train_lora.sh",
+      "language": "shell",
+      "sizeLines": 66,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/cli/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/cli/export_bundle.py",
+      "language": "python",
+      "sizeLines": 58,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/cli/train.py",
+      "language": "python",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/data/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/data/dataset.py",
+      "language": "python",
+      "sizeLines": 271,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/engine/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/engine/batches.py",
+      "language": "python",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/engine/builders.py",
+      "language": "python",
+      "sizeLines": 73,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/engine/checkpoints.py",
+      "language": "python",
+      "sizeLines": 49,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/engine/trainer.py",
+      "language": "python",
+      "sizeLines": 323,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/utils/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/utils/logging.py",
+      "language": "python",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/utils/seed.py",
+      "language": "python",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/model_deploy/pi05/train/src/pi05/train/utils/tensorboard.py",
+      "language": "python",
+      "sizeLines": 159,
+      "fileCategory": "code"
+    },
+    {
+      "path": "start_all_sensor.sh",
+      "language": "shell",
+      "sizeLines": 177,
+      "fileCategory": "code"
+    },
+    {
+      "path": "start_data_clean.sh",
+      "language": "shell",
+      "sizeLines": 194,
+      "fileCategory": "code"
+    },
+    {
+      "path": "start_gopro_only.sh",
+      "language": "shell",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "start_octopus.sh",
+      "language": "shell",
+      "sizeLines": 77,
+      "fileCategory": "code"
+    }
+  ],
+  "complexity": "moderate",
+  "totalFiles": 113,
+  "totalLines": 11957,
+  "languageCounts": {
+    "unknown": 2,
+    "markdown": 9,
+    "shell": 15,
+    "udev": 1,
+    "yaml": 17,
+    "python": 69
+  },
+  "categoryCounts": {
+    "code": 86,
+    "docs": 9,
+    "config": 18
+  },
+  "importMap": {
+    "launch/all_sensor_nodes.launch.py": [],
+    "scripts/all_sensor_status.py": [],
+    "scripts/configure_octopus_scanner.py": [],
+    "scripts/hardware_identity_scan.py": [],
+    "scripts/hwk_query_device_info.py": [],
+    "scripts/start_gopro_only.py": [],
+    "skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py": [],
+    "skills/stage4-l3-orchestrator/scripts/validate_stage4_l3_cards.py": [],
+    "src/model_deploy/gripper_ctrl.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/__init__.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/config/__init__.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/config/schema.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/data/__init__.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/data/action_codec.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/data/image_preprocess.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/data/normalization.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/data/state_codec.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/model/__init__.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/model/builder.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/robot/__init__.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/robot/action_spec.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/robot/joint_limits.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/ros/__init__.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/ros/topics.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/runtime/__init__.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/runtime/bundle.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/utils/__init__.py": [],
+    "src/model_deploy/pi05/common/src/pi05/common/utils/paths.py": [],
+    "src/model_deploy/pi05/deploy/launch/pi05_picotele_mux.launch.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/__init__.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/cli/__init__.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/cli/bridge_ros.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/cli/command_mux_ros.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/cli/deploy_ros.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/config/__init__.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/config/schema.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/models/__init__.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/models/policy_loader.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/ros/__init__.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/ros/policy_node.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/__init__.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/command_mux_node.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/__init__.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/control_loop.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/inference_worker.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/observation_collector.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/safety_guard.py": [],
+    "src/model_deploy/pi05/deploy/src/pi05/deploy/runtime/shared_buffer.py": [],
+    "src/model_deploy/pi05/tests/deploy/test_deploy_config.py": [],
+    "src/model_deploy/pi05/tests/train/test_config.py": [],
+    "src/model_deploy/pi05/train/scripts/smoke_test.py": [],
+    "src/model_deploy/pi05/train/scripts/test_dataloader.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/__init__.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/cli/__init__.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/cli/export_bundle.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/cli/train.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/data/__init__.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/data/dataset.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/engine/__init__.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/engine/batches.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/engine/builders.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/engine/checkpoints.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/engine/trainer.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/utils/__init__.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/utils/logging.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/utils/seed.py": [],
+    "src/model_deploy/pi05/train/src/pi05/train/utils/tensorboard.py": []
+  },
+  "filteredByIgnore": 0
+}
