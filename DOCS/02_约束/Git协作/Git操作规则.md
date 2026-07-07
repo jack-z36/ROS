@@ -126,6 +126,72 @@ git push
 
 执行阶段任务时，必须先读取本文件，再读取对应阶段专属 Git 规则。阶段专属文件只定义本阶段的提交范围、同步和验收策略，不得重复或降低本文件的全局底线。
 
+## 工作树（Worktree）
+
+仓库中存在多个长期集成分支（`data_collection`、`data_clean`、`model_deploy`、`docs_maintaining`），且多个 Agent 可能同时在不同分支上工作。此时**不能**在主工作目录内用 `git switch` 切换分支——这会干扰已经在主目录工作的 Agent。
+
+Git worktree 让同一仓库同时拥有多个独立工作目录，各检出不同分支，共享一份 `.git` 对象库。
+
+### 触发条件
+
+出现以下任一情况时，Agent 应使用 worktree 而非 `git switch`：
+
+- 主工作目录已被其他 Agent 占用（`git status` 显示非预期改动，或用户明确告知）。
+- 用户需要在同一个仓库同时操作两个不同分支（例如一边维护 `model_deploy`，一边在三级功能分支上开发）。
+- 任务需要在当前分支保持不动的前提下，临时进入另一个分支查看或修改文件。
+
+### 创建规则
+
+工作树目录必须放在仓库根下的 `worktrees/` 内。
+
+```bash
+# 固定开工流程
+cd <仓库根>
+git worktree add worktrees/<用途描述> <目标分支>
+```
+
+示例：
+
+```bash
+git worktree add worktrees/l2-01-external-contract feat/model_deploy/l2-01-external-contract-design
+```
+
+`worktrees/` 必须加入 `.gitignore`，避免工作树目录被主仓库误认为未跟踪内容：
+
+```text
+# .gitignore
+worktrees/
+```
+
+### 约束
+
+- 工作树目录`worktrees/*`不得提交到版本控制；`.gitignore` 必须包含 `worktrees/`。
+- 同一个分支**不得**同时在两个工作树中检出。
+- Agent 在操作前必须先确认当前所在工作树（`git worktree list` + `pwd`），防止在错误的工作树中提交。
+- 主工作目录（仓库根）始终保留给当前主要的集成分支；其他并行工作一律在各自 worktree 中操作。
+- Git 写操作（提交、推送、合并）的强制规则（通用强制规则第 1-6 条、固定工作流）在所有 worktree 中同样适用，不因 worktree 而豁免。
+
+### 查看与清理
+
+```bash
+# 列出所有工作树
+git worktree list
+
+# 工作完成后删除工作树
+cd <仓库根>
+git worktree remove worktrees/<用途描述>
+
+# 如果工作树内有未提交改动，需先处理或加 --force
+git worktree remove --force worktrees/<用途描述>
+```
+
+### 隔离保证
+
+- 每个 worktree 有独立的工作区（不同目录）、独立的 HEAD 和 index。
+- 一个 worktree 的未提交改动**不会**出现在另一个 worktree 的 `git status` 中。
+- 所有 worktree 共享同一份远端跟踪（`origin/*`）。
+- `git fetch` 在任一 worktree 执行后，所有 worktree 都能看到更新后的远端引用。
+
 ## 分支删除与归档
 
 - 禁止删除 `main`、`data_collection`、`data_clean`、`model_deploy`、`docs_maintaining`。
