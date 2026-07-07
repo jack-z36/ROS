@@ -20,7 +20,7 @@ Read these before producing artifacts:
 3. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 4. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/ACT代码树分层与产物落点约束.md`
 5. `DOCS/02_约束/认知偏好/用户认知框架与讲解偏好.md`
-6. The L1 task doc and L1 architecture doc under `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/`
+6. The L1 task doc and L1 architecture doc under `DOCS/03_工程/阶段四：模型部署/02_implement/`
 7. Pi0.5 reference source under `DOCS/03_工程/阶段四：模型部署/pi05_old/pi05_test/pi05/`
 
 Read `references/l2-output-contract.md` when creating or checking the final file tree.
@@ -43,9 +43,9 @@ The old layer-based ids `l2-01-types`, `l2-02-config`, `l2-03-assembly`, `l2-04-
 
 Do not use these as authoritative L2 design sources:
 
-- `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/_legacy_layer_based_act/`
-- `DOCS/03_工程/阶段四：模型部署/03_tasks/_legacy_layer_based_act/`
-- `DOCS/03_工程/阶段四：模型部署/03_tasks/_archived_pi05/`
+- `DOCS/03_工程/阶段四：模型部署/02_implement/归档/`
+- `DOCS/03_工程/阶段四：模型部署/03_tasks/归档/_legacy_layer_based_act/`
+- `DOCS/03_工程/阶段四：模型部署/03_tasks/归档/_archived_pi05/`
 - `DOCS/03_工程/阶段四：模型部署/01_contracts/*Contract Delta*`
 
 Contracts may be consulted only as reference semantics for topic, shape, bundle, or hardware interfaces. They do not define the current L2 boundary.
@@ -141,7 +141,7 @@ If the user corrects the design, update the L2 design docs accordingly. Do not g
 Create or update:
 
 ```text
-DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_id>_<l2_name>/
+DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
 ├── 00_L2功能边界.md
 ├── 01_pi05源码3.5层微元拆解.md
 ├── 02_ACT微元设计与协作.md
@@ -208,8 +208,8 @@ Human acceptance must never mark real-robot behavior as passed without real hard
 - Do not create L3 task files.
 - Do not modify `src/model_deploy/act/` implementation files.
 - Do not edit Pi0.5 reference source.
-- Keep L2 design docs in `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/`.
-- Do not create or update design packages under `_legacy_layer_based_act/`.
+- Keep L2 design docs in `DOCS/03_工程/阶段四：模型部署/02_implement/`.
+- Do not create or update design packages under `02_implement/归档/` or old layer-based directories.
 - Do not use Contract Delta files as the L2 boundary or task source.
 - Do not use Stage 2 L2 templates for Stage 4 ACT L2 design.
 - Create the required interactive HTML visualization. Make diagrams when they clarify dataflow, state ownership, failure propagation, or `ControlLoop` scheduling.

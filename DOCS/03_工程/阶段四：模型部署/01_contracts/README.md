@@ -5,10 +5,10 @@
 当前 ACT 第一版开发的权威优先级是：
 
 1. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
-2. `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/00_L1_ACT部署程序任务文档.md`
-3. `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/01_L1_ACT功能模块边界.md`
-4. `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/02_L1_ACT功能模块协作架构.md`
-5. 当前 L2 设计目录：`DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_id>_<中文短名>/`
+2. `DOCS/03_工程/阶段四：模型部署/02_implement/00_L1_ACT部署程序任务文档.md`
+3. `DOCS/03_工程/阶段四：模型部署/02_implement/01_L1_ACT功能模块边界.md`
+4. `DOCS/03_工程/阶段四：模型部署/02_implement/02_L1_ACT功能模块协作架构.md`
+5. 当前 L2 设计目录：`DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<中文短名>/`
 6. 本目录下的参考契约
 
 ## 使用规则

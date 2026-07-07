@@ -5,7 +5,7 @@ Use this reference when creating or checking a Stage 4 L2 design package.
 ## Required File Tree
 
 ```text
-DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_id>_<l2_name>/
+DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
 ├── 00_L2功能边界.md
 ├── 01_pi05源码3.5层微元拆解.md
 ├── 02_ACT微元设计与协作.md
@@ -25,7 +25,7 @@ DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_id>_<l2_name>/
 | Field | Purpose | Example |
 |---|---|---|
 | `l2_id` | Stable id for branch, dispatch, cards, acceptance, status. | `l2-01-external-contract` |
-| `l2_design_dir` | Design package directory under `02_l2_change_packages/`. | `l2-01-external-contract_外部参数加载与契约校验闭环` |
+| `l2_design_dir` | Design package directory under `02_implement/`. | `l2-01-external-contract_外部参数加载与契约校验闭环` |
 
 Current valid `l2_id` values:
 
@@ -215,12 +215,12 @@ The L2 is ready for L3 generation only when:
 Run these read-only checks after creating an L2 design package:
 
 ```bash
-rg -n 'l2-01-types|l2-02-config|l2-03-assembly|l2-04-publish|l2-05-hardware' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
-rg -n 'ACT Contract Delta|AS-IS Contract -> TO-BE Contract -> Contract Delta|阶段二开发范式|L2能力模块说明文件模板' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
-rg -n '01_L1_ACT功能模块边界.md' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
-rg -n '02_L1_ACT功能模块协作架构.md' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
-rg -n '<!doctype html>|<svg|<details|view-|l2-[0-9]{2}-' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>/05_L2架构交互可视化.html
-find DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>/{types,config,repo,service,runtime,ui} -maxdepth 1 -type f
+rg -n 'l2-01-types|l2-02-config|l2-03-assembly|l2-04-publish|l2-05-hardware' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>
+rg -n 'ACT Contract Delta|AS-IS Contract -> TO-BE Contract -> Contract Delta|阶段二开发范式|L2能力模块说明文件模板' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>
+rg -n '01_L1_ACT功能模块边界.md' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>
+rg -n '02_L1_ACT功能模块协作架构.md' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>
+rg -n '<!doctype html>|<svg|<details|view-|l2-[0-9]{2}-' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>/05_L2架构交互可视化.html
+find DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>/{types,config,repo,service,runtime,ui} -maxdepth 1 -type f
 ```
 
 Expected result: old ids and Contract Delta appear only inside explicit contamination-check sections, the L1 Agent architecture doc is referenced, the interactive HTML contains a doctype, SVG, interactive views/cards, stable L2 id references, and every six-layer subfolder contains at least one design file or README.

@@ -112,7 +112,7 @@ git push origin --delete feat/model_deploy/<topic>
 允许提交：
 
 - `src/model_deploy/act/` 下本 L3 明确允许的源码、配置、launch、脚本或测试。
-- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<new-l2>/` 设计文档。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/02_implement/<new-l2>/` 设计文档。
 - 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<new-l2>/` 任务文件。
 - 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<new-l2>/` 已通过 L3 任务归档文件。
 - 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/dispatch/<new-l2>.yaml` dispatch。
@@ -123,7 +123,7 @@ git push origin --delete feat/model_deploy/<topic>
 禁止提交：
 
 - `src/model_deploy/pi05/`、`DOCS/03_工程/阶段四：模型部署/pi05_old/` 或其他 Pi0.5 历史源码作为 L3 修改落点；Pi0.5 只能作为只读参考。
-- `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/_legacy_layer_based_act/`、`03_tasks/_legacy_layer_based_act/`、`05_acceptance/_legacy_layer_based_act/` 下的旧 layer-based ACT 产物，除非当前任务明确是文档归档、迁移或降权维护。
+- `DOCS/03_工程/阶段四：模型部署/02_implement/归档/`、`03_tasks/归档/_legacy_layer_based_act/`、`05_acceptance/_legacy_layer_based_act/` 下的旧 layer-based ACT 产物，除非当前任务明确是文档归档、迁移或降权维护。
 - ROS 构建产物：`build/`、`install/`、`log/`
 - Python 缓存和测试缓存：`__pycache__/`、`*.pyc`、`.pytest_cache/`
 - 本地环境、私有配置、下载缓存、模型权重和大型数据产物
