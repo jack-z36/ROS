@@ -15,18 +15,17 @@
 
 ## 当前 L2 状态
 
-> [!warning] 2026-07-05 重置说明
-> 阶段四 ACT 第一版主线已切换为“7 个运行时功能闭环 L2”。旧 `l2-01-types`、`l2-02-config`、`l2-03-assembly`、`l2-04-publish`、`l2-05-hardware` 全部作废，只能在 `_legacy_layer_based_act/` 或废弃说明中出现。旧状态不得作为循环恢复依据。
+> [!warning] 2026-07-07 修正说明
+> 阶段四 ACT 第一版主线已修正为“6 个运行时功能闭环 L2”。独立 `l2-04-action-smoothing` 从第一版移除，action 平滑降级为后续优化方向。旧 `l2-01-types`、`l2-02-config`、`l2-03-assembly`、`l2-04-publish`、`l2-05-hardware` 全部作废，只能在 `_legacy_layer_based_act/` 或废弃说明中出现。旧状态不得作为循环恢复依据。
 
 | L2 ID | L2 名称 | L2 设计目录 | Dispatch | Acceptance | 三级分支 | Gate 状态 | 人类验收 | 下游放行 |
 |---|---|---|---|---|---|---|---|---|
 | `l2-01-external-contract` | 外部参数加载与契约校验闭环 | `02_implement/l2-01-external-contract_外部参数加载与契约校验闭环/` | `03_tasks/task/dispatch/l2-01-external-contract.yaml` | `05_acceptance/l2-01-external-contract/` | `feat/model_deploy/l2-01-external-contract` | 未开始 | 未开始 | 不允许 L2-02 |
 | `l2-02-observation-snapshot` | 传感器订阅与 ObservationSnapshot 组装闭环 | `02_implement/l2-02-observation-snapshot_ObservationSnapshot组装闭环/` | `03_tasks/task/dispatch/l2-02-observation-snapshot.yaml` | `05_acceptance/l2-02-observation-snapshot/` | `feat/model_deploy/l2-02-observation-snapshot` | 未开始 | 未开始 | 不允许 L2-03 |
 | `l2-03-act-inference` | ObservationSnapshot 到 ACT ActionChunk 推理闭环 | `02_implement/l2-03-act-inference_ACT推理闭环/` | `03_tasks/task/dispatch/l2-03-act-inference.yaml` | `05_acceptance/l2-03-act-inference/` | `feat/model_deploy/l2-03-act-inference` | 未开始 | 未开始 | 不允许 L2-04 |
-| `l2-04-action-smoothing` | ActionChunk 时间对齐与平滑融合闭环 | `02_implement/l2-04-action-smoothing_ActionChunk平滑闭环/` | `03_tasks/task/dispatch/l2-04-action-smoothing.yaml` | `05_acceptance/l2-04-action-smoothing/` | `feat/model_deploy/l2-04-action-smoothing` | 未开始 | 未开始 | 不允许 L2-05 |
-| `l2-05-safety-guard` | 单步 Action 安全检查闭环 | `02_implement/l2-05-safety-guard_单步Action安全检查闭环/` | `03_tasks/task/dispatch/l2-05-safety-guard.yaml` | `05_acceptance/l2-05-safety-guard/` | `feat/model_deploy/l2-05-safety-guard` | 未开始 | 未开始 | 不允许 L2-06 |
-| `l2-06-action-publisher` | 单步 Action 到执行器 Topic 适配发送闭环 | `02_implement/l2-06-action-publisher_执行器Topic适配发送闭环/` | `03_tasks/task/dispatch/l2-06-action-publisher.yaml` | `05_acceptance/l2-06-action-publisher/` | `feat/model_deploy/l2-06-action-publisher` | 未开始 | 未开始 | 不允许 L2-07 |
-| `l2-07-control-loop` | ControlLoop 中央运行调度闭环 | `02_implement/l2-07-control-loop_ControlLoop中央调度闭环/` | `03_tasks/task/dispatch/l2-07-control-loop.yaml` | `05_acceptance/l2-07-control-loop/` | `feat/model_deploy/l2-07-control-loop` | 未开始 | 未开始 | 不适用 |
+| `l2-04-safety-guard` | 单步 Action 安全检查闭环 | `02_implement/l2-04-safety-guard_单步Action安全检查闭环/` | `03_tasks/task/dispatch/l2-04-safety-guard.yaml` | `05_acceptance/l2-04-safety-guard/` | `feat/model_deploy/l2-04-safety-guard` | 未开始 | 未开始 | 不允许 L2-05 |
+| `l2-05-action-publisher` | 单步 Action 到执行器 Topic 适配发送闭环 | `02_implement/l2-05-action-publisher_执行器Topic适配发送闭环/` | `03_tasks/task/dispatch/l2-05-action-publisher.yaml` | `05_acceptance/l2-05-action-publisher/` | `feat/model_deploy/l2-05-action-publisher` | 未开始 | 未开始 | 不允许 L2-06 |
+| `l2-06-control-loop` | ControlLoop 中央运行调度闭环 | `02_implement/l2-06-control-loop_ControlLoop中央调度闭环/` | `03_tasks/task/dispatch/l2-06-control-loop.yaml` | `05_acceptance/l2-06-control-loop/` | `feat/model_deploy/l2-06-control-loop` | 未开始 | 未开始 | 不适用 |
 
 ## 验收与合入流程
 

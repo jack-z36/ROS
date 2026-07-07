@@ -11,7 +11,7 @@
 
 ## 不负责
 
-本文不记录软件 L3 进度，不替代 `l2-05-safety-guard`、`l2-06-action-publisher` 或 `l2-07-control-loop` 验收结果，也不提供真机执行命令全文。
+本文不记录软件 L3 进度，不替代 `l2-04-safety-guard`、`l2-05-action-publisher` 或 `l2-06-control-loop` 验收结果，也不提供真机执行命令全文。
 
 ## 当前硬件边界
 
@@ -21,7 +21,7 @@
 
 任何 real-robot smoke test 或真实执行器发送默认保持 blocked。解除 blocked 必须同时满足：
 
-- 新版 `l2-01-external-contract` 至 `l2-07-control-loop` 的软件侧 Gate 和人类验收均通过，或当前 L2 明确声明只做分段真机验证。
+- 新版 `l2-01-external-contract` 至 `l2-06-control-loop` 的软件侧 Gate 和人类验收均通过，或当前 L2 明确声明只做分段真机验证。
 - RM65 双臂连接、标定和工作空间确认完成。
 - 大象夹爪连接、标定和 width 映射确认完成。
 - 真模型 bundle 就绪。

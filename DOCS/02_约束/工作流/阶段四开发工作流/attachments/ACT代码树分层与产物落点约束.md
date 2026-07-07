@@ -41,7 +41,7 @@ src/model_deploy/act/
 | `config/` | 配置 schema、配置对象、配置校验 | `schema.py`、配置 dataclass | 业务计算、ROS node、模型推理 |
 | `repo/` | 进程外资源读取和反序列化 | bundle reader、manifest parser、normalizer loader、policy loader | ROS topic、硬件 SDK、运行调度 |
 | `service/` | RAM 内业务计算、转换、校验 | observation collector、batch builder、safety guard、action adapter | timer、thread、ROS node 生命周期 |
-| `runtime/` | 时间、线程、队列、状态机、调度 | shared buffer、inference worker、control loop、chunk smoother | 直接 ROS 发布、直接硬件发送 |
+| `runtime/` | 时间、线程、队列、状态机、调度 | shared buffer、inference worker、control loop、chunk cursor state | 直接 ROS 发布、直接硬件发送 |
 | `ui/` | 外部交互边界 | ROS node、subscriber、publisher、message converter | 核心模型推理、核心业务计算 |
 
 ## 4. 依赖方向

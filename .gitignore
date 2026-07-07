@@ -60,3 +60,6 @@ DOCS/.obsidian/
 
 # Vendored LeRobot test artifacts with unavailable Git LFS objects
 **/third_party/lerobot/tests/artifacts/
+
+# Git worktree 本地工作目录（不提交）
+worktrees/

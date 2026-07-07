@@ -14,18 +14,17 @@
 
 ## 状态表
 
-> [!warning] 2026-07-05 重置说明
-> 旧 layer-based L2 Git 状态作废。当前只记录新版 7 个功能闭环 L2 的提交、push 和 merge 状态。旧 `l2-01-types` 等分支不得作为当前合入依据。
+> [!warning] 2026-07-07 修正说明
+> 旧 layer-based L2 Git 状态作废。当前只记录新版 6 个第一版功能闭环 L2 的提交、push 和 merge 状态。独立 `l2-04-action-smoothing` 已移出第一版，不得作为当前合入依据。
 
 | 范围 | 三级分支 | 本地提交 | push 状态 | merge 状态 | 备注 |
 |---|---|---|---|---|---|
 | `l2-01-external-contract` | `feat/model_deploy/l2-01-external-contract` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-01，未开始 |
 | `l2-02-observation-snapshot` | `feat/model_deploy/l2-02-observation-snapshot` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-02，未开始 |
 | `l2-03-act-inference` | `feat/model_deploy/l2-03-act-inference` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-03，未开始 |
-| `l2-04-action-smoothing` | `feat/model_deploy/l2-04-action-smoothing` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-04，未开始 |
-| `l2-05-safety-guard` | `feat/model_deploy/l2-05-safety-guard` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-05，未开始 |
-| `l2-06-action-publisher` | `feat/model_deploy/l2-06-action-publisher` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-06，未开始 |
-| `l2-07-control-loop` | `feat/model_deploy/l2-07-control-loop` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-07，未开始 |
+| `l2-04-safety-guard` | `feat/model_deploy/l2-04-safety-guard` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-04，未开始 |
+| `l2-05-action-publisher` | `feat/model_deploy/l2-05-action-publisher` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-05，未开始 |
+| `l2-06-control-loop` | `feat/model_deploy/l2-06-control-loop` | 待生成 L3 | 待记录 | 未合入 | 新版 L2-06，未开始 |
 
 ## 合入前置条件
 
