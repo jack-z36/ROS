@@ -32,10 +32,11 @@ Current valid `l2_id` values:
 - `l2-01-external-contract`
 - `l2-02-observation-snapshot`
 - `l2-03-act-inference`
-- `l2-04-action-smoothing`
-- `l2-05-safety-guard`
-- `l2-06-action-publisher`
-- `l2-07-control-loop`
+- `l2-04-safety-guard`
+- `l2-05-action-publisher`
+- `l2-06-control-loop`
+
+`l2-04-action-smoothing` is not a valid first-version L2 identity. Treat action smoothing, smoothstep blending, cross-chunk fusion, and RTC-style alignment as follow-up optimization scope unless the L1 documents are explicitly redesigned again.
 
 Old `l2-01-types`, `l2-02-config`, `l2-03-assembly`, `l2-04-publish`, and `l2-05-hardware` are invalid current L2 identities.
 

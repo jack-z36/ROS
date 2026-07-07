@@ -16,9 +16,9 @@
 
 | 字段 | 内容 |
 |---|---|
-| 更新时间 | 2026-07-05（北京时间） |
+| 更新时间 | 2026-07-07（北京时间） |
 | 当前目标 L2 | 未选择；等待新版 L2 设计目录、dispatch 和 acceptance 生成 |
-| 当前主线 | 新版 ACT 7 个功能闭环 L2 |
+| 当前主线 | 新版 ACT 第一版 6 个功能闭环 L2；独立 action 平滑已降级为后续优化 |
 | 上游 Gate | 全部未开始 |
 | 下一步 | 从 `l2-01-external-contract` 开始生成新版 L2 设计目录、dispatch、验收卡片和 acceptance 目录；不得恢复旧 `l2-01-types` 等 layer-based 任务 |
 | Git 前置 | 修改和提交范围必须落到 `src/model_deploy/act/` 与当前新版 L2 工程文档；Pi0.5 只读参考 |

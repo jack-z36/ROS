@@ -5,7 +5,7 @@
 > - 目标路径：`DOCS/03_工程/阶段四：模型部署/02_implement/01_L1_ACT功能模块边界.md`。
 > - 上游任务文档：`00_L1_ACT部署程序任务文档.md`。
 > - 协作文档：`02_L1_ACT功能模块协作架构.md`（讲模块间协作，不讲单模块边界）。
-> - 适用对象：第一版 ACT 部署程序的 7 个 L2 功能模块的功能边界、输入输出、负责/不负责、代码层落点。
+> - 适用对象：第一版 ACT 部署程序的 6 个 L2 功能模块的功能边界、输入输出、负责/不负责、代码层落点。
 > - Agent 消费目的：完整理解每个功能模块的边界，支持 L2 功能设计、L3 微元任务生成和越界检查，避免幻觉和职责串扰。
 > - 本文职责：定义每个 L2 的功能边界。不展开模块间协作关系（指向 `02_L1_ACT功能模块协作架构.md`），不展开任务管理属性（指向 `00_L1_ACT部署程序任务文档.md`）。
 > - 人类消费入口：`ACT架构交互可视化.html`。
@@ -58,9 +58,9 @@ types / config / repo / service / runtime / ui
 | 角色 | 含义 | 对应 L2 |
 |---|---|---|
 | 外部输入角色 | ROS callback 接收传感器数据并写入 RAM；外部配置进入 RAM。 | L2-01、L2-02 |
-| 后台计算角色 | ACT 推理 actor 消费 `ObservationSnapshot`，产出 `ActionChunk`；chunk 平滑；安全检查。 | L2-03、L2-04、L2-05 |
-| 中央调度角色 | `ControlLoop` 按时间和状态调用各服务，决定何时取 observation、何时推理、何时消费 chunk、何时 fallback。 | L2-07 |
-| 外部输出角色 | 把内部动作对象转换成外部执行器可消费的 topic 消息。 | L2-06 |
+| 后台计算角色 | ACT 推理 actor 消费 `ObservationSnapshot`，产出 `ActionChunk`；安全检查单步 raw action。 | L2-03、L2-04 |
+| 中央调度角色 | `ControlLoop` 按时间和状态调用各服务，决定何时取 observation、何时推理、何时消费 chunk、何时 fallback。 | L2-06 |
+| 外部输出角色 | 把内部动作对象转换成外部执行器可消费的 topic 消息。 | L2-05 |
 
 `ControlLoop` 不是普通加工函数，而是 runtime 中央总控。它不应该被拆进某个单纯的数据转换 L2。
 
@@ -185,7 +185,7 @@ SharedBuffer.latest_observation
 ### 3.8 上下游
 
 - 上游：L2-01（state/topic/image/config 契约）。
-- 下游：L2-07 读取 `latest_observation`；L2-03 消费 `ObservationSnapshot` 契约。
+- 下游：L2-06 读取 `latest_observation`；L2-03 消费 `ObservationSnapshot` 契约。
 - 协作细节见 `02_L1_ACT功能模块协作架构.md`。
 
 ## 4. L2-03 ObservationSnapshot 到 ACT ActionChunk 推理闭环
@@ -238,7 +238,8 @@ predict_action_chunk(observation: ObservationSnapshot) -> np.ndarray shape (chun
 
 - 不负责 ROS callback。
 - 不负责 `ObservationSnapshot` 是否齐全。
-- 不负责 action_chunk 的时间对齐与平滑。
+- 不负责 action_chunk 的首版单步选择。
+- 不负责 action 平滑、跨 chunk 融合或 RTC 类优化。
 - 不负责 safety 检查。
 - 不负责 topic 发布。
 - 不负责真机发送。
@@ -254,82 +255,18 @@ predict_action_chunk(observation: ObservationSnapshot) -> np.ndarray shape (chun
 ### 4.8 上下游
 
 - 上游：L2-01（bundle/normalizer/runtime 配置）、L2-02（`ObservationSnapshot` 契约，可先用 mock）。
-- 下游：L2-04 消费 `ActionChunk` 契约。
+- 下游：L2-06 通过 queue 收集 `ActionChunk`，并在首版中直取单步 raw action。
 - 协作细节见 `02_L1_ACT功能模块协作架构.md`。
 
-## 5. L2-04 ActionChunk 时间对齐与平滑融合闭环
+## 5. L2-04 单步 Action 安全检查闭环
 
-`l2-04-action-smoothing`
+`l2-04-safety-guard`
 
 ### 5.1 功能定义
 
-本 L2 的功能是管理当前 action chunk 与下一个 action chunk 的生命周期，根据当前时间选出本 tick 应该执行的单步 raw action，并在 chunk 切换时执行 smoothstep 融合策略。
-
-> [!important] 平滑是条件触发
-> 常规 tick 直接取 `active_chunk.actions[cursor]`，不做混合；只有 chunk 切换边界（`cursor ≥ execute_horizon` 或 chunk 用尽，且有可用 `pending_chunk`）才进入 smoothstep blend。冷启动 / `blend_steps ≤ 0` / 无 `last_command` 时硬切，不 blend。
-
-### 5.2 输入
-
-```text
-active ActionChunk
-pending ActionChunk
-now
-control_hz
-execute_horizon
-prefetch_steps
-blend_steps
-```
-
-### 5.3 输出
-
-```text
-raw single action, shape (16,)
-chunk 状态更新（active/pending/cursor）
-chunk switch / discarded chunk metrics
-```
-
-### 5.4 负责内容
-
-- 保存 active chunk 和 pending chunk。
-- 判断 chunk shape、时效性、数值合法性。
-- 按 `obs_time` 和 `action_dt` 计算 `aligned_index(now)`。
-- 消费 active chunk 的当前 step。
-- 在切换点将 pending chunk 激活。
-- 在配置允许时执行 smoothstep blend。
-- 丢弃过期或非法 chunk。
-
-### 5.5 不负责内容
-
-- 不生成 observation。
-- 不调用 ACT 模型。
-- 不做最终 safety 检查。
-- 不发布 ROS topic。
-- 不直接发送执行器命令。
-- 不决定何时提交 inference request；该决策属于 L2-07 总控。
-
-### 5.6 完成判据
-
-旧 chunk 能按 tick 消费，新 chunk 到达后能成为 pending，并在切换点平滑过渡；非法或过期 chunk 被拒绝并记录原因。
-
-### 5.7 代码层落点
-
-`runtime/`、`tests/`。
-
-### 5.8 上下游
-
-- 上游：L2-03（`ActionChunk` 契约，可用 fake chunk 单测）。
-- 下游：L2-05 消费 raw single action。
-- 协作细节见 `02_L1_ACT功能模块协作架构.md`。
-
-## 6. L2-05 单步 Action 安全检查闭环
-
-`l2-05-safety-guard`
-
-### 6.1 功能定义
-
 本 L2 的功能是对准备发布或发送的单步 raw action 做部署侧安全检查，输出 safe action、拒绝原因或 fallback 决策依据。
 
-### 6.2 输入
+### 5.2 输入
 
 ```text
 raw single action, shape (16,)
@@ -338,7 +275,7 @@ previous safe action
 SafetyConfig
 ```
 
-### 6.3 输出
+### 5.3 输出
 
 ```text
 SafetyResult(
@@ -348,7 +285,7 @@ SafetyResult(
 )
 ```
 
-### 6.4 负责内容
+### 5.4 负责内容
 
 - 检查 action shape 是否为 16。
 - 检查 NaN / Inf。
@@ -357,38 +294,39 @@ SafetyResult(
 - 检查 TCP 单步位移或姿态变化是否超限。
 - 根据配置执行 reject、clamp、hold-last-action 或 safe-stop 所需的安全返回。
 
-### 6.5 不负责内容
+### 5.5 不负责内容
 
 - 不产生 raw action。
 - 不管理 chunk 生命周期。
+- 不做 action 平滑、跨 chunk 融合或 RTC 类优化。
 - 不发布 `/act/policy_action`。
 - 不转换硬件命令格式。
 - 不调用硬件 SDK。
-- 不处理 workspace / IK / 急停等硬件级检查；这些属于 L2-06。
+- 不处理 workspace / IK / 急停等硬件级检查；这些属于 L2-05。
 
-### 6.6 完成判据
+### 5.6 完成判据
 
 合法 action 通过；非法 shape、NaN/Inf、quaternion 非归一化、width 越界、TCP step 超限等输入被拒绝或按配置处理，并返回明确原因。
 
-### 6.7 代码层落点
+### 5.7 代码层落点
 
 `service/`、`tests/`。
 
-### 6.8 上下游
+### 5.8 上下游
 
-- 上游：L2-01（action spec / safety config）、L2-04（raw single action）。
-- 下游：L2-06 消费 safe action / `SafetyResult`。
+- 上游：L2-01（action spec / safety config）；运行时由 L2-06 产出 raw single action。设计和单测阶段可用 mock raw action。
+- 下游：L2-05 消费 safe action / `SafetyResult`。
 - 协作细节见 `02_L1_ACT功能模块协作架构.md`。
 
-## 7. L2-06 单步 Action 到执行器 Topic 适配发送闭环
+## 6. L2-05 单步 Action 到执行器 Topic 适配发送闭环
 
-`l2-06-action-publisher`
+`l2-05-action-publisher`
 
-### 7.1 功能定义
+### 6.1 功能定义
 
 本 L2 的功能是把通过安全检查的单步 action 转换为外部执行器可以消费的 ROS topic 消息，并在 gate 允许时发送到对应 topic。
 
-### 7.2 输入
+### 6.2 输入
 
 ```text
 safe single action, shape (16,)
@@ -397,7 +335,7 @@ latest arm/gripper state
 BridgeConfig / HardwareConfig
 ```
 
-### 7.3 输出
+### 6.3 输出
 
 ```text
 /act/policy_action
@@ -408,7 +346,7 @@ BridgeConfig / HardwareConfig
 /act/command/status
 ```
 
-### 7.4 负责内容
+### 6.4 负责内容
 
 - 发布或适配 `/act/policy_action`。
 - 将 16D action 拆为 left TCP、left gripper、right TCP、right gripper。
@@ -418,81 +356,83 @@ BridgeConfig / HardwareConfig
 - 输出 command status，记录 `action_id`、`safety_ok`、`sent_to_driver`、`failure_reason`。
 - 支持 shadow-run，默认不直接触发真机动作。
 
-### 7.5 不负责内容
+### 6.5 不负责内容
 
 - 不调用 ACT 模型。
 - 不管理 action chunk。
 - 不决定何时 tick。
-- 不替代 L2-05 的 policy-action 通用安全检查。
+- 不替代 L2-04 的 policy-action 通用安全检查。
 - 不在无人工授权时执行 real-robot smoke test。
 
-### 7.6 完成判据
+### 6.6 完成判据
 
 在 shadow-run 下，safe action 能被正确转换为执行器 topic 消息；gate 关闭时不发送真机；失败原因能写入 `/act/command/status`。
 
-### 7.7 代码层落点
+### 6.7 代码层落点
 
 `ui/`、`service/`、`launch/`、`tests/`。
 
-### 7.8 上下游
+### 6.8 上下游
 
-- 上游：L2-01（topic/hardware/bridge 配置）、L2-05（safe action / `SafetyResult`）。
+- 上游：L2-01（topic/hardware/bridge 配置）、L2-04（safe action / `SafetyResult`）。
 - 下游：外部执行器（外部边界）。
 - 协作细节见 `02_L1_ACT功能模块协作架构.md`。
 
-## 8. L2-07 ControlLoop 中央运行调度闭环
+## 7. L2-06 ControlLoop 中央运行调度闭环
 
-`l2-07-control-loop`
+`l2-06-control-loop`
 
-### 8.1 功能定义
+### 7.1 功能定义
 
 本 L2 的功能是实现部署程序的中央运行总控。它以固定 `control_hz` 周期执行 tick，根据时间、状态、队列、失败条件和配置，调用前面 L2 提供的各个 service。
 
-### 8.2 输入
+### 7.2 输入
 
 ```text
 DeployConfig
 SharedBuffer.latest_observation
 SharedBuffer.inference_request_queue
 SharedBuffer.chunk_result_queue
-chunk smoother
 SafetyGuard
 publisher / command adapter
 ```
 
-### 8.3 输出
+### 7.3 输出
 
 ```text
 InferenceRequest
-safe action 或 fallback 输出（直接交给 L2-06 发布）
+raw single action, shape (16,)
+safe action 或 fallback 输出（直接交给 L2-05 发布）
 status / metrics
 ```
 
 > [!note] 不存在独立的 ControlDecision 对象
-> ACT 模块的 tick 不产出"决策对象"。安全检查通过后，safe action 直接由 L2-06 发布；任何不可用环节直接进入 fallback（hold / safe_stop / status-only），由 L2-06 输出。
+> ACT 模块的 tick 不产出"决策对象"。安全检查通过后，safe action 直接由 L2-05 发布；任何不可用环节直接进入 fallback（hold / safe_stop / status-only），由 L2-05 输出。
 
-### 8.4 负责内容
+### 7.4 负责内容
 
 - 按 `control_hz` 周期运行。
 - 读取 latest observation。
 - 根据 chunk 状态和 prefetch 策略决定是否提交 `InferenceRequest`。
 - 收集后台推理返回的 `ActionChunk`。
-- 调用 L2-04 取当前 tick 的 raw single action。
-- 调用 L2-05 进行安全检查。
-- 调用 L2-06 的发布或发送接口。
+- 首版维护 active chunk 与 cursor，并按 tick 直取当前 step 作为 raw single action。
+- 对非法 chunk、过期 chunk 或 cursor 不可用进入 fallback。
+- 调用 L2-04 进行安全检查。
+- 调用 L2-05 的发布或发送接口。
 - 处理 fallback：无 observation、无 chunk、chunk 过期、safety 拒绝、推理失败。
 - 更新 metrics 和 status。
 
-### 8.5 不负责内容
+### 7.5 不负责内容
 
 - 不直接解析外部配置文件。
 - 不直接预处理图像。
 - 不直接实现 ACT batch 构造。
 - 不直接实现 ACT 前向推理。
 - 不直接实现硬件 SDK 细节。
+- 不实现 action 平滑、smoothstep blend、跨 chunk 融合或 RTC 类优化。
 - 不把所有 service 逻辑塞进 `tick()` 内部。
 
-### 8.6 完成判据
+### 7.6 完成判据
 
 在 mock 环境中，ControlLoop 能持续按 tick 调用各服务：
 
@@ -505,14 +445,14 @@ safety 拒绝 -> fallback
 发布成功 -> metrics 计数更新
 ```
 
-### 8.7 代码层落点
+### 7.7 代码层落点
 
 `runtime/`、`ui/`、`tests/integration/`。
 
-### 8.8 上下游
+### 7.8 上下游
 
-- 上游：L2-01（DeployConfig）、L2-02 至 L2-06（service 句柄）。
-- 下游：通过 L2-06 发布命令；通过 metrics 发布 status。
+- 上游：L2-01（DeployConfig）、L2-02 至 L2-05（service 句柄）。
+- 下游：通过 L2-05 发布命令；通过 metrics 发布 status。
 - 协作细节见 `02_L1_ACT功能模块协作架构.md`。
 
 ## 9. 模块边界不变量
@@ -522,8 +462,8 @@ safety 拒绝 -> fallback
 1. L2-01 可以检查 bundle contract，但不做真实模型前向推理。
 2. L2-02 只生成 `ObservationSnapshot`，不决定推理节奏。
 3. L2-03 只消费 `InferenceRequest`，不决定 action 何时执行。
-4. L2-04 只管理 chunk 生命周期和平滑，不做安全检查。
-5. L2-05 只做 policy-action 通用安全检查，不做硬件 workspace / IK / gate。
-6. L2-06 只做外部 topic / 硬件命令适配，不做 ACT batch 和模型推理。
-7. L2-07 只做调度和状态机，不吞并前面各 service 的实现细节。
+4. L2-04 只做 policy-action 通用安全检查，不做硬件 workspace / IK / gate。
+5. L2-05 只做外部 topic / 硬件命令适配，不做 ACT batch 和模型推理。
+6. L2-06 只做调度、首版 chunk 直取和状态机，不吞并前面各 service 的实现细节。
+7. 第一版不实现 action 平滑；smoothstep blend、跨 chunk 融合和 RTC 类平滑属于后续优化方向。
 8. 任何真机发送都必须经过 shadow-run / gate / command_status，不得由模型节点直接调用硬件 SDK。

@@ -34,10 +34,11 @@ Only these Stage 4 ACT L2 ids are valid current L2 identities:
 - `l2-01-external-contract`
 - `l2-02-observation-snapshot`
 - `l2-03-act-inference`
-- `l2-04-action-smoothing`
-- `l2-05-safety-guard`
-- `l2-06-action-publisher`
-- `l2-07-control-loop`
+- `l2-04-safety-guard`
+- `l2-05-action-publisher`
+- `l2-06-control-loop`
+
+`l2-04-action-smoothing` is not a current first-version L2 identity. Action smoothing, smoothstep blending, cross-chunk fusion, and RTC-style alignment are follow-up optimization directions, not first-version L2 Gate scope.
 
 The old layer-based ids `l2-01-types`, `l2-02-config`, `l2-03-assembly`, `l2-04-publish`, and `l2-05-hardware` are legacy only. They may appear only when explaining archived material, never as the current L2 id, branch topic, dispatch group, acceptance directory, or design package identity.
 

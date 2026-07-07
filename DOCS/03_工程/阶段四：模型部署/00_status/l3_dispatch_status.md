@@ -19,10 +19,9 @@
 | `l2-01-external-contract` | `03_tasks/task/dispatch/l2-01-external-contract.yaml` | 未生成；需先完成新版 L2 设计和 L3 生成 |
 | `l2-02-observation-snapshot` | `03_tasks/task/dispatch/l2-02-observation-snapshot.yaml` | 未生成；等待 L2-01 Gate |
 | `l2-03-act-inference` | `03_tasks/task/dispatch/l2-03-act-inference.yaml` | 未生成；等待 L2-02 Gate |
-| `l2-04-action-smoothing` | `03_tasks/task/dispatch/l2-04-action-smoothing.yaml` | 未生成；等待 L2-03 Gate |
-| `l2-05-safety-guard` | `03_tasks/task/dispatch/l2-05-safety-guard.yaml` | 未生成；等待 L2-04 Gate |
-| `l2-06-action-publisher` | `03_tasks/task/dispatch/l2-06-action-publisher.yaml` | 未生成；等待 L2-05 Gate |
-| `l2-07-control-loop` | `03_tasks/task/dispatch/l2-07-control-loop.yaml` | 未生成；等待 L2-06 Gate |
+| `l2-04-safety-guard` | `03_tasks/task/dispatch/l2-04-safety-guard.yaml` | 未生成；等待 L2-03 Gate |
+| `l2-05-action-publisher` | `03_tasks/task/dispatch/l2-05-action-publisher.yaml` | 未生成；等待 L2-04 Gate |
+| `l2-06-control-loop` | `03_tasks/task/dispatch/l2-06-control-loop.yaml` | 未生成；等待 L2-05 Gate |
 
 > [!warning] 旧调度作废
 > 旧 layer-based dispatch 已隔离到 `03_tasks/_legacy_layer_based_act/`，不得作为当前调度来源。

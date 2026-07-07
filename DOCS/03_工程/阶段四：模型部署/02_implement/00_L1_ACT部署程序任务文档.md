@@ -35,7 +35,7 @@ L1 架构协作包按消费对象拆分为 4 个产物：
 -> ObservationSnapshot
 -> ACT batch
 -> ACT action_chunk
--> chunk 时间对齐与平滑
+-> ControlLoop 直取当前 tick 的单步 action
 -> 单步 action 安全检查
 -> 执行器可消费 topic
 -> ControlLoop 持续调度
@@ -45,17 +45,18 @@ L1 架构协作包按消费对象拆分为 4 个产物：
 
 ## 2. L2 功能模块清单
 
-本 L1 拆成 7 个 L2，按运行时功能闭环组织：
+本 L1 拆成 6 个第一版 L2，按运行时功能闭环组织：
 
 | L2 ID | 中文名称 |
 |---|---|
 | `l2-01-external-contract` | 外部参数加载与契约校验闭环 |
 | `l2-02-observation-snapshot` | 传感器订阅与 ObservationSnapshot 组装闭环 |
 | `l2-03-act-inference` | ObservationSnapshot 到 ACT ActionChunk 推理闭环 |
-| `l2-04-action-smoothing` | ActionChunk 时间对齐与平滑融合闭环 |
-| `l2-05-safety-guard` | 单步 Action 安全检查闭环 |
-| `l2-06-action-publisher` | 单步 Action 到执行器 Topic 适配发送闭环 |
-| `l2-07-control-loop` | ControlLoop 中央运行调度闭环 |
+| `l2-04-safety-guard` | 单步 Action 安全检查闭环 |
+| `l2-05-action-publisher` | 单步 Action 到执行器 Topic 适配发送闭环 |
+| `l2-06-control-loop` | ControlLoop 中央运行调度闭环 |
+
+第一版明确不设置独立的 `l2-04-action-smoothing`。`ActionChunk` 的首版消费方式是最小 cursor 直取：ControlLoop 收集最新 chunk、维护 active chunk 与 cursor、按 tick 取当前 step，缺 chunk、chunk 非法或 cursor 不可用时进入 fallback。smoothstep blend、跨 chunk 平滑融合、RTC 类平滑和复杂时间对齐作为后续优化方向，不进入第一版 L2 Gate。
 
 后续 dispatch、状态摘要、三级分支和 acceptance 目录必须使用上述稳定 L2 ID。
 
@@ -71,10 +72,9 @@ L1 架构协作包按消费对象拆分为 4 个产物：
 L2-01 外部参数加载与契约校验闭环
 L2-02 传感器订阅与 ObservationSnapshot 组装闭环
 L2-03 ObservationSnapshot 到 ACT ActionChunk 推理闭环
-L2-04 ActionChunk 时间对齐与平滑融合闭环
-L2-05 单步 Action 安全检查闭环
-L2-06 单步 Action 到执行器 Topic 适配发送闭环
-L2-07 ControlLoop 中央运行调度闭环
+L2-04 单步 Action 安全检查闭环
+L2-05 单步 Action 到执行器 Topic 适配发送闭环
+L2-06 ControlLoop 中央运行调度闭环
 ```
 
 ## 4. L2 依赖关系
@@ -86,7 +86,6 @@ L2-01
   -> L2-04
   -> L2-05
   -> L2-06
-  -> L2-07
 ```
 
 更精确地说：
@@ -96,10 +95,9 @@ L2-01
 | L2-01 | 无 | 全部后续 L2 的静态契约地基。 |
 | L2-02 | L2-01 | 依赖 state/topic/image/config 契约。 |
 | L2-03 | L2-01、L2-02 的 `ObservationSnapshot` 契约 | 可先用 mock snapshot 开发。 |
-| L2-04 | L2-03 的 `ActionChunk` 契约 | 可用 fake chunk 单测。 |
-| L2-05 | L2-01、L2-04 | 依赖 action schema 和单步 raw action。 |
-| L2-06 | L2-01、L2-05 | 依赖 safe action 和 topic/hardware 配置。 |
-| L2-07 | L2-02 至 L2-06 | 负责把前面所有 service 串成持续运行程序。 |
+| L2-04 | L2-01、单步 raw action 契约 | 依赖 action schema；设计和单测阶段可用 mock raw action，运行时 raw action 由 L2-06 首版 cursor 直取提供。 |
+| L2-05 | L2-01、L2-04 | 依赖 safe action 和 topic/hardware 配置。 |
+| L2-06 | L2-02 至 L2-05 | 负责收集 `ActionChunk`、直取单步 action，并把前面所有 service 串成持续运行程序。 |
 
 模块之间的协作接口、RAM 对象所有权、同步/异步边界详见 `02_L1_ACT功能模块协作架构.md`。
 
@@ -109,8 +107,8 @@ L1 完成不等于真机动作一定通过。L1 的完成状态分为三层：
 
 | 验收层级 | 通过标准 |
 |---|---|
-| 本地单测 | L2-01 至 L2-05 在无 ROS / 无硬件条件下可用 mock 通过。 |
-| dry-run / shadow-run | L2-06 至 L2-07 能启动 mock 或 ROS shadow 链路，能观察 action 和 command status。 |
+| 本地单测 | L2-01 至 L2-04 在无 ROS / 无硬件条件下可用 mock 通过。 |
+| dry-run / shadow-run | L2-05 至 L2-06 能启动 mock 或 ROS shadow 链路，能观察 action 和 command status。 |
 | real-robot | 必须人工授权、硬件在场、急停准备完成后执行；默认不作为自动验收项。 |
 
 L1 的最小自动化完成标准：
@@ -119,7 +117,7 @@ L1 的最小自动化完成标准：
 配置契约通过
 ObservationSnapshot 可构造
 fake ACT action_chunk 可生成
-chunk 平滑与 safety 单测通过
+ControlLoop 可从 fake chunk 直取单步 action，safety 单测通过
 shadow-run action 到 command topic 转换通过
 ControlLoop mock 闭环可持续 tick
 ```

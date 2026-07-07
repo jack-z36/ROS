@@ -20,11 +20,12 @@
 l2-01-external-contract
 → l2-02-observation-snapshot
 → l2-03-act-inference
-→ l2-04-action-smoothing
-→ l2-05-safety-guard
-→ l2-06-action-publisher
-→ l2-07-control-loop
+→ l2-04-safety-guard
+→ l2-05-action-publisher
+→ l2-06-control-loop
 ```
+
+`l2-04-action-smoothing` 已从第一版循环目标移除。Action 平滑、smoothstep blend、跨 chunk 融合和 RTC 类对齐均为后续优化方向，不作为当前循环完成条件。
 
 旧 `l2-01-types`、`l2-02-config`、`l2-03-assembly`、`l2-04-publish`、`l2-05-hardware` 以及 `deploy_022` / `deploy_023` 目标作废，只能作为 legacy 历史参考。
 
@@ -34,7 +35,7 @@ l2-01-external-contract
 
 当前循环完成的最小标准：
 
-- 7 个新版功能闭环 L2 均按顺序完成 L2 Gate。
+- 6 个新版功能闭环 L2 均按顺序完成 L2 Gate。
 - 每个 L2 均具备人类验收记录。
 - 每个 L2 的 L3 均来自新版 active / dispatch / cards / acceptance 路径。
 - 旧 layer-based L2 不再作为循环恢复、调度或合入依据。
