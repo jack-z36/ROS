@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 import time
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Deque, Dict, Optional, Tuple
 
@@ -122,6 +122,7 @@ class PressureDriverNode(Node):
                 )
 
     def _create_workers(self, config: DriverConfig) -> None:
+        identity_addrs = config.identity_device_addrs() if config.identity_targets else set()
         for serial_cfg in config.serial_ports:
             worker = SerialWorker(
                 config=serial_cfg,
@@ -132,6 +133,8 @@ class PressureDriverNode(Node):
                 identity_query_package_id=config.identity_query_package_id,
             )
             self._workers[serial_cfg.name] = worker
+            if identity_addrs:
+                worker.add_identity_addrs(identity_addrs)
             if not worker.start():
                 continue
             if config.identity_targets:
@@ -143,26 +146,19 @@ class PressureDriverNode(Node):
         sensor_configs: list[SensorConfig],
         worker: SerialWorker,
     ) -> None:
-        for sensor_cfg in sensor_configs:
-            uid = worker.identity_by_addr.get(sensor_cfg.device_addr)
-            if not uid:
-                continue
-
+        for device_addr, uid in worker.identity_by_addr.items():
             target = self._config.identity_targets.get(uid)
             if target is None:
-                self.get_logger().error(
-                    f"Unknown HWK_CHIP_UID ignored: serial={serial_name}, "
-                    f"device_addr={sensor_cfg.device_addr}, HWK_CHIP_UID={uid}; "
-                    "add it to hardware_identity_map.yaml before publishing"
-                )
                 continue
+
             if uid in self._bound_identity_uids:
                 raise RuntimeError(
                     f"Duplicate HWK_CHIP_UID detected across serial ports: {uid}"
                 )
 
             publisher = self._publishers_by_uid[uid]
-            key = (serial_name, sensor_cfg.device_addr)
+            key = (serial_name, device_addr)
+            sensor_cfg = replace(next(iter(sensor_configs)), device_addr=device_addr)
             self._sensors[key] = SensorRuntime(
                 serial_name=serial_name,
                 config=sensor_cfg,
@@ -173,7 +169,7 @@ class PressureDriverNode(Node):
             self._bound_identity_uids.add(uid)
             self.get_logger().info(
                 f"Bound HWK sensor by UID: serial={serial_name}, "
-                f"device_addr={sensor_cfg.device_addr}, HWK_CHIP_UID={uid}, "
+                f"device_addr={device_addr}, HWK_CHIP_UID={uid}, "
                 f"logical={target.logical_name}, topic={target.topic}"
             )
 

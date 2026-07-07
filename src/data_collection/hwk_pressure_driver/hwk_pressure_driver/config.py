@@ -37,6 +37,7 @@ class IdentityTargetConfig:
     topic: str
     frame_id: str
     required: bool
+    device_addr: int = 6
 
 
 @dataclass(frozen=True)
@@ -60,6 +61,9 @@ class DriverConfig:
     identity_query_package_id: int
     identity_targets: Dict[str, IdentityTargetConfig]
     serial_ports: List[SerialPortConfig]
+
+    def identity_device_addrs(self) -> set[int]:
+        return {t.device_addr for t in self.identity_targets.values()}
 
 
 class ConfigError(ValueError):
@@ -338,6 +342,9 @@ def _load_identity_targets(
         if not uid:
             continue
 
+        raw_addr = match.get("HWK_DEVICE_ADDR")
+        device_addr = int(raw_addr) if raw_addr is not None else 6
+
         topic = str(target.get("topic", "")).strip()
         hand = str(target.get("hand", "")).strip()
         gripper = str(target.get("gripper", "")).strip()
@@ -365,6 +372,7 @@ def _load_identity_targets(
             topic=topic,
             frame_id=str(target.get("frame_id", "")).strip(),
             required=_as_bool(entry_raw.get("required", True), f"pressure.{logical_name}.required"),
+            device_addr=device_addr,
         )
 
     if strict_identity and not targets:

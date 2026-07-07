@@ -66,6 +66,10 @@ class SerialWorker:
     def is_open(self) -> bool:
         return self._serial is not None and self._serial.is_open
 
+    def add_identity_addrs(self, addrs: set[int]) -> None:
+        """Add extra device addresses to probe during identity discovery."""
+        self._known_addrs |= addrs
+
     def start(self) -> bool:
         """Open the serial port and start the reader thread."""
 
