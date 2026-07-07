@@ -59,7 +59,9 @@ git pull --ff-only
 
 ## L3 原子提交流程
 
-Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交：
+Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交。
+
+如果验收结论为 `PASS_LOCAL`，提交前必须先把对应 L3 任务文件从 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<new-l2>/` 移动到 `DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<new-l2>/`，并把该归档移动纳入同一个 L3 原子提交。其他可提交终态不是“验收任务执行通过”，默认不触发该归档。
 
 ```bash
 git status --short --branch
@@ -112,6 +114,7 @@ git push origin --delete feat/model_deploy/<topic>
 - `src/model_deploy/act/` 下本 L3 明确允许的源码、配置、launch、脚本或测试。
 - 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<new-l2>/` 设计文档。
 - 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<new-l2>/` 任务文件。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<new-l2>/` 已通过 L3 任务归档文件。
 - 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/dispatch/<new-l2>.yaml` dispatch。
 - 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/cards/<new-l2>/` 验收卡片。
 - 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/05_acceptance/<new-l2>/` 验收结果、脚本和日志。

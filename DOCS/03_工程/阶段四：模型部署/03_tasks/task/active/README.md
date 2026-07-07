@@ -2,6 +2,12 @@
 
 本目录只存放新版 ACT 功能闭环 L2 的 active L3。
 
+当某个 L3 的验收卡片返回 `PASS_LOCAL` 后，主 Agent 必须把对应任务文件移出本目录，归档到：
+
+```text
+DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<new-l2>/
+```
+
 允许的 L2 ID：
 
 ```text

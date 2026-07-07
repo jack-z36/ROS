@@ -1,6 +1,6 @@
 ---
 name: stage4-l2-designer
-description: Produce the fixed Stage 4 ACT L2 design package in this ROS repository. Use when designing one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create the L2 design docs, and draft L2 Gate plus human acceptance mechanisms.
+description: Produce the fixed Stage 4 ACT L2 design package in this ROS repository. Use when designing one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create the L2 design docs, generate a human-consumable interactive HTML architecture visualization like ACT架构交互可视化.html, and draft L2 Gate plus human acceptance mechanisms.
 ---
 
 # Stage4 L2 Designer
@@ -24,6 +24,8 @@ Read these before producing artifacts:
 7. Pi0.5 reference source under `DOCS/03_工程/阶段四：模型部署/pi05_old/pi05_test/pi05/`
 
 Read `references/l2-output-contract.md` when creating or checking the final file tree.
+
+Use `DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视化.html` as the visual quality exemplar when the task asks for an interactive architecture document or when generating the required L2 visualization. Read its structure and interaction pattern; do not copy its ACT-wide content into a single-L2 visualization.
 
 ## Current L2 Identity Rules
 
@@ -145,6 +147,7 @@ DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_id>_<l2_name>/
 ├── 02_ACT微元设计与协作.md
 ├── 03_L2验收机制.md
 ├── 04_人类验收机制.md
+├── 05_L2架构交互可视化.html
 ├── types/
 ├── config/
 ├── repo/
@@ -157,7 +160,41 @@ Each six-layer subfolder must contain one or more design `.md` files for target 
 
 Every design package must include `l2_id`, `l2_design_dir`, L1 task doc path, L1 Agent architecture doc path, and a legacy / Contract Delta / Stage 2 template contamination check.
 
-### 6. Design Acceptance
+### 6. Write the Interactive Visualization
+
+Create `05_L2架构交互可视化.html` as a standalone, static, human-consumable HTML document for this L2.
+
+Use the existing ACT visualization as the interaction and information-density benchmark:
+
+- Single self-contained HTML file with inline CSS and no network dependencies.
+- First screen has a clear title, short subtitle, and an explicit note that Markdown design docs are authoritative if HTML conflicts with them.
+- Radio-tab or equivalent no-build interaction for multiple views.
+- Left-side or top module index listing the L2, upstream/downstream L2s, target code layers, and major runtime objects.
+- Main visual area with SVG diagrams, not only prose tables.
+- Right-side or lower explanation area that teaches how to read the current view.
+- Expandable boundary cards using `<details>` / `<summary>` for responsibilities, non-responsibilities, inputs, outputs, state ownership, and acceptance signals.
+- Responsive layout for narrow screens.
+
+The visualization must include at least these views when relevant:
+
+- Overview: this L2 in the Stage 4 ACT collaboration graph.
+- Dataflow: external inputs, RAM objects, queues/topics, outputs, and ownership.
+- Control/runtime flow: timer, worker, callback, service call, or `ControlLoop.tick()` interactions.
+- Failure/fallback propagation: validation failures, stale data, rejected actions, blocked hardware, status emission.
+- Metrics/status/acceptance: observable counters, topics, logs, commands, and pass/fail phenomena.
+- Boundary contract: responsibilities, non-responsibilities, upstream/downstream contracts, and target files.
+
+Do not make the HTML a decorative duplicate of Markdown. It should compress the design into a fast inspection artifact for humans while preserving enough labels to audit data ownership, control ownership, and failure paths. If the L2 has no meaningful runtime control or failure path, include the view with an explicit "not applicable" explanation.
+
+Validate the generated HTML by checking that it contains:
+
+- `<!doctype html>`
+- at least three view selectors or `<details>` sections
+- at least one `<svg`
+- references to the authoritative L1/L2 Markdown docs
+- the stable `l2_id`
+
+### 7. Design Acceptance
 
 Produce both:
 
@@ -175,7 +212,7 @@ Human acceptance must never mark real-robot behavior as passed without real hard
 - Do not create or update design packages under `_legacy_layer_based_act/`.
 - Do not use Contract Delta files as the L2 boundary or task source.
 - Do not use Stage 2 L2 templates for Stage 4 ACT L2 design.
-- Make diagrams when they clarify dataflow, state ownership, or `ControlLoop` scheduling.
+- Create the required interactive HTML visualization. Make diagrams when they clarify dataflow, state ownership, failure propagation, or `ControlLoop` scheduling.
 - Treat `types/config/repo/service/runtime/ui` as code placement boundaries, not L2 task boundaries.
 
 ## Handoff
@@ -183,6 +220,7 @@ Human acceptance must never mark real-robot behavior as passed without real hard
 End with:
 
 - Created/updated L2 design package path.
+- Created/updated interactive visualization path.
 - Pi0.5 files inspected.
 - ACT files proposed.
 - Open user decisions.

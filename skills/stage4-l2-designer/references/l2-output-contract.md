@@ -11,6 +11,7 @@ DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_id>_<l2_name>/
 ├── 02_ACT微元设计与协作.md
 ├── 03_L2验收机制.md
 ├── 04_人类验收机制.md
+├── 05_L2架构交互可视化.html
 ├── types/
 ├── config/
 ├── repo/
@@ -160,6 +161,41 @@ Use this signature shape:
 - 备注：
 ```
 
+## 05_L2架构交互可视化.html
+
+Must be a standalone static HTML document that helps a human inspect this L2 quickly.
+
+Use `DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视化.html` as the quality bar for structure and interaction:
+
+- self-contained `<!doctype html>` file with inline CSS and no network dependencies.
+- clear title, subtitle, and a note that the L1/L2 Markdown docs are authoritative if the HTML conflicts with them.
+- tabs implemented by radio inputs, or an equally simple no-build interaction.
+- left or top module index for this L2, adjacent L2s, target layers, and major runtime objects.
+- SVG diagrams for the main views.
+- explanatory panel or section for how to read each view.
+- expandable `<details>` boundary cards for responsibilities, non-responsibilities, inputs, outputs, state ownership, and acceptance signals.
+- responsive layout for narrow screens.
+
+Required views:
+
+| View | Required content |
+|---|---|
+| Overview | This L2 in the Stage 4 ACT collaboration graph, with upstream/downstream L2s. |
+| Dataflow | External inputs, RAM objects, queues/topics, outputs, and ownership. |
+| Control/runtime flow | Timer, worker, callback, service call, or `ControlLoop.tick()` interactions. |
+| Failure/fallback | Validation failures, stale data, rejected actions, blocked hardware, fallback/status propagation. |
+| Metrics/status/acceptance | Observable topics, logs, counters, commands, pass/fail phenomena. |
+| Boundary contract | Responsibilities, non-responsibilities, target files, and acceptance coverage. |
+
+The visualization is an inspection artifact, not the source of truth. It must cite the authoritative L1 task doc, L1 Agent architecture doc, and current L2 package Markdown files. If a required view is not meaningful for this L2, keep the tab/card and explain why it is not applicable.
+
+The HTML must not:
+
+- Pull scripts, fonts, styles, or images from the network.
+- Copy ACT-wide example content as if it were this L2's design.
+- Use Contract Delta, legacy L2 ids, or Stage 2 templates as the current boundary.
+- Hide unresolved design decisions that remain blocking.
+
 ## Ready For L3 Criteria
 
 The L2 is ready for L3 generation only when:
@@ -170,6 +206,7 @@ The L2 is ready for L3 generation only when:
 - Six-layer design docs exist.
 - L2 Gate exists.
 - Human acceptance mechanism exists.
+- Interactive HTML visualization exists and is aligned with the Markdown design docs.
 - Open user decisions are either resolved or explicitly marked as blocking.
 - The package passed the legacy / Contract Delta / Stage 2 template contamination check.
 
@@ -180,9 +217,10 @@ Run these read-only checks after creating an L2 design package:
 ```bash
 rg -n 'l2-01-types|l2-02-config|l2-03-assembly|l2-04-publish|l2-05-hardware' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
 rg -n 'ACT Contract Delta|AS-IS Contract -> TO-BE Contract -> Contract Delta|阶段二开发范式|L2能力模块说明文件模板' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
-	rg -n '01_L1_ACT功能模块边界.md' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
-	rg -n '02_L1_ACT功能模块协作架构.md' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
+rg -n '01_L1_ACT功能模块边界.md' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
+rg -n '02_L1_ACT功能模块协作架构.md' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>
+rg -n '<!doctype html>|<svg|<details|view-|l2-[0-9]{2}-' DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>/05_L2架构交互可视化.html
 find DOCS/03_工程/阶段四：模型部署/02_l2_change_packages/<l2_design_dir>/{types,config,repo,service,runtime,ui} -maxdepth 1 -type f
 ```
 
-Expected result: old ids and Contract Delta appear only inside explicit contamination-check sections, the L1 Agent architecture doc is referenced, and every six-layer subfolder contains at least one design file or README.
+Expected result: old ids and Contract Delta appear only inside explicit contamination-check sections, the L1 Agent architecture doc is referenced, the interactive HTML contains a doctype, SVG, interactive views/cards, stable L2 id references, and every six-layer subfolder contains at least one design file or README.
