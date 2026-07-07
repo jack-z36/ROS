@@ -1,35 +1,40 @@
 ---
 name: stage4-l2-designer
-description: Produce the fixed Stage 4 ACT L2 design package in this ROS repository. Use when designing one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create the L2 design docs, generate a human-consumable interactive HTML architecture visualization like ACT架构交互可视化.html, and draft L2 Gate plus human acceptance mechanisms.
+description: Produce and maintain the Stage 4 ACT L2 design package in this ROS repository. Use when designing, optimizing, reviewing, or migrating one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create Agent-consumable atomic Markdown under agent_context/, create a human-consumable interactive SVG-heavy HTML visualization, and draft L2 Gate plus human acceptance mechanisms.
 ---
 
 # Stage4 L2 Designer
 
 ## Purpose
 
-Use this skill for the first phase of a Stage 4 L2: turn one functional L2 boundary into a fixed design package that can later generate L3 tasks.
+Use this skill for the L2 design phase of Stage 4 ACT deployment work. It turns one functional L2 boundary into two separated products:
 
-This skill does not execute L3 tasks. Use `stage4-l3-orchestrator` after the L2 design package and acceptance mechanism are confirmed.
+- a low-density human HTML entrypoint with interactive diagrams;
+- high-density Agent Markdown under `agent_context/`.
+
+This skill does not execute L3 tasks. Use `stage4-l3-orchestrator` only after the L2 design package and acceptance mechanism are confirmed.
 
 ## Required Context
 
-Read these before producing artifacts:
+Read these before producing or changing artifacts:
 
 1. `AGENTS.md`
 2. `DOCS/02_约束/上下文加载/03_非具体编程规划加载规则.md`
 3. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 4. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/ACT代码树分层与产物落点约束.md`
 5. `DOCS/02_约束/认知偏好/用户认知框架与讲解偏好.md`
-6. The L1 task doc and L1 architecture doc under `DOCS/03_工程/阶段四：模型部署/02_implement/`
-7. Pi0.5 reference source under `DOCS/03_工程/阶段四：模型部署/pi05_old/pi05_test/pi05/`
+6. `DOCS/03_工程/阶段四：模型部署/02_implement/00_L1_ACT部署程序任务文档.md`
+7. `DOCS/03_工程/阶段四：模型部署/02_implement/01_L1_ACT功能模块边界.md`
+8. `DOCS/03_工程/阶段四：模型部署/02_implement/02_L1_ACT功能模块协作架构.md`
+9. Pi0.5 reference source under `DOCS/03_工程/阶段四：模型部署/pi05_old/pi05_test/pi05/`
 
-Read `references/l2-output-contract.md` when creating or checking the final file tree.
+Read `references/l2-output-contract.md` when creating, migrating, or checking the final file tree.
 
-Use `DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视化.html` as the visual quality exemplar when the task asks for an interactive architecture document or when generating the required L2 visualization. Read its structure and interaction pattern; do not copy its ACT-wide content into a single-L2 visualization.
+Use `DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视化.html` only as a visual quality reference. Do not copy ACT-wide content into a single-L2 visualization.
 
 ## Current L2 Identity Rules
 
-Only these Stage 4 ACT L2 ids are valid current L2 identities:
+Only these Stage 4 ACT L2 ids are valid:
 
 - `l2-01-external-contract`
 - `l2-02-observation-snapshot`
@@ -39,7 +44,7 @@ Only these Stage 4 ACT L2 ids are valid current L2 identities:
 - `l2-06-action-publisher`
 - `l2-07-control-loop`
 
-The old layer-based ids `l2-01-types`, `l2-02-config`, `l2-03-assembly`, `l2-04-publish`, and `l2-05-hardware` are legacy only. They may appear only when explaining archived material, never as the current L2 id, branch topic, dispatch group, acceptance directory, or design package identity.
+The old layer-based ids `l2-01-types`, `l2-02-config`, `l2-03-assembly`, `l2-04-publish`, and `l2-05-hardware` are legacy only. They may appear only in contamination checks, deprecation notes, or explicit read-only reference context.
 
 Do not use these as authoritative L2 design sources:
 
@@ -50,19 +55,29 @@ Do not use these as authoritative L2 design sources:
 
 Contracts may be consulted only as reference semantics for topic, shape, bundle, or hardware interfaces. They do not define the current L2 boundary.
 
-`DOCS/03_工程/阶段四：模型部署/pi05_old/AGENTS.md` describes the archived Pi0.5 reference project. It is not the current Stage 4 ACT rule source. Its graph can help navigate Pi0.5 source, but final L2 design claims must cite actual Pi0.5 files/classes/functions and the current L1 architecture document.
+## Output Shape
 
-## Inputs
+Create or maintain exactly this L2 package shape:
 
-Require or infer:
+```text
+DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
+├── L2架构交互可视化.html
+└── agent_context/
+    ├── 00_INDEX.md
+    ├── 01_L2功能边界.md
+    ├── 02_pi05源码3.5层微元拆解.md
+    ├── 03_ACT微元设计与协作.md
+    ├── 04_L2验收机制.md
+    ├── 05_人类验收机制.md
+    ├── 06_types层设计.md
+    ├── 07_config层设计.md
+    ├── 08_repo层设计.md
+    ├── 09_service层设计.md
+    ├── 10_runtime层设计.md
+    └── 11_ui层设计.md
+```
 
-- L2 id and name, for example `L2-03 ObservationSnapshot 到 ACT ActionChunk 推理闭环`.
-- Stable `l2_id`, which must be one of the current L2 identity rules.
-- L2 functional boundary: inputs, outputs, responsibilities, non-responsibilities.
-- Current ACT target root: `src/model_deploy/act/`.
-- Pi0.5 reference root: `DOCS/03_工程/阶段四：模型部署/pi05_old/pi05_test/pi05/`.
-
-If the L2 boundary is missing or ambiguous, ask the user before writing design files. If the L2 id is not in the current whitelist, stop and report the mismatch.
+The package root is for humans. Keep all Agent Markdown inside `agent_context/`. Do not create `types/`, `config/`, `repo/`, `service/`, `runtime/`, or `ui/` subdirectories in the L2 design package.
 
 ## Workflow
 
@@ -81,9 +96,7 @@ Upstream L2:
 Downstream L2:
 ```
 
-Proceed only when the boundary is clear enough to map source files.
-
-The boundary must come from the L1 task document and L1 Agent architecture document. Do not infer the current L2 boundary from Contract Delta files, HTML visualization, legacy L2 cards, or old dispatch files.
+Stop for user confirmation before continuing. The boundary must come from the L1 task document and L1 Agent architecture documents, not from Contract Delta files, HTML visualization, legacy cards, or old dispatch files.
 
 ### 2. Inspect Pi0.5 Source
 
@@ -91,137 +104,118 @@ Search Pi0.5 source for files, classes, functions, config keys, topics, queues, 
 
 Prefer `rg` and direct source reads. Do not summarize from memory.
 
-Pi0.5 source is a structure reference. Reuse decisions must be rewritten through the current ACT L1/L2 responsibility boundary; do not copy Pi0.5 task boundaries or topic namespaces as current ACT design.
+Source range matching is an internal working step only. Do not create a standalone `源码范围匹配` document. Fold useful evidence into `agent_context/02_pi05源码3.5层微元拆解.md`:
 
-Use source range matching as an internal working step only. Do not create a standalone `源码范围匹配` document.
+- exact Pi0.5 paths, classes, functions, constants, and entry points;
+- 3.5-layer micro-unit table using `数据 / 计算函数 / 内部状态更新函数 / 数据读写函数 / 编排函数`;
+- class packaging table with state, lifecycle, concurrency, and ACT recommendation;
+- reuse decision: `直接复用 / 结构复用 / 参考理解 / 不复用`.
 
-Fold source evidence into the 3.5-layer source micro-unit document:
-
-- Relevant file/class/function inventory.
-- 3.5-layer micro-unit table using the user's categories:
-  - 数据
-  - 计算函数
-  - 内部状态更新函数
-  - 数据读写函数
-  - 编排函数
-- class packaging table: class, internal state, lifecycle, concurrency, reason for class.
-- Reuse decision: `直接复用 / 结构复用 / 参考理解 / 不复用`.
-
-Do not bulk-copy source files. Quote only short targeted snippets when needed to identify an interface.
+Pi0.5 is a structure reference. Reuse decisions must be rewritten through the current ACT L1/L2 boundary.
 
 ### 3. Recommend ACT Design
 
-Map the Pi0.5 findings into ACT design recommendations.
+Map the Pi0.5 findings into ACT recommendations.
 
-For every recommended ACT micro-unit, specify:
+For every ACT micro-unit, specify:
 
-- 3.5-layer type.
-- Target layer: `types / config / repo / service / runtime / ui`.
-- Target file path under `src/model_deploy/act/`.
-- Function or class decision.
-- Inputs, outputs, side effects.
-- Upstream/downstream dependencies.
-- Reasoning and Pi0.5 reference.
+- 3.5-layer type;
+- target layer: `types / config / repo / service / runtime / ui`;
+- target file path under `src/model_deploy/act/`;
+- function or class decision;
+- inputs, outputs, and side effects;
+- upstream/downstream dependencies;
+- reasoning and Pi0.5 reference.
 
-Flag anything that needs user judgment, especially:
+Stop for user confirmation after recommending ACT micro-units, class/function decisions, Pi0.5 reuse decisions, and six-layer landing points.
 
-- Whether a stateful object should be a class.
-- Whether `ControlLoop.tick()` owns scheduling or a service owns computation.
-- Whether a Pi0.5 behavior should be reused structurally or rejected for ACT.
-- Whether a validation requires ROS, bundle, or hardware.
+### 4. Write Agent Context
 
-### 4. Interaction Checkpoint
+Write high-density Markdown under `agent_context/`.
 
-Present the ACT recommendation as a draft for user review before generating L3.
+`00_INDEX.md` is the Agent routing entry. It must describe:
 
-If the user corrects the design, update the L2 design docs accordingly. Do not generate L3 in this skill.
+- each Markdown file's responsibility;
+- when to read it;
+- HTML vs Markdown authority;
+- contamination checks.
 
-### 5. Write the L2 Design Package
+Macro design files must carry the full detail needed by later Agents. Do not compress Agent Markdown for human readability.
 
-Create or update:
+Six-layer design is represented by six files directly under `agent_context/`, not by six directories. If a layer adds no source artifact, keep its file and write:
 
 ```text
-DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
-├── 00_L2功能边界.md
-├── 01_pi05源码3.5层微元拆解.md
-├── 02_ACT微元设计与协作.md
-├── 03_L2验收机制.md
-├── 04_人类验收机制.md
-├── 05_L2架构交互可视化.html
-├── types/
-├── config/
-├── repo/
-├── service/
-├── runtime/
-└── ui/
+本 L2 不在该层新增源码产物。
+原因：
+验收如何确认：
 ```
 
-Each six-layer subfolder must contain one or more design `.md` files for target functions/classes, or a `README.md` explaining that the L2 has no artifact in that layer.
+### 5. Write Human HTML
 
-Every design package must include `l2_id`, `l2_design_dir`, L1 task doc path, L1 Agent architecture doc path, and a legacy / Contract Delta / Stage 2 template contamination check.
+Create `L2架构交互可视化.html` as the only root-level human entrypoint.
 
-### 6. Write the Interactive Visualization
+Rules:
 
-Create `05_L2架构交互可视化.html` as a standalone, static, human-consumable HTML document for this L2.
+- standalone `<!doctype html>` file with inline CSS and no network dependencies;
+- low text density: show core relationships, not implementation detail;
+- visual-first: use inline SVG diagrams, visual cards, arrows, swimlanes, or state panels;
+- interactive: include radio tabs, toggles, `<details>`, hover states, or equivalent no-build interaction;
+- cite `agent_context/00_INDEX.md` and the relevant Agent Markdown files as authoritative;
+- state clearly that HTML is not used for L3 generation.
 
-Use the existing ACT visualization as the interaction and information-density benchmark:
+Required views:
 
-- Single self-contained HTML file with inline CSS and no network dependencies.
-- First screen has a clear title, short subtitle, and an explicit note that Markdown design docs are authoritative if HTML conflicts with them.
-- Radio-tab or equivalent no-build interaction for multiple views.
-- Left-side or top module index listing the L2, upstream/downstream L2s, target code layers, and major runtime objects.
-- Main visual area with SVG diagrams, not only prose tables.
-- Right-side or lower explanation area that teaches how to read the current view.
-- Expandable boundary cards using `<details>` / `<summary>` for responsibilities, non-responsibilities, inputs, outputs, state ownership, and acceptance signals.
-- Responsive layout for narrow screens.
+- Overview: this L2 in the Stage 4 ACT collaboration graph;
+- Dataflow: external inputs, RAM objects, queues/topics, outputs, ownership;
+- Control/runtime flow: timer, worker, callback, service call, or `ControlLoop.tick()` interactions;
+- Failure/fallback: validation failures, stale data, rejected actions, blocked hardware, status propagation;
+- Metrics/status/acceptance: observable counters, topics, logs, commands, pass/fail phenomena;
+- Boundary contract: responsibilities, non-responsibilities, target files, acceptance coverage.
 
-The visualization must include at least these views when relevant:
+If a view is not meaningful for the L2, keep the view and explain why in one compact visual note.
 
-- Overview: this L2 in the Stage 4 ACT collaboration graph.
-- Dataflow: external inputs, RAM objects, queues/topics, outputs, and ownership.
-- Control/runtime flow: timer, worker, callback, service call, or `ControlLoop.tick()` interactions.
-- Failure/fallback propagation: validation failures, stale data, rejected actions, blocked hardware, status emission.
-- Metrics/status/acceptance: observable counters, topics, logs, commands, and pass/fail phenomena.
-- Boundary contract: responsibilities, non-responsibilities, upstream/downstream contracts, and target files.
+Stop for user confirmation after drafting the HTML information hierarchy and L2 Gate/human acceptance design.
 
-Do not make the HTML a decorative duplicate of Markdown. It should compress the design into a fast inspection artifact for humans while preserving enough labels to audit data ownership, control ownership, and failure paths. If the L2 has no meaningful runtime control or failure path, include the view with an explicit "not applicable" explanation.
-
-Validate the generated HTML by checking that it contains:
-
-- `<!doctype html>`
-- at least three view selectors or `<details>` sections
-- at least one `<svg`
-- references to the authoritative L1/L2 Markdown docs
-- the stable `l2_id`
-
-### 7. Design Acceptance
+### 6. Design Acceptance
 
 Produce both:
 
-- `03_L2验收机制.md`: AI-side L2 Gate, required L3 list draft, local/mock/dry-run/shadow-run checks, blocked items, pass/fail criteria.
-- `04_人类验收机制.md`: human runnable checklist, commands, inputs, observation points, pass/fail phenomena, signature location, hardware safety notes.
+- `agent_context/04_L2验收机制.md`: AI-side L2 Gate, required L3 draft, local/mock/dry-run/shadow-run checks, blocked items, pass/fail criteria.
+- `agent_context/05_人类验收机制.md`: human runnable checklist, commands, inputs, observation points, pass/fail phenomena, signature location, hardware safety notes.
 
 Human acceptance must never mark real-robot behavior as passed without real hardware, explicit authorization, emergency stop readiness, and shadow-run evidence.
+
+## Validation
+
+After creating or migrating a package, run:
+
+```bash
+python3 skills/stage4-l2-designer/scripts/validate_l2_design_package.py DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>
+```
+
+Also inspect any reported contamination manually before treating the package as ready for L3 generation.
 
 ## Output Rules
 
 - Do not create L3 task files.
 - Do not modify `src/model_deploy/act/` implementation files.
 - Do not edit Pi0.5 reference source.
-- Keep L2 design docs in `DOCS/03_工程/阶段四：模型部署/02_implement/`.
+- Do not place Agent Markdown in the L2 package root.
+- Do not create six-layer subdirectories in the L2 design package.
 - Do not create or update design packages under `02_implement/归档/` or old layer-based directories.
 - Do not use Contract Delta files as the L2 boundary or task source.
 - Do not use Stage 2 L2 templates for Stage 4 ACT L2 design.
-- Create the required interactive HTML visualization. Make diagrams when they clarify dataflow, state ownership, failure propagation, or `ControlLoop` scheduling.
 - Treat `types/config/repo/service/runtime/ui` as code placement boundaries, not L2 task boundaries.
 
 ## Handoff
 
 End with:
 
-- Created/updated L2 design package path.
-- Created/updated interactive visualization path.
-- Pi0.5 files inspected.
-- ACT files proposed.
-- Open user decisions.
-- Whether the design is ready for L3 generation.
+- L2 design package path;
+- human HTML path;
+- Agent context path;
+- Pi0.5 files inspected;
+- ACT files proposed;
+- open user decisions;
+- validation command result;
+- whether the design is ready for L3 generation.

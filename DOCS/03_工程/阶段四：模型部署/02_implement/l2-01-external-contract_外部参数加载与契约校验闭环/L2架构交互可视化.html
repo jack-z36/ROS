@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L2-01 外部参数加载与契约校验闭环 · 架构可视化</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#161a22; --ink:#e6e8ee; --dim:#8b95a8; --accent:#6ea8ff;
+  --line:#262d3d; --ok:#5fd3a3; --warn:#f0c674; --bad:#e06c6c;
+  --l2:#b48cff; --types:#7fd1b9; --config:#f0c674; --repo:#6ea8ff; --none:#5a6273;
+  --data:#7fd1b9; --calc:#f0c674; --io:#6ea8ff; --orch:#b48cff; --state:#f0877a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif}
+.wrap{display:flex;min-height:100vh}
+.side{width:200px;flex:0 0 200px;background:var(--panel);border-right:1px solid var(--line);padding:14px 12px;overflow:auto;position:sticky;top:0;height:100vh}
+.side h1{font-size:13px;margin:0 0 2px}
+.side .sub{color:var(--dim);font-size:11px;margin-bottom:12px;line-height:1.4}
+.side .gh{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:12px 0 4px}
+.side label{display:block;padding:5px 8px;border-radius:5px;font-size:12px;cursor:pointer;color:var(--ink);margin-bottom:2px}
+.side label:hover{background:#1d2330}
+.side .tag{font-size:10px;color:var(--dim);padding:2px 8px}
+.main{flex:1;padding:20px 26px;max-width:1080px;overflow:auto}
+input[type=radio]{display:none}
+.view{display:none}
+#v-overview:checked ~ .wrap .ov,#v-pi05:checked ~ .wrap .pi,
+#v-design:checked ~ .wrap .ds,#v-flow:checked ~ .wrap .fl,
+#v-failure:checked ~ .wrap .ff,#v-boundary:checked ~ .wrap .bd{display:block}
+#v-overview:checked ~ .wrap label[for=v-overview],
+#v-pi05:checked ~ .wrap label[for=v-pi05],
+#v-design:checked ~ .wrap label[for=v-design],
+#v-flow:checked ~ .wrap label[for=v-flow],
+#v-failure:checked ~ .wrap label[for=v-failure],
+#v-boundary:checked ~ .wrap label[for=v-boundary]{background:var(--accent);color:#0f1115;font-weight:600}
+.note{background:#1b2030;border-left:3px solid var(--warn);padding:8px 11px;border-radius:5px;font-size:11px;color:var(--dim);margin-bottom:14px}
+.note b{color:var(--warn)}
+h2{font-size:16px;margin:0 0 10px}
+.lead{color:var(--dim);font-size:12px;margin:0 0 12px}
+svg{display:block;margin:6px auto;max-width:100%}
+.figcap{text-align:center;color:var(--dim);font-size:11px;margin:0 0 18px}
+.row{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0}
+.row > *{flex:1;min-width:240px}
+details{border:1px solid var(--line);border-radius:5px;margin:8px 0;background:#141925}
+summary{padding:7px 10px;cursor:pointer;font-size:12px;color:var(--ink);list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:hover{background:#1b2030}
+.di{padding:8px 10px;font-size:11px;color:var(--dim)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--dim);justify-content:center;margin:4px 0 14px}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+@media(max-width:760px){.wrap{flex-direction:column}.side{position:static;width:100%;height:auto;border-right:none;border-bottom:1px solid var(--line)}.main{padding:14px}}
+</style>
+</head>
+<body>
+<input type="radio" name="t" id="v-overview" checked>
+<input type="radio" name="t" id="v-pi05">
+<input type="radio" name="t" id="v-design">
+<input type="radio" name="t" id="v-flow">
+<input type="radio" name="t" id="v-failure">
+<input type="radio" name="t" id="v-boundary">
+<div class="wrap">
+  <aside class="side">
+    <h1>L2-01</h1>
+    <div class="sub">外部参数加载与契约校验闭环<br><span style="color:var(--accent);font-family:monospace">l2-01-external-contract</span></div>
+    <div class="gh">视图</div>
+    <label for="v-overview">▸ 总览定位</label>
+    <label for="v-pi05">▸ Pi0.5 源码拆解</label>
+    <label for="v-design">▸ ACT 设计落点</label>
+    <label for="v-flow">▸ 装配数据流</label>
+    <label for="v-failure">▸ 失败传播</label>
+    <label for="v-boundary">▸ 边界契约</label>
+    <div class="gh">Agent 权威上下文</div>
+    <div class="tag">冲突时以 agent_context/*.md 为准</div>
+    <div class="tag">→ agent_context/00_INDEX.md</div>
+    <div class="tag">→ agent_context/01_L2功能边界.md</div>
+    <div class="tag">→ agent_context/03_ACT微元设计与协作.md</div>
+  </aside>
+
+  <main class="main">
+    <div class="note"><b>权威声明</b>：本 HTML 是人类快速浏览用的低密度可视化，不作为 L3 生成依据。与设计 Markdown 冲突时，以 <code>agent_context/</code> 内的 Agent 文档为准。</div>
+
+    <!-- ============ VIEW 1: OVERVIEW ============ -->
+    <section class="view ov">
+      <h2>总览：L2-01 在 ACT 中的角色</h2>
+      <p class="lead">启动期一次性装配者 —— 把外部文件读成 RAM 里锁死的契约对象，喂给全部下游 L2。</p>
+
+      <svg viewBox="0 0 760 220" role="img" aria-label="L2-01 定位">
+        <defs>
+          <marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6z" fill="#8b95a8"/></marker>
+          <marker id="a1p" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6z" fill="#b48cff"/></marker>
+        </defs>
+        <!-- 输入 -->
+        <text x="20" y="22" fill="#8b95a8" font-size="10">进程外文件</text>
+        <g font-size="10" fill="#f0c674">
+          <rect x="10" y="32" width="90" height="18" rx="3" fill="#1b2030" stroke="#f0c674"/><text x="55" y="44" text-anchor="middle" fill="#e6e8ee">deploy.yaml</text>
+          <rect x="10" y="54" width="90" height="18" rx="3" fill="#1b2030" stroke="#f0c674"/><text x="55" y="66" text-anchor="middle" fill="#e6e8ee">manifest.json</text>
+          <rect x="10" y="76" width="90" height="18" rx="3" fill="#1b2030" stroke="#f0c674"/><text x="55" y="88" text-anchor="middle" fill="#e6e8ee">normalizers.json</text>
+          <rect x="10" y="98" width="90" height="18" rx="3" fill="#1b2030" stroke="#f0c674"/><text x="55" y="110" text-anchor="middle" fill="#e6e8ee">experiment.yaml</text>
+          <rect x="10" y="120" width="90" height="18" rx="3" fill="#1b2030" stroke="#f0c674"/><text x="55" y="132" text-anchor="middle" fill="#e6e8ee">checkpoint</text>
+        </g>
+        <!-- L2-01 core -->
+        <rect x="170" y="40" width="180" height="110" rx="10" fill="#1b2030" stroke="#6ea8ff" stroke-width="2"/>
+        <text x="260" y="62" text-anchor="middle" fill="#e6e8ee" font-size="13" font-weight="700">L2-01</text>
+        <text x="260" y="78" text-anchor="middle" fill="#9aa3b2" font-size="10">外部参数加载</text>
+        <text x="260" y="92" text-anchor="middle" fill="#9aa3b2" font-size="10">与契约校验</text>
+        <rect x="195" y="105" width="130" height="16" rx="3" fill="#0f1115" stroke="#7fd1b9"/><text x="260" y="116" text-anchor="middle" fill="#7fd1b9" font-size="9">读 → 校验 → 冻结</text>
+        <text x="260" y="138" text-anchor="middle" fill="#5fd3a3" font-size="9">启动期 · 一次性 · 无并发</text>
+        <!-- arrows in -->
+        <line x1="100" y1="65" x2="168" y2="75" stroke="#8b95a8" stroke-width="1" marker-end="url(#a1)"/>
+        <line x1="100" y1="85" x2="168" y2="85" stroke="#8b95a8" stroke-width="1" marker-end="url(#a1)"/>
+        <line x1="100" y1="105" x2="168" y2="95" stroke="#8b95a8" stroke-width="1" marker-end="url(#a1)"/>
+        <line x1="100" y1="125" x2="168" y2="105" stroke="#8b95a8" stroke-width="1" marker-end="url(#a1)"/>
+        <!-- RAM outputs -->
+        <text x="430" y="32" fill="#8b95a8" font-size="10">RAM 契约对象（冻结，下游 import）</text>
+        <g font-size="10">
+          <rect x="420" y="42" width="120" height="22" rx="4" fill="#0f1115" stroke="#5fd3a3"/><text x="480" y="56" text-anchor="middle" fill="#5fd3a3">DeployConfig</text>
+          <rect x="420" y="70" width="120" height="22" rx="4" fill="#0f1115" stroke="#7fd1b9"/><text x="480" y="84" text-anchor="middle" fill="#7fd1b9">StateSpec(16D)</text>
+          <rect x="420" y="98" width="120" height="22" rx="4" fill="#0f1115" stroke="#7fd1b9"/><text x="480" y="112" text-anchor="middle" fill="#7fd1b9">ActionSpec(16D)</text>
+          <rect x="420" y="126" width="120" height="22" rx="4" fill="#0f1115" stroke="#5fd3a3"/><text x="480" y="140" text-anchor="middle" fill="#5fd3a3">ContractResult</text>
+        </g>
+        <line x1="350" y1="90" x2="418" y2="90" stroke="#5fd3a3" stroke-width="1.5" marker-end="url(#a1)"/>
+        <!-- downstream L2 -->
+        <text x="600" y="32" fill="#8b95a8" font-size="10">全部下游 L2</text>
+        <g font-size="9" fill="#e6e8ee">
+          <rect x="590" y="42" width="80" height="16" rx="3" fill="#161a22" stroke="#2a3140"/><text x="630" y="53" text-anchor="middle">L2-02 Obs</text>
+          <rect x="590" y="62" width="80" height="16" rx="3" fill="#161a22" stroke="#2a3140"/><text x="630" y="73" text-anchor="middle">L2-03 推理</text>
+          <rect x="590" y="82" width="80" height="16" rx="3" fill="#161a22" stroke="#2a3140"/><text x="630" y="93" text-anchor="middle">L2-04 平滑</text>
+          <rect x="590" y="102" width="80" height="16" rx="3" fill="#161a22" stroke="#2a3140"/><text x="630" y="113" text-anchor="middle">L2-05 Safety</text>
+          <rect x="590" y="122" width="80" height="16" rx="3" fill="#161a22" stroke="#2a3140"/><text x="630" y="133" text-anchor="middle">L2-06 发布</text>
+          <rect x="590" y="142" width="80" height="16" rx="3" fill="#161a22" stroke="#2a3140"/><text x="630" y="153" text-anchor="middle">L2-07 Loop</text>
+        </g>
+        <g stroke="#b48cff" stroke-width="1" stroke-dasharray="3 2" fill="none">
+          <line x1="540" y1="53" x2="588" y2="50" marker-end="url(#a1p)"/>
+          <line x1="540" y1="75" x2="588" y2="70" marker-end="url(#a1p)"/>
+          <line x1="540" y1="85" x2="588" y2="90" marker-end="url(#a1p)"/>
+          <line x1="540" y1="105" x2="588" y2="110" marker-end="url(#a1p)"/>
+          <line x1="540" y1="120" x2="588" y2="130" marker-end="url(#a1p)"/>
+          <line x1="540" y1="135" x2="588" y2="150" marker-end="url(#a1p)"/>
+        </g>
+        <text x="555" y="172" fill="#b48cff" font-size="9" text-anchor="middle">import 契约对象</text>
+        <text x="260" y="195" text-anchor="middle" fill="#5a6273" font-size="9">上游：无 · 下游：全部 L2 · 角色：外部输入（静态契约地基）</text>
+      </svg>
+      <p class="figcap">图 1 · L2-01 把外部静态文件读成 RAM 契约对象，供全部下游 L2 import</p>
+    </section>
+
+    <!-- ============ VIEW 2: PI05 源码拆解 ============ -->
+    <section class="view pi">
+      <h2>Pi0.5 源码拆解（只读参考）</h2>
+      <p class="lead">把 Pi0.5 中实现"参数加载与契约校验"的源码按 3.5 层认知框架拆成微元，判定可复用程度。</p>
+
+      <div class="legend">
+        <span><i style="background:#7fd1b9"></i>数据</span>
+        <span><i style="background:#f0c674"></i>计算函数</span>
+        <span><i style="background:#f0877a"></i>状态更新</span>
+        <span><i style="background:#6ea8ff"></i>数据读写</span>
+        <span><i style="background:#b48cff"></i>编排函数</span>
+      </div>
+
+      <svg viewBox="0 0 760 360" role="img" aria-label="Pi0.5 源码 3.5 层微元拆解">
+        <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6z" fill="#5a6273"/></marker></defs>
+        <!-- 源码文件列 -->
+        <text x="20" y="22" fill="#8b95a8" font-size="10" font-weight="600">Pi0.5 源码文件</text>
+        <g font-size="9">
+          <rect x="10" y="30" width="150" height="20" rx="3" fill="#161a22" stroke="#2a3140"/><text x="85" y="43" text-anchor="middle" fill="#e6e8ee">deploy/config/schema.py</text>
+          <rect x="10" y="54" width="150" height="20" rx="3" fill="#161a22" stroke="#2a3140"/><text x="85" y="67" text-anchor="middle" fill="#e6e8ee">common/runtime/bundle.py</text>
+          <rect x="10" y="78" width="150" height="20" rx="3" fill="#161a22" stroke="#2a3140"/><text x="85" y="91" text-anchor="middle" fill="#e6e8ee">common/robot/action_spec.py</text>
+          <rect x="10" y="102" width="150" height="20" rx="3" fill="#161a22" stroke="#2a3140"/><text x="85" y="115" text-anchor="middle" fill="#e6e8ee">common/data/state_codec.py</text>
+          <rect x="10" y="126" width="150" height="20" rx="3" fill="#161a22" stroke="#2a3140"/><text x="85" y="139" text-anchor="middle" fill="#e6e8ee">common/data/normalization.py</text>
+          <rect x="10" y="150" width="150" height="20" rx="3" fill="#161a22" stroke="#2a3140"/><text x="85" y="163" text-anchor="middle" fill="#e6e8ee">common/ros/topics.py</text>
+          <rect x="10" y="174" width="150" height="20" rx="3" fill="#161a22" stroke="#2a3140"/><text x="85" y="187" text-anchor="middle" fill="#e6e8ee">policy_loader.py (_validate)</text>
+          <rect x="10" y="198" width="150" height="20" rx="3" fill="#161a22" stroke="#2a3140"/><text x="85" y="211" text-anchor="middle" fill="#e6e8ee">common/config/schema.py</text>
+        </g>
+        <!-- 3.5 层分类列 -->
+        <text x="250" y="22" fill="#8b95a8" font-size="10" font-weight="600">3.5 层微元类型</text>
+        <!-- 数据 -->
+        <circle cx="258" cy="40" r="5" fill="#7fd1b9"/><text x="270" y="43" fill="#e6e8ee" font-size="9">DeployConfig + 子 dataclass 群</text>
+        <circle cx="258" cy="58" r="5" fill="#7fd1b9"/><text x="270" y="61" fill="#e6e8ee" font-size="9">ACTION_DIM=14 / STATE_DIM=26 常量</text>
+        <circle cx="258" cy="76" r="5" fill="#7fd1b9"/><text x="270" y="79" fill="#e6e8ee" font-size="9">bundle 文件名常量 (MANIFEST_NAME...)</text>
+        <circle cx="258" cy="94" r="5" fill="#7fd1b9"/><text x="270" y="97" fill="#e6e8ee" font-size="9">BimanualAction / BimanualState 结构</text>
+        <!-- 计算函数 -->
+        <circle cx="258" cy="116" r="5" fill="#f0c674"/><text x="270" y="119" fill="#e6e8ee" font-size="9">类型化校验器 _str/_choice/_positive_*</text>
+        <circle cx="258" cy="134" r="5" fill="#f0c674"/><text x="270" y="137" fill="#e6e8ee" font-size="9">__post_init__ 关系校验</text>
+        <circle cx="258" cy="152" r="5" fill="#f0c674"/><text x="270" y="155" fill="#e6e8ee" font-size="9">ActionStateNormalizer 归一化算法</text>
+        <!-- 数据读写 -->
+        <circle cx="258" cy="174" r="5" fill="#6ea8ff"/><text x="270" y="177" fill="#e6e8ee" font-size="9">load_deploy_config(path)</text>
+        <circle cx="258" cy="192" r="5" fill="#6ea8ff"/><text x="270" y="195" fill="#e6e8ee" font-size="9">load_bundle_manifest / normalizers</text>
+        <circle cx="258" cy="210" r="5" fill="#6ea8ff"/><text x="270" y="213" fill="#e6e8ee" font-size="9">_validate_bundle (存在性检查)</text>
+        <!-- 编排 -->
+        <circle cx="258" cy="232" r="5" fill="#b48cff"/><text x="270" y="235" fill="#e6e8ee" font-size="9">_deploy_from_mapping 装配编排</text>
+        <circle cx="258" cy="250" r="5" fill="#b48cff"/><text x="270" y="253" fill="#e6e8ee" font-size="9">from_mapping / with_namespace</text>
+        <!-- 连线 文件->微元 (示意几条) -->
+        <g stroke="#3a4358" stroke-width="0.8" fill="none">
+          <line x1="160" y1="40" x2="250" y2="40" marker-end="url(#a2)"/>
+          <line x1="160" y1="40" x2="250" y2="116" marker-end="url(#a2)"/>
+          <line x1="160" y1="88" x2="250" y2="58" marker-end="url(#a2)"/>
+          <line x1="160" y1="88" x2="250" y2="94" marker-end="url(#a2)"/>
+          <line x1="160" y1="64" x2="250" y2="76" marker-end="url(#a2)"/>
+          <line x1="160" y1="64" x2="250" y2="192" marker-end="url(#a2)"/>
+          <line x1="160" y1="134" x2="250" y2="152" marker-end="url(#a2)"/>
+          <line x1="160" y1="184" x2="250" y2="210" marker-end="url(#a2)"/>
+        </g>
+        <!-- 复用判定列 -->
+        <text x="520" y="22" fill="#8b95a8" font-size="10" font-weight="600">复用判定 → ACT</text>
+        <g font-size="9">
+          <rect x="500" y="32" width="220" height="30" rx="4" fill="#0f1115" stroke="#5fd3a3"/>
+          <text x="510" y="44" fill="#5fd3a3" font-weight="600">直接复用</text>
+          <text x="510" y="56" fill="#9aa3b2">ActionStateNormalizer 算法</text>
+          <rect x="500" y="68" width="220" height="30" rx="4" fill="#0f1115" stroke="#7fd1b9"/>
+          <text x="510" y="80" fill="#7fd1b9" font-weight="600">结构复用</text>
+          <text x="510" y="92" fill="#9aa3b2">DeployConfig 全套 frozen dataclass</text>
+          <rect x="500" y="104" width="220" height="30" rx="4" fill="#0f1115" stroke="#7fd1b9"/>
+          <text x="510" y="116" fill="#7fd1b9" font-weight="600">结构复用</text>
+          <text x="510" y="128" fill="#9aa3b2">校验器群 + from_mapping 模式</text>
+          <rect x="500" y="140" width="220" height="30" rx="4" fill="#0f1115" stroke="#f0c674"/>
+          <text x="510" y="152" fill="#f0c674" font-weight="600">参考理解（不直接用）</text>
+          <text x="510" y="164" fill="#9aa3b2">BimanualAction/State（14D/26D→16D）</text>
+          <rect x="500" y="176" width="220" height="30" rx="4" fill="#0f1115" stroke="#e06c6c"/>
+          <text x="510" y="188" fill="#e06c6c" font-weight="600">新建（Pi0.5 无）</text>
+          <text x="510" y="200" fill="#9aa3b2">TCP 步长 / quaternion 检查字段</text>
+        </g>
+        <line x1="370" y1="135" x2="498" y2="135" stroke="#5a6273" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#a2)"/>
+        <!-- 缺口标注 -->
+        <rect x="500" y="216" width="220" height="50" rx="4" fill="#1b2030" stroke="#e06c6c" stroke-dasharray="3 2"/>
+        <text x="610" y="232" text-anchor="middle" fill="#e06c6c" font-size="10" font-weight="600">⚠ Pi0.5 两大缺口（ACT 补强）</text>
+        <text x="510" y="246" fill="#9aa3b2" font-size="9">① bundle 只校验存在性，不查元数据一致</text>
+        <text x="510" y="258" fill="#9aa3b2" font-size="9">② 无 TCP/quaternion safety</text>
+        <!-- 维度差异 -->
+        <rect x="20" y="290" width="720" height="56" rx="6" fill="#1b2030" stroke="#f0c674"/>
+        <text x="40" y="308" fill="#f0c674" font-size="11" font-weight="600">维度差异（最关键）</text>
+        <text x="40" y="324" fill="#e6e8ee" font-size="10">Pi0.5: <tspan fill="#e06c6c">action=14D</tspan>（关节空间 6臂+1夹爪×2）, <tspan fill="#e06c6c">state=26D</tspan>（关节+EE pos/rpy）</text>
+        <text x="40" y="338" fill="#e6e8ee" font-size="10">ACT: <tspan fill="#5fd3a3">action=16D</tspan>（TCP笛卡尔绝对位姿 7+1×2）, <tspan fill="#5fd3a3">state=16D</tspan>（TCP pose，去触觉）</text>
+      </svg>
+      <p class="figcap">图 2 · Pi0.5 源码按 3.5 层拆解 + 复用判定 + 维度差异</p>
+
+      <details>
+        <summary>class 封装盘点（点开看明细）</summary>
+        <div class="di">
+          <b>结构复用</b>：DeployConfig + 子 dataclass 群（frozen，携校验不变式）。<br>
+          <b>直接复用类</b>：ActionStateNormalizer（算法无关，仅 dim 不同）。<br>
+          <b>参考模式</b>：BimanualAction/BimanualState（Pi0.5 几何 14D/26D，ACT 16D 重定义）。<br>
+          <b>不做成 class</b>：所有加载/校验函数（纯输入→输出，无状态）。
+        </div>
+      </details>
+    </section>
+
+    <!-- ============ VIEW 3: ACT 设计落点 ============ -->
+    <section class="view ds">
+      <h2>ACT 设计：六层落点</h2>
+      <p class="lead">L2-01 横跨 types/config/repo 三层（有产物），service/runtime/ui 三层无产物。</p>
+
+      <svg viewBox="0 0 720 340" role="img" aria-label="六层代码落点">
+        <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6z" fill="#5a6273"/></marker></defs>
+        <!-- 依赖方向轴 -->
+        <text x="60" y="22" fill="#8b95a8" font-size="10">依赖方向（仅向下）→</text>
+        <line x1="60" y1="30" x2="660" y2="30" stroke="#3a4358" stroke-width="1" marker-end="url(#a3)"/>
+
+        <g font-size="11">
+          <!-- types -->
+          <rect x="40" y="48" width="180" height="80" rx="6" fill="#1b2030" stroke="#7fd1b9" stroke-width="2"/>
+          <text x="130" y="66" text-anchor="middle" fill="#7fd1b9" font-weight="700">types/</text>
+          <text x="130" y="82" text-anchor="middle" fill="#9aa3b2" font-size="9">数据规格（最上游）</text>
+          <text x="130" y="100" text-anchor="middle" fill="#e6e8ee" font-size="9">action_spec.py</text>
+          <text x="130" y="114" text-anchor="middle" fill="#e6e8ee" font-size="9">state_spec.py</text>
+          <text x="130" y="128" text-anchor="middle" fill="#e6e8ee" font-size="9">contract_result.py</text>
+
+          <!-- config -->
+          <rect x="270" y="48" width="180" height="80" rx="6" fill="#1b2030" stroke="#f0c674" stroke-width="2"/>
+          <text x="360" y="66" text-anchor="middle" fill="#f0c674" font-weight="700">config/</text>
+          <text x="360" y="82" text-anchor="middle" fill="#9aa3b2" font-size="9">schema + 校验</text>
+          <text x="360" y="100" text-anchor="middle" fill="#e6e8ee" font-size="9">schema.py</text>
+          <text x="360" y="114" text-anchor="middle" fill="#9aa3b2" font-size="9">DeployConfig + 校验器</text>
+          <text x="360" y="128" text-anchor="middle" fill="#9aa3b2" font-size="9">+ contract 校验</text>
+
+          <!-- repo -->
+          <rect x="500" y="48" width="180" height="80" rx="6" fill="#1b2030" stroke="#6ea8ff" stroke-width="2"/>
+          <text x="590" y="66" text-anchor="middle" fill="#6ea8ff" font-weight="700">repo/</text>
+          <text x="590" y="82" text-anchor="middle" fill="#9aa3b2" font-size="9">外部资源读取</text>
+          <text x="590" y="100" text-anchor="middle" fill="#e6e8ee" font-size="9">bundle_reader.py</text>
+          <text x="590" y="114" text-anchor="middle" fill="#e6e8ee" font-size="9">manifest/normalizer loader</text>
+          <text x="590" y="128" text-anchor="middle" fill="#e6e8ee" font-size="9">experiment_config_loader</text>
+        </g>
+        <g stroke="#5a6273" stroke-width="1" fill="none">
+          <line x1="220" y1="88" x2="268" y2="88" marker-end="url(#a3)"/>
+          <line x1="450" y1="88" x2="498" y2="88" marker-end="url(#a3)"/>
+        </g>
+        <text x="244" y="82" text-anchor="middle" fill="#5a6273" font-size="8">依赖</text>
+        <text x="474" y="82" text-anchor="middle" fill="#5a6273" font-size="8">依赖</text>
+
+        <!-- 无产物层 -->
+        <g font-size="10">
+          <rect x="40" y="160" width="180" height="44" rx="6" fill="#0f1115" stroke="#5a6273" stroke-dasharray="3 2"/>
+          <text x="130" y="178" text-anchor="middle" fill="#5a6273" font-weight="600">service/</text>
+          <text x="130" y="194" text-anchor="middle" fill="#5a6273" font-size="9">无产物（无 RAM 业务计算）</text>
+
+          <rect x="270" y="160" width="180" height="44" rx="6" fill="#0f1115" stroke="#5a6273" stroke-dasharray="3 2"/>
+          <text x="360" y="178" text-anchor="middle" fill="#5a6273" font-weight="600">runtime/</text>
+          <text x="360" y="194" text-anchor="middle" fill="#5a6273" font-size="9">无产物（启动期一次性）</text>
+
+          <rect x="500" y="160" width="180" height="44" rx="6" fill="#0f1115" stroke="#5a6273" stroke-dasharray="3 2"/>
+          <text x="590" y="178" text-anchor="middle" fill="#5a6273" font-weight="600">ui/</text>
+          <text x="590" y="194" text-anchor="middle" fill="#5a6273" font-size="9">无产物（无 ROS node）</text>
+
+          <rect x="40" y="214" width="640" height="28" rx="6" fill="#0f1115" stroke="#f0c674" stroke-dasharray="3 2"/>
+          <text x="360" y="232" text-anchor="middle" fill="#f0c674" font-size="10">config_files/deploy.yaml ← 运行配置实例（具体值）</text>
+        </g>
+
+        <!-- 关键设计原则 -->
+        <rect x="40" y="260" width="640" height="68" rx="6" fill="#1b2030" stroke="#262d3d"/>
+        <text x="56" y="278" fill="#6ea8ff" font-size="11" font-weight="600">两条核心设计原则</text>
+        <text x="56" y="294" fill="#e6e8ee" font-size="10">① <tspan fill="#7fd1b9">读取与校验分离</tspan>：repo 只读不校验，config 做校验（各自独立单测）</text>
+        <text x="56" y="310" fill="#e6e8ee" font-size="10">② <tspan fill="#5fd3a3">校验后即不可变</tspan>：frozen dataclass，构造后只读（避免 Pi0.5 的 __setattr__ 覆写反模式）</text>
+        <text x="56" y="324" fill="#9aa3b2" font-size="9">③ 补强：bundle 元数据三处 dim 交叉校验（Pi0.5 只查存在性）</text>
+      </svg>
+      <p class="figcap">图 3 · 六层落点：types→config→repo 有产物；service/runtime/ui 无产物；依赖方向仅向下</p>
+    </section>
+
+    <!-- ============ VIEW 4: 装配数据流 ============ -->
+    <section class="view fl">
+      <h2>装配数据流（启动期，同步）</h2>
+      <p class="lead">6 步固定顺序，失败即终止，不进入半初始化状态。</p>
+
+      <svg viewBox="0 0 720 200" role="img" aria-label="装配数据流">
+        <defs><marker id="a4" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6z" fill="#5fd3a3"/></marker></defs>
+        <g font-size="10">
+          <!-- 6 步横排 -->
+          <rect x="10" y="60" width="100" height="60" rx="6" fill="#1b2030" stroke="#6ea8ff"/>
+          <text x="60" y="80" text-anchor="middle" fill="#6ea8ff" font-size="9" font-weight="600">①读</text>
+          <text x="60" y="96" text-anchor="middle" fill="#e6e8ee" font-size="9">deploy.yaml</text>
+          <text x="60" y="110" text-anchor="middle" fill="#9aa3b2" font-size="8">repo 边界</text>
+
+          <rect x="130" y="60" width="100" height="60" rx="6" fill="#1b2030" stroke="#f0c674"/>
+          <text x="180" y="80" text-anchor="middle" fill="#f0c674" font-size="9" font-weight="600">②装配</text>
+          <text x="180" y="96" text-anchor="middle" fill="#e6e8ee" font-size="9">DeployConfig</text>
+          <text x="180" y="110" text-anchor="middle" fill="#9aa3b2" font-size="8">config 校验</text>
+
+          <rect x="250" y="60" width="100" height="60" rx="6" fill="#1b2030" stroke="#6ea8ff"/>
+          <text x="300" y="80" text-anchor="middle" fill="#6ea8ff" font-size="9" font-weight="600">③读 bundle</text>
+          <text x="300" y="96" text-anchor="middle" fill="#e6e8ee" font-size="9">manifest/norm</text>
+          <text x="300" y="110" text-anchor="middle" fill="#9aa3b2" font-size="8">repo 边界</text>
+
+          <rect x="370" y="60" width="100" height="60" rx="6" fill="#1b2030" stroke="#f0c674"/>
+          <text x="420" y="80" text-anchor="middle" fill="#f0c674" font-size="9" font-weight="600">④contract</text>
+          <text x="420" y="96" text-anchor="middle" fill="#e6e8ee" font-size="9">校验一致性</text>
+          <text x="420" y="110" text-anchor="middle" fill="#9aa3b2" font-size="8">config 计算</text>
+
+          <rect x="490" y="60" width="100" height="60" rx="6" fill="#1b2030" stroke="#7fd1b9"/>
+          <text x="540" y="80" text-anchor="middle" fill="#7fd1b9" font-size="9" font-weight="600">⑤规格</text>
+          <text x="540" y="96" text-anchor="middle" fill="#e6e8ee" font-size="9">StateSpec</text>
+          <text x="540" y="110" text-anchor="middle" fill="#e6e8ee" font-size="9">ActionSpec</text>
+
+          <rect x="610" y="60" width="100" height="60" rx="6" fill="#0f1115" stroke="#5fd3a3" stroke-width="2"/>
+          <text x="660" y="80" text-anchor="middle" fill="#5fd3a3" font-size="9" font-weight="600">⑥返回</text>
+          <text x="660" y="96" text-anchor="middle" fill="#e6e8ee" font-size="9">契约对象群</text>
+          <text x="660" y="110" text-anchor="middle" fill="#9aa3b2" font-size="8">冻结只读</text>
+        </g>
+        <g stroke="#5fd3a3" stroke-width="1.3" fill="none">
+          <line x1="110" y1="90" x2="128" y2="90" marker-end="url(#a4)"/>
+          <line x1="230" y1="90" x2="248" y2="90" marker-end="url(#a4)"/>
+          <line x1="350" y1="90" x2="368" y2="90" marker-end="url(#a4)"/>
+          <line x1="470" y1="90" x2="488" y2="90" marker-end="url(#a4)"/>
+          <line x1="590" y1="90" x2="608" y2="90" marker-end="url(#a4)"/>
+        </g>
+        <text x="360" y="40" text-anchor="middle" fill="#8b95a8" font-size="10">读 → 校验 → 读 → 校验 → 构造 → 冻结</text>
+        <text x="360" y="150" text-anchor="middle" fill="#9aa3b2" font-size="9">状态归属：全部输出对象归"启动 Main"，构造后只读，被全部下游 import</text>
+        <text x="360" y="166" text-anchor="middle" fill="#9aa3b2" font-size="9">外部边界：只读文件，无写、无 ROS topic、无硬件</text>
+        <text x="360" y="182" text-anchor="middle" fill="#5fd3a3" font-size="9">编排点：load_deploy_config（启动期一次性，不参与稳态 tick）</text>
+      </svg>
+      <p class="figcap">图 4 · 6 步同步装配，repo（读）与 config（校验）交替推进</p>
+    </section>
+
+    <!-- ============ VIEW 5: 失败传播 ============ -->
+    <section class="view ff">
+      <h2>失败传播：非法在入口处终止</h2>
+      <p class="lead">所有失败在启动期阻止程序进入运行循环（对应协作架构第 9 节）。</p>
+
+      <svg viewBox="0 0 720 260" role="img" aria-label="失败传播">
+        <defs><marker id="a5" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6z" fill="#e06c6c"/></marker></defs>
+        <g font-size="10">
+          <rect x="20" y="40" width="170" height="28" rx="4" fill="#1b2030" stroke="#e06c674"/><text x="105" y="58" text-anchor="middle" fill="#e6e8ee">配置缺字段 / dim≠16</text>
+          <rect x="20" y="76" width="170" height="28" rx="4" fill="#1b2030" stroke="#e06c674"/><text x="105" y="94" text-anchor="middle" fill="#e6e8ee">hz/chunk/mode 非法</text>
+          <rect x="20" y="112" width="170" height="28" rx="4" fill="#1b2030" stroke="#e06c674"/><text x="105" y="130" text-anchor="middle" fill="#e6e8ee">bundle 缺文件</text>
+          <rect x="20" y="148" width="170" height="28" rx="4" fill="#1b2030" stroke="#e06c674"/><text x="105" y="166" text-anchor="middle" fill="#e6e8ee">三处 dim 不一致</text>
+          <rect x="20" y="184" width="170" height="28" rx="4" fill="#1b2030" stroke="#e06c674"/><text x="105" y="202" text-anchor="middle" fill="#e6e8ee">normalizer dim≠16</text>
+        </g>
+        <g stroke="#e06c6c" stroke-width="1.2" fill="none">
+          <line x1="190" y1="54" x2="388" y2="110" marker-end="url(#a5)"/>
+          <line x1="190" y1="90" x2="388" y2="115" marker-end="url(#a5)"/>
+          <line x1="190" y1="126" x2="388" y2="120" marker-end="url(#a5)"/>
+          <line x1="190" y1="162" x2="388" y2="125" marker-end="url(#a5)"/>
+          <line x1="190" y1="198" x2="388" y2="130" marker-end="url(#a5)"/>
+        </g>
+        <rect x="390" y="70" width="180" height="90" rx="8" fill="#0f1115" stroke="#e06c6c" stroke-width="2"/>
+        <text x="480" y="100" text-anchor="middle" fill="#e06c6c" font-size="12" font-weight="700">阻止启动</text>
+        <text x="480" y="118" text-anchor="middle" fill="#9aa3b2" font-size="9">抛 ACT 配置异常</text>
+        <text x="480" y="132" text-anchor="middle" fill="#9aa3b2" font-size="9">或 FileNotFoundError</text>
+        <text x="480" y="148" text-anchor="middle" fill="#9aa3b2" font-size="9">不进入运行循环</text>
+
+        <rect x="390" y="180" width="180" height="50" rx="8" fill="#0f1115" stroke="#f0c674" stroke-width="2" stroke-dasharray="3 2"/>
+        <text x="480" y="198" text-anchor="middle" fill="#f0c674" font-size="10" font-weight="600">bundle contract 非法</text>
+        <text x="480" y="214" text-anchor="middle" fill="#9aa3b2" font-size="9">默认也阻止启动</text>
+        <text x="480" y="226" text-anchor="middle" fill="#9aa3b2" font-size="9">可选：fake-policy+env-blocked</text>
+
+        <text x="20" y="240" fill="#5a6273" font-size="9">策略：配置非法→必阻止。bundle/normalizer contract 非法→默认阻止，mode 允许+allow_fake=true 时可降级。</text>
+      </svg>
+      <p class="figcap">图 5 · 失败传播：全部在入口处终止，不进入半初始化状态</p>
+    </section>
+
+    <!-- ============ VIEW 6: 边界契约 ============ -->
+    <section class="view bd">
+      <h2>边界契约</h2>
+      <div class="row">
+        <svg viewBox="0 0 300 200" role="img" aria-label="负责">
+          <rect x="10" y="10" width="280" height="180" rx="8" fill="#0f1115" stroke="#5fd3a3"/>
+          <text x="150" y="32" text-anchor="middle" fill="#5fd3a3" font-size="12" font-weight="700">✓ 负责</text>
+          <g font-size="10" fill="#e6e8ee">
+            <text x="24" y="56">• 固定 16D state/action 规格</text>
+            <text x="24" y="76">• 固定 /act/* topic 名</text>
+            <text x="24" y="96">• 固定 runtime 参数</text>
+            <text x="24" y="116">• 定义 safety 参数（含 TCP 占位）</text>
+            <text x="24" y="136">• 校验 bundle 交付物</text>
+            <text x="24" y="156">• 校验 normalizer dim==16</text>
+            <text x="24" y="176">• 配置装配 + 类型校验</text>
+          </g>
+        </svg>
+        <svg viewBox="0 0 300 200" role="img" aria-label="不负责">
+          <rect x="10" y="10" width="280" height="180" rx="8" fill="#0f1115" stroke="#e06c6c"/>
+          <text x="150" y="32" text-anchor="middle" fill="#e06c6c" font-size="12" font-weight="700">✗ 不负责</text>
+          <g font-size="10" fill="#9aa3b2">
+            <text x="24" y="56">• 订阅 ROS topic → L2-02</text>
+            <text x="24" y="76">• 创建 publisher → L2-06</text>
+            <text x="24" y="96">• 加载模型 / 推理 → L2-03</text>
+            <text x="24" y="116">• 启动控制循环 → L2-07</text>
+            <text x="24" y="136">• 发硬件命令 → L2-06</text>
+            <text x="24" y="156">• 执行 safety 检查 → L2-05</text>
+            <text x="24" y="176">• 存具体配置值 → config_files/</text>
+          </g>
+        </svg>
+      </div>
+
+      <details>
+        <summary>16D 维度契约（已锁定，源自阶段二交付说明）</summary>
+        <div class="di">
+          <b>state 16D</b>（去触觉，左全在前）：左TCP(7) + 右TCP(7) + 左夹爪(1) + 右夹爪(1)<br>
+          <b>action 16D</b>（左右交替）：左TCP目标(7) + 左夹爪(1) + 右TCP目标(7) + 右夹爪(1)<br>
+          action 是绝对动作（target at t+1）；TCP 用 xyzw quaternion 归一化；夹爪 [0,1]。<br>
+          详见 <code>types/README.md</code> 维度契约表。
+        </div>
+      </details>
+      <details>
+        <summary>设计决策（7 项已确认）</summary>
+        <div class="di">
+          1. 16D 段序（源自阶段二交付说明） · 2. DeployConfig frozen dataclass + 5 子配置 · 3. 读取/校验分离 · 4. bundle 三处 dim 交叉校验 · 5. 失败策略（非法阻止，可选 fake-policy） · 6. TCP/quaternion 占位（L2-05 填值） · 7. 入口 load_deploy_config 在 config/schema.py
+        </div>
+      </details>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
