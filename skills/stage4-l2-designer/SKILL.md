@@ -1,6 +1,6 @@
 ---
 name: stage4-l2-designer
-description: Produce and maintain the Stage 4 ACT L2 design package in this ROS repository. Use when designing, optimizing, reviewing, or migrating one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create Agent-consumable atomic Markdown under agent_context/, create a human-consumable interactive SVG-heavy HTML visualization that is semantically aligned one-to-one with agent_context Markdown, and draft L2 Gate plus human acceptance mechanisms.
+description: Produce and maintain the Stage 4 ACT L2 design package in this ROS repository. Use when designing, optimizing, reviewing, or migrating one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create Agent-consumable atomic Markdown under agent_context/, create a human-consumable four-dimension interactive HTML visualization aligned with the approved L2 HTML sample pattern, and draft L2 Gate plus human acceptance mechanisms.
 ---
 
 # Stage4 L2 Designer
@@ -14,7 +14,7 @@ Use this skill for the L2 design phase of Stage 4 ACT deployment work. It turns 
 
 The HTML is a visual projection of the Markdown, not an independent source of truth. Any change to HTML logic, views, labels, relationships, dataflow, failure path, boundary, or Gate semantics must be reflected in the authoritative Markdown at the same time.
 
-This skill does not execute L3 tasks. Use `stage4-l3-orchestrator` only after the L2 design package and acceptance mechanism are confirmed.
+This skill does not generate or execute L3 tasks. Use `stage4-l3-generator` after the L2 design package and acceptance mechanism are confirmed, then use `stage4-l3-orchestrator` to execute and accept generated L3 tasks.
 
 ## Required Context
 
@@ -25,10 +25,11 @@ Read these before producing or changing artifacts:
 3. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 4. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/ACT代码树分层与产物落点约束.md`
 5. `DOCS/02_约束/认知偏好/用户认知框架与讲解偏好.md`
-6. `DOCS/03_工程/阶段四：模型部署/02_implement/00_L1_ACT部署程序任务文档.md`
-7. `DOCS/03_工程/阶段四：模型部署/02_implement/01_L1_ACT功能模块边界.md`
-8. `DOCS/03_工程/阶段四：模型部署/02_implement/02_L1_ACT功能模块协作架构.md`
-9. Pi0.5 reference source under `DOCS/03_工程/阶段四：模型部署/pi05_old/pi05_test/pi05/`
+6. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/00_INDEX.md`
+7. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/01_L1_ACT部署程序任务文档.md`
+8. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/02_L1_ACT功能模块边界.md`
+9. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/03_L1_ACT功能模块协作架构.md`
+10. Pi0.5 reference source under `DOCS/03_工程/阶段四：模型部署/pi05_old/pi05_test/pi05/`
 
 Read `references/l2-output-contract.md` when creating, migrating, or checking the final file tree.
 
@@ -178,23 +179,48 @@ Create `L2架构交互可视化.html` as the only root-level human entrypoint.
 Rules:
 
 - standalone `<!doctype html>` file with inline CSS and no network dependencies;
-- low text density: show core relationships, not implementation detail;
-- visual-first: use inline SVG diagrams, visual cards, arrows, swimlanes, or state panels;
-- interactive: include radio tabs, toggles, `<details>`, hover states, or equivalent no-build interaction;
+- follow the approved L2 HTML sample pattern: four radio-driven dimensions, not six generic architecture views;
+- low text density: show core relationships, not complete Agent implementation detail;
+- visual-first: use inline SVG diagrams, visual cards, arrows, swimlanes, state panels, code trace blocks, directory trees, classbox cards, and acceptance cards as appropriate;
+- interactive: use pure CSS radio tabs, layer radio panes, `<details>`, hover states, and no-build controls; do not require a dev server;
 - cite `agent_context/00_INDEX.md` and the relevant Agent Markdown files as authoritative;
 - add `data-agent-source` on each view root and keep it aligned with `00_INDEX.md`;
 - state clearly that HTML is not used for L3 generation.
 
-Required views:
+Required top-level skeleton:
 
-- Overview: this L2 in the Stage 4 ACT collaboration graph;
-- Dataflow: external inputs, RAM objects, queues/topics, outputs, ownership;
-- Control/runtime flow: timer, worker, callback, service call, or `ControlLoop.tick()` interactions;
-- Failure/fallback: validation failures, stale data, rejected actions, blocked hardware, status propagation;
-- Metrics/status/acceptance: observable counters, topics, logs, commands, pass/fail phenomena;
-- Boundary contract: responsibilities, non-responsibilities, target files, acceptance coverage.
+```text
+header: h1 + subtitle + note that HTML is not L3 authority
+input[type=radio]#v1..#v4
+nav.tabs with labels:
+  1 功能边界
+  2 Pi0.5 如何运作
+  3 开发蓝图
+  4 人类验收标准
+.views with exactly these four root sections:
+  section.view.boundary[data-agent-source=...]
+  section.view.pi05map[data-agent-source=...]
+  section.view.blueprint[data-agent-source=...]
+  section.view.acceptance[data-agent-source=...]
+```
 
-If a view is not meaningful for the L2, keep the view and explain why in one compact visual note. The explanation must still map to an authoritative Markdown section.
+Each dimension section must include:
+
+- `<div class="reading-path">...</div>`;
+- `<p class="lead">...</p>`;
+- at least one SVG figure or an equivalent sample-pattern visual component;
+- a final `<p class="src">权威来源：...</p>` listing the authoritative `agent_context` files and sections.
+
+Use these dimension responsibilities:
+
+| Dimension | Question answered | Required sample-pattern components |
+|---|---|---|
+| `boundary` / 维度1 功能边界 | 做什么 / 不做什么 / 输入输出契约是什么？ | status/positioning SVG, startup processing SVG, responsible vs non-responsible boundary-wall SVG, data contract cards |
+| `pi05map` / 维度2 Pi0.5 如何运作 | 参考源码如何运行，用白话讲清楚。 | plain-language callout, `details` terminology dictionary `.dict`, four-step `.flow`, `.trace`, bundle `.tree`, core-question cards |
+| `blueprint` / 维度3 开发蓝图 | 代码如何分层，每层有哪些 micro-units？ | runtime/assembly SVG, six-layer `.lpick` radio panes, `.classbox` + `.mu-list` micro-unit breakdown, no-artifact layer panes |
+| `acceptance` / 维度4 人类验收标准 | 怎么验证，跑什么，看到什么算通过或失败？ | sample-style `.vfy` groups, `.vfy-item` cards, command blocks, pass/fail phenomena, rationale links |
+
+Do not reintroduce the old six-view contract as required HTML structure. Those architecture-report ideas may appear only as content inside the four approved dimensions when useful.
 
 Stop for user confirmation after drafting the HTML information hierarchy and L2 Gate/human acceptance design.
 

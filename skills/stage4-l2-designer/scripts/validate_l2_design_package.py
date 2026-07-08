@@ -35,6 +35,36 @@ CONTAMINATION_TERMS = [
     "L2能力模块说明文件模板",
 ]
 
+REQUIRED_HTML_VIEWS = [
+    ("boundary", "功能边界"),
+    ("pi05map", "Pi0.5 如何运作"),
+    ("blueprint", "开发蓝图"),
+    ("acceptance", "人类验收标准"),
+]
+
+REQUIRED_HTML_COMPONENTS = [
+    (".reading-path", 'class="reading-path"', "HTML missing sample reading-path component"),
+    (".lead", 'class="lead"', "HTML missing lead paragraph component"),
+    (".figure", 'class="figure"', "HTML missing figure wrapper component"),
+    (".dict", 'class="dict"', "HTML missing terminology dictionary component: .dict"),
+    (".flow", 'class="flow"', "HTML missing four-step flow component: .flow"),
+    (".trace", 'class="trace"', "HTML missing trace component: .trace"),
+    (".tree", 'class="tree"', "HTML missing bundle tree component: .tree"),
+    (".lpick", 'class="lpick"', "HTML missing six-layer radio picker component: .lpick"),
+    (".classbox", 'class="classbox"', "HTML missing classbox component"),
+    (".mu-list", 'class="mu-list"', "HTML missing micro-unit list component"),
+    (".vfy-item", 'class="vfy-item"', "HTML missing sample acceptance card component: .vfy-item"),
+]
+
+OLD_REQUIRED_HTML_VIEW_LABELS = [
+    "Over" + "view",
+    "Data" + "flow",
+    "Control/runtime " + "flow",
+    "Failure/" + "fallback",
+    "Metrics/status/" + "acceptance",
+    "Boundary " + "contract",
+]
+
 ALLOWED_CONTAMINATION_CONTEXT = re.compile(
     r"(污染|旧|历史|废弃|作废|legacy|Legacy|只读|参考|不来自|不得|禁止|隔离|归档|"
     r"contamination|deprecated|read-only|archive|invalid|not from|old layer-based)",
@@ -119,10 +149,30 @@ def check_html(package: Path, l2_id: str, errors: list[str]) -> None:
     if re.search(r"https?://|//fonts\.|@import", text):
         errors.append("HTML appears to reference network resources")
 
+    for view_id in ("v1", "v2", "v3", "v4"):
+        if not re.search(rf'<input\b[^>]*\bid=["\']{view_id}["\'][^>]*\btype=["\']radio["\']', text):
+            errors.append(f"HTML missing approved radio tab input: {view_id}")
+
+    for view_class, label in REQUIRED_HTML_VIEWS:
+        if not re.search(rf'<section\b[^>]*class=["\'][^"\']*\b{view_class}\b[^"\']*["\']', text):
+            errors.append(f"HTML missing approved four-dimension view section: {view_class}")
+        if label not in text:
+            errors.append(f"HTML missing approved four-dimension tab/heading label: {label}")
+
+    for _, marker, message in REQUIRED_HTML_COMPONENTS:
+        if marker not in text:
+            errors.append(message)
+
+    for old_label in OLD_REQUIRED_HTML_VIEW_LABELS:
+        if old_label in text:
+            errors.append(f"HTML appears to use old six-view label instead of approved sample dimensions: {old_label}")
+
     source_refs = re.findall(r'data-agent-source=["\']([^"\']+)["\']', text)
     if not source_refs:
         errors.append("HTML missing data-agent-source references on views")
         return
+    if len(source_refs) < len(REQUIRED_HTML_VIEWS):
+        errors.append("HTML must have data-agent-source on each of the four approved dimension views")
     agent_dir = package / "agent_context"
     index_text = (agent_dir / "00_INDEX.md").read_text(encoding="utf-8") if (agent_dir / "00_INDEX.md").is_file() else ""
     for source in source_refs:

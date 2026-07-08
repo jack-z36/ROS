@@ -227,16 +227,35 @@ Required properties:
 - `data-agent-source` on every HTML view root;
 - stable `l2_id`.
 
-Required views:
+The HTML must follow the approved L2 sample pattern, not the older six-view architecture report pattern. Use exactly four top-level dimensions:
 
-| View | Required content | Typical authoritative Markdown |
+```text
+header: h1 + subtitle + authority note
+input[type=radio]#v1..#v4
+nav.tabs:
+  1 功能边界
+  2 Pi0.5 如何运作
+  3 开发蓝图
+  4 人类验收标准
+.views:
+  section.view.boundary
+  section.view.pi05map
+  section.view.blueprint
+  section.view.acceptance
+```
+
+Each dimension root section must include `data-agent-source`, a `reading-path`, a `lead` paragraph, visual content, and a final `<p class="src">权威来源：...</p>`.
+
+Required dimensions:
+
+| Dimension | Required content | Typical authoritative Markdown |
 |---|---|---|
-| Overview | This L2 in the Stage 4 ACT collaboration graph, with upstream/downstream L2s. | `01_L2功能边界.md`, `03_ACT微元设计与协作.md` |
-| Dataflow | External inputs, RAM objects, queues/topics, outputs, and ownership. | `01_L2功能边界.md`, `03_ACT微元设计与协作.md` |
-| Control/runtime flow | Timer, worker, callback, service call, or `ControlLoop.tick()` interactions. | `03_ACT微元设计与协作.md`, `10_runtime层设计.md` |
-| Failure/fallback | Validation failures, stale data, rejected actions, blocked hardware, fallback/status propagation. | `03_ACT微元设计与协作.md`, `04_L2验收机制.md` |
-| Metrics/status/acceptance | Observable topics, logs, counters, commands, pass/fail phenomena. | `04_L2验收机制.md`, `05_人类验收机制.md` |
-| Boundary contract | Responsibilities, non-responsibilities, target files, and acceptance coverage. | `01_L2功能边界.md`, `06-11_*层设计.md` |
+| `boundary` / 维度1 功能边界 | Explain what this L2 does and does not do. Use a status/positioning SVG, startup processing SVG, responsible vs non-responsible boundary-wall SVG, and data contract cards. | `01_L2功能边界.md` |
+| `pi05map` / 维度2 Pi0.5 如何运作 | Explain the matching Pi0.5 source in plain language. Use a terminology dictionary `.dict`, four-step `.flow`, trace block `.trace`, bundle directory `.tree`, source-difference callouts, and core-question cards. | `02_pi05源码3.5层微元拆解.md` |
+| `blueprint` / 维度3 开发蓝图 | Explain ACT code landing and micro-units. Use a runtime/assembly SVG, six-layer `.lpick` radio panes, `.classbox` + `.mu-list` micro-unit cards, and no-artifact panes explaining reason, upstream object, and acceptance confirmation. | `03_ACT微元设计与协作.md`, `06-11_*层设计.md` |
+| `acceptance` / 维度4 人类验收标准 | Explain how a human verifies the L2. Use sample-style `.vfy` groups and `.vfy-item` cards with commands, pass phenomena, fail phenomena, and rationale links to the authoritative docs. | `04_L2验收机制.md`, `05_人类验收机制.md` |
+
+The old six-view labels from the architecture-report pattern must not be required or used as top-level view labels. Their semantics may be folded into the four approved dimensions.
 
 The HTML must not:
 
@@ -283,6 +302,6 @@ Expected result:
 - root contains only `L2架构交互可视化.html` and `agent_context/`;
 - all 12 fixed Markdown files exist;
 - no six-layer subdirectories exist;
-- HTML contains doctype, SVG, interaction controls, `agent_context` references, stable L2 id, and valid `data-agent-source` links;
+- HTML contains doctype, the four approved radio dimensions, sample-pattern visual components, `agent_context` references, stable L2 id, and valid `data-agent-source` links;
 - `00_INDEX.md` contains the semantic alignment table;
 - legacy and Contract Delta terms appear only in allowed contamination/deprecation/read-only contexts.
