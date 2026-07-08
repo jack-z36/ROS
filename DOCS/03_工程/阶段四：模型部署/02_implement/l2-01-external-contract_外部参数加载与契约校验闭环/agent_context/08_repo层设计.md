@@ -1,72 +1,37 @@
-# repo 层设计 — L2-01 外部参数加载与契约校验闭环
+# repo 层设计：L2-01
 
-> `l2_id`：`l2-01-external-contract`
-> 上游边界来源：`01_L1_ACT功能模块边界.md` L2-01 段 + `02_L1_ACT功能模块协作架构.md`。本文件任务边界继承自当前 L1/L2 功能边界。
-
-## 目标源码路径
+## 1. 目标源码路径
 
 ```text
-src/model_deploy/act/repo/
-├── bundle_reader.py
-├── manifest_parser.py
-├── normalizer_loader.py
-└── experiment_config_loader.py
+src/model_deploy/act/repo/bundle_reader.py
+src/model_deploy/act/repo/manifest_parser.py
+src/model_deploy/act/repo/normalizer_loader.py
+src/model_deploy/act/repo/experiment_config_loader.py
 ```
 
-## 层职责（来自 ACT 代码树分层约束）
+## 2. 层职责
 
-进程外资源读取和反序列化。禁止 ROS topic、硬件 SDK、运行调度。`repo/` 依赖 `types`、`config`（不反向）。
+`repo/` 负责进程外资源读取和反序列化。它只做路径、文件存在性、格式读取，不做业务维度校验；业务校验归 `config/`。
 
-> **读取/校验分离原则**：本层函数只做"路径→RAM 对象"（读文件、反序列化、存在性检查），**不做业务校验**（类型/范围/dim 一致归 `config/`）。
+## 3. 文件设计
 
-## 文件设计
+| 文件 | 职责 | 输入 | 输出 | 副作用 |
+|---|---|---|---|---|
+| `bundle_reader.py` | bundle 目录检查、checkpoint 路径解析 | bundle dir | checkpoint path / exception | 文件系统 stat |
+| `manifest_parser.py` | 读取 manifest.json | bundle dir | manifest dict | 文件读取 |
+| `normalizer_loader.py` | 读取 normalizers.json | bundle dir | normalizer objects | 文件读取 |
+| `experiment_config_loader.py` | 读取 experiment_config.yaml | bundle dir | experiment config dict/object | 文件读取 |
 
-### bundle_reader.py
+## 4. 不负责内容
 
-- 文件职责：bundle 目录存在性检查 + checkpoint 路径解析。
-- class 设计：无（纯函数）。
-- 函数设计：
-  - `check_bundle_files(bundle_dir) -> None`：检查 manifest.json/normalizers.json/experiment_config.yaml/checkpoint 存在，缺失抛 `FileNotFoundError`。
-  - `resolve_checkpoint_path(bundle_dir) -> Path`：解析 checkpoint 路径。
-- 输入/输出：bundle 路径 → 存在性确认 / checkpoint Path。
-- 副作用：跨进程读（文件系统 stat）。
-- 依赖方向：`repo` → `types`（用文件名常量）。不依赖 `config`（不做校验）。
-- Pi0.5 参考：`deploy/models/policy_loader.py:_validate_bundle`（存在性校验段，复用）；`common/runtime/bundle.py:resolve_bundle_adapter_dir`。
-- 验收覆盖：单测——合法 bundle 通过；缺各类文件抛 FileNotFoundError。
+- 不做 ROS topic 读写。
+- 不加载 ACT policy 到模型对象。
+- 不做 state/action 维度业务校验。
+- 不读写平滑处理或 RTC 对齐配置；这些第一版不进入 L2-01。
 
-### manifest_parser.py
+## 5. 验收覆盖
 
-- 文件职责：读 manifest.json → dict。
-- class 设计：无。
-- 函数设计：`read_bundle_manifest(bundle_dir) -> dict`（json.load）。
-- 输入/输出：bundle 路径 → manifest dict。
-- 副作用：跨进程读。
-- 依赖方向：`repo` → `types`（用 `MANIFEST_NAME` 常量）。
-- Pi0.5 参考：`common/runtime/bundle.py:load_bundle_manifest`（**强复用**）。
-- 验收覆盖：单测——合法 manifest 读出 dict；坏 JSON 抛异常。
-
-### normalizer_loader.py
-
-- 文件职责：读 normalizers.json → `(state_normalizer, action_normalizer)` 对象。
-- class 设计：无（复用 `ActionStateNormalizer` 类，该类归 `types/` 或 `repo/` 共享；算法模型无关）。
-- 函数设计：`read_bundle_normalizers(bundle_dir) -> tuple[ActionStateNormalizer, ActionStateNormalizer]`。
-- 输入/输出：bundle 路径 → 两个 normalizer 对象。
-- 副作用：跨进程读 + 反序列化。
-- 依赖方向：`repo` → `types`（用 `NORMALIZERS_NAME` + `ActionStateNormalizer`）。
-- Pi0.5 参考：`common/runtime/bundle.py:load_bundle_normalizers`（**强复用**）；`common/data/normalization.py:ActionStateNormalizer`（**直接复用类**）。
-- 验收覆盖：单测——合法 normalizers 读出对象；dim 不匹配由 `config/` 校验（本层不校验）。
-
-### experiment_config_loader.py
-
-- 文件职责：读 bundle 内 experiment_config.yaml → `ExperimentConfig` 对象。
-- class 设计：`ExperimentConfig`（frozen dataclass，含 model/data dims）。
-- 函数设计：`read_experiment_config(bundle_dir) -> ExperimentConfig`。
-- 输入/输出：bundle 路径 → ExperimentConfig。
-- 副作用：跨进程读。
-- 依赖方向：`repo` → `types`。
-- Pi0.5 参考：`common/config/schema.py:ExperimentConfig` + `load_experiment_config`（参考）。**关键差异**：ACT **不**像 Pi0.5 那样用 `object.__setattr__` 覆写 dims，而是保留原值供 `config/` 交叉校验。
-- 验收覆盖：单测——合法 experiment_config 读出；yaml 解析错误抛异常。
-
-## 边界继承声明
-
-本文件的 `repo/` 任务边界来自当前 L1/L2 功能边界（L2-01 负责外部资源读取），不是旧 layer-based 卡片。
+- 合法文件可读取。
+- 缺文件抛明确异常。
+- 坏 JSON/YAML 抛明确异常。
+- 业务维度不一致交给 `config` 层 contract check。

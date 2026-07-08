@@ -24,12 +24,7 @@ DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
 
 The root is the human entry surface. All Agent Markdown must live in `agent_context/`. Do not create `types/`, `config/`, `repo/`, `service/`, `runtime/`, or `ui/` directories inside the L2 design package.
 
-`l2_id` and `l2_design_dir` are different:
-
-| Field | Purpose | Example |
-|---|---|---|
-| `l2_id` | Stable id for branch, dispatch, cards, acceptance, status. | `l2-01-external-contract` |
-| `l2_design_dir` | Design package directory under `02_implement/`. | `l2-01-external-contract_外部参数加载与契约校验闭环` |
+## Valid L2 Identity
 
 Current valid `l2_id` values:
 
@@ -44,6 +39,35 @@ Current valid `l2_id` values:
 
 Old `l2-01-types`, `l2-02-config`, `l2-03-assembly`, `l2-04-publish`, and `l2-05-hardware` are invalid current L2 identities. They may appear only inside explicit contamination checks, deprecation notes, or read-only history/reference statements.
 
+## Semantic Alignment Contract
+
+HTML and Markdown are a paired product:
+
+- HTML is the human projection.
+- `agent_context/*.md` is the Agent source of truth.
+- Every HTML view must map to one or more Markdown files and sections.
+- Every semantic change in HTML must be applied to Markdown in the same change.
+- Every semantic change in Markdown must update the corresponding HTML view, or both `00_INDEX.md` and HTML must mark HTML as stale.
+
+`agent_context/00_INDEX.md` must contain a section titled exactly:
+
+```text
+## HTML-MD 语义对齐表
+```
+
+The table must include these columns:
+
+| HTML view id | HTML view label | Human-visible meaning | Authoritative Markdown | Required Markdown section | Markdown-only detail |
+|---|---|---|---|---|---|
+
+Each HTML view root must include:
+
+```html
+<section class="view ..." data-agent-source="agent_context/<file>.md#<section-or-anchor>">
+```
+
+The `data-agent-source` file must exist. The file path must also appear in `00_INDEX.md`.
+
 ## agent_context/00_INDEX.md
 
 Must include:
@@ -52,6 +76,7 @@ Must include:
 - Human HTML entry path.
 - Statement that `agent_context/*.md` is authoritative for Agent work.
 - Route table mapping reading purpose to file.
+- `HTML-MD 语义对齐表`.
 - Contamination check terms and allowed context.
 - Statement that HTML is not used for L3 generation.
 
@@ -199,18 +224,19 @@ Required properties:
 - visual-first, low-text presentation using inline SVG diagrams, visual cards, arrows, swimlanes, state panels, or similar graphics;
 - interaction through radio tabs, toggles, `<details>`, hover states, or equivalent no-build controls;
 - explicit references to `agent_context/00_INDEX.md` and relevant Agent Markdown files;
+- `data-agent-source` on every HTML view root;
 - stable `l2_id`.
 
 Required views:
 
-| View | Required content |
-|---|---|
-| Overview | This L2 in the Stage 4 ACT collaboration graph, with upstream/downstream L2s. |
-| Dataflow | External inputs, RAM objects, queues/topics, outputs, and ownership. |
-| Control/runtime flow | Timer, worker, callback, service call, or `ControlLoop.tick()` interactions. |
-| Failure/fallback | Validation failures, stale data, rejected actions, blocked hardware, fallback/status propagation. |
-| Metrics/status/acceptance | Observable topics, logs, counters, commands, pass/fail phenomena. |
-| Boundary contract | Responsibilities, non-responsibilities, target files, and acceptance coverage. |
+| View | Required content | Typical authoritative Markdown |
+|---|---|---|
+| Overview | This L2 in the Stage 4 ACT collaboration graph, with upstream/downstream L2s. | `01_L2功能边界.md`, `03_ACT微元设计与协作.md` |
+| Dataflow | External inputs, RAM objects, queues/topics, outputs, and ownership. | `01_L2功能边界.md`, `03_ACT微元设计与协作.md` |
+| Control/runtime flow | Timer, worker, callback, service call, or `ControlLoop.tick()` interactions. | `03_ACT微元设计与协作.md`, `10_runtime层设计.md` |
+| Failure/fallback | Validation failures, stale data, rejected actions, blocked hardware, fallback/status propagation. | `03_ACT微元设计与协作.md`, `04_L2验收机制.md` |
+| Metrics/status/acceptance | Observable topics, logs, counters, commands, pass/fail phenomena. | `04_L2验收机制.md`, `05_人类验收机制.md` |
+| Boundary contract | Responsibilities, non-responsibilities, target files, and acceptance coverage. | `01_L2功能边界.md`, `06-11_*层设计.md` |
 
 The HTML must not:
 
@@ -236,6 +262,8 @@ The L2 is ready for L3 generation only when:
 - Pi0.5 3.5-layer source micro-units are explained.
 - ACT micro-units and class/function decisions are confirmed by the user.
 - All 12 `agent_context/` files exist.
+- `00_INDEX.md` contains a valid `HTML-MD 语义对齐表`.
+- Each HTML view has a valid `data-agent-source` reference to existing Agent Markdown.
 - L2 Gate exists.
 - Human acceptance mechanism exists.
 - Human HTML visualization exists and aligns with the Markdown design docs.
@@ -255,5 +283,6 @@ Expected result:
 - root contains only `L2架构交互可视化.html` and `agent_context/`;
 - all 12 fixed Markdown files exist;
 - no six-layer subdirectories exist;
-- HTML contains doctype, SVG, interaction controls, `agent_context` references, and stable L2 id;
+- HTML contains doctype, SVG, interaction controls, `agent_context` references, stable L2 id, and valid `data-agent-source` links;
+- `00_INDEX.md` contains the semantic alignment table;
 - legacy and Contract Delta terms appear only in allowed contamination/deprecation/read-only contexts.

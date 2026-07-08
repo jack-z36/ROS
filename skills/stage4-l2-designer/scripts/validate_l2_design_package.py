@@ -77,13 +77,27 @@ def check_agent_context(package: Path, errors: list[str]) -> None:
             errors.append(f"unexpected Agent Markdown: agent_context/{child.name}")
 
     index = agent_dir / "00_INDEX.md"
-    if index.is_file():
-        text = index.read_text(encoding="utf-8")
-        for filename in REQUIRED_AGENT_FILES[1:]:
-            if filename not in text:
-                errors.append(f"00_INDEX.md does not route to {filename}")
-        if "L2架构交互可视化.html" not in text:
-            errors.append("00_INDEX.md does not reference the human HTML entry")
+    if not index.is_file():
+        return
+    text = index.read_text(encoding="utf-8")
+    for filename in REQUIRED_AGENT_FILES[1:]:
+        if filename not in text:
+            errors.append(f"00_INDEX.md does not route to {filename}")
+    if "L2架构交互可视化.html" not in text:
+        errors.append("00_INDEX.md does not reference the human HTML entry")
+    if "HTML-MD 语义对齐表" not in text:
+        errors.append("00_INDEX.md missing HTML-MD semantic alignment table")
+    required_alignment_headers = [
+        "HTML view id",
+        "HTML view label",
+        "Human-visible meaning",
+        "Authoritative Markdown",
+        "Required Markdown section",
+        "Markdown-only detail",
+    ]
+    for header in required_alignment_headers:
+        if header not in text:
+            errors.append(f"00_INDEX.md semantic alignment table missing column: {header}")
 
 
 def check_html(package: Path, l2_id: str, errors: list[str]) -> None:
@@ -104,6 +118,23 @@ def check_html(package: Path, l2_id: str, errors: list[str]) -> None:
         errors.append("HTML missing simple interaction controls")
     if re.search(r"https?://|//fonts\.|@import", text):
         errors.append("HTML appears to reference network resources")
+
+    source_refs = re.findall(r'data-agent-source=["\']([^"\']+)["\']', text)
+    if not source_refs:
+        errors.append("HTML missing data-agent-source references on views")
+        return
+    agent_dir = package / "agent_context"
+    index_text = (agent_dir / "00_INDEX.md").read_text(encoding="utf-8") if (agent_dir / "00_INDEX.md").is_file() else ""
+    for source in source_refs:
+        if not source.startswith("agent_context/"):
+            errors.append(f"HTML data-agent-source must start with agent_context/: {source}")
+            continue
+        file_part = source.split("#", 1)[0]
+        source_path = package / file_part
+        if not source_path.is_file():
+            errors.append(f"HTML data-agent-source file does not exist: {source}")
+        if file_part not in index_text:
+            errors.append(f"00_INDEX.md semantic alignment table does not mention HTML source: {file_part}")
 
 
 def check_contamination(package: Path, errors: list[str]) -> None:

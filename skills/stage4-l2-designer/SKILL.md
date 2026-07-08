@@ -1,16 +1,18 @@
 ---
 name: stage4-l2-designer
-description: Produce and maintain the Stage 4 ACT L2 design package in this ROS repository. Use when designing, optimizing, reviewing, or migrating one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create Agent-consumable atomic Markdown under agent_context/, create a human-consumable interactive SVG-heavy HTML visualization, and draft L2 Gate plus human acceptance mechanisms.
+description: Produce and maintain the Stage 4 ACT L2 design package in this ROS repository. Use when designing, optimizing, reviewing, or migrating one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create Agent-consumable atomic Markdown under agent_context/, create a human-consumable interactive SVG-heavy HTML visualization that is semantically aligned one-to-one with agent_context Markdown, and draft L2 Gate plus human acceptance mechanisms.
 ---
 
 # Stage4 L2 Designer
 
 ## Purpose
 
-Use this skill for the L2 design phase of Stage 4 ACT deployment work. It turns one functional L2 boundary into two separated products:
+Use this skill for the L2 design phase of Stage 4 ACT deployment work. It turns one functional L2 boundary into two separated but semantically aligned products:
 
 - a low-density human HTML entrypoint with interactive diagrams;
 - high-density Agent Markdown under `agent_context/`.
+
+The HTML is a visual projection of the Markdown, not an independent source of truth. Any change to HTML logic, views, labels, relationships, dataflow, failure path, boundary, or Gate semantics must be reflected in the authoritative Markdown at the same time.
 
 This skill does not execute L3 tasks. Use `stage4-l3-orchestrator` only after the L2 design package and acceptance mechanism are confirmed.
 
@@ -34,7 +36,7 @@ Use `DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视�
 
 ## Current L2 Identity Rules
 
-Only these Stage 4 ACT L2 ids are valid:
+Only these Stage 4 ACT L2 ids are valid current L2 identities:
 
 - `l2-01-external-contract`
 - `l2-02-observation-snapshot`
@@ -79,6 +81,23 @@ DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
 ```
 
 The package root is for humans. Keep all Agent Markdown inside `agent_context/`. Do not create `types/`, `config/`, `repo/`, `service/`, `runtime/`, or `ui/` subdirectories in the L2 design package.
+
+## Semantic Alignment Rule
+
+HTML and Markdown must be semantically one-to-one:
+
+- Every HTML view must have an authoritative Markdown source in `agent_context/`.
+- Every HTML view must be a compressed visual version of the corresponding Markdown section, never a separate design.
+- Every HTML relationship, arrow, state owner, failure path, runtime path, Gate signal, or boundary statement must be traceable to a Markdown section.
+- If HTML logic changes, update the authoritative Markdown in the same change.
+- If Markdown semantics change, update the HTML projection in the same change or explicitly mark the HTML stale in both `00_INDEX.md` and the HTML note.
+
+Implement this alignment mechanically:
+
+- `agent_context/00_INDEX.md` must contain a `HTML-MD 语义对齐表`.
+- Each row maps one HTML view id/label to authoritative Markdown file(s), Markdown section(s), and the extra detail that exists only in Markdown.
+- Each HTML view root element should include `data-agent-source="agent_context/<file>.md#<section-or-anchor>"`.
+- Each HTML view should visibly mention the relevant `agent_context` file in a compact source note or side panel.
 
 ## Workflow
 
@@ -134,11 +153,12 @@ Stop for user confirmation after recommending ACT micro-units, class/function de
 
 Write high-density Markdown under `agent_context/`.
 
-`00_INDEX.md` is the Agent routing entry. It must describe:
+`00_INDEX.md` is the Agent routing and alignment entry. It must describe:
 
 - each Markdown file's responsibility;
 - when to read it;
 - HTML vs Markdown authority;
+- `HTML-MD 语义对齐表`;
 - contamination checks.
 
 Macro design files must carry the full detail needed by later Agents. Do not compress Agent Markdown for human readability.
@@ -162,6 +182,7 @@ Rules:
 - visual-first: use inline SVG diagrams, visual cards, arrows, swimlanes, or state panels;
 - interactive: include radio tabs, toggles, `<details>`, hover states, or equivalent no-build interaction;
 - cite `agent_context/00_INDEX.md` and the relevant Agent Markdown files as authoritative;
+- add `data-agent-source` on each view root and keep it aligned with `00_INDEX.md`;
 - state clearly that HTML is not used for L3 generation.
 
 Required views:
@@ -173,7 +194,7 @@ Required views:
 - Metrics/status/acceptance: observable counters, topics, logs, commands, pass/fail phenomena;
 - Boundary contract: responsibilities, non-responsibilities, target files, acceptance coverage.
 
-If a view is not meaningful for the L2, keep the view and explain why in one compact visual note.
+If a view is not meaningful for the L2, keep the view and explain why in one compact visual note. The explanation must still map to an authoritative Markdown section.
 
 Stop for user confirmation after drafting the HTML information hierarchy and L2 Gate/human acceptance design.
 

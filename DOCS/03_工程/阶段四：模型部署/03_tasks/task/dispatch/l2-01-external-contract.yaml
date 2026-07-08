@@ -1,0 +1,272 @@
+# L2-01 外部参数加载与契约校验闭环 调度索引
+
+> [!info] 归属
+> - 功能组：`l2-01-external-contract`
+> - L2 设计目录：`DOCS/03_工程/阶段四：模型部署/02_implement/l2-01-external-contract_外部参数加载与契约校验闭环/`
+> - L2 功能边界：`agent_context/01_L2功能边界.md`
+> - L2 验收机制：`agent_context/04_L2验收机制.md`
+> - 本文件是调度索引，主 Agent 据此判断并行 / 串行；不随单个 L3 归档移动。
+
+> [!warning] 旧版隔离
+> 旧 `l2-01-types` dispatch 已隔离到 `03_tasks/归档/_archived_pi05/dispatch/l2-01-types.yaml`，不得作为当前调度来源。
+
+```yaml
+dispatch_index:
+  group: l2-01-external-contract
+  branch: feat/model_deploy/l2-01-external-contract
+  integration_branch: model_deploy
+  source_l2: DOCS/03_工程/阶段四：模型部署/02_implement/l2-01-external-contract_外部参数加载与契约校验闭环/agent_context/01_L2功能边界.md
+  max_parallel_agents: 3
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-external-contract
+  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-external-contract/l2-01-external-contract_整体验收卡片.md
+
+  waves:
+    - wave: 1
+      parallel_group: l2-01-external-contract-p1
+      tasks: [deploy_001, deploy_002, deploy_003]
+    - wave: 2
+      parallel_group: l2-01-external-contract-p2
+      depends_on: [deploy_001, deploy_002, deploy_003]
+      tasks: [deploy_004, deploy_005, deploy_006, deploy_007]
+    - wave: 3
+      parallel_group: l2-01-external-contract-p3
+      depends_on: [deploy_001, deploy_002, deploy_003]
+      tasks: [deploy_008]
+    - wave: 4
+      parallel_group: l2-01-external-contract-p4
+      depends_on: [deploy_001, deploy_002, deploy_003, deploy_004, deploy_005, deploy_006, deploy_007, deploy_008]
+      tasks: [deploy_009]
+    - wave: 5
+      parallel_group: l2-01-external-contract-p5
+      depends_on: [deploy_001, deploy_002, deploy_003, deploy_004, deploy_005, deploy_006, deploy_007, deploy_008, deploy_009]
+      tasks: [deploy_010]
+
+  tasks:
+    deploy_001:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_001_契约结果对象ContractResult.md
+      title: 契约结果对象 ContractResult
+      depends_on: []
+      can_run_parallel_with: [deploy_002, deploy_003]
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/types/contract_result.py
+          - src/model_deploy/act/tests/types/test_contract_result.py
+        modules:
+          - model_deploy.act.types.contract_result
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_002:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_002_16D状态规格StateSpec.md
+      title: 16D 状态规格 StateSpec
+      depends_on: []
+      can_run_parallel_with: [deploy_001, deploy_003]
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S2]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/types/state_spec.py
+          - src/model_deploy/act/tests/types/test_state_spec.py
+        modules:
+          - model_deploy.act.types.state_spec
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_003:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_003_16D动作规格ActionSpec.md
+      title: 16D 动作规格 ActionSpec
+      depends_on: []
+      can_run_parallel_with: [deploy_001, deploy_002]
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S2]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/types/action_spec.py
+          - src/model_deploy/act/tests/types/test_action_spec.py
+        modules:
+          - model_deploy.act.types.action_spec
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_004:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_004_manifest解析器.md
+      title: manifest 解析器
+      depends_on: [deploy_001, deploy_002, deploy_003]
+      can_run_parallel_with: [deploy_005, deploy_006, deploy_007]
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S3]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/repo/manifest_parser.py
+          - src/model_deploy/act/tests/repo/test_manifest_parser.py
+        modules:
+          - model_deploy.act.repo.manifest_parser
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_005:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_005_normalizer加载器.md
+      title: normalizer 加载器
+      depends_on: [deploy_001, deploy_002, deploy_003]
+      can_run_parallel_with: [deploy_004, deploy_006, deploy_007]
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S4]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/repo/normalizer_loader.py
+          - src/model_deploy/act/tests/repo/test_normalizer_loader.py
+        modules:
+          - model_deploy.act.repo.normalizer_loader
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_006:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_006_experiment_config加载器.md
+      title: experiment_config 加载器
+      depends_on: [deploy_001, deploy_002, deploy_003]
+      can_run_parallel_with: [deploy_004, deploy_005, deploy_007]
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S4]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/repo/experiment_config_loader.py
+          - src/model_deploy/act/tests/repo/test_experiment_config_loader.py
+        modules:
+          - model_deploy.act.repo.experiment_config_loader
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_007:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_007_bundle读取器.md
+      title: bundle 读取器
+      depends_on: [deploy_001, deploy_002, deploy_003]
+      can_run_parallel_with: [deploy_004, deploy_005, deploy_006]
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S3]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/repo/bundle_reader.py
+          - src/model_deploy/act/tests/repo/test_bundle_reader.py
+        modules:
+          - model_deploy.act.repo.bundle_reader
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_008:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_008_DeployConfig核心schema与校验器.md
+      title: DeployConfig 核心 schema 与校验器
+      depends_on: [deploy_001, deploy_002, deploy_003]
+      can_run_parallel_with: []
+      must_run_after: []
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S2, S5]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/config/schema.py
+          - src/model_deploy/act/config_files/deploy.yaml
+          - src/model_deploy/act/tests/config/test_schema.py
+        modules:
+          - model_deploy.act.config.schema
+        config_keys: [runtime, safety, topics, image, bundle]
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_009:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_009_契约交叉校验与配置编排.md
+      title: 契约交叉校验与配置编排
+      depends_on: [deploy_001, deploy_002, deploy_003, deploy_004, deploy_005, deploy_006, deploy_007, deploy_008]
+      can_run_parallel_with: []
+      must_run_after: [deploy_008]
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S3, S4]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/config/schema.py
+          - src/model_deploy/act/tests/config/test_contract_check.py
+        modules:
+          - model_deploy.act.config.schema
+        config_keys: [bundle, normalizer, experiment_config]
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_010:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_010_L2Gate集成测试.md
+      title: L2 Gate 集成测试
+      depends_on: [deploy_001, deploy_002, deploy_003, deploy_004, deploy_005, deploy_006, deploy_007, deploy_008, deploy_009]
+      can_run_parallel_with: []
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S2, S3, S4, S5]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/tests/integration/test_l2_01_gate.py
+        modules:
+          - model_deploy.act.tests.integration.test_l2_01_gate
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+```
+
+## 调度说明
+
+### Wave 结构与依赖
+
+```text
+wave1 (types 层, 3 个 L3 并行, 无依赖):
+  deploy_001  contract_result.py    ─┐
+  deploy_002  state_spec.py          ├─ 可并行 (不同文件)
+  deploy_003  action_spec.py        ─┘
+
+wave2 (repo 层, 4 个 L3 并行, 依赖 types):
+  deploy_004  manifest_parser.py     ─┐
+  deploy_005  normalizer_loader.py    ├─ 可并行 (不同文件)
+  deploy_006  experiment_config_loader.py
+  deploy_007  bundle_reader.py       ─┘
+
+wave3 (config 核心, 依赖 types):
+  deploy_008  schema.py 核心 + deploy.yaml
+
+wave4 (config 契约校验, 依赖全部 types+repo+config核心, 同文件串行):
+  deploy_009  schema.py 追加契约校验 + load_deploy_config
+
+wave5 (集成测试, 依赖全部):
+  deploy_010  tests/integration/test_l2_01_gate.py
+```
+
+### 冲突说明
+
+- `deploy_008` 和 `deploy_009` 都写 `src/model_deploy/act/config/schema.py`，`conflict_scope.files` 重叠。`deploy_009` 的 `must_run_after: [deploy_008]` 强制串行，不得并行。
+- 其余 L3 的 `conflict_scope.files` 互不重叠，同 wave 内可并行。
+- `max_parallel_agents: 3`：wave2 有 4 个可并行 L3，主 Agent 每次最多派发 3 个，第 4 个等下一批。
+
+### L2 Gate 场景覆盖矩阵
+
+| 场景 | 描述 | 主要覆盖 L3 | 辅助覆盖 L3 |
+|---|---|---|---|
+| S1 | 合法配置载入 | deploy_008, deploy_009, deploy_010 | deploy_001, deploy_002, deploy_003 |
+| S2 | 非法维度失败 | deploy_002, deploy_003, deploy_008, deploy_010 | — |
+| S3 | bundle 缺文件失败 | deploy_004, deploy_007, deploy_009, deploy_010 | — |
+| S4 | normalizer 维度不一致失败 | deploy_005, deploy_006, deploy_009, deploy_010 | — |
+| S5 | 无平滑配置泄漏 | deploy_008, deploy_010 | — |
+
+### 归档规则
+
+当某个 L3 验收卡片返回 `PASS_LOCAL` 后，主 Agent 必须把对应任务文件从 `03_tasks/task/active/l2-01-external-contract/` 移动到 `03_tasks/completed/l2-01-external-contract/`。验收 Agent 不得执行归档。

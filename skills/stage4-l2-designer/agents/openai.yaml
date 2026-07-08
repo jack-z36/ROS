@@ -1,4 +1,4 @@
 interface:
   display_name: "Stage4 L2 Designer"
-  short_description: "Design Stage 4 L2 Agent context and human HTML visuals."
-  default_prompt: "Use $stage4-l2-designer to produce or migrate a Stage 4 ACT L2 design package with Agent Markdown under agent_context/ and a human interactive SVG-heavy HTML visualization."
+  short_description: "Design aligned Stage 4 L2 Agent context and human HTML visuals."
+  default_prompt: "Use $stage4-l2-designer to produce or migrate a Stage 4 ACT L2 design package with Agent Markdown under agent_context/ and a semantically aligned human interactive SVG-heavy HTML visualization."
