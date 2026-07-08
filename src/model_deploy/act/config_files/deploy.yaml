@@ -1,0 +1,58 @@
+# ACT default deployment configuration (dry-run mode)
+#
+# This file is the default config instance for local development and testing.
+# Set bundle.bundle_dir to a real bundle path before running.
+# Action-smoothing fields and legacy bridge/mux sections are intentionally absent.
+
+bundle:
+  bundle_dir: null  # must be set at runtime
+
+runtime:
+  mode: dry-run
+  control_hz: 30.0
+  inference_hz: 10.0
+  chunk_size: 30
+  execute_horizon: 10
+  prefetch_steps: 5
+  state_dim: 16
+  action_dim: 16
+  max_action_age_sec: 0.45
+  max_inference_requests: 1
+  max_pending_chunks: 1
+  fallback_policy: hold_last_action
+  max_delta_per_step: 0.03
+  warmup_steps: 2
+  compile_model: true
+  compile_mode: reduce-overhead
+  publish_metrics_hz: 1.0
+  task: bimanual manipulation
+
+image:
+  image_size: 224
+  resize_mode: resize_pad
+  transport: raw
+
+topics:
+  namespace: /act
+  observation:
+    arm_state: /act/observation/arm_state
+    left_image: /act/observation/image/left_gripper_fisheye
+    right_image: /act/observation/image/right_gripper_fisheye
+    left_tcp_pose: /act/observation/arm/left_tcp_pose
+    right_tcp_pose: /act/observation/arm/right_tcp_pose
+    left_gripper_state: /act/observation/gripper/left_state
+    right_gripper_state: /act/observation/gripper/right_state
+  command:
+    policy_action: /act/policy_action
+    left_arm_target: /act/command/arm/left_target
+    right_arm_target: /act/command/arm/right_target
+    left_gripper_target: /act/command/gripper/left_target
+    right_gripper_target: /act/command/gripper/right_target
+    status: /act/command/status
+    metrics: /act/metrics
+
+safety:
+  max_tcp_delta_per_step: 0.03
+  hand_min: 300.0
+  hand_max: 1000.0
+  quaternion_check: true

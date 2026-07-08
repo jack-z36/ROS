@@ -8,9 +8,9 @@ For current Stage 4 ACT L2 design, the authoritative rules are:
 
 1. Repository root `AGENTS.md`
 2. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
-3. `DOCS/03_工程/阶段四：模型部署/02_implement/00_L1_ACT部署程序任务文档.md`
-4. `DOCS/03_工程/阶段四：模型部署/02_implement/01_L1_ACT功能模块边界.md`
-5. `DOCS/03_工程/阶段四：模型部署/02_implement/02_L1_ACT功能模块协作架构.md`
+3. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/01_L1_ACT部署程序任务文档.md`
+4. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/02_L1_ACT功能模块边界.md`
+5. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/03_L1_ACT功能模块协作架构.md`
 
 The graphify outputs below may be used only as navigation aids for Pi0.5 source inspection. They are not ACT design authority. Any L2 design conclusion must cite actual Pi0.5 source files / classes / functions and reconcile them with the current ACT L1 architecture.
 
