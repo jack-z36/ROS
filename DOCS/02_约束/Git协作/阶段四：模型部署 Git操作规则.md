@@ -57,6 +57,58 @@ git switch feat/model_deploy/<topic> || git switch -c feat/model_deploy/<topic> 
 git pull --ff-only
 ```
 
+## 多 Agent 并行工作树
+
+阶段四存在两种典型并行场景：Ralph / OpenCode 循环工程主 Agent 在 `model_deploy` 上持续调度 L2/L3，同时用户或另一个 Agent 需要在三级功能分支上开发代码或设计文档。此时**不得**在主工作目录内用 `git switch` 切换分支，必须使用工作树。
+
+具体规则见全局 `DOCS/02_约束/Git协作/Git操作规则.md` 的「工作树」节。以下为阶段四专属约定。
+
+### 触发时机
+
+OpenCode 主 Agent 或用户在以下情况必须使用 worktree：
+
+- 主工作目录已检出 `model_deploy` 且工作区存在 Ralph / OpenCode 循环工程的活跃改动（状态摘要、dispatch、任务文件等）。
+- 需要同时在 `model_deploy` 和某个三级功能分支上工作。
+- 用户明确要求"在其他目录继续开发某个 L2/L3"。
+
+### 阶段四工作树命名
+
+阶段四的工作树目录统一命名为：
+
+```text
+worktrees/<l2-id 或简短用途描述>
+```
+
+示例：
+
+```text
+worktrees/l2-01-external-contract  → feat/model_deploy/l2-01-external-contract-design
+worktrees/l2-03-act-inference      → feat/model_deploy/l2-03-act-inference
+```
+
+### 加载链更新
+
+OpenCode 主 Agent 在`00_status/current_loop_snapshot.md` 的输出中，必须说明当前所在工作树路径、检出分支，以及是否存在其他活跃工作树。格式：
+
+```text
+当前工作树：/home/hit/ROS/worktrees/l2-01-external-contract
+检出分支：feat/model_deploy/l2-01-external-contract-design
+其他活跃工作树：/home/hit/ROS (model_deploy)
+```
+
+### Gate 合入后清理
+
+三级功能分支合入 `model_deploy` 并确认远端同步后，应删除对应工作树：
+
+```bash
+# 回到主工作目录
+cd /home/hit/ROS
+# 删除工作树（必须先确保工作树内无未提交改动）
+git worktree remove worktrees/<l2-id>
+```
+
+合入 `model_deploy` 本身在任一工作树或主工作目录中均可执行——优先在主工作目录执行，除非主工作目录被 Ralph / OpenCode 循环工程占用且有未完成状态无法中断。
+
 ## L3 原子提交流程
 
 Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交。
