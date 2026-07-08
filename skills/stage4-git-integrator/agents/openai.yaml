@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stage4 Git Integrator"
+  short_description: "Check and run Stage 4 L3 commit and model_deploy merge workflows."
+  default_prompt: "Use $stage4-git-integrator to check Gate, human acceptance, branch state, and allowed paths before committing or merging Stage 4 model_deploy work."
