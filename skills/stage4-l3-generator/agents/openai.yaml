@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stage4 L3 Generator"
+  short_description: "Generate Stage 4 L3 tasks, dispatch, and acceptance cards."
+  default_prompt: "Use $stage4-l3-generator to generate Stage 4 ACT L3 task files, dispatch YAML, and acceptance cards from a confirmed L2 agent_context package."
