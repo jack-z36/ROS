@@ -1,0 +1,1507 @@
+{
+  "batch": 4,
+  "totalFiles": 25,
+  "project": "PI05 Project",
+  "nodes": [
+    {
+      "id": "file:common/config/paths.yaml",
+      "label": "paths.yaml",
+      "type": "file",
+      "file": "common/config/paths.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Human-readable path templates for repository layout (workspace_root, project_root, datasets, models, outputs paths)"
+    },
+    {
+      "id": "config:paths.yaml:workspace_root",
+      "label": "workspace_root (..)",
+      "type": "config-value",
+      "file": "common/config/paths.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Relative path to workspace root (parent of project root)"
+    },
+    {
+      "id": "config:paths.yaml:project_root",
+      "label": "project_root (.)",
+      "type": "config-value",
+      "file": "common/config/paths.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Relative path to project root"
+    },
+    {
+      "id": "config:paths.yaml:datasets",
+      "label": "datasets paths",
+      "type": "config-value",
+      "file": "common/config/paths.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Dataset directory paths: canonical_lerobot_dataset, project_raw_dir, project_interim_dir, project_processed_dir"
+    },
+    {
+      "id": "config:paths.yaml:models",
+      "label": "models path",
+      "type": "config-value",
+      "file": "common/config/paths.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Pretrained model path: pretrained_pi05_base -> lerobot/pi05_base"
+    },
+    {
+      "id": "config:paths.yaml:outputs",
+      "label": "outputs paths",
+      "type": "config-value",
+      "file": "common/config/paths.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Output directory paths: root, checkpoints, exports, logs"
+    },
+    {
+      "id": "file:common/config/runtime.yaml",
+      "label": "runtime.yaml",
+      "type": "file",
+      "file": "common/config/runtime.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Runtime configuration: device, mixed_precision, num_workers, seed, deployment host/port/timeout/warmup"
+    },
+    {
+      "id": "config:runtime.yaml:runtime",
+      "label": "runtime settings",
+      "type": "config-value",
+      "file": "common/config/runtime.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Runtime parameters: device=cuda, mixed_precision=bf16, num_workers=4, seed=42, log_level=info"
+    },
+    {
+      "id": "config:runtime.yaml:deployment",
+      "label": "deployment settings",
+      "type": "config-value",
+      "file": "common/config/runtime.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Deployment server parameters: host=0.0.0.0, port=8000, request_timeout_s=2.0, warmup_steps=10"
+    },
+    {
+      "id": "file:common/src/pi05/common/__init__.py",
+      "label": "pi05.common (package)",
+      "type": "file",
+      "file": "common/src/pi05/common/__init__.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Shared components package used by both training and deployment"
+    },
+    {
+      "id": "file:common/src/pi05/common/config/__init__.py",
+      "label": "pi05.common.config (package)",
+      "type": "file",
+      "file": "common/src/pi05/common/config/__init__.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Config package re-exporting schema classes: ConfigError, DataConfig, ExperimentConfig, LoggingConfig, LoraConfig, ModelConfig, TrainingConfig, load_experiment_config"
+    },
+    {
+      "id": "file:common/src/pi05/common/config/schema.py",
+      "label": "schema.py",
+      "type": "file",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Typed config layer with YAML training configuration dataclasses: ExperimentConfig, LoraConfig, DataConfig, ModelConfig, TrainingConfig, LoggingConfig"
+    },
+    {
+      "id": "class:ConfigError",
+      "label": "ConfigError",
+      "type": "class",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Exception raised when YAML config has missing required fields or invalid types (extends ValueError)"
+    },
+    {
+      "id": "class:LoraConfig",
+      "label": "LoraConfig",
+      "type": "class",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for LoRA hyperparameters: rank, alpha, dropout, target_modules with from_mapping factory"
+    },
+    {
+      "id": "class:DataConfig",
+      "label": "DataConfig",
+      "type": "class",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for dataset configuration: dataset_path, fps, num_workers, chunk_size, image_size, state_dim=26, action_dim=14, cameras"
+    },
+    {
+      "id": "class:ModelConfig",
+      "label": "ModelConfig",
+      "type": "class",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for Pi0.5 model configuration: pretrained_path, device, dtype, chunk_size, paligemma_variant, action_expert_variant, attention_implementation"
+    },
+    {
+      "id": "class:TrainingConfig",
+      "label": "TrainingConfig",
+      "type": "class",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for training hyperparameters: batch_size, lr, epochs, gradient_accumulation_steps, warmup_steps, mixed_precision"
+    },
+    {
+      "id": "class:LoggingConfig",
+      "label": "LoggingConfig",
+      "type": "class",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for experiment logging: project_name, run_name, output_dir, export_dir, tensorboard settings"
+    },
+    {
+      "id": "class:ExperimentConfig",
+      "label": "ExperimentConfig",
+      "type": "class",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Top-level frozen dataclass composing LoraConfig, DataConfig, ModelConfig, TrainingConfig, LoggingConfig with from_mapping and run_summary"
+    },
+    {
+      "id": "func:load_experiment_config",
+      "label": "load_experiment_config()",
+      "type": "function",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Load and parse a YAML config file into an ExperimentConfig instance"
+    },
+    {
+      "id": "func:schema:from_mapping",
+      "label": "from_mapping() classmethods",
+      "type": "function-group",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Collection of from_mapping factory methods on LoraConfig, DataConfig, ModelConfig, TrainingConfig, LoggingConfig, ExperimentConfig"
+    },
+    {
+      "id": "func:schema:validators",
+      "label": "schema validation helpers",
+      "type": "function-group",
+      "file": "common/src/pi05/common/config/schema.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Internal validation helpers: _str, _bool, _int, _float, _path, _positive_int, _port, _required_section, etc."
+    },
+    {
+      "id": "file:common/src/pi05/common/data/__init__.py",
+      "label": "pi05.common.data (package)",
+      "type": "file",
+      "file": "common/src/pi05/common/data/__init__.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Data package docstring noting heavyweight imports (normalization) should come from concrete modules for lightweight config/codec imports"
+    },
+    {
+      "id": "file:common/src/pi05/common/data/action_codec.py",
+      "label": "action_codec.py",
+      "type": "file",
+      "file": "common/src/pi05/common/data/action_codec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Action encoding helpers for Pi0.5 deployment outputs: validation of 14-D action vectors and chunks, structured split to BimanualAction"
+    },
+    {
+      "id": "func:ensure_action_vector",
+      "label": "ensure_action_vector()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/action_codec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Validate and return one flat 14-D action vector as float32 ndarray"
+    },
+    {
+      "id": "func:ensure_action_chunk",
+      "label": "ensure_action_chunk()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/action_codec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Validate and return a 2-D action chunk (batch of action vectors)"
+    },
+    {
+      "id": "func:split_action",
+      "label": "split_action()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/action_codec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Split a flat 14-D action vector into structured BimanualAction view"
+    },
+    {
+      "id": "file:common/src/pi05/common/data/image_preprocess.py",
+      "label": "image_preprocess.py",
+      "type": "file",
+      "file": "common/src/pi05/common/data/image_preprocess.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Image preprocessing for Pi0.5: RGB numpy to CHW float tensor with resize_pad or resize_crop modes"
+    },
+    {
+      "id": "class:ImagePreprocessConfig",
+      "label": "ImagePreprocessConfig",
+      "type": "class",
+      "file": "common/src/pi05/common/data/image_preprocess.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for deployment image preprocessing: image_size=224, mode=resize_pad"
+    },
+    {
+      "id": "func:preprocess_rgb_image",
+      "label": "preprocess_rgb_image()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/image_preprocess.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Convert RGB numpy array to normalized CHW float tensor using resize_pad or resize_crop"
+    },
+    {
+      "id": "func:resize_pad",
+      "label": "_resize_pad()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/image_preprocess.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Internal: resize with aspect-ratio-preserving padding to square canvas"
+    },
+    {
+      "id": "func:resize_crop",
+      "label": "_resize_crop()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/image_preprocess.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Internal: resize then center-crop to square image"
+    },
+    {
+      "id": "file:common/src/pi05/common/data/normalization.py",
+      "label": "normalization.py",
+      "type": "file",
+      "file": "common/src/pi05/common/data/normalization.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Normalization utilities: ActionStateNormalizer (min-max to [-1,1]), factory helpers bootstrapping from LeRobotDataset"
+    },
+    {
+      "id": "class:ActionStateNormalizer",
+      "label": "ActionStateNormalizer",
+      "type": "class",
+      "file": "common/src/pi05/common/data/normalization.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Min-max normalizer mapping state/action vectors to [-1,1] with identity mask support for degenerate dimensions"
+    },
+    {
+      "id": "func:build_normalizer_from_lerobot",
+      "label": "build_normalizer_from_lerobot()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/normalization.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Create ActionStateNormalizer from LeRobotDataset metadata stats or sampled data"
+    },
+    {
+      "id": "func:build_state_action_normalizers",
+      "label": "build_state_action_normalizers()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/normalization.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Convenience helper returning (state_normalizer, action_normalizer) tuple from a LeRobotDataset"
+    },
+    {
+      "id": "func:ensure_vector_stats",
+      "label": "ensure_vector_stats()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/normalization.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Ensure stats.json has metadata-compatible vector statistics for requested keys"
+    },
+    {
+      "id": "file:common/src/pi05/common/data/state_codec.py",
+      "label": "state_codec.py",
+      "type": "file",
+      "file": "common/src/pi05/common/data/state_codec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "State encoding contract for Pi0.5 bimanual deployment: BimanualState struct, 26-D vector encoding, proprioception decoding"
+    },
+    {
+      "id": "class:BimanualState",
+      "label": "BimanualState",
+      "type": "class",
+      "file": "common/src/pi05/common/data/state_codec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for structured bimanual state: left/right arm_q, hand_q, ee_pos, ee_rpy"
+    },
+    {
+      "id": "func:encode_bimanual_state",
+      "label": "encode_bimanual_state()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/state_codec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Encode structured BimanualState into canonical 26-D vector"
+    },
+    {
+      "id": "func:decode_picotele_proprioception",
+      "label": "decode_picotele_proprioception()",
+      "type": "function",
+      "file": "common/src/pi05/common/data/state_codec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Decode legacy picotele proprioception vector [right6, left6] into left/right arm arrays"
+    },
+    {
+      "id": "file:common/src/pi05/common/model/__init__.py",
+      "label": "pi05.common.model (package)",
+      "type": "file",
+      "file": "common/src/pi05/common/model/__init__.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Shared model package init"
+    },
+    {
+      "id": "file:common/src/pi05/common/model/builder.py",
+      "label": "builder.py",
+      "type": "file",
+      "file": "common/src/pi05/common/model/builder.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Model builders for Pi0.5 LoRA fine-tuning: load policy, wrap with LoRA adapters, configure PEFT"
+    },
+    {
+      "id": "func:build_pi05_with_lora",
+      "label": "build_pi05_with_lora()",
+      "type": "function",
+      "file": "common/src/pi05/common/model/builder.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Load Pi0.5 policy, configure feature specs, resize action projections, wrap with LoRA adapters"
+    },
+    {
+      "id": "func:get_pi05_policy_config",
+      "label": "get_pi05_policy_config()",
+      "type": "function",
+      "file": "common/src/pi05/common/model/builder.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Locate PI0.5 policy config across common PEFT/wrapper layers"
+    },
+    {
+      "id": "func:resolve_peft_target_modules",
+      "label": "_resolve_peft_target_modules()",
+      "type": "function",
+      "file": "common/src/pi05/common/model/builder.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Resolve LoRA target modules based on ExperimentConfig, restricting to expert-only when train_expert_only"
+    },
+    {
+      "id": "func:image_keys_from_cameras",
+      "label": "_image_keys_from_cameras()",
+      "type": "function",
+      "file": "common/src/pi05/common/model/builder.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Convert camera names tuple to image key tuple (observation.images.<camera>)"
+    },
+    {
+      "id": "func:resize_pi05_action_projections",
+      "label": "_resize_pi05_action_projections()",
+      "type": "function",
+      "file": "common/src/pi05/common/model/builder.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Resize PI0.5 action_in_proj and action_out_proj linear layers to match configured action_dim"
+    },
+    {
+      "id": "func:force_pi05_attention_implementation",
+      "label": "_force_pi05_attention_implementation()",
+      "type": "function",
+      "file": "common/src/pi05/common/model/builder.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Force all submodule attention implementations to SDPA/FlashAttention instead of eager"
+    },
+    {
+      "id": "func:ensure_pi05_feature_specs",
+      "label": "_ensure_pi05_feature_specs()",
+      "type": "function",
+      "file": "common/src/pi05/common/model/builder.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Configure PI05Config input/output feature specs for state, action, and image keys"
+    },
+    {
+      "id": "file:common/src/pi05/common/robot/__init__.py",
+      "label": "pi05.common.robot (package)",
+      "type": "file",
+      "file": "common/src/pi05/common/robot/__init__.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Robot specification helpers shared by training and deployment"
+    },
+    {
+      "id": "file:common/src/pi05/common/robot/action_spec.py",
+      "label": "action_spec.py",
+      "type": "file",
+      "file": "common/src/pi05/common/robot/action_spec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Robot action layout: constants (ARM_DOF=6, ACTION_DIM=14, STATE_DIM=26), BimanualAction, split_bimanual_action, hand_command_to_trigger"
+    },
+    {
+      "id": "const:ARM_DOF",
+      "label": "ARM_DOF=6",
+      "type": "constant",
+      "file": "common/src/pi05/common/robot/action_spec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Degrees of freedom per arm (6 joints)"
+    },
+    {
+      "id": "const:HAND_DOF",
+      "label": "HAND_DOF=1",
+      "type": "constant",
+      "file": "common/src/pi05/common/robot/action_spec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Degrees of freedom per hand (1)"
+    },
+    {
+      "id": "const:ACTION_DIM",
+      "label": "ACTION_DIM=14",
+      "type": "constant",
+      "file": "common/src/pi05/common/robot/action_spec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Total action vector dimension: 6+6+1+1 = 14"
+    },
+    {
+      "id": "const:STATE_DIM",
+      "label": "STATE_DIM=26",
+      "type": "constant",
+      "file": "common/src/pi05/common/robot/action_spec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Total state observation dimension: 6+6+1+1+3+3+3+3 = 26"
+    },
+    {
+      "id": "class:BimanualAction",
+      "label": "BimanualAction",
+      "type": "class",
+      "file": "common/src/pi05/common/robot/action_spec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for structured bimanual action (left_arm, right_arm, left_hand, right_hand) with as_vector()"
+    },
+    {
+      "id": "func:split_bimanual_action",
+      "label": "split_bimanual_action()",
+      "type": "function",
+      "file": "common/src/pi05/common/robot/action_spec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Split flat 14-D action vector into structured BimanualAction"
+    },
+    {
+      "id": "func:hand_command_to_trigger",
+      "label": "hand_command_to_trigger()",
+      "type": "function",
+      "file": "common/src/pi05/common/robot/action_spec.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Convert dataset hand-command scale to normalized trigger value [0,1]"
+    },
+    {
+      "id": "file:common/src/pi05/common/robot/joint_limits.py",
+      "label": "joint_limits.py",
+      "type": "file",
+      "file": "common/src/pi05/common/robot/joint_limits.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Joint limit primitives for deployment safety checks: JointLimitSpec with clamp/contains, broad_joint_limits factory"
+    },
+    {
+      "id": "class:JointLimitSpec",
+      "label": "JointLimitSpec",
+      "type": "class",
+      "file": "common/src/pi05/common/robot/joint_limits.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for per-arm joint bounds with from_values factory, clamp() and contains() methods"
+    },
+    {
+      "id": "func:broad_joint_limits",
+      "label": "broad_joint_limits()",
+      "type": "function",
+      "file": "common/src/pi05/common/robot/joint_limits.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Return permissive JointLimitSpec (default ±2π) for when hardware bounds are absent"
+    },
+    {
+      "id": "file:common/src/pi05/common/ros/__init__.py",
+      "label": "pi05.common.ros (package)",
+      "type": "file",
+      "file": "common/src/pi05/common/ros/__init__.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "ROS naming helpers shared by deployment modules"
+    },
+    {
+      "id": "file:common/src/pi05/common/ros/topics.py",
+      "label": "topics.py",
+      "type": "file",
+      "file": "common/src/pi05/common/ros/topics.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "ROS topic naming helpers: Pi05CommandTopics, Pi05ObservationTopics, join_topic, DEFAULT_NAMESPACE"
+    },
+    {
+      "id": "func:join_topic",
+      "label": "join_topic()",
+      "type": "function",
+      "file": "common/src/pi05/common/ros/topics.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Join ROS topic fragments while keeping a single leading slash"
+    },
+    {
+      "id": "const:DEFAULT_NAMESPACE",
+      "label": "DEFAULT_NAMESPACE=/pi05_vla",
+      "type": "constant",
+      "file": "common/src/pi05/common/ros/topics.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Default ROS namespace for Pi0.5 deployment topics"
+    },
+    {
+      "id": "class:Pi05CommandTopics",
+      "label": "Pi05CommandTopics",
+      "type": "class",
+      "file": "common/src/pi05/common/ros/topics.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for command topic set (left/right arm/hand targets, status, metrics) with with_namespace factory"
+    },
+    {
+      "id": "class:Pi05ObservationTopics",
+      "label": "Pi05ObservationTopics",
+      "type": "class",
+      "file": "common/src/pi05/common/ros/topics.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Frozen dataclass for observation topic set (3 images, proprioception, 2 hand states, 4 EE poses) with with_namespace factory"
+    },
+    {
+      "id": "file:common/src/pi05/common/runtime/__init__.py",
+      "label": "pi05.common.runtime (package)",
+      "type": "file",
+      "file": "common/src/pi05/common/runtime/__init__.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Runtime bundle package re-exporting export_deploy_bundle, load_bundle_manifest, load_bundle_normalizers, resolve_bundle_adapter_dir"
+    },
+    {
+      "id": "file:common/src/pi05/common/runtime/bundle.py",
+      "label": "bundle.py",
+      "type": "file",
+      "file": "common/src/pi05/common/runtime/bundle.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Deploy bundle export/load helpers: export manifest, normalizers, experiment config, adapter directory"
+    },
+    {
+      "id": "func:export_deploy_bundle",
+      "label": "export_deploy_bundle()",
+      "type": "function",
+      "file": "common/src/pi05/common/runtime/bundle.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Export minimum runtime payload: copy adapter, write manifest.json, normalizers.json, experiment_config.yaml"
+    },
+    {
+      "id": "func:load_bundle_manifest",
+      "label": "load_bundle_manifest()",
+      "type": "function",
+      "file": "common/src/pi05/common/runtime/bundle.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Load deploy bundle manifest.json from bundle directory"
+    },
+    {
+      "id": "func:load_bundle_normalizers",
+      "label": "load_bundle_normalizers()",
+      "type": "function",
+      "file": "common/src/pi05/common/runtime/bundle.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Load state and action normalizers from bundle normalizers.json"
+    },
+    {
+      "id": "func:resolve_bundle_adapter_dir",
+      "label": "resolve_bundle_adapter_dir()",
+      "type": "function",
+      "file": "common/src/pi05/common/runtime/bundle.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Resolve adapter subdirectory within a deploy bundle"
+    },
+    {
+      "id": "file:common/src/pi05/common/utils/__init__.py",
+      "label": "pi05.common.utils (package)",
+      "type": "file",
+      "file": "common/src/pi05/common/utils/__init__.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Utils package re-exporting path constants and helpers from paths module"
+    },
+    {
+      "id": "file:common/src/pi05/common/utils/paths.py",
+      "label": "paths.py",
+      "type": "file",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Path helpers: PROJECT_ROOT, COMMON_SRC_ROOT, TRAIN_SRC_ROOT, DEPLOY_SRC_ROOT, WORKSPACE_ROOT, bootstrap_project_paths, default config path accessors"
+    },
+    {
+      "id": "const:PROJECT_ROOT",
+      "label": "PROJECT_ROOT",
+      "type": "constant",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Resolved project root path (where pyproject.toml, common/src, train/src, deploy/src exist)"
+    },
+    {
+      "id": "const:COMMON_SRC_ROOT",
+      "label": "COMMON_SRC_ROOT",
+      "type": "constant",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Path to common/src directory"
+    },
+    {
+      "id": "const:TRAIN_SRC_ROOT",
+      "label": "TRAIN_SRC_ROOT",
+      "type": "constant",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Path to train/src directory"
+    },
+    {
+      "id": "const:DEPLOY_SRC_ROOT",
+      "label": "DEPLOY_SRC_ROOT",
+      "type": "constant",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Path to deploy/src directory"
+    },
+    {
+      "id": "const:WORKSPACE_ROOT",
+      "label": "WORKSPACE_ROOT",
+      "type": "constant",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Workspace root (finds third_party/lerobot/src parent)"
+    },
+    {
+      "id": "func:bootstrap_project_paths",
+      "label": "bootstrap_project_paths()",
+      "type": "function",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Insert project source and third-party LeRobot paths into sys.path for non-installed entrypoints"
+    },
+    {
+      "id": "func:default_deploy_config_path",
+      "label": "default_deploy_config_path()",
+      "type": "function",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Return default path to deploy/config/deploy.yaml"
+    },
+    {
+      "id": "func:default_train_config_path",
+      "label": "default_train_config_path()",
+      "type": "function",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Return default path to train/config/lora.yaml"
+    },
+    {
+      "id": "func:default_data_config_path",
+      "label": "default_data_config_path()",
+      "type": "function",
+      "file": "common/src/pi05/common/utils/paths.py",
+      "fileCategory": "code",
+      "language": "Python",
+      "summary": "Return default path to train/config/data.yaml"
+    },
+    {
+      "id": "file:DEPLOY_REPRODUCE.md",
+      "label": "DEPLOY_REPRODUCE.md",
+      "type": "file",
+      "file": "DEPLOY_REPRODUCE.md",
+      "fileCategory": "documentation",
+      "language": "Markdown",
+      "summary": "Deployment reproduction guide: prerequisites, clone, conda env, bundle copy, verify install, run deployment, common issues"
+    },
+    {
+      "id": "file:deploy/config/deploy.yaml",
+      "label": "deploy.yaml",
+      "type": "file",
+      "file": "deploy/config/deploy.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Main deployment configuration: bundle path, runtime mode, image, topics, safety, bridge, mux settings"
+    },
+    {
+      "id": "config:deploy.yaml:bundle",
+      "label": "deploy bundle config",
+      "type": "config-value",
+      "file": "deploy/config/deploy.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Bundle configuration: bundle_dir pointing to exported deployment bundle"
+    },
+    {
+      "id": "config:deploy.yaml:runtime",
+      "label": "deploy runtime config",
+      "type": "config-value",
+      "file": "deploy/config/deploy.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Runtime mode (dry-run/shadow-run/safe-run), device, inference_hz, control_hz, chunk_size, safety parameters"
+    },
+    {
+      "id": "config:deploy.yaml:image",
+      "label": "deploy image config",
+      "type": "config-value",
+      "file": "deploy/config/deploy.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Image preprocessing: image_size=224, resize_mode=resize_pad, transport=raw"
+    },
+    {
+      "id": "config:deploy.yaml:topics",
+      "label": "deploy topic config",
+      "type": "config-value",
+      "file": "deploy/config/deploy.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Full ROS topic namespace mapping for observation, command, bridge_output, mux topics"
+    },
+    {
+      "id": "config:deploy.yaml:safety",
+      "label": "deploy safety config",
+      "type": "config-value",
+      "file": "deploy/config/deploy.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Safety parameters: max_joint_delta, stale_observation_timeout, clamp_normalized_action, hand_min/max, joint_limits"
+    },
+    {
+      "id": "config:deploy.yaml:bridge",
+      "label": "deploy bridge config",
+      "type": "config-value",
+      "file": "deploy/config/deploy.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Bridge settings: enabled, forward_commands, publish_to_picotele, speed_scale, publish_deadman"
+    },
+    {
+      "id": "config:deploy.yaml:mux",
+      "label": "deploy mux config",
+      "type": "config-value",
+      "file": "deploy/config/deploy.yaml",
+      "fileCategory": "config",
+      "language": "YAML",
+      "summary": "Command multiplexer settings: enabled, default_mode=teleop, publish_hz, vla_deadman_value"
+    },
+    {
+      "id": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "label": "pi05_picotele_mux.launch.py",
+      "type": "file",
+      "file": "deploy/launch/pi05_picotele_mux.launch.py",
+      "fileCategory": "rosLaunch",
+      "language": "Python",
+      "summary": "Integrated ROS2 launch for Pi0.5 VLA, picotele, RealSense, and command mux with picotele arguments and topic remappings"
+    },
+    {
+      "id": "func:generate_launch_description",
+      "label": "generate_launch_description()",
+      "type": "function",
+      "file": "deploy/launch/pi05_picotele_mux.launch.py",
+      "fileCategory": "rosLaunch",
+      "language": "Python",
+      "summary": "Generate ROS2 LaunchDescription integrating RealSense, pico headset, picotele planner/teleop/hand/tactile nodes, command mux, bridge, VLA inference"
+    },
+    {
+      "id": "file:deploy/service/README.md",
+      "label": "deploy/service/README.md",
+      "type": "file",
+      "file": "deploy/service/README.md",
+      "fileCategory": "documentation",
+      "language": "Markdown",
+      "summary": "Placeholder documentation for deployment service implementation"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:common/src/pi05/common/config/schema.py",
+      "target": "file:common/src/pi05/common/utils/paths.py",
+      "relation": "imports",
+      "label": "schema.py imports PROJECT_ROOT from paths.py",
+      "weight": 1.0,
+      "detail": "from pi05.common.utils.paths import PROJECT_ROOT"
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:LoraConfig",
+      "relation": "composes",
+      "label": "ExperimentConfig contains LoraConfig",
+      "weight": 1.0,
+      "detail": "ExperimentConfig.lora: LoraConfig"
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:DataConfig",
+      "relation": "composes",
+      "label": "ExperimentConfig contains DataConfig",
+      "weight": 1.0,
+      "detail": "ExperimentConfig.data: DataConfig"
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:ModelConfig",
+      "relation": "composes",
+      "label": "ExperimentConfig contains ModelConfig",
+      "weight": 1.0,
+      "detail": "ExperimentConfig.model: ModelConfig"
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:TrainingConfig",
+      "relation": "composes",
+      "label": "ExperimentConfig contains TrainingConfig",
+      "weight": 1.0,
+      "detail": "ExperimentConfig.training: TrainingConfig"
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:LoggingConfig",
+      "relation": "composes",
+      "label": "ExperimentConfig contains LoggingConfig",
+      "weight": 1.0,
+      "detail": "ExperimentConfig.logging: LoggingConfig"
+    },
+    {
+      "source": "func:load_experiment_config",
+      "target": "class:ExperimentConfig",
+      "relation": "creates",
+      "label": "load_experiment_config returns ExperimentConfig",
+      "weight": 1.0,
+      "detail": "Calls ExperimentConfig.from_mapping()"
+    },
+    {
+      "source": "class:LoraConfig",
+      "target": "func:schema:from_mapping",
+      "relation": "has-method",
+      "label": "LoraConfig uses from_mapping pattern",
+      "weight": 1.0,
+      "detail": "LoraConfig.from_mapping() classmethod"
+    },
+    {
+      "source": "class:DataConfig",
+      "target": "func:schema:from_mapping",
+      "relation": "has-method",
+      "label": "DataConfig uses from_mapping pattern",
+      "weight": 1.0,
+      "detail": "DataConfig.from_mapping() classmethod"
+    },
+    {
+      "source": "class:ModelConfig",
+      "target": "func:schema:from_mapping",
+      "relation": "has-method",
+      "label": "ModelConfig uses from_mapping pattern",
+      "weight": 1.0,
+      "detail": "ModelConfig.from_mapping() classmethod"
+    },
+    {
+      "source": "class:TrainingConfig",
+      "target": "func:schema:from_mapping",
+      "relation": "has-method",
+      "label": "TrainingConfig uses from_mapping pattern",
+      "weight": 1.0,
+      "detail": "TrainingConfig.from_mapping() classmethod"
+    },
+    {
+      "source": "class:LoggingConfig",
+      "target": "func:schema:from_mapping",
+      "relation": "has-method",
+      "label": "LoggingConfig uses from_mapping pattern",
+      "weight": 1.0,
+      "detail": "LoggingConfig.from_mapping() classmethod"
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "func:schema:from_mapping",
+      "relation": "has-method",
+      "label": "ExperimentConfig uses from_mapping pattern",
+      "weight": 1.0,
+      "detail": "ExperimentConfig.from_mapping() classmethod"
+    },
+    {
+      "source": "func:schema:validators",
+      "target": "class:ConfigError",
+      "relation": "throws",
+      "label": "Validation helpers raise ConfigError",
+      "weight": 1.0,
+      "detail": "All _str, _bool, _int, _float, _path validators raise ConfigError on invalid input"
+    },
+    {
+      "source": "file:common/src/pi05/common/config/__init__.py",
+      "target": "file:common/src/pi05/common/config/schema.py",
+      "relation": "re-exports",
+      "label": "config __init__ re-exports schema classes",
+      "weight": 1.0,
+      "detail": "Re-exports ConfigError, DataConfig, ExperimentConfig, LoggingConfig, LoraConfig, ModelConfig, TrainingConfig, load_experiment_config"
+    },
+    {
+      "source": "file:common/src/pi05/common/data/action_codec.py",
+      "target": "file:common/src/pi05/common/robot/action_spec.py",
+      "relation": "imports",
+      "label": "action_codec imports action_spec constants and types",
+      "weight": 1.0,
+      "detail": "from pi05.common.robot.action_spec import ACTION_DIM, BimanualAction, split_bimanual_action"
+    },
+    {
+      "source": "func:ensure_action_vector",
+      "target": "const:ACTION_DIM",
+      "relation": "uses",
+      "label": "ensure_action_vector validates against ACTION_DIM=14",
+      "weight": 1.0,
+      "detail": "Checks vector.size == ACTION_DIM"
+    },
+    {
+      "source": "func:split_action",
+      "target": "func:split_bimanual_action",
+      "relation": "delegates-to",
+      "label": "split_action delegates to split_bimanual_action",
+      "weight": 1.0,
+      "detail": "Calls split_bimanual_action(ensure_action_vector(action))"
+    },
+    {
+      "source": "file:common/src/pi05/common/data/state_codec.py",
+      "target": "file:common/src/pi05/common/robot/action_spec.py",
+      "relation": "imports",
+      "label": "state_codec imports action_spec constants",
+      "weight": 1.0,
+      "detail": "from pi05.common.robot.action_spec import ARM_DOF, STATE_DIM"
+    },
+    {
+      "source": "func:encode_bimanual_state",
+      "target": "const:STATE_DIM",
+      "relation": "uses",
+      "label": "encode_bimanual_state validates against STATE_DIM=26",
+      "weight": 1.0,
+      "detail": "Checks vector.size == STATE_DIM"
+    },
+    {
+      "source": "func:encode_bimanual_state",
+      "target": "const:ARM_DOF",
+      "relation": "uses",
+      "label": "encode_bimanual_state uses ARM_DOF=6",
+      "weight": 1.0,
+      "detail": "Uses ARM_DOF for arm joint vector sizes"
+    },
+    {
+      "source": "func:decode_picotele_proprioception",
+      "target": "const:ARM_DOF",
+      "relation": "uses",
+      "label": "decode_picotele_proprioception uses ARM_DOF=6",
+      "weight": 1.0,
+      "detail": "Uses ARM_DOF to split proprioception vector"
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/joint_limits.py",
+      "target": "file:common/src/pi05/common/robot/action_spec.py",
+      "relation": "imports",
+      "label": "joint_limits imports ARM_DOF from action_spec",
+      "weight": 1.0,
+      "detail": "from pi05.common.robot.action_spec import ARM_DOF"
+    },
+    {
+      "source": "class:JointLimitSpec",
+      "target": "const:ARM_DOF",
+      "relation": "uses",
+      "label": "JointLimitSpec validates against ARM_DOF=6",
+      "weight": 1.0,
+      "detail": "Checks min/max vectors have ARM_DOF elements"
+    },
+    {
+      "source": "file:common/src/pi05/common/model/builder.py",
+      "target": "file:common/src/pi05/common/config/schema.py",
+      "relation": "imports",
+      "label": "builder.py imports ExperimentConfig from schema",
+      "weight": 1.0,
+      "detail": "from pi05.common.config.schema import ExperimentConfig"
+    },
+    {
+      "source": "func:build_pi05_with_lora",
+      "target": "class:ExperimentConfig",
+      "relation": "uses",
+      "label": "build_pi05_with_lora consumes ExperimentConfig",
+      "weight": 1.0,
+      "detail": "Reads model, lora, data sub-configs from ExperimentConfig"
+    },
+    {
+      "source": "func:build_pi05_with_lora",
+      "target": "class:LoraConfig",
+      "relation": "reads",
+      "label": "build_pi05_with_lora reads LoRA config",
+      "weight": 1.0,
+      "detail": "exp_config.lora for rank, alpha, dropout"
+    },
+    {
+      "source": "func:build_pi05_with_lora",
+      "target": "class:ModelConfig",
+      "relation": "reads",
+      "label": "build_pi05_with_lora reads model config",
+      "weight": 1.0,
+      "detail": "exp_config.model for device, dtype, chunk_size, action_dim, etc."
+    },
+    {
+      "source": "func:build_pi05_with_lora",
+      "target": "func:ensure_pi05_feature_specs",
+      "relation": "calls",
+      "label": "build_pi05_with_lora calls _ensure_pi05_feature_specs",
+      "weight": 1.0,
+      "detail": "Sets up input/output feature specs for state, action, image keys"
+    },
+    {
+      "source": "func:build_pi05_with_lora",
+      "target": "func:resize_pi05_action_projections",
+      "relation": "calls",
+      "label": "build_pi05_with_lora calls _resize_pi05_action_projections",
+      "weight": 1.0,
+      "detail": "Resizes action projection linear layers"
+    },
+    {
+      "source": "func:build_pi05_with_lora",
+      "target": "func:force_pi05_attention_implementation",
+      "relation": "calls",
+      "label": "build_pi05_with_lora calls _force_pi05_attention_implementation",
+      "weight": 1.0,
+      "detail": "Forces SDPA/FlashAttention on all submodules"
+    },
+    {
+      "source": "func:build_pi05_with_lora",
+      "target": "func:image_keys_from_cameras",
+      "relation": "calls",
+      "label": "build_pi05_with_lora calls _image_keys_from_cameras",
+      "weight": 1.0,
+      "detail": "Converts camera names to image key strings"
+    },
+    {
+      "source": "func:build_pi05_with_lora",
+      "target": "func:resolve_peft_target_modules",
+      "relation": "calls",
+      "label": "build_pi05_with_lora calls _resolve_peft_target_modules",
+      "weight": 1.0,
+      "detail": "Determines LoRA target module regex/list"
+    },
+    {
+      "source": "func:ensure_pi05_feature_specs",
+      "target": "const:STATE_DIM",
+      "relation": "references",
+      "label": "_ensure_pi05_feature_specs references 26-D state",
+      "weight": 0.9,
+      "detail": "Configures OBS_STATE feature with shape (state_dim,) typically 26"
+    },
+    {
+      "source": "func:ensure_pi05_feature_specs",
+      "target": "const:ACTION_DIM",
+      "relation": "references",
+      "label": "_ensure_pi05_feature_specs references 14-D action",
+      "weight": 0.9,
+      "detail": "Configures ACTION feature with shape (action_dim,) typically 14"
+    },
+    {
+      "source": "file:common/src/pi05/common/runtime/bundle.py",
+      "target": "file:common/src/pi05/common/config/schema.py",
+      "relation": "imports",
+      "label": "bundle.py imports ExperimentConfig from schema",
+      "weight": 1.0,
+      "detail": "from pi05.common.config.schema import ExperimentConfig"
+    },
+    {
+      "source": "file:common/src/pi05/common/runtime/bundle.py",
+      "target": "file:common/src/pi05/common/data/normalization.py",
+      "relation": "imports",
+      "label": "bundle.py imports normalizers from normalization",
+      "weight": 1.0,
+      "detail": "from pi05.common.data.normalization import ActionStateNormalizer, build_state_action_normalizers"
+    },
+    {
+      "source": "func:export_deploy_bundle",
+      "target": "class:ExperimentConfig",
+      "relation": "uses",
+      "label": "export_deploy_bundle uses ExperimentConfig",
+      "weight": 1.0,
+      "detail": "Reads config for dataset, model, logging settings"
+    },
+    {
+      "source": "func:export_deploy_bundle",
+      "target": "class:ActionStateNormalizer",
+      "relation": "creates",
+      "label": "export_deploy_bundle creates ActionStateNormalizer via build_state_action_normalizers",
+      "weight": 1.0,
+      "detail": "Builds normalizers from dataset for bundle payload"
+    },
+    {
+      "source": "func:export_deploy_bundle",
+      "target": "func:build_state_action_normalizers",
+      "relation": "calls",
+      "label": "export_deploy_bundle calls build_state_action_normalizers",
+      "weight": 1.0,
+      "detail": "Generates state/action normalizer pair"
+    },
+    {
+      "source": "func:load_bundle_normalizers",
+      "target": "class:ActionStateNormalizer",
+      "relation": "creates",
+      "label": "load_bundle_normalizers creates ActionStateNormalizer from JSON",
+      "weight": 1.0,
+      "detail": "Deserializes min/max/identity_indices from normalizers.json"
+    },
+    {
+      "source": "file:common/src/pi05/common/runtime/__init__.py",
+      "target": "file:common/src/pi05/common/runtime/bundle.py",
+      "relation": "re-exports",
+      "label": "runtime __init__ re-exports bundle functions",
+      "weight": 1.0,
+      "detail": "Re-exports export_deploy_bundle, load_bundle_manifest, load_bundle_normalizers, resolve_bundle_adapter_dir"
+    },
+    {
+      "source": "file:common/src/pi05/common/utils/__init__.py",
+      "target": "file:common/src/pi05/common/utils/paths.py",
+      "relation": "re-exports",
+      "label": "utils __init__ re-exports path constants and functions",
+      "weight": 1.0,
+      "detail": "Re-exports all path constants and bootstrap_project_paths, default_config_path functions"
+    },
+    {
+      "source": "const:PROJECT_ROOT",
+      "target": "file:common/src/pi05/common/utils/paths.py",
+      "relation": "defined-in",
+      "label": "PROJECT_ROOT defined in paths.py",
+      "weight": 1.0,
+      "detail": "Resolved at module level by _find_project_root()"
+    },
+    {
+      "source": "const:PROJECT_ROOT",
+      "target": "const:COMMON_SRC_ROOT",
+      "relation": "derives",
+      "label": "COMMON_SRC_ROOT derived from PROJECT_ROOT",
+      "weight": 1.0,
+      "detail": "PROJECT_ROOT / 'common' / 'src'"
+    },
+    {
+      "source": "const:PROJECT_ROOT",
+      "target": "const:TRAIN_SRC_ROOT",
+      "relation": "derives",
+      "label": "TRAIN_SRC_ROOT derived from PROJECT_ROOT",
+      "weight": 1.0,
+      "detail": "PROJECT_ROOT / 'train' / 'src'"
+    },
+    {
+      "source": "const:PROJECT_ROOT",
+      "target": "const:DEPLOY_SRC_ROOT",
+      "relation": "derives",
+      "label": "DEPLOY_SRC_ROOT derived from PROJECT_ROOT",
+      "weight": 1.0,
+      "detail": "PROJECT_ROOT / 'deploy' / 'src'"
+    },
+    {
+      "source": "const:PROJECT_ROOT",
+      "target": "const:WORKSPACE_ROOT",
+      "relation": "derives",
+      "label": "WORKSPACE_ROOT derived from PROJECT_ROOT",
+      "weight": 1.0,
+      "detail": "Finds third_party/lerobot/src in PROJECT_ROOT parents"
+    },
+    {
+      "source": "func:default_deploy_config_path",
+      "target": "file:deploy/config/deploy.yaml",
+      "relation": "points-to",
+      "label": "default_deploy_config_path returns deploy/config/deploy.yaml path",
+      "weight": 1.0,
+      "detail": "Returns PROJECT_ROOT / 'deploy' / 'config' / 'deploy.yaml'"
+    },
+    {
+      "source": "file:DEPLOY_REPRODUCE.md",
+      "target": "file:deploy/config/deploy.yaml",
+      "relation": "references",
+      "label": "DEPLOY_REPRODUCE.md references deploy.yaml",
+      "weight": 0.9,
+      "detail": "Documentation mentions updating bundle_dir in deploy/config/deploy.yaml"
+    },
+    {
+      "source": "file:DEPLOY_REPRODUCE.md",
+      "target": "file:deploy/config/deploy.yaml",
+      "relation": "documents",
+      "label": "DEPLOY_REPRODUCE.md documents deployment workflow",
+      "weight": 0.9,
+      "detail": "Guide explains how to configure and run deployment referencing deploy.yaml"
+    },
+    {
+      "source": "config:deploy.yaml:bundle",
+      "target": "config:paths.yaml:models",
+      "relation": "references",
+      "label": "deploy bundle config references model paths concept",
+      "weight": 0.7,
+      "detail": "Bundle dir points to exported model outputs, related to paths.yaml model/output layout"
+    },
+    {
+      "source": "config:deploy.yaml:runtime",
+      "target": "config:runtime.yaml:runtime",
+      "relation": "overrides",
+      "label": "deploy runtime config overrides common runtime settings",
+      "weight": 0.9,
+      "detail": "Deployment-specific runtime settings (device, dtype) override common defaults"
+    },
+    {
+      "source": "config:deploy.yaml:image",
+      "target": "class:ImagePreprocessConfig",
+      "relation": "configures",
+      "label": "deploy image config aligns with ImagePreprocessConfig",
+      "weight": 0.9,
+      "detail": "image_size=224, resize_mode=resize_pad matches ImagePreprocessConfig fields"
+    },
+    {
+      "source": "config:deploy.yaml:topics",
+      "target": "class:Pi05CommandTopics",
+      "relation": "configures",
+      "label": "deploy topic config defines Pi05CommandTopics",
+      "weight": 0.9,
+      "detail": "command section defines left/right arm and hand topics matching Pi05CommandTopics schema"
+    },
+    {
+      "source": "config:deploy.yaml:topics",
+      "target": "class:Pi05ObservationTopics",
+      "relation": "configures",
+      "label": "deploy topic config defines Pi05ObservationTopics",
+      "weight": 0.9,
+      "detail": "observation section defines image, proprioception, hand state, EE pose topics"
+    },
+    {
+      "source": "config:deploy.yaml:safety",
+      "target": "class:JointLimitSpec",
+      "relation": "configures",
+      "label": "deploy safety config includes joint limits",
+      "weight": 0.8,
+      "detail": "joint_limits section with min/max rad maps to JointLimitSpec"
+    },
+    {
+      "source": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "target": "file:deploy/config/deploy.yaml",
+      "relation": "loads",
+      "label": "launch script loads deploy.yaml config",
+      "weight": 1.0,
+      "detail": "Uses default_config pointing to deploy/config/deploy.yaml"
+    },
+    {
+      "source": "config:deploy.yaml:topics",
+      "target": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "relation": "configures",
+      "label": "topic config informs launch remappings",
+      "weight": 0.9,
+      "detail": "The topic remappings in launch.py align with deploy.yaml topic config"
+    },
+    {
+      "source": "config:deploy.yaml:mux",
+      "target": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "relation": "configures",
+      "label": "mux config informs launch mux script",
+      "weight": 0.9,
+      "detail": "mux settings in deploy.yaml are consumed by run_command_mux.sh launched from launch.py"
+    },
+    {
+      "source": "config:deploy.yaml:bridge",
+      "target": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "relation": "configures",
+      "label": "bridge config informs launch bridge script",
+      "weight": 0.9,
+      "detail": "bridge settings in deploy.yaml are consumed by run_bridge.sh launched from launch.py"
+    },
+    {
+      "source": "func:generate_launch_description",
+      "target": "class:Pi05CommandTopics",
+      "relation": "implements",
+      "label": "launch description implements Pi05CommandTopics remappings",
+      "weight": 0.9,
+      "detail": "Remaps command topics matching Pi05CommandTopics structure"
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/action_spec.py",
+      "target": "file:common/src/pi05/common/data/action_codec.py",
+      "relation": "provides-types-for",
+      "label": "action_spec provides types used by action_codec",
+      "weight": 1.0,
+      "detail": "ACTION_DIM, BimanualAction, split_bimanual_action used by action_codec"
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/action_spec.py",
+      "target": "file:common/src/pi05/common/data/state_codec.py",
+      "relation": "provides-types-for",
+      "label": "action_spec provides constants for state_codec",
+      "weight": 1.0,
+      "detail": "ARM_DOF, STATE_DIM used by state_codec"
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/action_spec.py",
+      "target": "file:common/src/pi05/common/robot/joint_limits.py",
+      "relation": "provides-types-for",
+      "label": "action_spec provides ARM_DOF for joint_limits",
+      "weight": 1.0,
+      "detail": "ARM_DOF=6 used in JointLimitSpec and broad_joint_limits"
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/action_spec.py",
+      "target": "file:common/src/pi05/common/model/builder.py",
+      "relation": "provides-types-for",
+      "label": "action_spec constants used by builder defaults",
+      "weight": 0.8,
+      "detail": "Builder uses DEFAULT_STATE_DIM=26, DEFAULT_ACTION_DIM=14 matching action_spec"
+    },
+    {
+      "source": "file:common/src/pi05/common/config/schema.py",
+      "target": "file:common/src/pi05/common/model/builder.py",
+      "relation": "provides-types-for",
+      "label": "schema provides ExperimentConfig for builder",
+      "weight": 1.0,
+      "detail": "build_pi05_with_lora consumes ExperimentConfig"
+    },
+    {
+      "source": "file:common/src/pi05/common/config/schema.py",
+      "target": "file:common/src/pi05/common/runtime/bundle.py",
+      "relation": "provides-types-for",
+      "label": "schema provides ExperimentConfig for bundle",
+      "weight": 1.0,
+      "detail": "export_deploy_bundle uses ExperimentConfig"
+    },
+    {
+      "source": "class:ActionStateNormalizer",
+      "target": "const:STATE_DIM",
+      "relation": "references",
+      "label": "ActionStateNormalizer expects 26-D state vectors",
+      "weight": 0.8,
+      "detail": "Normalizer dimension determined by data, matches STATE_DIM=26 for state and ACTION_DIM=14 for action"
+    },
+    {
+      "source": "class:ActionStateNormalizer",
+      "target": "const:ACTION_DIM",
+      "relation": "references",
+      "label": "ActionStateNormalizer expects 14-D action vectors",
+      "weight": 0.8,
+      "detail": "Normalizer dimension determined by data, matches ACTION_DIM=14"
+    },
+    {
+      "source": "class:BimanualAction",
+      "target": "const:ARM_DOF",
+      "relation": "uses",
+      "label": "BimanualAction uses ARM_DOF for arm vectors",
+      "weight": 1.0,
+      "detail": "as_vector() concatenates ARM_DOF-sized left_arm and right_arm"
+    },
+    {
+      "source": "class:BimanualState",
+      "target": "const:ARM_DOF",
+      "relation": "uses",
+      "label": "BimanualState uses ARM_DOF for arm joint arrays",
+      "weight": 1.0,
+      "detail": "left_arm_q and right_arm_q are ARM_DOF-sized"
+    },
+    {
+      "source": "file:common/src/pi05/common/data/normalization.py",
+      "target": "file:common/src/pi05/common/data/action_codec.py",
+      "relation": "related",
+      "label": "normalization and action_codec are sibling data modules",
+      "weight": 0.7,
+      "detail": "Both under pi05.common.data, both process action vectors"
+    },
+    {
+      "source": "file:common/src/pi05/common/data/normalization.py",
+      "target": "file:common/src/pi05/common/data/state_codec.py",
+      "relation": "related",
+      "label": "normalization and state_codec are sibling data modules",
+      "weight": 0.7,
+      "detail": "Both under pi05.common.data, both process state vectors"
+    },
+    {
+      "source": "file:common/src/pi05/common/ros/topics.py",
+      "target": "config:deploy.yaml:topics",
+      "relation": "schema-matches",
+      "label": "Pi05ObservationTopics/CmdTopics schema matched by deploy.yaml topics",
+      "weight": 0.9,
+      "detail": "deploy.yaml observation and command sections follow Pi05ObservationTopics and Pi05CommandTopics structure"
+    },
+    {
+      "source": "file:deploy/service/README.md",
+      "target": "file:common/src/pi05/common/runtime/bundle.py",
+      "relation": "references",
+      "label": "service README references bundle and model loading",
+      "weight": 0.7,
+      "detail": "Suggests model loading and warmup logic (related to bundle)"
+    }
+  ],
+  "metadata": {
+    "batchId": 4,
+    "description": "Pi05 common library layer: shared config (schema, YAML), data codecs (action, state, image, normalization), model builder (LoRA), robot spec (action_spec, joint_limits, ros topics), bundle runtime, path utilities, plus deploy config, launch, and documentation",
+    "nodeCount": 97,
+    "edgeCount": 76,
+    "filesAnalyzed": 25,
+    "keyAbstractions": [
+      "ExperimentConfig (composite config with Lora/Data/Model/Training/Logging sub-configs)",
+      "ActionStateNormalizer (min-max normalizer for state/action vectors)",
+      "build_pi05_with_lora (model builder with LoRA PEFT wrapping)",
+      "BimanualAction / BimanualState (structured action/state contracts)",
+      "Pi05CommandTopics / Pi05ObservationTopics (ROS topic naming schemas)",
+      "export_deploy_bundle (bundle serialization for deployment)",
+      "deploy.yaml (central deployment configuration)",
+      "PROJECT_ROOT / WORKSPACE_ROOT (path anchors)"
+    ]
+  }
+}

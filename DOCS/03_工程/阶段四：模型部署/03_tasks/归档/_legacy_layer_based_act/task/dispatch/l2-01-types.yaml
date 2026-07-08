@@ -1,0 +1,107 @@
+# L2-01 ACT Types 层 dispatch 索引
+# 权威调度文件：主 Agent 读取本文件决定 L3 并行/串行关系。
+# 状态字段以本文件 dispatch_status 为准。
+
+dispatch_index:
+  l2: l2-01-types
+  branch: feat/model_deploy/l2-01-types
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-01-types
+  max_parallel_agents: 2
+  required_l3:
+    - deploy_001
+    - deploy_002
+    - deploy_003
+    - deploy_004
+
+  waves:
+    - wave: 1
+      parallel_group: l2-01-types-w1
+      description: 基础结构与常量（action_spec 是地基，state_codec/action_codec 依赖它但彼此可并行）
+      tasks:
+        - deploy_001  # action_spec，wave1 先行（blocks 002/003/004）
+      note: deploy_001 必须先完成，因为 002/003 依赖它的常量
+
+    - wave: 1b
+      parallel_group: l2-01-types-w1
+      description: deploy_001 完成后，002 与 003 可并行（无文件冲突，都只依赖 action_spec.py）
+      tasks:
+        - deploy_002  # state_codec
+        - deploy_003  # action_codec
+      note: can_run_parallel_with 互相引用
+
+    - wave: 2
+      parallel_group: l2-01-types-w2
+      description: 边界校验完善与全量单测，依赖 001/002/003 全部完成
+      tasks:
+        - deploy_004
+
+  tasks:
+    - task_id: deploy_001
+      title: 新建 ACT action_spec（16D TCP+width 结构）
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_001_新建ACT_action_spec.md
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_001_验收卡片.md
+      acceptance_mode: direct-local
+      wave: 1
+      depends_on: []
+      blocks: [deploy_002, deploy_003, deploy_004]
+      can_run_parallel_with: []
+      conflict_scope:
+        files: [src/model_deploy/act/types/action_spec.py]
+        modules: [act.types.action_spec]
+      robot_risk: none
+      dispatch_status: ready
+
+    - task_id: deploy_002
+      title: 新建 ACT state_codec（16D 分组段序）
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_002_新建ACT_state_codec.md
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_002_验收卡片.md
+      acceptance_mode: direct-local
+      wave: 1b
+      depends_on: [deploy_001]
+      blocks: [deploy_004]
+      can_run_parallel_with: [deploy_003]
+      conflict_scope:
+        files: [src/model_deploy/act/types/state_codec.py]
+        modules: [act.types.state_codec]
+      robot_risk: none
+      dispatch_status: ready
+
+    - task_id: deploy_003
+      title: 新建 ACT action_codec（16D 交替段序）
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_003_新建ACT_action_codec.md
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_003_验收卡片.md
+      acceptance_mode: direct-local
+      wave: 1b
+      depends_on: [deploy_001]
+      blocks: [deploy_004]
+      can_run_parallel_with: [deploy_002]
+      conflict_scope:
+        files: [src/model_deploy/act/types/action_codec.py]
+        modules: [act.types.action_codec]
+      robot_risk: none
+      dispatch_status: ready
+
+    - task_id: deploy_004
+      title: ACT Types 层边界校验完善与全量单测
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-types/deploy_004_Types层边界校验与全量单测.md
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-types/deploy_004_验收卡片.md
+      acceptance_mode: direct-local
+      wave: 2
+      depends_on: [deploy_001, deploy_002, deploy_003]
+      blocks: []
+      can_run_parallel_with: []
+      conflict_scope:
+        files:
+          - src/model_deploy/act/types/action_spec.py
+          - src/model_deploy/act/types/state_codec.py
+          - src/model_deploy/act/types/action_codec.py
+          - src/model_deploy/act/tests/types/test_action_spec.py
+          - src/model_deploy/act/tests/types/test_state_codec.py
+          - src/model_deploy/act/tests/types/test_action_codec.py
+        modules:
+          - act.types.action_spec
+          - act.types.state_codec
+          - act.types.action_codec
+      robot_risk: none
+      dispatch_status: ready

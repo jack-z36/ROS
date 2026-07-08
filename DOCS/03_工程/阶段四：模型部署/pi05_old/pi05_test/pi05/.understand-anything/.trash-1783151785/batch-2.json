@@ -1,0 +1,456 @@
+{
+  "meta": {
+    "batchIndex": 2,
+    "totalBatches": 6,
+    "project": "PI05 Project",
+    "schemaVersion": 1,
+    "generatedAt": "2026-07-04T00:00:00Z"
+  },
+  "nodes": [
+    {
+      "id": "config:train/config/data.yaml",
+      "type": "config_file",
+      "label": "train/config/data.yaml",
+      "file": "train/config/data.yaml",
+      "properties": {
+        "language": "YAML",
+        "fileCategory": "config",
+        "sizeLines": 30,
+        "description": "Train-side dataset schema sample defining the standard observation/action feature layout for PI0.5: 3 RGB cameras (top, left_wrist, right_wrist) at 224x224, state=26D, action=14D, chunk_size=30, fps=60",
+        "batch": 2
+      }
+    },
+    {
+      "id": "config:train/config/lora.yaml",
+      "type": "config_file",
+      "label": "train/config/lora.yaml",
+      "file": "train/config/lora.yaml",
+      "properties": {
+        "language": "YAML",
+        "fileCategory": "config",
+        "sizeLines": 87,
+        "description": "Full LoRA fine-tuning configuration for right-hand pour-water-cup task. Defines LoRA hyperparams (rank=32, alpha=64, dropout=0.05, 10 target modules), training params (batch=2, lr=1e-4, 6 epochs, bf16), 3 cameras, and logging setup",
+        "batch": 2
+      }
+    },
+    {
+      "id": "config:train/config/lora_vtla_stage1.yaml",
+      "type": "config_file",
+      "label": "train/config/lora_vtla_stage1.yaml",
+      "file": "train/config/lora_vtla_stage1.yaml",
+      "properties": {
+        "language": "YAML",
+        "fileCategory": "config",
+        "sizeLines": 87,
+        "description": "VTLA (Vision-Tactile-Language-Action) variant LoRA fine-tuning config. Extends the 3-camera layout with left_tactile and right_tactile cameras (5 total). Same LoRA and training hyperparams as lora.yaml, targets lerobot_octopus_v3_vtla dataset",
+        "batch": 2
+      }
+    },
+    {
+      "id": "config:train/config/train.yaml",
+      "type": "config_file",
+      "label": "train/config/train.yaml",
+      "file": "train/config/train.yaml",
+      "properties": {
+        "language": "YAML",
+        "fileCategory": "config",
+        "sizeLines": 18,
+        "description": "Minimal experiment configuration template with experiment metadata (name, task), standard output paths (dataset, checkpoints, exports, logs), and launch settings (device, mixed_precision, resume)",
+        "batch": 2
+      }
+    },
+    {
+      "id": "concept:train_data_schema",
+      "type": "concept",
+      "label": "Train-side dataset schema",
+      "file": null,
+      "properties": {
+        "description": "Standard train-side dataset feature schema: observation.images.{top,left_wrist,right_wrist} (224x224x3 uint8), observation.state (26D float32), action (14D float32). chunk_size=30, fps=60. Used by all training configs and shared with deploy-side normalizer.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:lora_hyperparams",
+      "type": "concept",
+      "label": "LoRA hyperparameters (rank=32, alpha=64, dropout=0.05)",
+      "file": null,
+      "properties": {
+        "description": "Standard LoRA configuration shared across fine-tuning variants: rank=32, alpha=64, dropout=0.05. Used by both lora.yaml and lora_vtla_stage1.yaml.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:lora_target_modules_wide",
+      "type": "concept",
+      "label": "LoRA target modules (wide coverage)",
+      "file": null,
+      "properties": {
+        "description": "10 LoRA target modules covering all attention projections (q_proj, k_proj, v_proj, o_proj, out_proj), action expert head (action_in_proj, action_out_proj), time MLP (time_mlp_in, time_mlp_out), and generic linear layers.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:training_hyperparams_public",
+      "type": "concept",
+      "label": "Training hyperparameters (public default)",
+      "file": null,
+      "properties": {
+        "description": "Standard training hyperparameters: batch_size=2, lr=1e-4, epochs=6, gradient_accumulation_steps=8, warmup_steps=500, max_steps_per_epoch=null, seed=42, grad_clip_norm=1.0, mixed_precision=bf16, checkpoint_freq_epochs=1. Budget ~3k-6k steps, ~2 days on single GPU.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:model_config_public",
+      "type": "concept",
+      "label": "Model config (chunk_size=30, max_action_dim=14)",
+      "file": null,
+      "properties": {
+        "description": "Model configuration: chunk_size=30, n_action_steps=30, state_dim=26, action_dim=14, max_action_dim=14 (forcing PI0.5 to use 14D instead of default 32D padding), pretrained_path='lerobot/pi05_base', train_expert_only=false.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:logging_config_public",
+      "type": "concept",
+      "label": "Logging configuration (wandb + tensorboard)",
+      "file": null,
+      "properties": {
+        "description": "Logging setup: wandb project=pi05, output_dir=../../outputs/checkpoints, export_dir=../../outputs/exports, tensorboard under ../../outputs/logs/tensorboard, auto-launch on localhost:6006, log_freq=200.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:camera_setup_3cam",
+      "type": "concept",
+      "label": "3-camera setup (top, left_wrist, right_wrist)",
+      "file": null,
+      "properties": {
+        "description": "Standard 3-camera observation layout: top (overhead/scene view), left_wrist (egocentric left gripper), right_wrist (egocentric right gripper). Each 224x224x3 RGB. Used by data.yaml, lora.yaml, and shared as base for VTLA variant.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:camera_setup_5cam_vtla",
+      "type": "concept",
+      "label": "5-camera VTLA setup (+ left_tactile, + right_tactile)",
+      "file": null,
+      "properties": {
+        "description": "VTLA variant camera layout extending the 3-camera setup with left_tactile and right_tactile image inputs (224x224x3). Used by lora_vtla_stage1.yaml for the Octopus robot with Inspire Hand tactile sensors.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:action_dim_constraint",
+      "type": "concept",
+      "label": "Action dimension fixed at 14D",
+      "file": null,
+      "properties": {
+        "description": "Enforced constraint: action always 14D regardless of state dimension expansion. Explicitly documented in data.yaml line 28 comment. model config max_action_dim=14 prevents PI0.5 from using 32D default padding.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:state_dim_derivation",
+      "type": "concept",
+      "label": "State dimension derivation (14 + 2*6 = 26)",
+      "file": null,
+      "properties": {
+        "description": "State dimension 26 is derived as 14 (joint positions) + 2x6 (end-effector poses: x, y, z, roll, pitch, yaw for left and right arms). Documented in lora.yaml line 27 comment.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:experiment_template",
+      "type": "concept",
+      "label": "Experiment template (train.yaml)",
+      "file": null,
+      "properties": {
+        "description": "Minimal experiment configuration template defining experiment name/notes/task, standard output paths (dataset, checkpoints, exports, logs), and launch settings (device=cuda, mixed_precision=bf16, resume support). Entry points left blank for CLI override.",
+        "crossBatch": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "config:train/config/data.yaml",
+      "target": "concept:train_data_schema",
+      "relation": "defines",
+      "properties": {
+        "confidence": "high",
+        "lines": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+        "detail": "Full file defines the train-side dataset feature schema: cameras, dimensions, data types, and shapes for all observation features and action"
+      }
+    },
+    {
+      "source": "config:train/config/data.yaml",
+      "target": "concept:camera_setup_3cam",
+      "relation": "specifies",
+      "properties": {
+        "confidence": "high",
+        "lines": [10, 11, 12, 13],
+        "detail": "Lines 10-13 define the 3-camera list: top, left_wrist, right_wrist"
+      }
+    },
+    {
+      "source": "config:train/config/data.yaml",
+      "target": "concept:action_dim_constraint",
+      "relation": "enforces",
+      "properties": {
+        "confidence": "high",
+        "lines": [27, 28, 29],
+        "detail": "Lines 27-29: action shape [14] with comment 'action 始终保持 14D，不能随 state 扩维' (action must always remain 14D, cannot scale with state)"
+      }
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:lora_hyperparams",
+      "relation": "defines",
+      "properties": {
+        "confidence": "high",
+        "lines": [1, 2, 3, 4],
+        "detail": "Lines 1-4: lora.rank=32, lora.alpha=64, lora.dropout=0.05"
+      }
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:lora_target_modules_wide",
+      "relation": "defines",
+      "properties": {
+        "confidence": "high",
+        "lines": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+        "detail": "Lines 5-17: 10 target modules covering attention projections (q_proj, k_proj, v_proj, o_proj, out_proj), action expert head, time MLP, and linear"
+      }
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:training_hyperparams_public",
+      "relation": "defines",
+      "properties": {
+        "confidence": "high",
+        "lines": [61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74],
+        "detail": "Lines 61-74: training section with batch_size=2, lr=1e-4, epochs=6, grad_accum=8, warmup=500, seed=42, grad_clip_norm=1.0, bf16"
+      }
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:logging_config_public",
+      "relation": "defines",
+      "properties": {
+        "confidence": "high",
+        "lines": [76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87],
+        "detail": "Lines 76-87: logging section with project_name=pi05, run_name, output/exports dirs, tensorboard config"
+      }
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:train_data_schema",
+      "relation": "includes_section",
+      "properties": {
+        "confidence": "high",
+        "lines": [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
+        "detail": "Lines 19-49: full data section mirrors data.yaml schema with same 3 cameras, feature shapes, dimensions"
+      }
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:model_config_public",
+      "relation": "includes_section",
+      "properties": {
+        "confidence": "high",
+        "lines": [51, 52, 53, 54, 55, 56, 57, 58, 59],
+        "detail": "Lines 51-59: model section with chunk_size=30, n_action_steps=30, state_dim=26, action_dim=14, max_action_dim=14, pretrained_path='lerobot/pi05_base'"
+      }
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:camera_setup_3cam",
+      "relation": "uses",
+      "properties": {
+        "confidence": "high",
+        "lines": [30, 31, 32, 33],
+        "detail": "Lines 30-33: cameras list = top, left_wrist, right_wrist (3-camera setup)"
+      }
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:state_dim_derivation",
+      "relation": "explains",
+      "properties": {
+        "confidence": "high",
+        "lines": [27],
+        "detail": "Line 27 comment: '末端位姿为 6D [x, y, z, roll, pitch, yaw]，因此 state_dim=14+2*6=26'"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:lora_hyperparams",
+      "relation": "shares",
+      "properties": {
+        "confidence": "high",
+        "lines": [1, 2, 3, 4],
+        "detail": "Lines 1-4: identical LoRA hyperparams (rank=32, alpha=64, dropout=0.05)"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:lora_target_modules_wide",
+      "relation": "shares",
+      "properties": {
+        "confidence": "high",
+        "lines": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        "detail": "Lines 5-15: identical target modules list"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:training_hyperparams_public",
+      "relation": "shares",
+      "properties": {
+        "confidence": "high",
+        "lines": [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75],
+        "detail": "Lines 64-75: identical training hyperparams (batch_size=2, lr=1e-4, epochs=6, etc.)"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:logging_config_public",
+      "relation": "defines_variant",
+      "properties": {
+        "confidence": "high",
+        "lines": [77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87],
+        "detail": "Lines 77-87: same logging structure but different run_name='pi05_octopus_vtla_right_hand_pour_water_cup_lora_v1'"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:train_data_schema",
+      "relation": "includes_section",
+      "properties": {
+        "confidence": "high",
+        "lines": [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],
+        "detail": "Lines 17-53: data section mirrors same schema with added tactile features"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:model_config_public",
+      "relation": "includes_section",
+      "properties": {
+        "confidence": "high",
+        "lines": [55, 56, 57, 58, 59, 60, 61, 62],
+        "detail": "Lines 55-62: identical model section (chunk_size=30, max_action_dim=14, pretrained=lerobot/pi05_base)"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:camera_setup_5cam_vtla",
+      "relation": "defines",
+      "properties": {
+        "confidence": "high",
+        "lines": [26, 27, 28, 29, 30, 31],
+        "detail": "Lines 26-31: 5 cameras = top, left_wrist, right_wrist, left_tactile, right_tactile"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:state_dim_derivation",
+      "relation": "implies",
+      "properties": {
+        "confidence": "medium",
+        "lines": [24],
+        "detail": "Line 24: state_dim=26 (same derivation, no explicit comment)"
+      }
+    },
+    {
+      "source": "config:train/config/train.yaml",
+      "target": "concept:experiment_template",
+      "relation": "defines",
+      "properties": {
+        "confidence": "high",
+        "lines": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+        "detail": "Full file defines experiment name/task/notes, standard paths, and launch settings"
+      }
+    },
+    {
+      "source": "concept:train_data_schema",
+      "target": "concept:action_dim_constraint",
+      "relation": "constrains",
+      "properties": {
+        "confidence": "high",
+        "detail": "The train data schema enforces action_dim=14 as a fixed constant, explicitly documented as non-scalable with state"
+      }
+    },
+    {
+      "source": "concept:train_data_schema",
+      "target": "concept:state_dim_derivation",
+      "relation": "implies",
+      "properties": {
+        "confidence": "medium",
+        "detail": "The schema defines state_dim=26 which is derived as 14 (joints) + 2*6 (end-effector poses)"
+      }
+    },
+    {
+      "source": "concept:camera_setup_5cam_vtla",
+      "target": "concept:camera_setup_3cam",
+      "relation": "extends",
+      "properties": {
+        "confidence": "high",
+        "detail": "VTLA 5-camera setup includes the standard 3 cameras (top, left_wrist, right_wrist) plus 2 tactile cameras (left_tactile, right_tactile)"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "config:train/config/lora.yaml",
+      "relation": "variant_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "lora_vtla_stage1.yaml is a VTLA variant of lora.yaml: same LoRA/training/model params, adds 2 tactile cameras, uses Octopus VTLA dataset"
+      }
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "config:train/config/data.yaml",
+      "relation": "references_schema",
+      "properties": {
+        "confidence": "high",
+        "detail": "lora.yaml's data section mirrors the schema defined in data.yaml (same camera count, dimensions, feature shapes)"
+      }
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "config:train/config/data.yaml",
+      "relation": "references_schema",
+      "properties": {
+        "confidence": "high",
+        "detail": "lora_vtla_stage1.yaml's data section extends the base data.yaml schema with additional tactile features"
+      }
+    },
+    {
+      "source": "concept:training_hyperparams_public",
+      "target": "concept:model_config_public",
+      "relation": "constrains",
+      "properties": {
+        "confidence": "medium",
+        "detail": "Training hyperparams (state_dim=26, action_dim=14, chunk_size=30) must match model config dimensions"
+      }
+    },
+    {
+      "source": "config:train/config/train.yaml",
+      "target": "config:train/config/lora.yaml",
+      "relation": "template_for",
+      "properties": {
+        "confidence": "high",
+        "detail": "train.yaml defines the path/layout template (output_dir=../../outputs/checkpoints, export_dir=../../outputs/exports) that lora.yaml's logging section follows"
+      }
+    },
+    {
+      "source": "concept:lora_target_modules_wide",
+      "target": "concept:lora_hyperparams",
+      "relation": "configures",
+      "properties": {
+        "confidence": "high",
+        "detail": "The target modules list (10 modules) is applied with rank=32, alpha=64, dropout=0.05"
+      }
+    }
+  ]
+}

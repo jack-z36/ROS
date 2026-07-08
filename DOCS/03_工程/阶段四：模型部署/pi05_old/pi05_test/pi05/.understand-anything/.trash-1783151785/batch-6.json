@@ -1,0 +1,2002 @@
+{
+  "meta": {
+    "batchIndex": 6,
+    "totalBatches": 6,
+    "project": "PI05 Project",
+    "schemaVersion": 1,
+    "generatedAt": "2026-07-04T00:00:00Z"
+  },
+  "nodes": [
+    {
+      "id": "train-pkg",
+      "label": "pi05.train",
+      "type": "package",
+      "source_file": "train/src/pi05/train/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Training package for Pi0.5 VLA."
+    },
+    {
+      "id": "train-cli-pkg",
+      "label": "pi05.train.cli",
+      "type": "subpackage",
+      "source_file": "train/src/pi05/train/cli/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Training command-line entrypoints."
+    },
+    {
+      "id": "train-data-pkg",
+      "label": "pi05.train.data",
+      "type": "subpackage",
+      "source_file": "train/src/pi05/train/data/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Training-only datasets."
+    },
+    {
+      "id": "train-engine-pkg",
+      "label": "pi05.train.engine",
+      "type": "subpackage",
+      "source_file": "train/src/pi05/train/engine/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Training orchestration helpers."
+    },
+    {
+      "id": "train-utils-pkg",
+      "label": "pi05.train.utils",
+      "type": "subpackage",
+      "source_file": "train/src/pi05/train/utils/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Training-only runtime utilities."
+    },
+    {
+      "id": "file:train/src/pi05/train/cli/__init__.py",
+      "label": "cli/__init__.py",
+      "type": "file",
+      "file": "train/src/pi05/train/cli/__init__.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 1,
+        "description": "Package init for pi05.train.cli."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/cli/export_bundle.py",
+      "label": "cli/export_bundle.py",
+      "type": "file",
+      "file": "train/src/pi05/train/cli/export_bundle.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 58,
+        "description": "CLI for exporting a deployment-ready PI05 bundle from training artifacts."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/cli/train.py",
+      "label": "cli/train.py",
+      "type": "file",
+      "file": "train/src/pi05/train/cli/train.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 28,
+        "description": "CLI for Pi0.5 LoRA training."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/data/__init__.py",
+      "label": "data/__init__.py",
+      "type": "file",
+      "file": "train/src/pi05/train/data/__init__.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 1,
+        "description": "Package init for pi05.train.data."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/data/dataset.py",
+      "label": "data/dataset.py",
+      "type": "file",
+      "file": "train/src/pi05/train/data/dataset.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 271,
+        "description": "Dataset wrapper for Pi0.5-style LeRobot offline training."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/__init__.py",
+      "label": "engine/__init__.py",
+      "type": "file",
+      "file": "train/src/pi05/train/engine/__init__.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 1,
+        "description": "Package init for pi05.train.engine."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/batches.py",
+      "label": "engine/batches.py",
+      "type": "file",
+      "file": "train/src/pi05/train/engine/batches.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 19,
+        "description": "Batch adapters between the local dataset and LeRobot PI0.5 preprocessor."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/builders.py",
+      "label": "engine/builders.py",
+      "type": "file",
+      "file": "train/src/pi05/train/engine/builders.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 73,
+        "description": "Builders for datasets, dataloaders, optimizers, and schedulers."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/checkpoints.py",
+      "label": "engine/checkpoints.py",
+      "type": "file",
+      "file": "train/src/pi05/train/engine/checkpoints.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 49,
+        "description": "Checkpoint and final adapter export helpers."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/trainer.py",
+      "label": "engine/trainer.py",
+      "type": "file",
+      "file": "train/src/pi05/train/engine/trainer.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 323,
+        "description": "Main training loop for Pi0.5 LoRA fine-tuning."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/utils/__init__.py",
+      "label": "utils/__init__.py",
+      "type": "file",
+      "file": "train/src/pi05/train/utils/__init__.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 1,
+        "description": "Package init for pi05.train.utils."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/utils/logging.py",
+      "label": "utils/logging.py",
+      "type": "file",
+      "file": "train/src/pi05/train/utils/logging.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 19,
+        "description": "Logging setup that plays well with Accelerate main-process output."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/utils/seed.py",
+      "label": "utils/seed.py",
+      "type": "file",
+      "file": "train/src/pi05/train/utils/seed.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 11,
+        "description": "Reproducibility helpers."
+      }
+    },
+    {
+      "id": "file:train/src/pi05/train/utils/tensorboard.py",
+      "label": "utils/tensorboard.py",
+      "type": "file",
+      "file": "train/src/pi05/train/utils/tensorboard.py",
+      "properties": {
+        "language": "Python",
+        "fileCategory": "code",
+        "sizeLines": 159,
+        "description": "TensorBoard launch helpers used by the training entrypoint."
+      }
+    },
+    {
+      "id": "module:pi05.train.cli.export_bundle",
+      "label": "pi05.train.cli.export_bundle",
+      "type": "python_module",
+      "file": "train/src/pi05/train/cli/export_bundle.py",
+      "properties": {
+        "description": "CLI module: parses args, loads experiment config, calls export_deploy_bundle to package a trained LoRA adapter into a deploy bundle.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["parse_args", "main", "_resolve_paths"]
+      }
+    },
+    {
+      "id": "module:pi05.train.cli.train",
+      "label": "pi05.train.cli.train",
+      "type": "python_module",
+      "file": "train/src/pi05/train/cli/train.py",
+      "properties": {
+        "description": "CLI module: parses args, loads experiment config, calls train_from_config to launch Pi0.5 LoRA fine-tuning.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["parse_args", "main"]
+      }
+    },
+    {
+      "id": "module:pi05.train.data.dataset",
+      "label": "pi05.train.data.dataset",
+      "type": "python_module",
+      "file": "train/src/pi05/train/data/dataset.py",
+      "properties": {
+        "description": "Provides Pi05LeRobotDataset, a torch Dataset wrapping LeRobotDataset with action chunking, image preprocessing, and optional color jitter.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["Pi05LeRobotDataset", "DEFAULT_CAMERAS", "TACTILE_CAMERAS", "DEFAULT_IMAGE_SIZE", "IMAGE_NORMALIZE_MEAN", "IMAGE_NORMALIZE_STD"]
+      }
+    },
+    {
+      "id": "module:pi05.train.engine.batches",
+      "label": "pi05.train.engine.batches",
+      "type": "python_module",
+      "file": "train/src/pi05/train/engine/batches.py",
+      "properties": {
+        "description": "Provides to_lerobot_pi05_batch() adapter that maps local dataset keys (state, action_chunk, image_*) to the official PI0.5 processor input schema.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["to_lerobot_pi05_batch"]
+      }
+    },
+    {
+      "id": "module:pi05.train.engine.builders",
+      "label": "pi05.train.engine.builders",
+      "type": "python_module",
+      "file": "train/src/pi05/train/engine/builders.py",
+      "properties": {
+        "description": "Provides builder functions for dataloader, optimizer (AdamW), and LR scheduler (cosine with warmup) for Pi0.5 training.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["build_train_dataloader", "count_training_steps", "build_optimizer", "build_lr_scheduler"]
+      }
+    },
+    {
+      "id": "module:pi05.train.engine.checkpoints",
+      "label": "pi05.train.engine.checkpoints",
+      "type": "python_module",
+      "file": "train/src/pi05/train/engine/checkpoints.py",
+      "properties": {
+        "description": "Provides checkpoint resume, epoch-level adapter saving, and final adapter export helpers using Accelerate.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["maybe_resume", "save_epoch_adapter_checkpoint", "export_final_adapter"]
+      }
+    },
+    {
+      "id": "module:pi05.train.engine.trainer",
+      "label": "pi05.train.engine.trainer",
+      "type": "python_module",
+      "file": "train/src/pi05/train/engine/trainer.py",
+      "properties": {
+        "description": "Main training loop: Pi05LoraTrainer class orchestrates Accelerate, model/data builders, preprocessing, and the epoch-step loop with logging and checkpointing.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["Pi05LoraTrainer", "train_from_config"]
+      }
+    },
+    {
+      "id": "module:pi05.train.utils.logging",
+      "label": "pi05.train.utils.logging",
+      "type": "python_module",
+      "file": "train/src/pi05/train/utils/logging.py",
+      "properties": {
+        "description": "Provides configure_logging() and log_run_summary() for consistent Accelerate-compatible logging output.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["configure_logging", "log_run_summary", "LOG_FORMAT"]
+      }
+    },
+    {
+      "id": "module:pi05.train.utils.seed",
+      "label": "pi05.train.utils.seed",
+      "type": "python_module",
+      "file": "train/src/pi05/train/utils/seed.py",
+      "properties": {
+        "description": "Provides set_training_seed() wrapper around accelerate.utils.set_seed for reproducibility.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["set_training_seed"]
+      }
+    },
+    {
+      "id": "module:pi05.train.utils.tensorboard",
+      "label": "pi05.train.utils.tensorboard",
+      "type": "python_module",
+      "file": "train/src/pi05/train/utils/tensorboard.py",
+      "properties": {
+        "description": "Provides launch_tensorboard() with port conflict detection, reuse of existing TensorBoard instances, and fallback executable resolution.",
+        "language": "Python",
+        "fileCategory": "code",
+        "exportedSymbols": ["launch_tensorboard"]
+      }
+    },
+    {
+      "id": "Pi05LeRobotDataset",
+      "label": "Pi05LeRobotDataset",
+      "type": "class",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:24",
+      "docstring": "LeRobot-backed Dataset with action chunking and optional online image jitter. Wraps LeRobotDataset, normalizes images to [0,1], supports multi-camera input and tactile camera NEAREST interpolation."
+    },
+    {
+      "id": "Pi05LeRobotDataset.__init__",
+      "label": "Pi05LeRobotDataset.__init__",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:29",
+      "docstring": "Initialize dataset: validates path/chunk_size, resolves cameras, loads LeRobotDataset, sets up color jitter, normalizers, and episode ranges."
+    },
+    {
+      "id": "Pi05LeRobotDataset.__len__",
+      "label": "Pi05LeRobotDataset.__len__",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:68",
+      "docstring": "Return total number of frames in the underlying LeRobot dataset."
+    },
+    {
+      "id": "Pi05LeRobotDataset.__getitem__",
+      "label": "Pi05LeRobotDataset.__getitem__",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:71",
+      "docstring": "Get a training sample: preprocessed images, normalized state, action chunk, and task string."
+    },
+    {
+      "id": "Pi05LeRobotDataset._resolve_image_keys",
+      "label": "Pi05LeRobotDataset._resolve_image_keys",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:92",
+      "docstring": "Build a mapping from output image keys (image_top, etc.) to LeRobot dataset keys (observation.images.top). Validates all requested cameras exist."
+    },
+    {
+      "id": "Pi05LeRobotDataset._validate_vector_features",
+      "label": "Pi05LeRobotDataset._validate_vector_features",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:109",
+      "docstring": "Validate state and action dimensions against the dataset features."
+    },
+    {
+      "id": "Pi05LeRobotDataset._build_episode_ranges",
+      "label": "Pi05LeRobotDataset._build_episode_ranges",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:116",
+      "docstring": "Build a dict mapping episode_index to (start_idx, end_idx) frame ranges."
+    },
+    {
+      "id": "Pi05LeRobotDataset._get_action_chunk",
+      "label": "Pi05LeRobotDataset._get_action_chunk",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:125",
+      "docstring": "Extract a chunk_size-length action sequence starting at idx, clamped to episode boundary."
+    },
+    {
+      "id": "Pi05LeRobotDataset._prepare_image",
+      "label": "Pi05LeRobotDataset._prepare_image",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:142",
+      "docstring": "Preprocess a single image: resize (NEAREST for tactile, BILINEAR otherwise), center-crop, optional color jitter, normalize to [0,1]."
+    },
+    {
+      "id": "Pi05LeRobotDataset._normalize_cameras",
+      "label": "Pi05LeRobotDataset._normalize_cameras",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:164",
+      "docstring": "Static method: validate and deduplicate camera name list."
+    },
+    {
+      "id": "Pi05LeRobotDataset._dataset_image_key",
+      "label": "Pi05LeRobotDataset._dataset_image_key",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:174",
+      "docstring": "Static: format LeRobot dataset key for a camera, e.g. 'observation.images.top'."
+    },
+    {
+      "id": "Pi05LeRobotDataset._output_image_key",
+      "label": "Pi05LeRobotDataset._output_image_key",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:178",
+      "docstring": "Static: format output dict key for a camera, e.g. 'image_top'."
+    },
+    {
+      "id": "Pi05LeRobotDataset._camera_from_output_key",
+      "label": "Pi05LeRobotDataset._camera_from_output_key",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:182",
+      "docstring": "Static: extract camera name from output key, e.g. 'image_top' -> 'top'."
+    },
+    {
+      "id": "Pi05LeRobotDataset._resolve_task",
+      "label": "Pi05LeRobotDataset._resolve_task",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:187",
+      "docstring": "Resolve task string from item['task'], item['task_index'], or fall back to DEFAULT_TASK."
+    },
+    {
+      "id": "Pi05LeRobotDataset._task_from_index",
+      "label": "Pi05LeRobotDataset._task_from_index",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:195",
+      "docstring": "Look up task string by index from LeRobot metadata tasks table."
+    },
+    {
+      "id": "Pi05LeRobotDataset._to_image_tensor",
+      "label": "Pi05LeRobotDataset._to_image_tensor",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:216",
+      "docstring": "Convert image (Tensor/ndarray/PIL) to float32 CHW tensor in [0,1]."
+    },
+    {
+      "id": "Pi05LeRobotDataset._to_int",
+      "label": "Pi05LeRobotDataset._to_int",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:236",
+      "docstring": "Static: safely convert Tensor/ndarray/scalar to Python int."
+    },
+    {
+      "id": "Pi05LeRobotDataset._apply_normalizer",
+      "label": "Pi05LeRobotDataset._apply_normalizer",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:244",
+      "docstring": "Static: apply a normalizer callable or normalize() method to a tensor."
+    },
+    {
+      "id": "Pi05LeRobotDataset._feature_dim",
+      "label": "Pi05LeRobotDataset._feature_dim",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:255",
+      "docstring": "Static: extract feature dimensionality from LeRobot features dict, computing product of shape."
+    },
+    {
+      "id": "Pi05LeRobotDataset._warn_if_stale_expected_dim",
+      "label": "Pi05LeRobotDataset._warn_if_stale_expected_dim",
+      "type": "method",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:264",
+      "docstring": "Static: warn if configured expected dimension differs from actual dataset dimension."
+    },
+    {
+      "id": "DEFAULT_CAMERAS",
+      "label": "DEFAULT_CAMERAS",
+      "type": "constant",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:15",
+      "docstring": "Default camera tuple: ('top', 'left_wrist', 'right_wrist')."
+    },
+    {
+      "id": "TACTILE_CAMERAS",
+      "label": "TACTILE_CAMERAS",
+      "type": "constant",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:16",
+      "docstring": "Frozenset of tactile camera names: {'left_tactile', 'right_tactile'}. Triggers NEAREST interpolation."
+    },
+    {
+      "id": "DEFAULT_IMAGE_SIZE",
+      "label": "DEFAULT_IMAGE_SIZE",
+      "type": "constant",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:17",
+      "docstring": "Default image resize dimension: 224."
+    },
+    {
+      "id": "IMAGE_NORMALIZE_MEAN",
+      "label": "IMAGE_NORMALIZE_MEAN",
+      "type": "constant",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:20",
+      "docstring": "Identity mean (0,0,0) to avoid double normalization since PI0.5 model maps [0,1] to [-1,1] internally."
+    },
+    {
+      "id": "IMAGE_NORMALIZE_STD",
+      "label": "IMAGE_NORMALIZE_STD",
+      "type": "constant",
+      "source_file": "train/src/pi05/train/data/dataset.py",
+      "source_location": "line:21",
+      "docstring": "Identity std (1,1,1) to avoid double normalization."
+    },
+    {
+      "id": "to_lerobot_pi05_batch",
+      "label": "to_lerobot_pi05_batch",
+      "type": "function",
+      "source_file": "train/src/pi05/train/engine/batches.py",
+      "source_location": "line:8",
+      "docstring": "Map local dataset keys (state, action_chunk, image_*) to the official PI0.5 processor input schema (observation.state, action, observation.images.*)."
+    },
+    {
+      "id": "build_train_dataloader",
+      "label": "build_train_dataloader",
+      "type": "function",
+      "source_file": "train/src/pi05/train/engine/builders.py",
+      "source_location": "line:17",
+      "docstring": "Build a DataLoader: creates Pi05LeRobotDataset with normalizers from DataConfig and TrainingConfig."
+    },
+    {
+      "id": "count_training_steps",
+      "label": "count_training_steps",
+      "type": "function",
+      "source_file": "train/src/pi05/train/engine/builders.py",
+      "source_location": "line:54",
+      "docstring": "Compute total training steps from dataloader length, gradient accumulation, and epochs."
+    },
+    {
+      "id": "build_optimizer",
+      "label": "build_optimizer",
+      "type": "function",
+      "source_file": "train/src/pi05/train/engine/builders.py",
+      "source_location": "line:61",
+      "docstring": "Build AdamW optimizer for trainable model parameters with lr from TrainingConfig."
+    },
+    {
+      "id": "build_lr_scheduler",
+      "label": "build_lr_scheduler",
+      "type": "function",
+      "source_file": "train/src/pi05/train/engine/builders.py",
+      "source_location": "line:68",
+      "docstring": "Build cosine LR scheduler with warmup from transformers."
+    },
+    {
+      "id": "maybe_resume",
+      "label": "maybe_resume",
+      "type": "function",
+      "source_file": "train/src/pi05/train/engine/checkpoints.py",
+      "source_location": "line:11",
+      "docstring": "Resume training state from checkpoint via accelerator.load_state if checkpoint_path is provided."
+    },
+    {
+      "id": "save_epoch_adapter_checkpoint",
+      "label": "save_epoch_adapter_checkpoint",
+      "type": "function",
+      "source_file": "train/src/pi05/train/engine/checkpoints.py",
+      "source_location": "line:21",
+      "docstring": "Save epoch-level LoRA adapter checkpoint (adapter only, no optimizer/scheduler state)."
+    },
+    {
+      "id": "export_final_adapter",
+      "label": "export_final_adapter",
+      "type": "function",
+      "source_file": "train/src/pi05/train/engine/checkpoints.py",
+      "source_location": "line:36",
+      "docstring": "Export final LoRA adapter after training completes."
+    },
+    {
+      "id": "_AverageMeter",
+      "label": "_AverageMeter",
+      "type": "class",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:37",
+      "docstring": "Internal running average accumulator for training metrics."
+    },
+    {
+      "id": "_LogWindow",
+      "label": "_LogWindow",
+      "type": "class",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:50",
+      "docstring": "Internal sliding window of _AverageMeter instances for periodic logging."
+    },
+    {
+      "id": "Pi05LoraTrainer",
+      "label": "Pi05LoraTrainer",
+      "type": "class",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:75",
+      "docstring": "Coordinates config, Accelerate, model/data builders, and the train loop. Entry point for Pi0.5 LoRA fine-tuning."
+    },
+    {
+      "id": "Pi05LoraTrainer.__init__",
+      "label": "Pi05LoraTrainer.__init__",
+      "type": "method",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:78",
+      "docstring": "Store ExperimentConfig."
+    },
+    {
+      "id": "Pi05LoraTrainer.run",
+      "label": "Pi05LoraTrainer.run",
+      "type": "method",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:81",
+      "docstring": "Full training orchestration: configure logging, set seed, build dataloader/model/optimizer/scheduler, prepare with Accelerate, run train loop, export final adapter."
+    },
+    {
+      "id": "Pi05LoraTrainer._build_accelerator",
+      "label": "Pi05LoraTrainer._build_accelerator",
+      "type": "method",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:124",
+      "docstring": "Construct Accelerator with gradient accumulation, mixed precision (bf16 auto), and optional TensorBoard tracking."
+    },
+    {
+      "id": "Pi05LoraTrainer._init_trackers",
+      "label": "Pi05LoraTrainer._init_trackers",
+      "type": "method",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:138",
+      "docstring": "Initialize Accelerate trackers for TensorBoard logging and optionally auto-launch TensorBoard."
+    },
+    {
+      "id": "Pi05LoraTrainer._train_loop",
+      "label": "Pi05LoraTrainer._train_loop",
+      "type": "method",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:154",
+      "docstring": "Core epoch-step training loop: forward pass via preprocessor + model, backward with gradient accumulation, logging, checkpointing, and final adapter export."
+    },
+    {
+      "id": "Pi05LoraTrainer._maybe_export_deploy_bundle",
+      "label": "Pi05LoraTrainer._maybe_export_deploy_bundle",
+      "type": "method",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:240",
+      "docstring": "Attempt deploy bundle export after training, non-fatal on failure."
+    },
+    {
+      "id": "Pi05LoraTrainer._flush_log_window",
+      "label": "Pi05LoraTrainer._flush_log_window",
+      "type": "method",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:258",
+      "docstring": "Flush accumulated metrics to TensorBoard (via accelerator.log) and console."
+    },
+    {
+      "id": "train_from_config",
+      "label": "train_from_config",
+      "type": "function",
+      "source_file": "train/src/pi05/train/engine/trainer.py",
+      "source_location": "line:322",
+      "docstring": "Top-level entry: instantiate Pi05LoraTrainer(config) and call .run()."
+    },
+    {
+      "id": "parse_args@train.cli.export_bundle",
+      "label": "export_bundle.parse_args",
+      "type": "function",
+      "source_file": "train/src/pi05/train/cli/export_bundle.py",
+      "source_location": "line:12",
+      "docstring": "Parse CLI args: --config, --run-dir, --adapter-dir, --output-dir, --overwrite."
+    },
+    {
+      "id": "main@train.cli.export_bundle",
+      "label": "export_bundle.main",
+      "type": "function",
+      "source_file": "train/src/pi05/train/cli/export_bundle.py",
+      "source_location": "line:22",
+      "docstring": "Entry point: load config, resolve paths, call export_deploy_bundle, print result."
+    },
+    {
+      "id": "parse_args@train.cli.train",
+      "label": "train.parse_args",
+      "type": "function",
+      "source_file": "train/src/pi05/train/cli/train.py",
+      "source_location": "line:12",
+      "docstring": "Parse CLI args: --config (default from default_train_config_path)."
+    },
+    {
+      "id": "main@train.cli.train",
+      "label": "train.main",
+      "type": "function",
+      "source_file": "train/src/pi05/train/cli/train.py",
+      "source_location": "line:18",
+      "docstring": "Entry point: load config, bootstrap paths, call train_from_config."
+    },
+    {
+      "id": "LOG_FORMAT",
+      "label": "LOG_FORMAT",
+      "type": "constant",
+      "source_file": "train/src/pi05/train/utils/logging.py",
+      "source_location": "line:9",
+      "docstring": "Log format string: '%(asctime)s | %(levelname)s | %(name)s | %(message)s'."
+    },
+    {
+      "id": "configure_logging",
+      "label": "configure_logging",
+      "type": "function",
+      "source_file": "train/src/pi05/train/utils/logging.py",
+      "source_location": "line:12",
+      "docstring": "Configure root logger with INFO level and standard format."
+    },
+    {
+      "id": "log_run_summary",
+      "label": "log_run_summary",
+      "type": "function",
+      "source_file": "train/src/pi05/train/utils/logging.py",
+      "source_location": "line:16",
+      "docstring": "Log key-value pairs from a run summary dict."
+    },
+    {
+      "id": "set_training_seed",
+      "label": "set_training_seed",
+      "type": "function",
+      "source_file": "train/src/pi05/train/utils/seed.py",
+      "source_location": "line:8",
+      "docstring": "Set random seed via accelerate.utils.set_seed if seed is not None."
+    },
+    {
+      "id": "launch_tensorboard",
+      "label": "launch_tensorboard",
+      "type": "function",
+      "source_file": "train/src/pi05/train/utils/tensorboard.py",
+      "source_location": "line:13",
+      "docstring": "Launch TensorBoard for the given logdir. Reuses existing instance if found, avoids occupied ports, returns URL."
+    },
+    {
+      "id": "concept:train_cli_interface",
+      "label": "Train CLI interface",
+      "type": "concept",
+      "file": null,
+      "properties": {
+        "description": "Two CLI entry points (train and export_bundle) both following the same pattern: argparse -> load_experiment_config -> bootstrap_project_paths -> call engine function. Both invoked via python -m from shell scripts.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:training_pipeline",
+      "label": "Training pipeline",
+      "type": "concept",
+      "file": null,
+      "properties": {
+        "description": "End-to-end training pipeline: CLI -> config -> dataloader (Pi05LeRobotDataset + normalizers) -> model (build_pi05_with_lora) -> optimizer/scheduler -> Accelerate prepare -> train loop -> checkpoint -> final adapter -> deploy bundle export.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:action_chunking",
+      "label": "Action chunking (chunk_size=30)",
+      "type": "concept",
+      "file": null,
+      "properties": {
+        "description": "Training dataset extracts chunk_size-length action sequences (default 30). The chunk is padded at episode boundaries by repeating the last valid action. This is the train-side counterpart of the deploy-side chunked prediction.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:lerobot_pi05_batch_schema",
+      "label": "LeRobot PI0.5 processor batch schema",
+      "type": "concept",
+      "file": null,
+      "properties": {
+        "description": "The official PI0.5 preprocessor expects: observation.state (B, state_dim), action (B, chunk_size, action_dim), observation.images.<camera> (B, C, H, W), task (list[str]). The to_lerobot_pi05_batch adapter maps local keys to this schema.",
+        "crossBatch": true
+      }
+    },
+    {
+      "id": "concept:tensorboard_launch_flow",
+      "label": "TensorBoard auto-launch flow",
+      "type": "concept",
+      "file": null,
+      "properties": {
+        "description": "Pi05LoraTrainer optionally auto-launches TensorBoard via launch_tensorboard() which: (1) checks for existing TensorBoard on the same logdir to reuse, (2) detects port conflicts and finds alternatives, (3) falls back from tensorboard binary to python -m tensorboard.main.",
+        "crossBatch": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "train-cli-pkg",
+      "target": "train-pkg",
+      "relation": "subpackage_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "pi05.train.cli is a subpackage of pi05.train"
+      }
+    },
+    {
+      "source": "train-data-pkg",
+      "target": "train-pkg",
+      "relation": "subpackage_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "pi05.train.data is a subpackage of pi05.train"
+      }
+    },
+    {
+      "source": "train-engine-pkg",
+      "target": "train-pkg",
+      "relation": "subpackage_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "pi05.train.engine is a subpackage of pi05.train"
+      }
+    },
+    {
+      "source": "train-utils-pkg",
+      "target": "train-pkg",
+      "relation": "subpackage_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "pi05.train.utils is a subpackage of pi05.train"
+      }
+    },
+    {
+      "source": "file:train/src/pi05/train/cli/__init__.py",
+      "target": "train-cli-pkg",
+      "relation": "declares",
+      "properties": {
+        "confidence": "high",
+        "detail": "__init__.py declares pi05.train.cli package"
+      }
+    },
+    {
+      "source": "file:train/src/pi05/train/data/__init__.py",
+      "target": "train-data-pkg",
+      "relation": "declares",
+      "properties": {
+        "confidence": "high",
+        "detail": "__init__.py declares pi05.train.data package"
+      }
+    },
+    {
+      "source": "file:train/src/pi05/train/engine/__init__.py",
+      "target": "train-engine-pkg",
+      "relation": "declares",
+      "properties": {
+        "confidence": "high",
+        "detail": "__init__.py declares pi05.train.engine package"
+      }
+    },
+    {
+      "source": "file:train/src/pi05/train/utils/__init__.py",
+      "target": "train-utils-pkg",
+      "relation": "declares",
+      "properties": {
+        "confidence": "high",
+        "detail": "__init__.py declares pi05.train.utils package"
+      }
+    },
+    {
+      "source": "module:pi05.train.cli.export_bundle",
+      "target": "file:train/src/pi05/train/cli/export_bundle.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in export_bundle.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.cli.train",
+      "target": "file:train/src/pi05/train/cli/train.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in train.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.data.dataset",
+      "target": "file:train/src/pi05/train/data/dataset.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in dataset.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.batches",
+      "target": "file:train/src/pi05/train/engine/batches.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in batches.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.builders",
+      "target": "file:train/src/pi05/train/engine/builders.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in builders.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.checkpoints",
+      "target": "file:train/src/pi05/train/engine/checkpoints.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in checkpoints.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "file:train/src/pi05/train/engine/trainer.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in trainer.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.utils.logging",
+      "target": "file:train/src/pi05/train/utils/logging.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in logging.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.utils.seed",
+      "target": "file:train/src/pi05/train/utils/seed.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in seed.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.utils.tensorboard",
+      "target": "file:train/src/pi05/train/utils/tensorboard.py",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Module implementation in tensorboard.py"
+      }
+    },
+    {
+      "source": "module:pi05.train.cli.export_bundle",
+      "target": "train-cli-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "export_bundle is a module in pi05.train.cli package"
+      }
+    },
+    {
+      "source": "module:pi05.train.cli.train",
+      "target": "train-cli-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "train is a module in pi05.train.cli package"
+      }
+    },
+    {
+      "source": "module:pi05.train.data.dataset",
+      "target": "train-data-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "dataset is a module in pi05.train.data package"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.batches",
+      "target": "train-engine-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "batches is a module in pi05.train.engine package"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.builders",
+      "target": "train-engine-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "builders is a module in pi05.train.engine package"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.checkpoints",
+      "target": "train-engine-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "checkpoints is a module in pi05.train.engine package"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "train-engine-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer is a module in pi05.train.engine package"
+      }
+    },
+    {
+      "source": "module:pi05.train.utils.logging",
+      "target": "train-utils-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "logging is a module in pi05.train.utils package"
+      }
+    },
+    {
+      "source": "module:pi05.train.utils.seed",
+      "target": "train-utils-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "seed is a module in pi05.train.utils package"
+      }
+    },
+    {
+      "source": "module:pi05.train.utils.tensorboard",
+      "target": "train-utils-pkg",
+      "relation": "member_of",
+      "properties": {
+        "confidence": "high",
+        "detail": "tensorboard is a module in pi05.train.utils package"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset",
+      "target": "module:pi05.train.data.dataset",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Pi05LeRobotDataset class defined in dataset.py"
+      }
+    },
+    {
+      "source": "DEFAULT_CAMERAS",
+      "target": "module:pi05.train.data.dataset",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "DEFAULT_CAMERAS constant defined in dataset.py"
+      }
+    },
+    {
+      "source": "TACTILE_CAMERAS",
+      "target": "module:pi05.train.data.dataset",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "TACTILE_CAMERAS constant defined in dataset.py"
+      }
+    },
+    {
+      "source": "DEFAULT_IMAGE_SIZE",
+      "target": "module:pi05.train.data.dataset",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "DEFAULT_IMAGE_SIZE constant defined in dataset.py"
+      }
+    },
+    {
+      "source": "IMAGE_NORMALIZE_MEAN",
+      "target": "module:pi05.train.data.dataset",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "IMAGE_NORMALIZE_MEAN constant defined in dataset.py"
+      }
+    },
+    {
+      "source": "IMAGE_NORMALIZE_STD",
+      "target": "module:pi05.train.data.dataset",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "IMAGE_NORMALIZE_STD constant defined in dataset.py"
+      }
+    },
+    {
+      "source": "to_lerobot_pi05_batch",
+      "target": "module:pi05.train.engine.batches",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "to_lerobot_pi05_batch function defined in batches.py"
+      }
+    },
+    {
+      "source": "build_train_dataloader",
+      "target": "module:pi05.train.engine.builders",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "build_train_dataloader function defined in builders.py"
+      }
+    },
+    {
+      "source": "count_training_steps",
+      "target": "module:pi05.train.engine.builders",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "count_training_steps function defined in builders.py"
+      }
+    },
+    {
+      "source": "build_optimizer",
+      "target": "module:pi05.train.engine.builders",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "build_optimizer function defined in builders.py"
+      }
+    },
+    {
+      "source": "build_lr_scheduler",
+      "target": "module:pi05.train.engine.builders",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "build_lr_scheduler function defined in builders.py"
+      }
+    },
+    {
+      "source": "maybe_resume",
+      "target": "module:pi05.train.engine.checkpoints",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "maybe_resume function defined in checkpoints.py"
+      }
+    },
+    {
+      "source": "save_epoch_adapter_checkpoint",
+      "target": "module:pi05.train.engine.checkpoints",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "save_epoch_adapter_checkpoint function defined in checkpoints.py"
+      }
+    },
+    {
+      "source": "export_final_adapter",
+      "target": "module:pi05.train.engine.checkpoints",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "export_final_adapter function defined in checkpoints.py"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer",
+      "target": "module:pi05.train.engine.trainer",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "Pi05LoraTrainer class defined in trainer.py"
+      }
+    },
+    {
+      "source": "_AverageMeter",
+      "target": "module:pi05.train.engine.trainer",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "_AverageMeter class defined in trainer.py"
+      }
+    },
+    {
+      "source": "_LogWindow",
+      "target": "module:pi05.train.engine.trainer",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "_LogWindow class defined in trainer.py"
+      }
+    },
+    {
+      "source": "train_from_config",
+      "target": "module:pi05.train.engine.trainer",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "train_from_config function defined in trainer.py"
+      }
+    },
+    {
+      "source": "configure_logging",
+      "target": "module:pi05.train.utils.logging",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "configure_logging function defined in logging.py"
+      }
+    },
+    {
+      "source": "log_run_summary",
+      "target": "module:pi05.train.utils.logging",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "log_run_summary function defined in logging.py"
+      }
+    },
+    {
+      "source": "LOG_FORMAT",
+      "target": "module:pi05.train.utils.logging",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "LOG_FORMAT constant defined in logging.py"
+      }
+    },
+    {
+      "source": "set_training_seed",
+      "target": "module:pi05.train.utils.seed",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "set_training_seed function defined in seed.py"
+      }
+    },
+    {
+      "source": "launch_tensorboard",
+      "target": "module:pi05.train.utils.tensorboard",
+      "relation": "defined_in",
+      "properties": {
+        "confidence": "high",
+        "detail": "launch_tensorboard function defined in tensorboard.py"
+      }
+    },
+    {
+      "source": "main@train.cli.train",
+      "target": "train_from_config",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 24,
+        "detail": "train.py main() calls train_from_config(config)"
+      }
+    },
+    {
+      "source": "main@train.cli.export_bundle",
+      "target": "export_deploy_bundle",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 30,
+        "detail": "export_bundle.py main() calls export_deploy_bundle(config, ...)"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "configure_logging",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 82,
+        "detail": "Pi05LoraTrainer.run() calls configure_logging()"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "set_training_seed",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 83,
+        "detail": "Pi05LoraTrainer.run() calls set_training_seed()"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "build_train_dataloader",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 85,
+        "detail": "Pi05LoraTrainer.run() calls build_train_dataloader()"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "count_training_steps",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 86,
+        "detail": "Pi05LoraTrainer.run() calls count_training_steps()"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "build_optimizer",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 101,
+        "detail": "Pi05LoraTrainer.run() calls build_optimizer()"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "build_lr_scheduler",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 102,
+        "detail": "Pi05LoraTrainer.run() calls build_lr_scheduler()"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "maybe_resume",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 114,
+        "detail": "Pi05LoraTrainer.run() calls maybe_resume()"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "log_run_summary",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 91,
+        "detail": "Pi05LoraTrainer.run() calls log_run_summary() on main process"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "build_pi05_with_lora",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 93,
+        "detail": "Pi05LoraTrainer.run() calls build_pi05_with_lora(config, pretrained_path)"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer._train_loop",
+      "target": "to_lerobot_pi05_batch",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 182,
+        "detail": "Pi05LoraTrainer._train_loop() calls to_lerobot_pi05_batch(batch) to adapt local batch keys for the PI0.5 preprocessor"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer._train_loop",
+      "target": "save_epoch_adapter_checkpoint",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 221,
+        "detail": "Pi05LoraTrainer._train_loop() calls save_epoch_adapter_checkpoint() per checkpoint_freq_epochs"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer._train_loop",
+      "target": "export_final_adapter",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 231,
+        "detail": "Pi05LoraTrainer._train_loop() calls export_final_adapter() after all epochs"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer._train_loop",
+      "target": "Pi05LoraTrainer._maybe_export_deploy_bundle",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 232,
+        "detail": "Pi05LoraTrainer._train_loop() calls _maybe_export_deploy_bundle() after final adapter export"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer._init_trackers",
+      "target": "launch_tensorboard",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 148,
+        "detail": "Pi05LoraTrainer._init_trackers() calls launch_tensorboard() on main process when tensorboard_auto_launch is set"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer._maybe_export_deploy_bundle",
+      "target": "export_deploy_bundle",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 247,
+        "detail": "Pi05LoraTrainer._maybe_export_deploy_bundle() calls export_deploy_bundle() to create deploy artifact"
+      }
+    },
+    {
+      "source": "build_train_dataloader",
+      "target": "Pi05LeRobotDataset",
+      "relation": "instantiates",
+      "properties": {
+        "confidence": "high",
+        "lines": [22, 33],
+        "detail": "build_train_dataloader() creates Pi05LeRobotDataset twice: first to bootstrap normalizers, then with normalizers applied"
+      }
+    },
+    {
+      "source": "build_train_dataloader",
+      "target": "build_state_action_normalizers",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 31,
+        "detail": "build_train_dataloader() calls build_state_action_normalizers(bootstrap_dataset.dataset)"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset",
+      "target": "LeRobotDataset",
+      "relation": "wraps",
+      "properties": {
+        "confidence": "high",
+        "detail": "Pi05LeRobotDataset wraps LeRobotDataset internally (self.lerobot_dataset), using it for metadata and data access"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset",
+      "target": "Dataset",
+      "relation": "extends",
+      "properties": {
+        "confidence": "high",
+        "detail": "Pi05LeRobotDataset extends torch.utils.data.Dataset"
+      }
+    },
+    {
+      "source": "module:pi05.train.cli.train",
+      "target": "load_experiment_config",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "train.py imports load_experiment_config from pi05.common.config.schema"
+      }
+    },
+    {
+      "source": "module:pi05.train.cli.train",
+      "target": "bootstrap_project_paths",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "train.py imports bootstrap_project_paths from pi05.common.utils.paths"
+      }
+    },
+    {
+      "source": "module:pi05.train.cli.export_bundle",
+      "target": "load_experiment_config",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "export_bundle.py imports load_experiment_config from pi05.common.config.schema"
+      }
+    },
+    {
+      "source": "module:pi05.train.cli.export_bundle",
+      "target": "bootstrap_project_paths",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "export_bundle.py imports bootstrap_project_paths from pi05.common.utils.paths"
+      }
+    },
+    {
+      "source": "module:pi05.train.cli.export_bundle",
+      "target": "export_deploy_bundle",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "export_bundle.py imports export_deploy_bundle from pi05.common.runtime.bundle (lazy)"
+      }
+    },
+    {
+      "source": "module:pi05.train.data.dataset",
+      "target": "LeRobotDataset",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "dataset.py imports LeRobotDataset from lerobot.datasets.lerobot_dataset"
+      }
+    },
+    {
+      "source": "module:pi05.train.data.dataset",
+      "target": "ColorJitter",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "dataset.py imports ColorJitter and InterpolationMode from torchvision.transforms"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.builders",
+      "target": "DataConfig",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "builders.py imports DataConfig, TrainingConfig from pi05.common.config.schema"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.builders",
+      "target": "build_state_action_normalizers",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "builders.py imports build_state_action_normalizers from pi05.common.data.normalization"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.builders",
+      "target": "Pi05LeRobotDataset",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "builders.py imports Pi05LeRobotDataset from pi05.train.data.dataset"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "ExperimentConfig",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports ExperimentConfig from pi05.common.config.schema"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "build_pi05_with_lora",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports build_pi05_with_lora, get_pi05_policy_config from pi05.common.model.builder"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "export_deploy_bundle",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports export_deploy_bundle from pi05.common.runtime.bundle"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "to_lerobot_pi05_batch",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports to_lerobot_pi05_batch from pi05.train.engine.batches"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "build_train_dataloader",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports builder functions from pi05.train.engine.builders"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "export_final_adapter",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports checkpoint functions from pi05.train.engine.checkpoints"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "configure_logging",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports configure_logging, log_run_summary from pi05.train.utils.logging"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "set_training_seed",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports set_training_seed from pi05.train.utils.seed"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "launch_tensorboard",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports launch_tensorboard from pi05.train.utils.tensorboard"
+      }
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "make_pi05_pre_post_processors",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "trainer.py imports make_pi05_pre_post_processors from lerobot.policies.pi05.processor_pi05"
+      }
+    },
+    {
+      "source": "module:pi05.train.utils.seed",
+      "target": "accelerate_set_seed",
+      "relation": "imports",
+      "properties": {
+        "confidence": "high",
+        "detail": "seed.py imports set_seed from accelerate.utils"
+      }
+    },
+    {
+      "source": "concept:train_cli_interface",
+      "target": "train-pkg",
+      "relation": "describes",
+      "properties": {
+        "confidence": "high",
+        "detail": "The CLI interface concept is realized by the pi05.train package"
+      }
+    },
+    {
+      "source": "concept:training_pipeline",
+      "target": "Pi05LoraTrainer",
+      "relation": "orchestrates",
+      "properties": {
+        "confidence": "high",
+        "detail": "Pi05LoraTrainer is the central orchestrator of the training pipeline"
+      }
+    },
+    {
+      "source": "concept:training_pipeline",
+      "target": "Pi05LeRobotDataset",
+      "relation": "uses",
+      "properties": {
+        "confidence": "high",
+        "detail": "The training pipeline uses Pi05LeRobotDataset for data loading"
+      }
+    },
+    {
+      "source": "concept:action_chunking",
+      "target": "Pi05LeRobotDataset._get_action_chunk",
+      "relation": "implemented_by",
+      "properties": {
+        "confidence": "high",
+        "detail": "Action chunking is implemented by _get_action_chunk() method"
+      }
+    },
+    {
+      "source": "concept:lerobot_pi05_batch_schema",
+      "target": "to_lerobot_pi05_batch",
+      "relation": "implemented_by",
+      "properties": {
+        "confidence": "high",
+        "detail": "The batch schema adapter is implemented by to_lerobot_pi05_batch()"
+      }
+    },
+    {
+      "source": "concept:tensorboard_launch_flow",
+      "target": "launch_tensorboard",
+      "relation": "implemented_by",
+      "properties": {
+        "confidence": "high",
+        "detail": "TensorBoard auto-launch is implemented by launch_tensorboard() in pi05.train.utils.tensorboard"
+      }
+    },
+    {
+      "source": "concept:tensorboard_launch_flow",
+      "target": "Pi05LoraTrainer._init_trackers",
+      "relation": "triggered_by",
+      "properties": {
+        "confidence": "high",
+        "detail": "TensorBoard launch is triggered by Pi05LoraTrainer._init_trackers() when use_tensorboard and tensorboard_auto_launch are set"
+      }
+    },
+    {
+      "source": "module:pi05.train.data.dataset",
+      "target": "concept:lerobot_pi05_batch_schema",
+      "relation": "produces",
+      "properties": {
+        "confidence": "high",
+        "detail": "Pi05LeRobotDataset.__getitem__() produces items that are then adapted by to_lerobot_pi05_batch() into the batch schema"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "Accelerator",
+      "relation": "instantiates",
+      "properties": {
+        "confidence": "high",
+        "line": 131,
+        "detail": "Pi05LoraTrainer._build_accelerator() creates Accelerator with gradient accumulation, mixed precision, and TensorBoard config"
+      }
+    },
+    {
+      "source": "build_lr_scheduler",
+      "target": "get_cosine_schedule_with_warmup",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 69,
+        "detail": "build_lr_scheduler() wraps get_cosine_schedule_with_warmup from transformers"
+      }
+    },
+    {
+      "source": "build_optimizer",
+      "target": "AdamW",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 62,
+        "detail": "build_optimizer() creates AdamW optimizer from torch.optim"
+      }
+    },
+    {
+      "source": "parse_args@train.cli.train",
+      "target": "default_train_config_path",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 14,
+        "detail": "train.parse_args() uses default_train_config_path() as --config default"
+      }
+    },
+    {
+      "source": "parse_args@train.cli.export_bundle",
+      "target": "default_train_config_path",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 14,
+        "detail": "export_bundle.parse_args() uses default_train_config_path() as --config default"
+      }
+    },
+    {
+      "source": "main@train.cli.train",
+      "target": "load_experiment_config",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 20,
+        "detail": "train.main() calls load_experiment_config(args.config)"
+      }
+    },
+    {
+      "source": "main@train.cli.export_bundle",
+      "target": "load_experiment_config",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 24,
+        "detail": "export_bundle.main() calls load_experiment_config(args.config)"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset.__getitem__",
+      "target": "Pi05LeRobotDataset._prepare_image",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 76,
+        "detail": "__getitem__ calls _prepare_image() for each camera image"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset.__getitem__",
+      "target": "Pi05LeRobotDataset._get_action_chunk",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 81,
+        "detail": "__getitem__ calls _get_action_chunk() to extract chunk_size actions"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset.__getitem__",
+      "target": "Pi05LeRobotDataset._apply_normalizer",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "lines": [78, 82],
+        "detail": "__getitem__ calls _apply_normalizer() on state and action_chunk"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset.__getitem__",
+      "target": "Pi05LeRobotDataset._resolve_task",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 83,
+        "detail": "__getitem__ calls _resolve_task() to determine task string"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset.__init__",
+      "target": "Pi05LeRobotDataset._normalize_cameras",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 49,
+        "detail": "__init__ calls _normalize_cameras() to validate camera names"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset.__init__",
+      "target": "Pi05LeRobotDataset._resolve_image_keys",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 57,
+        "detail": "__init__ calls _resolve_image_keys() to build image key mapping"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset.__init__",
+      "target": "Pi05LeRobotDataset._validate_vector_features",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 58,
+        "detail": "__init__ calls _validate_vector_features() to check state/action dim consistency"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset.__init__",
+      "target": "Pi05LeRobotDataset._build_episode_ranges",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 66,
+        "detail": "__init__ calls _build_episode_ranges() for action chunk boundary clamping"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset._get_action_chunk",
+      "target": "Pi05LeRobotDataset._to_int",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "detail": "_get_action_chunk uses _to_int for episode boundary conversion"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset._prepare_image",
+      "target": "Pi05LeRobotDataset._to_image_tensor",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 143,
+        "detail": "_prepare_image calls _to_image_tensor() to convert input to float32 CHW tensor"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset._resolve_task",
+      "target": "Pi05LeRobotDataset._task_from_index",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 190,
+        "detail": "_resolve_task calls _task_from_index() when task_index is present but task is not"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset._build_episode_ranges",
+      "target": "Pi05LeRobotDataset._to_int",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "lines": [120, 121],
+        "detail": "_build_episode_ranges uses _to_int() for from/to index conversion"
+      }
+    },
+    {
+      "source": "Pi05LeRobotDataset._validate_vector_features",
+      "target": "Pi05LeRobotDataset._feature_dim",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 112,
+        "detail": "_validate_vector_features uses _feature_dim() to get actual dimensions"
+      }
+    },
+    {
+      "source": "train_from_config",
+      "target": "Pi05LoraTrainer",
+      "relation": "instantiates",
+      "properties": {
+        "confidence": "high",
+        "line": 323,
+        "detail": "train_from_config creates Pi05LoraTrainer(config) and calls .run()"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "Pi05LoraTrainer._build_accelerator",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 88,
+        "detail": "Pi05LoraTrainer.run() calls _build_accelerator()"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "Pi05LoraTrainer._init_trackers",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 89,
+        "detail": "Pi05LoraTrainer.run() calls _init_trackers(accelerator)"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "Pi05LoraTrainer._train_loop",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 115,
+        "detail": "Pi05LoraTrainer.run() calls _train_loop() as the final training step"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "get_pi05_policy_config",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 97,
+        "detail": "Pi05LoraTrainer.run() calls get_pi05_policy_config(model)"
+      }
+    },
+    {
+      "source": "Pi05LoraTrainer.run",
+      "target": "make_pi05_pre_post_processors",
+      "relation": "calls",
+      "properties": {
+        "confidence": "high",
+        "line": 99,
+        "detail": "Pi05LoraTrainer.run() calls make_pi05_pre_post_processors(policy_config) to create the preprocessor"
+      }
+    }
+  ]
+}

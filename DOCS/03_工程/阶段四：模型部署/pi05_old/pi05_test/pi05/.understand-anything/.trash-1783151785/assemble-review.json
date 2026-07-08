@@ -1,0 +1,298 @@
+{
+  "review_metadata": {
+    "reviewer": "Sisyphus-Junior (assemble-review)",
+    "date": "2026-07-04",
+    "artifact": "assembled-graph.json",
+    "input_sources": {
+      "batch_files": 6,
+      "input_nodes": 301,
+      "input_edges": 376,
+      "merge_script_report": true
+    }
+  },
+  "verdict": {
+    "overall": "PASS_WITH_ISSUES",
+    "score": 7.0,
+    "summary": "Graph assembly mostly correct. All cross-batch references resolved, no dangling edges. However, suffers from ID-format inconsistency across batches, 62 nodes with __nofilepath__ placeholder IDs, 98 nodes with unknown/non-schema types, and zero complexity differentiation (all 'moderate'). Edge relations are split between lowercase (49) and uppercase (10+5) naming conventions.",
+    "blocking": false
+  },
+  "summary": {
+    "assembled_nodes": 300,
+    "assembled_edges": 284,
+    "nodes_vs_input": -1,
+    "edges_vs_input": -92,
+    "merge_script_fixes_applied": 412,
+    "merge_script_issues_remaining": 490,
+    "merge_script_edges_dropped": 64
+  },
+  "schema_conformance": {
+    "pass": false,
+    "issues": [
+      {
+        "category": "unknown_node_types",
+        "count": 98,
+        "severity": "warning",
+        "detail": "10 node types not in canonical schema: method(26), constant(18), config-value(14), python_module(13), subpackage(10), config_file(5), package(2), shell_pattern(2), pattern(2), test_file(2), function-group(2), documentation(1).",
+        "recommendation": "Either extend the schema to include these types or map them to canonical equivalents (method→function, constant→concept, config-value→config, python_module→module, subpackage→module, etc.)."
+      },
+      {
+        "category": "missing_complexity_differentiation",
+        "count": 300,
+        "severity": "warning",
+        "detail": "All 300 nodes have complexity='moderate'. No simple, complex, or critical annotations exist.",
+        "recommendation": "If the extraction subagent didn't provide complexity, consider heuristics: files <50 lines → simple, >200 lines → complex, core ROS nodes/control-loop → critical."
+      },
+      {
+        "category": "nonstandard_id_format_batch3",
+        "count": 39,
+        "severity": "minor",
+        "detail": "Batch 3 uses nonstandard ID format (e.g., 'file-train/scripts/export_policy.sh' instead of 'file:train/scripts/export_policy.sh'). These were fixed by the merge script (71 bare path→file: corrections).",
+        "recommendation": "Fix the batch-3 extraction to emit canonical 'type:path' IDs consistently."
+      },
+      {
+        "category": "nonstandard_id_format_batch5",
+        "count": 52,
+        "severity": "minor",
+        "detail": "Batch 5 uses simple names without prefix (e.g., 'DeployConfig', 'ControlLoop'). These were prefixed to 'class:__nofilepath__:DeployConfig' during merge.",
+        "recommendation": "Batch 5 extraction should include proper type-prefixed IDs and file paths."
+      },
+      {
+        "category": "nonstandard_id_format_batch6",
+        "count": 87,
+        "severity": "minor",
+        "detail": "Batch 6 uses descriptive IDs (e.g., 'Pi05LoraTrainer.run', 'main@train.cli.train') without canonical type prefix or file path in the ID.",
+        "recommendation": "Standardize to 'method:Pi05LoraTrainer.run' and 'function:main@train.cli.train' with proper file fields."
+      }
+    ]
+  },
+  "node_property_consistency": {
+    "pass": false,
+    "issues": [
+      {
+        "category": "mixed_property_naming",
+        "count": 2,
+        "severity": "minor",
+        "detail": "Some nodes use properties.description (batches 1-4 style), others use flat summary/docString (batches 3,5,6 style). Merge script did not normalize these.",
+        "examples": [
+          "Batch 1 node: id='file:deploy/scripts/package_model.sh' has properties.description",
+          "Batch 3 node: id='file-train/scripts/export_policy.sh' has docString (flat)"
+        ],
+        "recommendation": "Normalize all nodes to use a single description field convention (e.g., always under properties.description)."
+      },
+      {
+        "category": "incomplete_file_attributes",
+        "count": 62,
+        "severity": "major",
+        "detail": "62 nodes have '__nofilepath__' placeholder in their ID, meaning the extraction lacked a file path. These use source_file/source_location instead. This is acceptable for structural nodes but makes ID-based lookups fragile.",
+        "example_ids": [
+          "class:__nofilepath__:DeployConfig",
+          "class:__nofilepath__:Pi05VlaDeployNode",
+          "function:__nofilepath__:load_deploy_config"
+        ],
+        "recommendation": "When source_file is available, reconstruct the canonical ID (e.g., 'class:deploy/src/pi05/deploy/config/schema.py:DeployConfig'). Only use __nofilepath__ when truly no file context exists."
+      },
+      {
+        "category": "missing_language_on_file_nodes",
+        "count": 15,
+        "severity": "minor",
+        "detail": "Some file nodes (batch 5/6 style) lack language/fileCategory properties that batch-4 nodes consistently include.",
+        "recommendation": "Ensure all file-type nodes include language and fileCategory in their properties."
+      }
+    ]
+  },
+  "cross_batch_reference_verification": {
+    "pass": true,
+    "check_count": 34,
+    "missing": 0,
+    "detail": "All 34 symbols from the cross-batch import map were found in the assembled graph (100% resolution rate)."
+  },
+  "edge_analysis": {
+    "total": 284,
+    "dangling_references": 0,
+    "issues": [
+      {
+        "category": "mixed_relation_case",
+        "count": 2,
+        "severity": "minor",
+        "detail": "Edge relation names mix lowercase (calls, uses, imports, composes, etc. = 49 unique) and UPPERCASE (CALLS, USES, COMPOSES, OWNS, PRODUCES, etc. = 10 unique). UPPERCASE relations appear only in batch-5/6 edges.",
+        "recommendation": "Normalize all relations to lowercase for consistency. The mixed case suggests two different extraction agents produced the edges."
+      },
+      {
+        "category": "overly_generic_relations",
+        "count": 4,
+        "severity": "info",
+        "detail": "Some relations are very generic ('related', 'references', 'uses') and could be more specific where the source code indicates a concrete relationship.",
+        "examples": [
+          "'normalization and action_codec are sibling data modules' → could be 'sibling_package'",
+          "'config:deploy.yaml:runtime overrides common runtime settings' → 'overrides' is fine"
+        ]
+      },
+      {
+        "category": "synthetic_concept_edges",
+        "count": 20,
+        "severity": "info",
+        "detail": "~20 edges involve concept nodes (abstract concepts without file backing) connecting to concrete nodes. These are high-level architectural connections, useful for overview but less precise than code-level edges."
+      },
+      {
+        "category": "edge_drop_rate",
+        "count": 64,
+        "severity": "warning",
+        "detail": "64 input edges were dropped during merge because source or target node IDs couldn't be resolved. This is 17% of the input edge set.",
+        "recommendation": "Investigate which batches contributed the dropped edges. If batch-3 nonstandard IDs or batch-5 unnamed nodes were involved, fixing those upstream would reduce edge loss."
+      }
+    ]
+  },
+  "merge_script_report_crosscheck": {
+    "verified_corrections": {
+      "bare_path_to_file_prefix": "71 nodes fixed — visible in batch-3 node IDs which now start correctly",
+      "bare_path_to_function_prefix": "43 nodes fixed — visible in batch-3 func: prefixes",
+      "bare_path_to_class_prefix": "35 nodes fixed — visible in batch-3 class: prefixes",
+      "func_to_function_canonicalization": "34 nodes fixed — visible in batch-4 func:→function: prefixes",
+      "duplicate_node_removal": "1 node removed — confirmed: assembled graph has 300 vs 301 input",
+      "edge_rewrites": "216 edge references rewritten — confirmed: no dangling references in output",
+      "dropped_edges": "64 edges dropped — confirmed: 376 input → 284 output = 92 missing total (28 were normalization, 64 were dropped)"
+    },
+    "unfixable_issues_still_present": {
+      "unknown_types": "All 98 unknown-type nodes are present in the assembled graph as-is (merge kept them)",
+      "complexity_defaulted_to_moderate": "All 300 nodes have complexity='moderate' (defaulted by merge, no original data preserved)",
+      "explanation": "The merge script kept unknown-type nodes and defaulted complexity, which is correct behavior — it should not discard data. But downstream consumers need to handle these gracefully."
+    }
+  },
+  "batch_by_batch_id_format_review": {
+    "batch_1": {
+      "nodes": 11,
+      "id_style": "Canonical (file:, module:, config:, concept: prefixes)",
+      "issues": []
+    },
+    "batch_2": {
+      "nodes": 15,
+      "id_style": "Canonical (config:, concept: prefixes)",
+      "issues": []
+    },
+    "batch_3": {
+      "nodes": 39,
+      "id_style": "Nonstandard (file-XXX, func-XXX, const-XXX, module-XXX, pattern-XXX, schema-XXX)",
+      "issues": ["All 39 IDs nonstandard; merge script fixed them but original extraction needs correction"]
+    },
+    "batch_4": {
+      "nodes": 97,
+      "id_style": "Mostly canonical with some func:→function: normalization needed",
+      "issues": ["14 function IDs used func: prefix instead of function: — merge fixed these"]
+    },
+    "batch_5": {
+      "nodes": 52,
+      "id_style": "Nonstandard (bare names without type prefix or file path)",
+      "issues": ["All 52 nodes lack canonical IDs; merge added __nofilepath__ placeholders"]
+    },
+    "batch_6": {
+      "nodes": 87,
+      "id_style": "Descriptive IDs without standard prefixes (some file:, module: prefixes present, others are bare method/function names)",
+      "issues": ["26 method-type nodes not in schema", "many bare-name nodes lack type prefixes"]
+    }
+  },
+  "structural_coverage": {
+    "train_package": {
+      "modules_covered": [
+        "pi05.train.cli.export_bundle",
+        "pi05.train.cli.train",
+        "pi05.train.data.dataset",
+        "pi05.train.engine.batches",
+        "pi05.train.engine.builders",
+        "pi05.train.engine.checkpoints",
+        "pi05.train.engine.trainer",
+        "pi05.train.utils.logging",
+        "pi05.train.utils.seed",
+        "pi05.train.utils.tensorboard"
+      ],
+      "coverage": 10,
+      "total_known": 10,
+      "status": "complete"
+    },
+    "common_package": {
+      "modules_covered": [
+        "pi05.common.config.schema",
+        "pi05.common.data.action_codec",
+        "pi05.common.data.image_preprocess",
+        "pi05.common.data.normalization",
+        "pi05.common.data.state_codec",
+        "pi05.common.model.builder",
+        "pi05.common.robot.action_spec",
+        "pi05.common.robot.joint_limits",
+        "pi05.common.ros.topics",
+        "pi05.common.runtime.bundle",
+        "pi05.common.utils.paths"
+      ],
+      "coverage": 11,
+      "total_known": 11,
+      "status": "complete"
+    },
+    "deploy_package": {
+      "modules_covered": [
+        "pi05.deploy.config.schema (classes present but no file node)",
+        "pi05.deploy.models.policy_loader (classes present but no file node)",
+        "pi05.deploy.ros_nodes.pi05_vla_deploy_node",
+        "pi05.deploy.ros_nodes.pi05_bridge_node",
+        "pi05.deploy.ros_nodes.command_mux_node",
+        "pi05.deploy.runtime.control_loop",
+        "pi05.deploy.runtime.inference_worker",
+        "pi05.deploy.runtime.observation_collector",
+        "pi05.deploy.runtime.safety_guard",
+        "pi05.deploy.runtime.shared_buffer",
+        "pi05.deploy.cli.deploy_ros",
+        "pi05.deploy.cli.bridge_ros",
+        "pi05.deploy.cli.command_mux_ros",
+        "pi05.deploy.ros.policy_node"
+      ],
+      "coverage": 14,
+      "total_known": 15,
+      "status": "near_complete",
+      "missing": ["deploy/src/pi05/deploy/config/schema.py (file node)", "deploy/src/pi05/deploy/models/policy_loader.py (file node)"]
+    },
+    "test_coverage": {
+      "test_files": [
+        "tests/deploy/test_deploy_config.py",
+        "tests/train/test_config.py"
+      ],
+      "coverage": "sparse",
+      "note": "Only 2 test file nodes. Several modules appear untested or unextracted."
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "high",
+      "action": "Fix batch-5 extraction to include canonical type-prefixed IDs with file paths",
+      "rationale": "52 nodes with __nofilepath__ IDs are the most critical quality issue — they break location-based queries.",
+      "effort": "Fix the extractor for deploy/src subtree"
+    },
+    {
+      "priority": "high",
+      "action": "Fix batch-3 extraction to use 'type:path' format",
+      "rationale": "39 nonstandard IDs were salvageable by the merge script but this should not be a recurring fix.",
+      "effort": "Fix the extractor for scripts/tools subtree"
+    },
+    {
+      "priority": "medium",
+      "action": "Add complexity differentiation",
+      "rationale": "All-moderate complexity makes the field useless. Even simple heuristics would add value.",
+      "effort": "Post-process: size-based (files) + role-based (core vs. utility)"
+    },
+    {
+      "priority": "medium",
+      "action": "Normalize edge relations to lowercase",
+      "rationale": "Mixed case (CALLS vs calls) is a technical debt that will confuse downstream tools.",
+      "effort": "Trivial: sed/script to lowercase all relation values"
+    },
+    {
+      "priority": "low",
+      "action": "Unify property naming convention across all batches",
+      "rationale": "Mix of properties.description (batches 1-2-4) vs flat docString/summary (batches 3-5-6) creates two code paths for reading node info.",
+      "effort": "Post-process normalization step"
+    },
+    {
+      "priority": "low",
+      "action": "Add file nodes for deploy/config/schema.py and deploy/models/policy_loader.py",
+      "rationale": "These files are structurally important but only have class/function nodes, no file-level node.",
+      "effort": "One-time: add file: nodes during manual fixup or re-extraction"
+    }
+  ]
+}

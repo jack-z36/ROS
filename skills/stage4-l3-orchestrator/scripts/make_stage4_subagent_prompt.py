@@ -98,6 +98,7 @@ Instructions:
 5. Do not edit source, tests, dispatch, cards, task files, or Git state.
 6. Write feedback to the path specified by the card.
 7. Use one conclusion only: `PASS_LOCAL`, `FAIL_LOCAL`, `BLOCKED_ENV`, `BLOCKED_HARDWARE_EXPECTED`, or `DEFER_TO_L2_GATE`.
+8. If the conclusion is `PASS_LOCAL`, do not archive files yourself; report that the main Agent must move the matching L3 task file to `DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<l2>/`.
 
 Final response: report the conclusion, feedback path, failed checks if any, and concrete fix requests for the execution sub-agent.
 """

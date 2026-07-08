@@ -37,9 +37,11 @@
 | Git 同步状态 | `DOCS/03_工程/阶段四：模型部署/00_status/git_sync_status.md` |
 | 循环恢复摘要 | `DOCS/03_工程/阶段四：模型部署/00_status/current_loop_snapshot.md` |
 
+旧 layer-based ACT 产物已隔离到 `_legacy_layer_based_act/`，不得作为上述权威来源。旧 `l2-01-types`、`l2-02-config`、`l2-03-assembly`、`l2-04-publish`、`l2-05-hardware` 只能作为废弃说明或历史参考出现。
+
 ## 维护规则
 
 - 状态摘要必须能追溯到权威来源。
 - 状态摘要不得覆盖或改写验收日志事实。
 - 如果状态摘要与 dispatch、验收结果或 Git 状态冲突，以权威来源为准，并由主 Agent更新摘要。
-
+- 状态摘要不得重新引用旧 layer-based L2 作为当前目标。

@@ -4,7 +4,7 @@
 
 - 阶段：阶段四：模型部署
 - 任务模式：阶段四 L2 / L3 执行、模型部署代码和工程文档协作
-- 适用对象：`model_deploy` 二级长期分支、阶段四三级功能分支、`src/model_deploy/pi05/` 和阶段四工程文档
+- 适用对象：`model_deploy` 二级长期分支、阶段四三级功能分支、`src/model_deploy/act/` 和阶段四工程文档
 - 不适用对象：阶段二数据清洗分支、`main` 稳定分支合并流程
 
 使用本文件前，必须先读取：
@@ -59,7 +59,9 @@ git pull --ff-only
 
 ## L3 原子提交流程
 
-Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交：
+Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交。
+
+如果验收结论为 `PASS_LOCAL`，提交前必须先把对应 L3 任务文件从 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<new-l2>/` 移动到 `DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<new-l2>/`，并把该归档移动纳入同一个 L3 原子提交。其他可提交终态不是“验收任务执行通过”，默认不触发该归档。
 
 ```bash
 git status --short --branch
@@ -77,7 +79,9 @@ git push -u origin feat/model_deploy/<topic>
 
 ## Gate 后合入流程
 
-当且仅当所属功能 Gate 通过后，AI 可以自动执行以下同步流程：
+当且仅当所属功能 Gate 通过 **且 人类验收签字通过** 后，AI 可以自动执行以下同步流程。
+
+人类验收关卡规则见 `DOCS/02_约束/工作流/阶段四开发工作流/attachments/人类验收关卡规则.md`。合入前必须检查 `05_acceptance/<l2>/验收结果.md` 的「人类验收」段：未填写或勾选「不通过」时，停止合入并向用户报告。
 
 ```bash
 git status --short --branch
@@ -95,6 +99,7 @@ git push origin --delete feat/model_deploy/<topic>
 出现以下任一情况时，停止自动同步并向用户报告：
 
 - 功能 Gate 未通过，或对应验收结果未记录通过结论。
+- 人类验收未签字、勾选「不通过」或缺少用户名/日期（见人类验收关卡规则）。
 - 当前分支不是对应三级功能分支，或该分支不是从 `model_deploy` 开出。
 - `model_deploy` 远端领先、本地分叉或 `pull --ff-only` 失败。
 - `git merge --no-ff` 产生冲突。
@@ -106,12 +111,19 @@ git push origin --delete feat/model_deploy/<topic>
 
 允许提交：
 
-- `src/model_deploy/pi05/` 下本功能明确允许的源码、配置、脚本或测试。
-- `DOCS/03_工程/阶段四：模型部署/` 下本功能的任务文件、验收结果和工程记录。
+- `src/model_deploy/act/` 下本 L3 明确允许的源码、配置、launch、脚本或测试。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/02_implement/<new-l2>/` 设计文档。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<new-l2>/` 任务文件。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<new-l2>/` 已通过 L3 任务归档文件。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/dispatch/<new-l2>.yaml` dispatch。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/cards/<new-l2>/` 验收卡片。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/05_acceptance/<new-l2>/` 验收结果、脚本和日志。
 - `DOCS/02_约束/` 下本次明确要求维护的约束、模板或工作流文件。
 
 禁止提交：
 
+- `src/model_deploy/pi05/`、`DOCS/03_工程/阶段四：模型部署/pi05_old/` 或其他 Pi0.5 历史源码作为 L3 修改落点；Pi0.5 只能作为只读参考。
+- `DOCS/03_工程/阶段四：模型部署/02_implement/归档/`、`03_tasks/归档/_legacy_layer_based_act/`、`05_acceptance/_legacy_layer_based_act/` 下的旧 layer-based ACT 产物，除非当前任务明确是文档归档、迁移或降权维护。
 - ROS 构建产物：`build/`、`install/`、`log/`
 - Python 缓存和测试缓存：`__pycache__/`、`*.pyc`、`.pytest_cache/`
 - 本地环境、私有配置、下载缓存、模型权重和大型数据产物

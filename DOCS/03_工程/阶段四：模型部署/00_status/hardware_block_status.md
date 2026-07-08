@@ -7,21 +7,21 @@
 
 ## 本文职责
 
-本文只记录阶段四无真机循环中的硬件 blocked 条件、`deploy_023` 交接条件和真机风险边界。
+本文只记录阶段四无真机循环中的硬件 blocked 条件、real-robot 交接条件和真机风险边界。
 
 ## 不负责
 
-本文不记录软件 L3 进度，不替代 L2-05 验收结果，也不提供真机执行命令全文。
+本文不记录软件 L3 进度，不替代 `l2-04-safety-guard`、`l2-05-action-publisher` 或 `l2-06-control-loop` 验收结果，也不提供真机执行命令全文。
 
 ## 当前硬件边界
 
 当前开发环境按无外设环境处理。任何 real-robot 行为都不得在未满足现场条件时写成通过。
 
-## deploy_023 blocked 条件
+## real-robot blocked 条件
 
-`deploy_023_real_robot_smoke_test` 默认保持 blocked。解除 blocked 必须同时满足：
+任何 real-robot smoke test 或真实执行器发送默认保持 blocked。解除 blocked 必须同时满足：
 
-- `deploy_022` shadow-run 全链路通过。
+- 新版 `l2-01-external-contract` 至 `l2-06-control-loop` 的软件侧 Gate 和人类验收均通过，或当前 L2 明确声明只做分段真机验证。
 - RM65 双臂连接、标定和工作空间确认完成。
 - 大象夹爪连接、标定和 width 映射确认完成。
 - 真模型 bundle 就绪。
@@ -39,4 +39,4 @@
 
 - 禁止在无硬件环境下声明 real-robot smoke test 通过。
 - 禁止伪造 SDK 返回码、动作观察结果或急停验证结果。
-
+- 禁止引用旧 `deploy_022` / `deploy_023` 作为当前循环目标或放行条件。

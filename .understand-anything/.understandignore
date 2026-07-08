@@ -1,0 +1,43 @@
+# .understandignore — patterns for files/dirs to exclude from analysis
+# Syntax: same as .gitignore (globs, # comments, ! negation, trailing / for dirs)
+#
+# Built-in defaults (always excluded unless negated):
+#   node_modules/, .git/, dist/, build/, obj/, *.lock, *.min.js, etc.
+#
+
+# --- Heavy vendored / generated directories ---
+
+# data_clean: 45k+ files, mostly third-party data processing code
+src/data_clean/
+
+# data_collection: 6k+ files, hardware SDK demos and vendor code
+src/data_collection/
+
+# third_party: vendored LeRobot library (~400 files) - external dependency
+src/model_deploy/third_party/
+
+# build/install/log: ROS2 build artifacts
+build/
+install/
+log/
+
+# asset: media assets (images, videos, etc.)
+asset/
+
+# --- Documentation with heavy attachments ---
+DOCS/
+
+# --- Config & tooling ---
+.vscode/
+.claude/
+.codex/
+omo/
+.ralph/
+.obsidian/
+.pytest_cache/
+worktree/
+
+# --- Generated / cache ---
+**/__pycache__/
+*.pyc
+*.egg-info/
