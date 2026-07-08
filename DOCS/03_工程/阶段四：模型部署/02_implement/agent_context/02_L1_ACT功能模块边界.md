@@ -2,13 +2,13 @@
 
 > [!info] 产物归属
 > - 类型：L1 架构协作包中的 Agent 权威边界上下文（阶段四：模型部署）。
-> - 目标路径：`DOCS/03_工程/阶段四：模型部署/02_implement/01_L1_ACT功能模块边界.md`。
-> - 上游任务文档：`00_L1_ACT部署程序任务文档.md`。
-> - 协作文档：`02_L1_ACT功能模块协作架构.md`（讲模块间协作，不讲单模块边界）。
+> - 目标路径：`DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/02_L1_ACT功能模块边界.md`。
+> - 上游任务文档：`01_L1_ACT部署程序任务文档.md`。
+> - 协作文档：`03_L1_ACT功能模块协作架构.md`（讲模块间协作，不讲单模块边界）。
 > - 适用对象：第一版 ACT 部署程序的 6 个 L2 功能模块的功能边界、输入输出、负责/不负责、代码层落点。
 > - Agent 消费目的：完整理解每个功能模块的边界，支持 L2 功能设计、L3 微元任务生成和越界检查，避免幻觉和职责串扰。
-> - 本文职责：定义每个 L2 的功能边界。不展开模块间协作关系（指向 `02_L1_ACT功能模块协作架构.md`），不展开任务管理属性（指向 `00_L1_ACT部署程序任务文档.md`）。
-> - 人类消费入口：`ACT架构交互可视化.html`。
+> - 本文职责：定义每个 L2 的功能边界。不展开模块间协作关系（指向 `03_L1_ACT功能模块协作架构.md`），不展开任务管理属性（指向 `01_L1_ACT部署程序任务文档.md`）。
+> - 人类消费入口：`../ACT架构交互可视化.html`。
 
 ## 0. 消费者分工与本文定位
 
@@ -16,15 +16,15 @@ L1 架构协作包按消费对象拆分为 4 个产物：
 
 | 消费者 | 消费产物 | 消费目的 | 信息密度 |
 |---|---|---|---|
-| Agent | `00_L1_ACT部署程序任务文档.md` | 获取 L1 总目标、L2 清单与开发顺序、L1 验收口径。 | 中。任务管理属性。 |
+| Agent | `01_L1_ACT部署程序任务文档.md` | 获取 L1 总目标、L2 清单与开发顺序、L1 验收口径。 | 中。任务管理属性。 |
 | Agent | 本文档（功能模块边界） | 完整理解每个 L2 的功能边界，减少 L2 设计和 L3 生成时的职责越界。 | 高。逐模块边界契约。 |
-| Agent | `02_L1_ACT功能模块协作架构.md` | 完整理解模块间协作关系，减少数据流和接口歧义。 | 高。协作关系契约。 |
-| 人类 | `ACT架构交互可视化.html` | 快速理解整体架构、模块协作和模块边界，更好地指挥 Agent。 | 低。可视化为主。 |
+| Agent | `03_L1_ACT功能模块协作架构.md` | 完整理解模块间协作关系，减少数据流和接口歧义。 | 高。协作关系契约。 |
+| 人类 | `../ACT架构交互可视化.html` | 快速理解整体架构、模块协作和模块边界，更好地指挥 Agent。 | 低。可视化为主。 |
 
 权威关系：
 
 - 本文档是 Agent 的边界权威上下文；HTML 与本文冲突时以本文为准。
-- 本文不重复定义协作关系，详见 `02_L1_ACT功能模块协作架构.md`。
+- 本文不重复定义协作关系，详见 `03_L1_ACT功能模块协作架构.md`。
 - L2 设计 Agent 和 L3 生成 Agent 必须读取本文，确认当前 L2 的边界后再展开内部设计。
 
 后续 Agent 使用本文时，必须至少抽取以下信息：
@@ -122,7 +122,7 @@ runtime/safety/topic 配置对象
 
 - 上游：无（全部后续 L2 的静态契约地基）。
 - 下游：所有 L2 都 import DeployConfig / 数据规格。
-- 协作细节见 `02_L1_ACT功能模块协作架构.md`。
+- 协作细节见 `03_L1_ACT功能模块协作架构.md`。
 
 ## 3. L2-02 传感器订阅与 ObservationSnapshot 组装闭环
 
@@ -186,7 +186,7 @@ SharedBuffer.latest_observation
 
 - 上游：L2-01（state/topic/image/config 契约）。
 - 下游：L2-06 读取 `latest_observation`；L2-03 消费 `ObservationSnapshot` 契约。
-- 协作细节见 `02_L1_ACT功能模块协作架构.md`。
+- 协作细节见 `03_L1_ACT功能模块协作架构.md`。
 
 ## 4. L2-03 ObservationSnapshot 到 ACT ActionChunk 推理闭环
 
@@ -256,7 +256,7 @@ predict_action_chunk(observation: ObservationSnapshot) -> np.ndarray shape (chun
 
 - 上游：L2-01（bundle/normalizer/runtime 配置）、L2-02（`ObservationSnapshot` 契约，可先用 mock）。
 - 下游：L2-06 通过 queue 收集 `ActionChunk`，并在首版中直取单步 raw action。
-- 协作细节见 `02_L1_ACT功能模块协作架构.md`。
+- 协作细节见 `03_L1_ACT功能模块协作架构.md`。
 
 ## 5. L2-04 单步 Action 安全检查闭环
 
@@ -316,7 +316,7 @@ SafetyResult(
 
 - 上游：L2-01（action spec / safety config）；运行时由 L2-06 产出 raw single action。设计和单测阶段可用 mock raw action。
 - 下游：L2-05 消费 safe action / `SafetyResult`。
-- 协作细节见 `02_L1_ACT功能模块协作架构.md`。
+- 协作细节见 `03_L1_ACT功能模块协作架构.md`。
 
 ## 6. L2-05 单步 Action 到执行器 Topic 适配发送闭环
 
@@ -376,7 +376,7 @@ BridgeConfig / HardwareConfig
 
 - 上游：L2-01（topic/hardware/bridge 配置）、L2-04（safe action / `SafetyResult`）。
 - 下游：外部执行器（外部边界）。
-- 协作细节见 `02_L1_ACT功能模块协作架构.md`。
+- 协作细节见 `03_L1_ACT功能模块协作架构.md`。
 
 ## 7. L2-06 ControlLoop 中央运行调度闭环
 
@@ -453,7 +453,7 @@ safety 拒绝 -> fallback
 
 - 上游：L2-01（DeployConfig）、L2-02 至 L2-05（service 句柄）。
 - 下游：通过 L2-05 发布命令；通过 metrics 发布 status。
-- 协作细节见 `02_L1_ACT功能模块协作架构.md`。
+- 协作细节见 `03_L1_ACT功能模块协作架构.md`。
 
 ## 9. 模块边界不变量
 

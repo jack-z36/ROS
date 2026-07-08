@@ -1,31 +1,30 @@
 # Stage 4 L2 Design Output Contract
 
-Use this reference when creating or checking a Stage 4 L2 design package.
+Use this reference when creating, migrating, or checking a Stage 4 L2 design package.
 
 ## Required File Tree
 
 ```text
 DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
-├── 00_L2功能边界.md
-├── 01_pi05源码3.5层微元拆解.md
-├── 02_ACT微元设计与协作.md
-├── 03_L2验收机制.md
-├── 04_人类验收机制.md
-├── 05_L2架构交互可视化.html
-├── types/
-├── config/
-├── repo/
-├── service/
-├── runtime/
-└── ui/
+├── L2架构交互可视化.html
+└── agent_context/
+    ├── 00_INDEX.md
+    ├── 01_L2功能边界.md
+    ├── 02_pi05源码3.5层微元拆解.md
+    ├── 03_ACT微元设计与协作.md
+    ├── 04_L2验收机制.md
+    ├── 05_人类验收机制.md
+    ├── 06_types层设计.md
+    ├── 07_config层设计.md
+    ├── 08_repo层设计.md
+    ├── 09_service层设计.md
+    ├── 10_runtime层设计.md
+    └── 11_ui层设计.md
 ```
 
-`l2_id` and `l2_design_dir` are different:
+The root is the human entry surface. All Agent Markdown must live in `agent_context/`. Do not create `types/`, `config/`, `repo/`, `service/`, `runtime/`, or `ui/` directories inside the L2 design package.
 
-| Field | Purpose | Example |
-|---|---|---|
-| `l2_id` | Stable id for branch, dispatch, cards, acceptance, status. | `l2-01-external-contract` |
-| `l2_design_dir` | Design package directory under `02_implement/`. | `l2-01-external-contract_外部参数加载与契约校验闭环` |
+## Valid L2 Identity
 
 Current valid `l2_id` values:
 
@@ -38,15 +37,56 @@ Current valid `l2_id` values:
 
 `l2-04-action-smoothing` is not a valid first-version L2 identity. Treat action smoothing, smoothstep blending, cross-chunk fusion, and RTC-style alignment as follow-up optimization scope unless the L1 documents are explicitly redesigned again.
 
-Old `l2-01-types`, `l2-02-config`, `l2-03-assembly`, `l2-04-publish`, and `l2-05-hardware` are invalid current L2 identities.
+Old `l2-01-types`, `l2-02-config`, `l2-03-assembly`, `l2-04-publish`, and `l2-05-hardware` are invalid current L2 identities. They may appear only inside explicit contamination checks, deprecation notes, or read-only history/reference statements.
 
-## 00_L2功能边界.md
+## Semantic Alignment Contract
+
+HTML and Markdown are a paired product:
+
+- HTML is the human projection.
+- `agent_context/*.md` is the Agent source of truth.
+- Every HTML view must map to one or more Markdown files and sections.
+- Every semantic change in HTML must be applied to Markdown in the same change.
+- Every semantic change in Markdown must update the corresponding HTML view, or both `00_INDEX.md` and HTML must mark HTML as stale.
+
+`agent_context/00_INDEX.md` must contain a section titled exactly:
+
+```text
+## HTML-MD 语义对齐表
+```
+
+The table must include these columns:
+
+| HTML view id | HTML view label | Human-visible meaning | Authoritative Markdown | Required Markdown section | Markdown-only detail |
+|---|---|---|---|---|---|
+
+Each HTML view root must include:
+
+```html
+<section class="view ..." data-agent-source="agent_context/<file>.md#<section-or-anchor>">
+```
+
+The `data-agent-source` file must exist. The file path must also appear in `00_INDEX.md`.
+
+## agent_context/00_INDEX.md
+
+Must include:
+
+- `l2_id` and human-readable L2 name.
+- Human HTML entry path.
+- Statement that `agent_context/*.md` is authoritative for Agent work.
+- Route table mapping reading purpose to file.
+- `HTML-MD 语义对齐表`.
+- Contamination check terms and allowed context.
+- Statement that HTML is not used for L3 generation.
+
+## agent_context/01_L2功能边界.md
 
 Must include:
 
 - `l2_id`, `l2_design_dir`, and human-readable L2 name.
 - L1 task doc path.
-- L1 Agent architecture doc path.
+- L1 Agent boundary doc path and collaboration doc path.
 - Legacy / Contract Delta / Stage 2 template contamination check.
 - One-sentence runtime responsibility.
 - Inputs.
@@ -57,7 +97,7 @@ Must include:
 - Completion criteria.
 - Questions still requiring user decision.
 
-## 01_pi05源码3.5层微元拆解.md
+## agent_context/02_pi05源码3.5层微元拆解.md
 
 Must classify source contents using the user's 3.5-layer vocabulary:
 
@@ -74,11 +114,9 @@ Also include a class packaging table:
 | class | state | packaged micro-units | lifecycle/concurrency | why class | ACT recommendation |
 |---|---|---|---|---|---|
 
-Source range matching is an internal working step. Do not create a separate source range matching file. Preserve the useful result by including exact Pi0.5 paths, object names, existing capabilities, ACT gaps, reuse decisions, and risks inside the micro-unit tables.
+Source range matching is an internal working step. Do not create a separate source range matching file. Preserve useful results by including exact Pi0.5 paths, object names, existing capabilities, ACT gaps, reuse decisions, and risks inside the micro-unit tables.
 
-Pi0.5 source evidence is reference-only. Do not inherit old L2 boundaries from Pi0.5, legacy cards, or Contract Delta.
-
-## 02_ACT微元设计与协作.md
+## agent_context/03_ACT微元设计与协作.md
 
 Must include:
 
@@ -96,30 +134,9 @@ Runtime orchestration point:
 Failure propagation:
 ```
 
-## Six-Layer Subfolder Docs
+This file is the main bridge from Pi0.5 source understanding to ACT implementation design. It must mark unresolved class/function, state ownership, runtime, or hardware decisions as blocking until user-confirmed.
 
-Each `types/config/repo/service/runtime/ui` subfolder must include one or more `.md` design files, or a `README.md` with:
-
-```text
-This L2 adds no artifact in this layer.
-Reason:
-How acceptance confirms this:
-```
-
-Each design file must include:
-
-- Target source path.
-- File responsibility.
-- Class design.
-- Function design.
-- Inputs and outputs.
-- Side effects.
-- Dependency direction.
-- Statement that this file's task boundary is inherited from the current L1/L2 functional boundary, not from old layer-based L2 cards.
-- Pi0.5 reference.
-- Acceptance coverage.
-
-## 03_L2验收机制.md
+## agent_context/04_L2验收机制.md
 
 Must include:
 
@@ -135,7 +152,7 @@ Must include:
 - Whether downstream L2 may start.
 - Whether Git merge to `model_deploy` is allowed.
 
-## 04_人类验收机制.md
+## agent_context/05_人类验收机制.md
 
 Must include:
 
@@ -162,40 +179,99 @@ Use this signature shape:
 - 备注：
 ```
 
-## 05_L2架构交互可视化.html
+## Six-Layer Design Files
+
+The six files are:
+
+- `06_types层设计.md`
+- `07_config层设计.md`
+- `08_repo层设计.md`
+- `09_service层设计.md`
+- `10_runtime层设计.md`
+- `11_ui层设计.md`
+
+Each file must include:
+
+- Target source path or explicit "no artifact in this layer".
+- Layer responsibility.
+- File responsibility.
+- Class design.
+- Function design.
+- Inputs and outputs.
+- Side effects.
+- Dependency direction.
+- Statement that the file's task boundary is inherited from the current L1/L2 functional boundary, not from old layer-based L2 cards.
+- Pi0.5 reference.
+- Acceptance coverage.
+
+If a layer adds no source artifact, the corresponding file must still exist and include:
+
+```text
+本 L2 不在该层新增源码产物。
+原因：
+验收如何确认：
+```
+
+## L2架构交互可视化.html
 
 Must be a standalone static HTML document that helps a human inspect this L2 quickly.
 
-Use `DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视化.html` as the quality bar for structure and interaction:
+Required properties:
 
-- self-contained `<!doctype html>` file with inline CSS and no network dependencies.
-- clear title, subtitle, and a note that the L1/L2 Markdown docs are authoritative if the HTML conflicts with them.
-- tabs implemented by radio inputs, or an equally simple no-build interaction.
-- left or top module index for this L2, adjacent L2s, target layers, and major runtime objects.
-- SVG diagrams for the main views.
-- explanatory panel or section for how to read each view.
-- expandable `<details>` boundary cards for responsibilities, non-responsibilities, inputs, outputs, state ownership, and acceptance signals.
-- responsive layout for narrow screens.
+- root-level file named exactly `L2架构交互可视化.html`;
+- self-contained `<!doctype html>` file with inline CSS and no network dependencies;
+- clear title, subtitle, and note that `agent_context/*.md` is authoritative if HTML conflicts with Markdown;
+- visual-first, low-text presentation using inline SVG diagrams, visual cards, arrows, swimlanes, state panels, or similar graphics;
+- interaction through radio tabs, toggles, `<details>`, hover states, or equivalent no-build controls;
+- explicit references to `agent_context/00_INDEX.md` and relevant Agent Markdown files;
+- `data-agent-source` on every HTML view root;
+- stable `l2_id`.
 
-Required views:
+The HTML must follow the approved L2 sample pattern, not the older six-view architecture report pattern. Use exactly four top-level dimensions:
 
-| View | Required content |
-|---|---|
-| Overview | This L2 in the Stage 4 ACT collaboration graph, with upstream/downstream L2s. |
-| Dataflow | External inputs, RAM objects, queues/topics, outputs, and ownership. |
-| Control/runtime flow | Timer, worker, callback, service call, or `ControlLoop.tick()` interactions. |
-| Failure/fallback | Validation failures, stale data, rejected actions, blocked hardware, fallback/status propagation. |
-| Metrics/status/acceptance | Observable topics, logs, counters, commands, pass/fail phenomena. |
-| Boundary contract | Responsibilities, non-responsibilities, target files, and acceptance coverage. |
+```text
+header: h1 + subtitle + authority note
+input[type=radio]#v1..#v4
+nav.tabs:
+  1 功能边界
+  2 Pi0.5 如何运作
+  3 开发蓝图
+  4 人类验收标准
+.views:
+  section.view.boundary
+  section.view.pi05map
+  section.view.blueprint
+  section.view.acceptance
+```
 
-The visualization is an inspection artifact, not the source of truth. It must cite the authoritative L1 task doc, L1 Agent architecture doc, and current L2 package Markdown files. If a required view is not meaningful for this L2, keep the tab/card and explain why it is not applicable.
+Each dimension root section must include `data-agent-source`, a `reading-path`, a `lead` paragraph, visual content, and a final `<p class="src">权威来源：...</p>`.
+
+Required dimensions:
+
+| Dimension | Required content | Typical authoritative Markdown |
+|---|---|---|
+| `boundary` / 维度1 功能边界 | Explain what this L2 does and does not do. Use a status/positioning SVG, startup processing SVG, responsible vs non-responsible boundary-wall SVG, and data contract cards. | `01_L2功能边界.md` |
+| `pi05map` / 维度2 Pi0.5 如何运作 | Explain the matching Pi0.5 source in plain language. Use a terminology dictionary `.dict`, four-step `.flow`, trace block `.trace`, bundle directory `.tree`, source-difference callouts, and core-question cards. | `02_pi05源码3.5层微元拆解.md` |
+| `blueprint` / 维度3 开发蓝图 | Explain ACT code landing and micro-units. Use a runtime/assembly SVG, six-layer `.lpick` radio panes, `.classbox` + `.mu-list` micro-unit cards, and no-artifact panes explaining reason, upstream object, and acceptance confirmation. | `03_ACT微元设计与协作.md`, `06-11_*层设计.md` |
+| `acceptance` / 维度4 人类验收标准 | Explain how a human verifies the L2. Use sample-style `.vfy` groups and `.vfy-item` cards with commands, pass phenomena, fail phenomena, and rationale links to the authoritative docs. | `04_L2验收机制.md`, `05_人类验收机制.md` |
+
+The old six-view labels from the architecture-report pattern must not be required or used as top-level view labels. Their semantics may be folded into the four approved dimensions.
 
 The HTML must not:
 
-- Pull scripts, fonts, styles, or images from the network.
+- Pull scripts, fonts, styles, images, or CSS from the network.
+- Use bitmap images as the default visualization method; prefer inline SVG.
 - Copy ACT-wide example content as if it were this L2's design.
 - Use Contract Delta, legacy L2 ids, or Stage 2 templates as the current boundary.
 - Hide unresolved design decisions that remain blocking.
+
+## Required Interaction Checkpoints
+
+During L2 design, stop for user confirmation at these checkpoints:
+
+1. L2 boundary: inputs, outputs, responsibilities, non-responsibilities, upstream/downstream.
+2. ACT micro-units and class/function design: Pi0.5 reuse decision and six-layer landing points.
+3. HTML information hierarchy and L2 Gate: what humans inspect, what Agents read, and how Gate passes.
 
 ## Ready For L3 Criteria
 
@@ -204,24 +280,28 @@ The L2 is ready for L3 generation only when:
 - Pi0.5 source range is mapped.
 - Pi0.5 3.5-layer source micro-units are explained.
 - ACT micro-units and class/function decisions are confirmed by the user.
-- Six-layer design docs exist.
+- All 12 `agent_context/` files exist.
+- `00_INDEX.md` contains a valid `HTML-MD 语义对齐表`.
+- Each HTML view has a valid `data-agent-source` reference to existing Agent Markdown.
 - L2 Gate exists.
 - Human acceptance mechanism exists.
-- Interactive HTML visualization exists and is aligned with the Markdown design docs.
+- Human HTML visualization exists and aligns with the Markdown design docs.
 - Open user decisions are either resolved or explicitly marked as blocking.
 - The package passed the legacy / Contract Delta / Stage 2 template contamination check.
 
-## Suggested Design Quality Scans
+## Validation
 
-Run these read-only checks after creating an L2 design package:
+Run:
 
 ```bash
-rg -n 'l2-01-types|l2-02-config|l2-03-assembly|l2-04-publish|l2-05-hardware' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>
-rg -n 'ACT Contract Delta|AS-IS Contract -> TO-BE Contract -> Contract Delta|阶段二开发范式|L2能力模块说明文件模板' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>
-rg -n '01_L1_ACT功能模块边界.md' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>
-rg -n '02_L1_ACT功能模块协作架构.md' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>
-rg -n '<!doctype html>|<svg|<details|view-|l2-[0-9]{2}-' DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>/05_L2架构交互可视化.html
-find DOCS/03_工程/阶段四：模型部署/02_implement/<l2_design_dir>/{types,config,repo,service,runtime,ui} -maxdepth 1 -type f
+python3 skills/stage4-l2-designer/scripts/validate_l2_design_package.py DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>
 ```
 
-Expected result: old ids and Contract Delta appear only inside explicit contamination-check sections, the L1 Agent architecture doc is referenced, the interactive HTML contains a doctype, SVG, interactive views/cards, stable L2 id references, and every six-layer subfolder contains at least one design file or README.
+Expected result:
+
+- root contains only `L2架构交互可视化.html` and `agent_context/`;
+- all 12 fixed Markdown files exist;
+- no six-layer subdirectories exist;
+- HTML contains doctype, the four approved radio dimensions, sample-pattern visual components, `agent_context` references, stable L2 id, and valid `data-agent-source` links;
+- `00_INDEX.md` contains the semantic alignment table;
+- legacy and Contract Delta terms appear only in allowed contamination/deprecation/read-only contexts.
