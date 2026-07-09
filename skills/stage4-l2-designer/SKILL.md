@@ -33,6 +33,8 @@ Read these before producing or changing artifacts:
 
 Read `references/l2-output-contract.md` when creating, migrating, or checking the final file tree.
 
+Read `html要求.md`（仓库根目录）as the authoritative HTML generation specification. All four dimensions, CSS components, SVG patterns, table formats, and terminal-block conventions must follow this spec. The dimension 4 paradigm in particular（one `.sh` script + `.term` terminal example + `.trtab` translation table）is fixed and must not revert to old-style `.vfy-item` cards.
+
 Use `DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视化.html` only as a visual quality reference. Do not copy ACT-wide content into a single-L2 visualization.
 
 ## Current L2 Identity Rules
@@ -218,9 +220,20 @@ Use these dimension responsibilities:
 | `boundary` / 维度1 功能边界 | 做什么 / 不做什么 / 输入输出契约是什么？ | status/positioning SVG, startup processing SVG, responsible vs non-responsible boundary-wall SVG, data contract cards |
 | `pi05map` / 维度2 Pi0.5 如何运作 | 参考源码如何运行，用白话讲清楚。 | plain-language callout, `details` terminology dictionary `.dict`, four-step `.flow`, `.trace`, bundle `.tree`, core-question cards |
 | `blueprint` / 维度3 开发蓝图 | 代码如何分层，每层有哪些 micro-units？ | runtime/assembly SVG, six-layer `.lpick` radio panes, `.classbox` + `.mu-list` micro-unit breakdown, no-artifact layer panes |
-| `acceptance` / 维度4 人类验收标准 | 怎么验证，跑什么，看到什么算通过或失败？ | sample-style `.vfy` groups, `.vfy-item` cards, command blocks, pass/fail phenomena, rationale links |
+| `acceptance` / 维度4 人类验收标准 | 怎么验证，跑什么，看到什么算通过或失败？ | one `.sh` script command + `.term` terminal example block（layered grouping with FAIL `.t-loc` location）+ `.trtab` translation table（label → layer → micro-unit with complete file→class→micro-unit location chain → PASS meaning / FAIL where to look）|
 
 Do not reintroduce the old six-view contract as required HTML structure. Those architecture-report ideas may appear only as content inside the four approved dimensions when useful.
+
+**Dimension 4 specific constraints（mandatory, per `html要求.md` §5）:**
+
+The acceptance dimension must follow the new paradigm, not the old `.vfy-item` card list:
+
+- **Part A — How to verify:** One `.sh` script command（e.g. `bash src/model_deploy/act/scripts/l2_XX_verify.sh`）with output format description. Must include a `.term` terminal example block showing a run with at least one FAIL, so humans can see the FAIL location format.
+- **Terminal output format:** Grouped by architecture layer（types/config/repo/service/runtime/ui·boundary）, visually aligned with dimension 3's six-layer `.lpick` tabs. Each line: `PASS|FAIL|BLOCKED` + label name + one-sentence description. FAIL lines must include a `.t-loc` sub-block with exact location: file / class / micro-unit / pytest node / error summary. Summary line: `N PASS / N FAIL / N BLOCKED`. BLOCKED ≠ failure（environment constraint）.
+- **Part B — Translation table（`.trtab`）:** Each row maps one terminal label to: layer → micro-unit with complete location chain（`文件路径 → class名（模块级函数标"无 class"）→ 微元名 + 类型小标签`）→ PASS meaning / FAIL where to look. The location chain must be complete—never abbreviate to just function name.
+- **CSS collision prevention:** `.trtab td.mu` must explicitly `display:block` to override the global `.mu{display:grid;grid-template-columns:90px 1fr}` rule. Terminal example block must use structured `.t-row` divs（not `<pre>`）with three-column grid alignment.
+- **Script design basis:** Reference `agent_context/04_L2验收机制.md §4` for script design requirements. The script itself is built by a later L3 task; dimension 4 only defines the expected output format and labels.
+- **Document audit items**（non-script, human-reviewed）may follow Part B as a compact section, clearly separated from automated script tests.
 
 Stop for user confirmation after drafting the HTML information hierarchy and L2 Gate/human acceptance design.
 
@@ -228,7 +241,7 @@ Stop for user confirmation after drafting the HTML information hierarchy and L2 
 
 Produce both:
 
-- `agent_context/04_L2验收机制.md`: AI-side L2 Gate, required L3 draft, local/mock/dry-run/shadow-run checks, blocked items, pass/fail criteria.
+- `agent_context/04_L2验收机制.md`: AI-side L2 Gate, required L3 draft, local/mock/dry-run/shadow-run checks, blocked items, pass/fail criteria. **Must include §4** that defines the `.sh` verification script design: output format（PASS/FAIL/BLOCKED per label, layered grouping aligned with six-layer tabs）, exit code rules, label→micro-unit mapping, and BLOCKED judgment criteria. This §4 is the design basis for the HTML dimension 4 `.term` terminal example block and `.trtab` translation table.
 - `agent_context/05_人类验收机制.md`: human runnable checklist, commands, inputs, observation points, pass/fail phenomena, signature location, hardware safety notes.
 
 Human acceptance must never mark real-robot behavior as passed without real hardware, explicit authorization, emergency stop readiness, and shadow-run evidence.
@@ -242,6 +255,12 @@ python3 skills/stage4-l2-designer/scripts/validate_l2_design_package.py DOCS/03_
 ```
 
 Also inspect any reported contamination manually before treating the package as ready for L3 generation.
+
+Additional manual checks for dimension 4:
+- HTML must contain `.term` terminal example block with at least one FAIL row and `.t-loc` sub-block.
+- HTML must contain `.trtab` translation table with complete location chains（file path → class → micro-unit + kind tag）per row.
+- `.trtab td.mu` must have `display:block` override to prevent CSS collision with global `.mu` grid layout.
+- Terminal labels must be grouped by layer matching dimension 3's six-layer tabs.
 
 ## Output Rules
 

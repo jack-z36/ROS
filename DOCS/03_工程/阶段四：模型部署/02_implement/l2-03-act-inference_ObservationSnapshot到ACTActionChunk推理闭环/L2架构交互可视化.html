@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L2-03 ObservationSnapshot 到 ACT ActionChunk 推理闭环 · 架构交互可视化</title>
+<style>
+:root{
+  --bg:#f6f7f9;--ink:#1f2937;--muted:#667085;--line:#d0d5dd;--panel:#ffffff;
+  --config:#2563eb;--types:#0f766e;--repo:#7c3aed;--warn:#b42318;--ok:#047857;
+  --ctrl:#344054;--pi:#c2410c;--grey:#98a2b3;--yellow:#b54708;
+  --types-bg:#ecfdf5;--config-bg:#eff6ff;--repo-bg:#f5f3ff;--warn-bg:#fef2f2;--ok-bg:#ecfdf5;--grey-bg:#f2f4f7;--pi-bg:#fff7ed;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.page{max-width:1240px;margin:0 auto;padding:22px}
+header{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start;margin-bottom:14px}
+h1{margin:0 0 6px;font-size:26px;line-height:1.2}
+h2{margin:0 0 6px;font-size:19px}
+h3{margin:14px 0 6px;font-size:15px}
+h4{margin:10px 0 4px;font-size:14px;color:var(--ctrl)}
+p{margin:0 0 8px;line-height:1.65}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.subtitle{color:var(--muted);max-width:820px}
+.note{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:11px 12px;color:var(--muted);font-size:12.5px;line-height:1.55}
+.note b{color:var(--ink)}
+
+input[name=tab]{position:absolute;opacity:0;pointer-events:none}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.tabs label{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:9px 13px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.tabs label .n{display:inline-flex;width:18px;height:18px;border-radius:999px;background:var(--grey-bg);color:var(--muted);font-size:11px;align-items:center;justify-content:center;font-weight:700}
+#v1:checked~.tabs label[for=v1]{background:var(--config);color:#fff;border-color:transparent}
+#v2:checked~.tabs label[for=v2]{background:var(--pi);color:#fff;border-color:transparent}
+#v3:checked~.tabs label[for=v3]{background:var(--types);color:#fff;border-color:transparent}
+#v4:checked~.tabs label[for=v4]{background:var(--ctrl);color:#fff;border-color:transparent}
+#v1:checked~.tabs label[for=v1] .n,#v2:checked~.tabs label[for=v2] .n,#v3:checked~.tabs label[for=v3] .n,#v4:checked~.tabs label[for=v4] .n{background:rgba(255,255,255,.25);color:#fff}
+
+.views>section{display:none}
+#v1:checked~.views .boundary,#v2:checked~.views .pi05map,#v3:checked~.views .blueprint,#v4:checked~.views .acceptance{display:block}
+
+.view{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.lead{color:var(--muted);margin:0 0 12px}
+.figure{border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:10px;margin-bottom:12px;overflow:auto}
+svg{width:100%;min-width:700px;height:auto;display:block}
+.box{fill:#fff;stroke:var(--line);stroke-width:1.4}
+.band{stroke:none}
+.title{font-size:13.5px;font-weight:760;fill:var(--ink)}
+.sub{font-size:11.5px;fill:var(--muted)}
+.edge{fill:none;stroke:#475467;stroke-width:1.8;marker-end:url(#arrow)}
+.queue{stroke:var(--repo);stroke-dasharray:7 5}
+.ctl{stroke:var(--ctrl);stroke-dasharray:4 4}
+.fedge{stroke:var(--warn)}
+.io{stroke:var(--ok)}
+.elabel{font-size:11px;fill:#475467}
+.mono{font-family:ui-monospace,monospace;font-size:11px;fill:var(--repo)}
+
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:8px;background:#fff;padding:12px;transition:box-shadow .15s,transform .15s}
+.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-1px)}
+.card h3{margin-top:0}
+.card.types{border-left-color:var(--types)}
+.card.config{border-left-color:var(--config)}
+.card.repo{border-left-color:var(--repo)}
+.card.ok{border-left-color:var(--ok)}
+.card.warn{border-left-color:var(--warn)}
+.card.pi{border-left-color:var(--pi)}
+.card.grey{border-left-color:var(--grey);background:var(--grey-bg)}
+.card.yellow{border-left-color:var(--yellow);background:#fffbeb}
+.card ul{margin:6px 0 0;padding-left:18px;color:var(--muted);line-height:1.6;font-size:13px}
+.card p{font-size:13px;color:var(--muted);line-height:1.65}
+
+.tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin:2px 3px 2px 0;font-size:11.5px;color:var(--muted);background:#fff}
+.badge{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:600}
+.badge.layer{background:var(--grey-bg);color:var(--ctrl)}
+.badge.direct{background:var(--ok-bg);color:var(--ok)}
+.badge.struct{background:var(--config-bg);color:var(--config)}
+.badge.ref{background:#fff7ed;color:var(--yellow)}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;color:var(--muted);font-size:12px;margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+
+details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;margin-bottom:8px}
+details[open]{background:#fbfcfe}
+summary{cursor:pointer;font-weight:700;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details p,details ul{margin:8px 0 0;padding-left:0;color:var(--muted);line-height:1.7;font-size:13px}
+details ul{padding-left:18px}
+details .body{padding-top:8px}
+
+.callout{border:1px solid #fedf89;background:#fffbeb;color:#7a5c00;border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.6;font-size:13px}
+.callout.warn{border-color:#fecdca;background:var(--warn-bg);color:#912018}
+.callout.pi{border-color:#fed7aa;background:var(--pi-bg);color:#9a3412}
+.callout.ok{border-color:#a7f3d0;background:var(--ok-bg);color:#065f46}
+.src{color:var(--muted);font-size:12px;margin:10px 0 0}
+.src code{color:var(--repo)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:12px}
+tr:nth-child(even) td{background:#fafbfc}
+td .okc{color:var(--ok);font-weight:600}
+td .errc{color:var(--warn);font-weight:600}
+
+.reading-path{font-size:11.5px;color:var(--muted);margin:-6px 0 10px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.reading-path a{color:var(--config);text-decoration:none;font-weight:600}
+.reading-path a:hover{text-decoration:underline}
+
+.step-label{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;background:var(--grey-bg);color:var(--ctrl);border-radius:999px;padding:2px 10px;margin-right:6px;font-weight:600}
+.step-label.code{background:var(--config-bg);color:var(--config)}
+.step-label.doc{background:var(--types-bg);color:var(--types)}
+
+.layer-matrix{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 12px}
+.lcell{border:1px solid var(--line);border-radius:8px;padding:10px;text-align:center;font-size:12px}
+.lcell.has{background:var(--types-bg);border-color:var(--types);color:var(--types)}
+.lcell.has b{display:block;font-size:13px}
+.lcell.none{background:var(--grey-bg);color:var(--muted)}
+.lcell.none b{display:block;font-size:13px;color:var(--ctrl)}
+
+.lpick input{position:absolute;opacity:0;pointer-events:none}
+.lpick .ltabs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 12px}
+@media(max-width:780px){.lpick .ltabs{grid-template-columns:repeat(3,1fr)}}
+.lpick .ltabs label{border:1px solid var(--line);border-radius:8px;padding:12px 8px;text-align:center;font-size:13px;cursor:pointer;background:#fff;color:var(--muted);display:block;transition:all .12s}
+.lpick .ltabs label b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+.lpick .ltabs label.has{border-color:var(--types)}
+.lpick .ltabs label.none{border-color:var(--line);background:var(--grey-bg)}
+.lpick .lpane{display:none;border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:14px}
+.lpick .lpane h4{margin:0 0 6px;color:var(--types)}
+.lpick .lpane.none-pane h4{color:var(--ctrl)}
+#l-types:checked~.lp-types,
+#l-config:checked~.lp-config,
+#l-repo:checked~.lp-repo,
+#l-service:checked~.lp-service,
+#l-runtime:checked~.lp-runtime,
+#l-ui:checked~.lp-ui{display:block}
+#l-types:checked~.ltabs label[for=l-types]{background:var(--types);border-color:var(--types);color:#fff}
+#l-types:checked~.ltabs label[for=l-types] b{color:#fff}
+#l-config:checked~.ltabs label[for=l-config]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-config:checked~.ltabs label[for=l-config] b{color:#fff}
+#l-repo:checked~.ltabs label[for=l-repo]{background:var(--repo);border-color:var(--repo);color:#fff}
+#l-repo:checked~.ltabs label[for=l-repo] b{color:#fff}
+#l-service:checked~.ltabs label[for=l-service]{background:var(--config);border-color:var(--config);color:#fff}
+#l-service:checked~.ltabs label[for=l-service] b{color:#fff}
+#l-runtime:checked~.ltabs label[for=l-runtime]{background:var(--repo);border-color:var(--repo);color:#fff}
+#l-runtime:checked~.ltabs label[for=l-runtime] b{color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui] b{color:#fff}
+
+.classbox{border:1px solid var(--line);border-left:4px solid var(--config);border-radius:8px;background:#fff;padding:12px;margin:8px 0}
+.classbox.repo{border-left-color:var(--repo)}
+.classbox.svc{border-left-color:var(--config)}
+.classbox.rt{border-left-color:var(--repo)}
+.classbox h5{margin:0 0 4px;font-size:13.5px;color:var(--config);font-family:ui-monospace,monospace}
+.classbox.repo h5{color:var(--repo)}
+.classbox.svc h5{color:var(--config)}
+.classbox.rt h5{color:var(--repo)}
+.classbox .role{font-size:12px;color:var(--muted);margin:0 0 8px}
+.mu-list{display:grid;gap:6px;margin-top:6px}
+.mu{display:grid;grid-template-columns:90px 1fr;gap:10px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:6px}
+.mu .kind{font-weight:700;text-align:right}
+.mu .kind.data{color:var(--types)}
+.mu .kind.calc{color:var(--config)}
+.mu .kind.io{color:var(--repo)}
+.mu .kind.orch{color:var(--yellow)}
+.mu .kind.state{color:#92400e}
+.mu .desc{color:var(--muted);line-height:1.6}
+
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:6px 0}
+@media(max-width:980px){.flow{grid-template-columns:1fr}}
+.step{background:#fff;border:1px solid var(--line);border-top:4px solid var(--config);border-radius:8px;padding:16px 14px;position:relative;font-size:13px}
+.step.s1{border-top-color:var(--repo)}
+.step.s2{border-top-color:var(--config)}
+.step.s3{border-top-color:var(--yellow)}
+.step.s4{border-top-color:var(--ok)}
+.step .no{position:absolute;top:-12px;left:12px;background:var(--ctrl);color:#fff;width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.step h4{margin:4px 0 6px;color:var(--ink)}
+.step .what{font-size:12.5px;color:var(--muted);line-height:1.7}
+.arrow-r{display:flex;align-items:center;justify-content:center;color:var(--grey);font-size:20px}
+@media(min-width:981px){.arrow-r{padding:0 2px}}
+
+.trace{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 20px;font-family:ui-monospace,monospace;font-size:13px;line-height:2.4;overflow:auto;letter-spacing:.3px}
+.trace .ln{color:#64748b;font-weight:700;margin-right:6px}
+.trace .key{color:#7dd3fc}
+.trace .val{color:#fde68a}
+.trace .cmt{color:#64748b}
+.trace .ok{color:#86efac}
+.trace .err{color:#fca5a5}
+.trace .gap{display:block;height:8px}
+
+.tree{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 16px;font-family:ui-monospace,monospace;font-size:12.5px;line-height:2.2;color:var(--ink)}
+.tree .dir{color:var(--repo);font-weight:700}
+.tree .file{color:var(--ink)}
+.tree .cmt{color:var(--muted);font-family:system-ui,sans-serif;font-size:11.5px}
+.tree .arrow{color:var(--grey)}
+
+.dict{width:100%}
+.dict td:first-child{width:24%;font-weight:600;color:var(--ctrl);font-family:ui-monospace,monospace;font-size:12.5px;vertical-align:top}
+.dict td{font-size:13px;line-height:1.65}
+
+.faq-q{font-weight:700;color:var(--ctrl);font-size:13.5px;margin:10px 0 4px}
+
+.vfy{margin:10px 0}
+.vfy-item{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.vfy-item .num{width:28px;height:28px;border-radius:999px;background:var(--ctrl);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:2px}
+.vfy-item .body{min-width:0}
+.vfy-item .do{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 6px}
+.vfy-item .cmd-block{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:8px 12px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;display:block;margin:6px 0}
+.vfy-item .cmd-block .c{color:#94a3b8}
+.vfy-item .result{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+@media(max-width:700px){.vfy-item .result{grid-template-columns:1fr}}
+.vfy-item .pass{border:1px solid #a7f3d0;border-radius:6px;background:var(--ok-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+.vfy-item .pass::before{content:"✅ 通过 → ";font-weight:700;color:var(--ok)}
+.vfy-item .fail{border:1px solid #fecdca;border-radius:6px;background:var(--warn-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+.vfy-item .fail::before{content:"❌ 失败 → ";font-weight:700;color:var(--warn)}
+.vfy-item .why{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
+.vfy-item .why a{color:var(--config);font-weight:600;text-decoration:none}
+.vfy-item .why a:hover{text-decoration:underline}
+.vfy-sep{margin:18px 0 12px;border-top:2px dashed var(--line)}
+.vfy-section-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);background:var(--grey-bg);border-radius:999px;padding:2px 10px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.vfy-item .do .tag{vertical-align:middle;margin-left:4px}
+
+	/* 维度4 终端范例块 + 翻译表 */
+	.term{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 18px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;margin:8px 0}
+	.term .t-hdr{color:#94a3b8;font-weight:700;margin-bottom:10px}
+	.term .t-grp{color:#7dd3fc;font-weight:700;margin:12px 0 5px}
+	.term .t-grp:first-of-type{margin-top:0}
+	.term .t-row{display:grid;grid-template-columns:72px 232px 1fr;gap:6px;line-height:2.0;align-items:baseline}
+	.term .t-row .ok{color:#86efac;font-weight:700}
+	.term .t-row .fail{color:#fca5a5;font-weight:700}
+	.term .t-row .blk{color:#fde68a;font-weight:700}
+	.term .t-row .lbl{color:#e2e8f0;overflow:hidden;text-overflow:ellipsis}
+	.term .t-row .note{color:#64748b}
+	.term .t-loc{color:#94a3b8;line-height:1.75;padding:2px 0 4px 24px;font-size:11.5px;border-left:2px solid #334155;margin-left:6px}
+	.term .t-loc span{display:block}
+	.term .t-sep{color:#475569;margin-top:8px}
+	.term .t-sum{color:#e2e8f0;font-weight:700;margin-top:4px}
+	.trtab{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+	.trtab th,.trtab td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+	.trtab th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:11.5px}
+	.trtab td.lbl{font-family:ui-monospace,monospace;color:var(--repo);font-size:12px;white-space:nowrap}
+	.trtab td.lyr{font-weight:600;white-space:nowrap}
+	.trtab tr.types td.lyr{color:var(--types)}
+	.trtab tr.config td.lyr{color:var(--config)}
+	.trtab tr.repo td.lyr{color:var(--repo)}
+	.trtab tr.service td.lyr{color:var(--config)}
+	.trtab tr.runtime td.lyr{color:var(--repo)}
+	.trtab tr.ui td.lyr,.trtab tr.boundary td.lyr{color:var(--yellow)}
+	.trtab td.mu{display:block;font-size:11.5px;color:var(--muted);line-height:1.7}
+	.trtab td.mu .fpath{color:var(--repo);font-family:ui-monospace,monospace;font-size:11px}
+	.trtab td.mu .cls{color:var(--config);font-weight:600}
+	.trtab td.mu .kindtag{font-size:10.5px;background:var(--grey-bg);color:var(--ctrl);border-radius:3px;padding:0 5px;margin-left:2px;white-space:nowrap}
+	.trtab td.mu .kindtag.data{color:var(--types)}
+	.trtab td.mu .kindtag.calc{color:var(--config)}
+	.trtab td.mu .kindtag.io{color:var(--repo)}
+	.trtab td.mu .kindtag.orch{color:var(--yellow)}
+	.trtab td.mu .kindtag.state{color:#92400e}
+	.trtab td.pf{display:block;font-size:12px;line-height:1.8}
+	.trtab td.pf .fp{color:var(--warn);font-weight:600}
+	.trtab td.pf .pp{color:var(--ok);font-weight:600}
+	.trtab td.pf .blk{color:#b54708;font-weight:600}
+	.trtab td.pf .fn{display:block}
+	</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>L2-03 · ObservationSnapshot 到 ACT ActionChunk 推理闭环</h1>
+      <p class="subtitle">后台计算角色：把观测冻结对象加工成 batch，调用 ACT policy，输出 <code>(chunk_size, 16)</code> 的动作块，经队列交给 L2-06。后台线程异步解耦，GPU 推理不阻塞 control tick。第一版 fake-policy 必跑，不做 action 平滑。本页用 4 个维度交互呈现：功能边界、Pi0.5 对应部分如何运作、开发蓝图、人类验收标准。<br><code>l2_id: l2-03-act-inference</code></p>
+    </div>
+    <div class="note">
+      <b>本页只是人类快速浏览入口，不作为 L3 生成依据。</b><br>
+      权威细节见 <code>agent_context/00_INDEX.md</code> 及其路由的 Markdown。HTML 与 MD 冲突时，以 MD 为准。
+    </div>
+  </header>
+
+  <input id="v1" name="tab" type="radio" checked>
+  <input id="v2" name="tab" type="radio">
+  <input id="v3" name="tab" type="radio">
+  <input id="v4" name="tab" type="radio">
+
+  <nav class="tabs" aria-label="维度视图">
+    <label for="v1"><span class="n">1</span>功能边界</label>
+    <label for="v2"><span class="n">2</span>Pi0.5 如何运作</label>
+    <label for="v3"><span class="n">3</span>开发蓝图</label>
+    <label for="v4"><span class="n">4</span>人类验收标准</label>
+  </nav>
+
+  <div class="views">
+
+    <!-- ============ 维度 1 · 功能边界 ============ -->
+    <section class="view boundary" data-agent-source="agent_context/01_L2功能边界.md#1-一句话运行时职责">
+      <h2>维度 1 · 功能边界</h2>
+      <div class="reading-path">📖 阅读路径：先理解 L2-03 是后台推理角色 → 然后去<a href="#" onclick="document.getElementById('v4').click()">维度4</a>对照验收</div>
+      <p class="lead">用四张图把 L2-03 的功能边界讲清楚：① 它在三个运行轴里的定位；② snapshot→chunk 的加工链；③ 负责 vs 不负责的边界墙；④ 输入输出契约。</p>
+
+      <h3>图① 三轴定位：L2-03 是后台推理轴</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 280" role="img" aria-label="L2-03 三轴定位">
+          <defs><marker id="arrow" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker></defs>
+          <!-- AX1 Observation 轴 -->
+          <rect class="box" x="20" y="20" width="240" height="70" rx="8"></rect><rect class="band" x="20" y="20" width="6" height="70" fill="var(--config)"></rect>
+          <text class="title" x="36" y="42">轴① Observation 事件轴</text>
+          <text class="sub" x="36" y="62">ROS topic→L2-02→latest_observation</text>
+          <text class="sub" x="36" y="78" fill="var(--config)">L2-02 负责，本 L2 不参与</text>
+          <!-- AX3 Control 轴 -->
+          <rect class="box" x="20" y="190" width="240" height="70" rx="8"></rect><rect class="band" x="20" y="190" width="6" height="70" fill="var(--ctrl)"></rect>
+          <text class="title" x="36" y="212">轴③ Control Tick 调度轴</text>
+          <text class="sub" x="36" y="232">L2-06 tick→提交 request→取 chunk</text>
+          <text class="sub" x="36" y="248" fill="var(--ctrl)">L2-06 负责调度</text>
+          <!-- AX2 Inference 轴（本 L2） -->
+          <rect class="box" x="340" y="100" width="300" height="90" rx="10" fill="#fcfdff" stroke="var(--repo)" stroke-width="2.5"></rect>
+          <rect class="band" x="340" y="100" width="300" height="26" fill="var(--repo)"></rect>
+          <text x="490" y="118" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">轴② Inference 后台轴（本 L2）</text>
+          <text class="title" x="356" y="142">L2-03 ACT 推理 Actor</text>
+          <text class="sub" x="356" y="160">request_queue → 推理 → chunk_result_queue</text>
+          <text class="sub" x="356" y="176" fill="var(--ok)">后台线程，异步解耦 GPU 与 tick</text>
+          <!-- 连接 -->
+          <path class="edge ctl" d="M260 130 Q300 135 340 140"></path>
+          <text class="elabel" x="262" y="125" fill="var(--ctrl)">tick 提交 request</text>
+          <path class="edge ctl" d="M340 168 Q300 200 264 215"></path>
+          <text class="elabel" x="250" y="180" fill="var(--ctrl)">tick 收集 chunk</text>
+          <path class="edge queue" d="M640 145 L710 145"></path>
+          <text class="elabel" x="644" y="138" fill="var(--repo)">写 chunk</text>
+          <rect class="box" x="712" y="110" width="180" height="70" rx="8"></rect><rect class="band" x="712" y="110" width="6" height="70" fill="var(--ok)"></rect>
+          <text class="title" x="728" y="134">ActionChunk</text>
+          <text class="sub" x="728" y="154">actions (chunk_size, 16)</text>
+          <text class="sub" x="728" y="170">obs_time / ready_time / request_id</text>
+        </svg>
+      </div>
+
+      <h3>图② snapshot→chunk 加工链（推理内部）</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 200" role="img" aria-label="snapshot 到 chunk 加工链">
+          <defs><marker id="arrow2" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker></defs>
+          <rect class="box" x="20" y="60" width="130" height="80" rx="8"></rect><rect class="band" x="20" y="60" width="6" height="80" fill="var(--types)"></rect>
+          <text class="title" x="36" y="84">ObservationSnapshot</text>
+          <text class="sub" x="36" y="104">images / state</text>
+          <text class="sub" x="36" y="120">encoded_state (16,)</text>
+          <text class="sub" x="36" y="136">captured_at_s</text>
+          <path class="edge" d="M152 100 L202 100"></path>
+          <text class="elabel" x="156" y="92">build_batch</text>
+          <rect class="box" x="204" y="60" width="150" height="80" rx="8"></rect><rect class="band" x="204" y="60" width="6" height="80" fill="var(--config)"></rect>
+          <text class="title" x="220" y="84">ACT batch</text>
+          <text class="sub" x="220" y="104">observation.state</text>
+          <text class="sub" x="220" y="120">observation.images.*</text>
+          <text class="sub" x="220" y="136">task</text>
+          <path class="edge" d="M356 100 L406 100"></path>
+          <text class="elabel" x="360" y="92">preprocess+device</text>
+          <rect class="box" x="408" y="60" width="150" height="80" rx="8" fill="var(--repo-bg)" stroke="var(--repo)"></rect><rect class="band" x="408" y="60" width="6" height="80" fill="var(--repo)"></rect>
+          <text class="title" x="424" y="84" fill="var(--repo)">policy.predict</text>
+          <text class="sub" x="424" y="104">GPU 前向</text>
+          <text class="sub" x="424" y="120">→ norm_chunk [−1,1]</text>
+          <text class="sub" x="424" y="136">最耗时边界</text>
+          <path class="edge" d="M560 100 L610 100"></path>
+          <text class="elabel" x="564" y="92">unnormalize</text>
+          <rect class="box" x="612" y="60" width="150" height="80" rx="8"></rect><rect class="band" x="612" y="60" width="6" height="80" fill="var(--config)"></rect>
+          <text class="title" x="628" y="84">物理尺度 chunk</text>
+          <text class="sub" x="628" y="104">clamp(−1,1)</text>
+          <text class="sub" x="628" y="120">校验 shape[1]==16</text>
+          <text class="sub" x="628" y="136">截断 chunk_size</text>
+          <path class="edge io" d="M764 100 L810 100"></path>
+          <rect class="box" x="812" y="60" width="90" height="80" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect><rect class="band" x="812" y="60" width="6" height="80" fill="var(--ok)"></rect>
+          <text class="title" x="857" y="92" text-anchor="middle" fill="var(--ok)">Action</text>
+          <text class="title" x="857" y="108" text-anchor="middle" fill="var(--ok)">Chunk</text>
+          <text class="sub" x="857" y="128" text-anchor="middle">(N, 16)</text>
+        </svg>
+      </div>
+
+      <h3>图③ 负责 vs 不负责：边界墙</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 250" role="img" aria-label="负责与不负责边界墙">
+          <rect x="430" y="20" width="60" height="210" fill="#fde68a" opacity="0.35"></rect>
+          <text x="460" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--yellow)">边界墙</text>
+          <line x1="460" y1="20" x2="460" y2="230" stroke="var(--yellow)" stroke-width="2" stroke-dasharray="6 4"></line>
+          <text class="title" x="30" y="36" fill="var(--ok)">✓ 负责（后台推理）</text>
+          <g><rect class="box" x="20" y="48" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="66">加载 ACT policy runtime（真实/fake），持有统一接口 predict_action_chunk</text></g>
+          <g><rect class="box" x="20" y="82" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="100">snapshot → ACT batch（处理 batch key、state normalize、图像整理）</text></g>
+          <g><rect class="box" x="20" y="116" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="134">推理后 action unnormalize，还原物理尺度；校验 shape[1]==16</text></g>
+          <g><rect class="box" x="20" y="150" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="168">InferenceWorker 后台线程：消费 request→推理→写 chunk + metrics</text></g>
+          <g><rect class="box" x="20" y="184" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="202">fake-policy 路径：无 bundle 时也能验收接口与调度</text></g>
+          <text class="title" x="510" y="36" fill="var(--warn)">✗ 不负责（归其他 L2）</text>
+          <g><rect class="box" x="500" y="48" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="66" fill="var(--warn)">不订阅 ROS topic / 不组装 snapshot（→ L2-02）</text></g>
+          <g><rect class="box" x="500" y="82" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="100" fill="var(--warn)">不决定何时推理 / 不提交 request（→ L2-06）</text></g>
+          <g><rect class="box" x="500" y="116" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="134" fill="var(--warn)">不做单步选择 / cursor / chunk 切换（→ L2-06）</text></g>
+          <g><rect class="box" x="500" y="150" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="168" fill="var(--warn)">不做 safety 检查 / 不发布 topic / 不发硬件（→ L2-04/L2-05）</text></g>
+          <g><rect class="box" x="500" y="184" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="202" fill="var(--warn)">不做 action 平滑 / blend / RTC / 跨 chunk 融合（后续优化）</text></g>
+        </svg>
+      </div>
+
+      <h3>图④ 输入输出契约</h3>
+      <div class="grid g2">
+        <div class="card types"><h3>输入</h3><ul>
+          <li><code>ObservationSnapshot</code>（images + state + encoded_state(16,) + captured_at_s）</li>
+          <li><code>InferenceRequest</code>（latest-only queue，来自 L2-06）</li>
+          <li><code>DeployConfig</code>（device/dtype/chunk_size/inference_hz/task）</li>
+          <li>ACT bundle（manifest/normalizers/experiment_config/adapter 权重）</li></ul></div>
+        <div class="card ok"><h3>输出</h3><ul>
+          <li><code>ActionChunk</code>：<code>actions (chunk_size, 16)</code> float32</li>
+          <li>时间戳：obs_time / infer_start_time / ready_time / action_dt</li>
+          <li><code>request_id</code>（继承自 request，供 L2-06 关联）</li>
+          <li>写入 <code>chunk_result_queue</code>（latest-only）</li>
+          <li>metrics：inference_count / latency / error_count</li></ul></div>
+      </div>
+
+      <div class="callout">边界不变量：L2-03 只消费 <code>InferenceRequest</code>，<b>不决定 action 何时执行</b>；第一版单步 raw action 由 L2-06 从 active chunk 按 cursor 直取，不做 smoothstep blend。</div>
+      <p class="src">权威来源：<code>agent_context/01_L2功能边界.md</code>（§1 职责 / §2 输入 / §3 输出 / §4 负责 / §5 不负责 / §8 上下游 / §7 代码层落点）</p>
+    </section>
+
+    <!-- ============ 维度 2 · Pi0.5 如何运作 ============ -->
+    <section class="view pi05map" data-agent-source="agent_context/02_pi05源码3.5层微元拆解.md#0-5-给计算机小白的白话开场">
+      <h2>维度 2 · Pi0.5 这部分是如何运作的</h2>
+      <div class="reading-path">📖 阅读路径：理解源码结构（后台 worker + policy runtime + queue）可复用，但模型框架（Pi0.5 VLA → ACT）和维度（14→16）必须重写 → 开发蓝图见<a href="#" onclick="document.getElementById('v3').click()">维度3</a></div>
+      <p class="lead">这一维度只回答一个问题：<b>Pi0.5 部署代码中，负责"把观测变成动作块"的那部分代码，到底是怎么一步步跑起来的。</b>不涉及 ACT 怎么改。下面按"先懂概念 → 看整体 → 跟一次推理 → 看每个零件"的顺序讲。</p>
+
+      <div class="callout pi">这一节用<b>白话</b>讲。每个专业术语第一次出现时都会解释，点开"术语词典"可以随时查。</div>
+
+      <h3>① 这部分代码整体在干什么（一句话）</h3>
+      <div class="card yellow">
+        <p style="color:#7a5c00;font-size:14px;line-height:1.7">像一个<b>"后台厨师"</b>——前面（L2-06）下单说"这盘观测数据给我做成一批动作"，厨师就在后厨默默把食材（snapshot）处理成模型能吃的样子（batch），喂给模型（policy），等模型吐出一串动作（action chunk），再装盘递回前面（result queue）。<b>全程不卡住前台</b>，因为厨师在独立的后厨（后台线程）干活。</p>
+        <p style="color:#7a5c00;font-size:13px;margin-top:6px">厨师循环很简单：看订单队列有没有新单 → 有就拿去做 → 做好放结果队列 → 继续看。和前台（ControlLoop）通过两个队列沟通，互不阻塞。</p>
+      </div>
+
+      <details open>
+        <summary>📖 术语词典（点开随时查，用《用户认知框架与讲解偏好》的概念体系解释）</summary>
+        <div class="body">
+        <table class="dict">
+          <tr><td>ObservationSnapshot</td><td><b>对应认知框架</b>第 3.5 层"数据"。"一盘刚拍好的食材"——某一瞬间所有传感器数据（图像 + 状态）冻结成一个完整对象。由 L2-02 准备好放那儿，本 L2 只负责拿来做菜。</td></tr>
+          <tr><td>batch</td><td><b>对应认知框架</b>第 3.5 层"计算函数"的产物。"模型能吃的标准化摆盘"。模型不直接吃原始 snapshot，要先把 state 归一化到 [−1,1]、图像整理成指定格式、贴标签（task）。纯 RAM 内数据变换。</td></tr>
+          <tr><td>policy<br>（策略模型）</td><td>"厨师的大脑"——一个训练好的神经网络。给它一盘标准化观测，它预测接下来该怎么动。本 L2 不训练它，只调用它。</td></tr>
+          <tr><td>predict_action_chunk</td><td><b>对应认知框架</b>第 3.5 层"编排函数"。"厨师做一次菜"——调模型一次，产出一串动作（不是单个）。比如一次产出 chunk_size=30 步连续动作。</td></tr>
+          <tr><td>normalize<br>unnormalize</td><td><b>对应认知框架</b>第 3.5 层"计算函数"（RAM 内）。模型只认 [−1,1]。<b>normalize</b> 把物理值压到 [−1,1]（推理前）；<b>unnormalize</b> 把模型输出的 [−1,1] 还原回物理尺度（推理后）。两个方向都要做，否则动作幅度全错。</td></tr>
+          <tr><td>InferenceWorker<br>（推理工人）</td><td><b>对应认知框架</b>第 3.5 层"编排函数"+"内部状态更新函数"。一个后台不停转的线程。循环：看队列有无新单 → 有就拿去做 → 做好放结果队列 → 继续。和前台通过两个队列通信。</td></tr>
+          <tr><td>latest-only<br>queue</td><td>一个特殊队列：新订单来了，旧的直接扔掉。推理要低延迟，过时观测做了也没意义。<code>LatestQueue</code>。</td></tr>
+          <tr><td>fake-policy<br>（假模型）</td><td>一个"假装是模型"的替身——不加载真实权重，直接返回 shape 正确的假动作块。目的：无 GPU / 无 bundle 时也能验证"从下单到出菜"整条链路是否通。</td></tr>
+          <tr><td>async 解耦</td><td>"前台点完单就能去干别的，不用等厨师做完"。control tick 每 1/30 秒跑一次，不能卡在等模型（可能几十毫秒）。所以推理放后台线程，前台只管下单和取菜。</td></tr>
+        </table>
+        </div>
+      </details>
+
+      <h3>② 整体流程：四个步骤（后台推理轴）</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:6px">Pi0.5 这部分代码在后台线程里循环执行。任一次推理出错，记录后继续下一个，不崩溃。</p>
+      <div class="flow">
+        <div class="step s1">
+          <span class="no">1</span>
+          <h4>取订单</h4>
+          <div class="what">从 <code>inference_request_queue</code> 取最新 request。无单就等 1ms 再看。<b>latest-only</b>：旧订单被新订单覆盖。</div>
+        </div>
+        <div class="step s2">
+          <span class="no">2</span>
+          <h4>备料+做菜</h4>
+          <div class="what"><code>predict_action_chunk</code>：snapshot→batch（normalize state）→preprocess→GPU 推理→unnormalize→校验 shape→截断。</div>
+        </div>
+        <div class="step s3">
+          <span class="no">3</span>
+          <h4>装盘递回</h4>
+          <div class="what">构造 <code>ActionChunk</code>（含时间戳 + request_id），写入 <code>chunk_result_queue</code>。</div>
+        </div>
+        <div class="step s4">
+          <span class="no">4</span>
+          <h4>记账+限速</h4>
+          <div class="what">记录 metrics（延迟/计数）；按 <code>inference_hz</code> 限速，避免空转过载。失败则记 <code>inference_error</code>，不崩溃。</div>
+        </div>
+      </div>
+
+      <h3>③ 跟一次推理走完全流程</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">假设 L2-06 在 tick 时决定要新 chunk，创建 <code>InferenceRequest</code> 丢进队列。跟着它走一遍：</p>
+      <div class="trace">
+<span class="cmt"># L2-06 在 tick 时创建 request（L2-06 职责，不是本 L2）</span>
+<span class="gap"></span>
+<span class="ln">①</span> <span class="cmt"># InferenceWorker 后台线程从队列取最新 request（编排函数，后台线程）</span>
+   request = request_queue.<span class="key">get_latest_or_none</span>()       <span class="cmt"># latest-only，旧的被丢</span>
+<span class="gap"></span>
+<span class="ln">②</span> <span class="cmt"># 按 inference_hz 限速（编排函数）</span>
+   remaining = period_s - (now - last_start)
+   <span class="cmt">#  if remaining &gt; 0: wait，continue（避免空转过载）</span>
+<span class="gap"></span>
+<span class="ln">③</span> <span class="cmt"># 调核心推理（编排函数 → 调 repo/service）</span>
+   actions = policy_runtime.<span class="key">predict_action_chunk</span>(request.observation)
+   <span class="cmt">#  3a. build_batch: state normalizer.normalize(encoded_state) → batch  [计算函数]</span>
+   <span class="cmt">#  3b. preprocessor(batch)  [计算函数]</span>
+   <span class="cmt">#  3c. batch move to cuda  [内部状态更新]</span>
+   <span class="cmt">#  3d. policy.predict(batch) → norm_chunk [−1,1]  [GPU 推理，最耗时]</span>
+   <span class="cmt">#  3e. cpu() + clamp(−1,1)  [计算函数]</span>
+   <span class="cmt">#  3f. action_normalizer.unnormalize → 物理尺度  [计算函数]</span>
+   <span class="cmt">#  3g. 校验 shape[1]==16, 截断 chunk_size  [计算函数]</span>
+<span class="gap"></span>
+<span class="ln">④</span> <span class="cmt"># 构造 ActionChunk 并写回（内部状态更新函数）</span>
+   chunk = <span class="ok">ActionChunk(actions, obs_time, infer_start, ready_time, action_dt, request_id)</span>
+   shared_buffer.<span class="key">record_inference_latency</span>(ready_time - infer_start)
+   result_queue.<span class="key">put_latest</span>(chunk)
+<span class="gap"></span>
+<span class="cmt"># ── 如果第③步模型抛异常会怎样？</span>
+<span class="ln">③'</span> <span class="cmt"># _run_request 用 try/except 捕获</span>
+   <span class="err">except Exception: shared_buffer.record_inference_error(message)</span>
+   <span class="cmt"># 记 error_count++ + last_error，worker 继续下一个 request，不崩溃</span>
+   <span class="cmt"># L2-06 下个 tick 发现长期无新 chunk / error 增长 → 进入 fallback</span>
+      </div>
+
+      <h3>④ 模型包（bundle）里有什么（推理需要读的外部资源）</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">推理链路启动时要读<b>模型包目录</b>（训练完成后导出，部署只读不改）。L2-03 复用 L2-01 的四个读取函数（<code>bundle_reader</code>/<code>manifest_parser</code>/<code>normalizer_loader</code>/<code>experiment_config_loader</code>）：</p>
+      <div class="tree">
+<span class="dir">act_pour_water_v1/</span>  <span class="cmt">← bundle_dir 指向这里（L2-01 已校验）</span>
+<span class="arrow">├──</span> <span class="file">manifest.json</span>            <span class="cmt">← 清单：维度(16)、模型信息、相机名、打包时间</span>
+<span class="arrow">├──</span> <span class="file">normalizers.json</span>         <span class="cmt">← state/action 的 min/max/identity_indices（长度须 16，L2-01 已校验）</span>
+<span class="arrow">├──</span> <span class="file">experiment_config.yaml</span>   <span class="cmt">← ACT 训练配置（只读原值，做交叉校验，不覆写维度）</span>
+<span class="arrow">└──</span> <span class="dir">policy/</span>                 <span class="cmt">← ACT 策略权重（L2-03 加载到 GPU；fake 模式跳过）</span>
+</div>
+      <p style="font-size:12.5px;color:var(--muted);margin:8px 0 0">fake-policy 模式下只读 manifest 拿相机名与维度，<b>不加载权重</b>，直接返回 shape 正确的假动作块——保证无 bundle/GPU 也能验收整条推理链路。</p>
+
+      <h3>⑤ Pi0.5 推理链路的两个核心入口</h3>
+      <div class="grid g2">
+        <div class="card pi"><h4>启动期：load_policy_runtime</h4><p>一次性加载：bundle 校验→模型构建（Pi0.5 VLA + LoRA）→adapter 权重→preprocessor→normalizer→构造 <code>Pi05PolicyRuntime</code>。</p>
+          <p style="font-size:12px;margin-top:4px"><b>ACT 差异</b>：模型替换为 LeRobot ACT；无 LoRA 包裹；增加 fake-policy 分支。</p></div>
+        <div class="card pi"><h4>稳态：InferenceWorker.run</h4><p>后台 daemon 线程循环：<code>get_latest_or_none</code>→限速→<code>_run_request</code>（predict→构造 chunk→record→put）。try/except 捕获失败。</p>
+          <p style="font-size:12px;margin-top:4px"><b>ACT 差异</b>：几乎完全一致，直接复用。</p></div>
+      </div>
+
+      <h3>⑤ 回答四个核心问题</h3>
+      <div class="grid g2">
+        <div class="card repo"><h4>❶ 谁持有状态？</h4><ul>
+          <li><code>Pi05PolicyRuntime</code>：model/policy/preprocessor/normalizer/device，启动期创建后稳定只读。</li>
+          <li><code>InferenceWorker</code>：_stop_event/period_s，后台线程生命周期。</li>
+          <li><code>SharedBuffer.metrics</code>：全局计数器，锁保护。</li></ul></div>
+        <div class="card repo"><h4>❷ 谁跨越外部边界？</h4><ul>
+          <li>启动期：<code>load_policy_runtime</code> 读 bundle + 加载权重到 GPU。</li>
+          <li>稳态：<code>policy.predict_action_chunk</code> 调 GPU（跨进程-设备边界，最耗时）。</li>
+          <li>本 L2 <b>不订阅/不发布</b> topic。</li></ul></div>
+        <div class="card config"><h4>❸ 谁只负责加工 RAM 对象？</h4><ul>
+          <li><code>_build_batch</code>（snapshot→batch dict）</li>
+          <li><code>normalize</code>/<code>unnormalize</code>（min-max 变换）</li>
+          <li><code>clamp</code>、shape 校验、截断</li></ul></div>
+        <div class="card yellow"><h4>❹ 谁负责 runtime 时序？</h4><p><code>InferenceWorker.run</code>：后台循环、inference_hz 限速、stop 控制。失败用 try/except 捕获并 record_inference_error，不崩溃。<b>不进入 ControlLoop.tick()</b>（那是 L2-06）。</p></div>
+      </div>
+
+      <details>
+        <summary>🔬 五种功能微元分类（对应你的认知框架第 3.5 层）—— 进阶，可先跳过</summary>
+        <div class="body">
+          <div class="grid g2">
+            <div class="card types"><h4>① 数据</h4><ul>
+              <li><code> Pi05PolicyRuntime</code>（持有 model/policy/normalizer/device）</li>
+              <li><code>ActionChunk</code>/<code>InferenceRequest</code>/<code>ObservationSnapshot</code>（frozen dataclass）</li>
+              <li><code>RuntimeMetrics</code> 计数器</li></ul></div>
+            <div class="card config"><h4>② 计算函数（RAM 内）</h4><ul>
+              <li><code>_build_batch</code>（snapshot→batch）</li>
+              <li><code>normalize</code>/<code>unnormalize</code></li>
+              <li><code>clamp</code>、shape 校验</li></ul></div>
+            <div class="card repo"><h4>③ 数据读写函数（跨边界）</h4><ul>
+              <li><code>policy.predict_action_chunk</code>（GPU 推理）</li>
+              <li><code>load_policy_runtime</code>（启动期读 bundle/权重）</li></ul></div>
+            <div class="card yellow"><h4>④ 编排函数</h4><ul>
+              <li><code>InferenceWorker.run</code>（后台循环）</li>
+              <li><code>_run_request</code>（predict→chunk→record）</li>
+              <li><code>predict_action_chunk</code>（推理编排）</li></ul></div>
+            <div class="card grey"><h4>⑤ 内部状态更新函数</h4><ul>
+              <li><code>LatestQueue.put_latest/get_latest_or_none</code></li>
+              <li><code>record_inference_*</code>（metrics 更新）</li>
+              <li><code>_move_tensors_to_device</code></li></ul></div>
+          </div>
+        </div>
+      </details>
+
+      <div class="callout pi"><b>维度差异（决定不能照搬）：</b>Pi0.5 是 <b>26D state / 14D action</b>（关节角），用 <b>VLA（PaliGemma+Gemma expert+LoRA）</b>，action_dim 死锁 14。ACT 第一版是 <b>16D / 16D</b>（TCP pose + gripper width），用 <b>LeRobot ACT</b>。所以推理链路的<b>结构</b>（后台 worker + policy runtime + queue）可复用，但<b>模型类、preprocessor、维度</b>必须重写。Pi0.5 <code>control_loop.py</code> 的 <code>smoothstep_alpha</code>/<code>_blend_next_action</code>/<code>blend_steps</code> 平滑逻辑<b>不继承</b>（第一版不做平滑）。</div>
+      <p class="src">权威来源：<code>agent_context/02_pi05源码3.5层微元拆解.md</code>（§0.5 白话开场 / §1 运行机制 / §2 范围匹配 / §3 3.5 层微元 / §4 class 封装 / §5 禁止继承）</p>
+    </section>
+
+    <!-- ============ 维度 3 · 开发蓝图 ============ -->
+    <section class="view blueprint" data-agent-source="agent_context/03_ACT微元设计与协作.md#2-ACT-微元设计">
+      <h2>维度 3 · 开发建议与蓝图</h2>
+      <div class="reading-path">📖 阅读路径：了解代码如何组织 → 代码写完后用<a href="#" onclick="document.getElementById('v4').click()">维度4</a>检查产物清单</div>
+      <p class="lead">L2-03 是后台推理角色。建议按「repo 加载 policy runtime → service 做 batch → runtime 跑 InferenceWorker」三层开发。fake-policy 是 Gate 必选项。</p>
+
+      <h3>图① 一次推理请求的运行时协作调用链</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">这张图回答"<b>运行起来后，各层模块怎么协作</b>"——按步骤①→⑥看箭头方向：<b>L2-06 是驱动方</b>（tick 提交 request），runtime worker 取 request 后调 repo 推理，repo 内部调 service 做 batch，成功则写回 result_queue，失败则记录错误并停止。每一步都标了对应的 3.5 层微元类型，可与图②对照。L2-01 只在编译时注入配置，不参与运行时调用（虚线）。</p>
+      <div class="figure">
+        <svg viewBox="0 0 920 430" role="img" aria-label="一次推理请求的运行时协作调用链">
+          <defs><marker id="arrow3" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker>
+            <marker id="arrowf2" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="var(--warn)"></path></marker></defs>
+          <!-- L2-01 注入 banner（编译时注入，非运行时调用） -->
+          <rect class="box" x="40" y="12" width="840" height="42" rx="8" fill="var(--ok-bg)" stroke="var(--ok)" stroke-dasharray="5 4"></rect>
+          <text class="title" x="460" y="30" text-anchor="middle" fill="var(--ctrl)">L2-01 提供（编译时注入，不参与运行时调用）</text>
+          <text class="sub" x="460" y="46" text-anchor="middle">DeployConfig.runtime/inference_hz/chunk_size/device/dtype/task → 注入 runtime/repo/service；StateSpec/ActionSpec 16D → 注入 repo</text>
+          <!-- 注入虚线箭头 -->
+          <path class="edge" d="M135 54 L135 74" stroke="var(--ok)" stroke-dasharray="4 3"></path>
+          <path class="edge" d="M425 54 L425 74" stroke="var(--ok)" stroke-dasharray="4 3"></path>
+          <path class="edge" d="M700 54 L700 74" stroke="var(--ok)" stroke-dasharray="4 3"></path>
+          <!-- 泳道表头 -->
+          <rect class="box" x="40" y="74" width="160" height="34" rx="6"></rect><rect class="band" x="40" y="74" width="6" height="34" fill="var(--ctrl)"></rect>
+          <text class="title" x="120" y="96" text-anchor="middle">上游 L2-06 · 驱动</text>
+          <rect class="box" x="212" y="74" width="200" height="34" rx="6"></rect><rect class="band" x="212" y="74" width="6" height="34" fill="var(--repo)"></rect>
+          <text class="title" x="312" y="96" text-anchor="middle">runtime · Worker+Buffer</text>
+          <rect class="box" x="424" y="74" width="240" height="34" rx="6"></rect><rect class="band" x="424" y="74" width="6" height="34" fill="var(--config)"></rect>
+          <text class="title" x="544" y="96" text-anchor="middle">repo+service · Predict</text>
+          <rect class="box" x="676" y="74" width="200" height="34" rx="6"></rect><rect class="band" x="676" y="74" width="6" height="34" fill="var(--ctrl)"></rect>
+          <text class="title" x="776" y="96" text-anchor="middle">下游 L2-06 · 消费</text>
+          <!-- 泳道分隔虚线 -->
+          <line x1="208" y1="112" x2="208" y2="420" stroke="var(--line)" stroke-dasharray="3 4"></line>
+          <line x1="420" y1="112" x2="420" y2="420" stroke="var(--line)" stroke-dasharray="3 4"></line>
+          <line x1="672" y1="112" x2="672" y2="420" stroke="var(--line)" stroke-dasharray="3 4"></line>
+          <!-- ① L2-06 tick → 提交 request（上游泳道） -->
+          <rect class="box" x="50" y="140" width="140" height="64" rx="8"></rect>
+          <text class="title" x="60" y="162">① tick 提交 request</text>
+          <text class="sub" x="60" y="180">构造 InferenceRequest</text>
+          <text class="sub" x="60" y="196" fill="var(--ctrl)">（编排函数，L2-06）</text>
+          <!-- ② worker 取 request（runtime 泳道） -->
+          <rect class="box" x="222" y="140" width="180" height="64" rx="8"></rect>
+          <text class="title" x="232" y="162">② 取最新 request</text>
+          <text class="sub" x="232" y="180">worker.run() → get_latest_or_none</text>
+          <text class="sub" x="232" y="196" fill="var(--repo)">（编排函数 + 内部状态更新）</text>
+          <!-- 箭头 ①→② -->
+          <path class="edge" d="M192 172 L222 172"></path>
+          <text class="elabel" x="196" y="164">request</text>
+          <!-- ③ 调 policy 推理（repo 泳道） -->
+          <rect class="box" x="434" y="140" width="220" height="64" rx="8"></rect>
+          <text class="title" x="444" y="162">③ 调 policy 推理</text>
+          <text class="sub" x="444" y="180">predict_action_chunk(obs)</text>
+          <text class="sub" x="444" y="196" fill="var(--config)">（编排函数，repo 入口）</text>
+          <!-- 箭头 ②→③ -->
+          <path class="edge" d="M402 172 L434 172"></path>
+          <!-- ④ 内部 batch+GPU（repo+service 泳道，垂直下行） -->
+          <rect class="box" x="434" y="234" width="220" height="80" rx="8"></rect>
+          <text class="title" x="444" y="256">④ build_batch → GPU → unnormalize</text>
+          <text class="sub" x="444" y="274">service.build_act_batch (计算函数)</text>
+          <text class="sub" x="444" y="290">preprocess → policy.predict (数据读写)</text>
+          <text class="sub" x="444" y="306" fill="var(--config)">unnormalize + clamp + 校验 shape（计算函数）</text>
+          <!-- 箭头 ③→④（垂直下行） -->
+          <path class="edge" d="M544 204 L544 234"></path>
+          <!-- ⑤ 成功分支：写 result_queue（runtime 泳道） -->
+          <rect class="box" x="222" y="250" width="180" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect>
+          <text class="title" x="232" y="272" fill="var(--ok)">⑤ 写 result_queue</text>
+          <text class="sub" x="232" y="290">构造 ActionChunk → put_latest</text>
+          <text class="sub" x="232" y="306" fill="var(--repo)">（内部状态更新函数）</text>
+          <!-- 箭头 ④→⑤（成功，斜向左下） -->
+          <path class="edge io" d="M434 274 L402 282"></path>
+          <!-- ⑥ 下游读取（下游泳道） -->
+          <rect class="box" x="686" y="250" width="180" height="64" rx="8"></rect>
+          <text class="title" x="696" y="272">⑥ L2-06 取 chunk</text>
+          <text class="sub" x="696" y="290">get_latest_or_none → 取 chunk</text>
+          <text class="sub" x="696" y="306" fill="var(--ctrl)">（编排函数，L2-06）</text>
+          <!-- 箭头 ⑤→⑥（斜向右下） -->
+          <path class="edge queue" d="M402 282 L686 282"></path>
+          <text class="elabel" x="480" y="274">ActionChunk</text>
+          <!-- 失败分支（④ 失败，红色虚线） -->
+          <rect class="box" x="434" y="350" width="220" height="56" rx="8" fill="var(--warn-bg)" stroke="var(--warn)" stroke-dasharray="5 4"></rect>
+          <text class="title" x="444" y="372" fill="var(--warn)">✗ 失败分支</text>
+          <text class="sub" x="444" y="390" fill="var(--warn)">GPU 异常 / 缺 bundle / shape 非法</text>
+          <text class="sub" x="444" y="404" fill="var(--warn)">→ record_inference_error，停在此</text>
+          <!-- 失败箭头 -->
+          <path d="M544 314 L544 350" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#arrowf2)"></path>
+          <!-- 说明注脚 -->
+          <text class="sub" x="50" y="426" fill="var(--muted)">注：①②③在一次 worker.run() 循环内顺序发生；④ 是 repo 内部调用 service；⑤ 仅当③④成功才执行；⑥ 由 L2-06 自己的 tick 触发，不在此 worker 循环内。L2-01 配置只在编译时注入，运行时只读不写。</text>
+        </svg>
+      </div>
+      <div class="callout"><b>关键协作事实（对照图②）：</b>① <b>L2-06 是驱动方</b>，tick 提交 request 触发整条链；②③ runtime worker 的 <code>run()</code> 是<b>编排函数</b>，消费 request、调 repo、写 chunk；④ repo 的 <code>predict_action_chunk</code> 是<b>编排函数</b>（内部编排 batch→GPU→unnormalize），service 的 <code>build_act_batch</code> 是<b>计算函数</b>（纯 RAM 变换），GPU predict 是<b>数据读写函数</b>（跨进程/设备边界）；⑤ runtime 的 <code>put_latest</code> 是<b>内部状态更新函数</b>（覆盖 latest chunk）；⑥ 下游 L2-06 在独立 tick 内读取。L2-01 只注入配置，运行时不参与调用。失败时 worker 不崩溃，记录 error 后继续循环。</div>
+
+      <h3>图② 六层代码落点（点击一层，只看这一层的内部）</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">点一个层，下方只显示该层内容。有产物的层是 <b>repo / service / runtime</b>；types / config 复用 L2-01，ui 不落点。</p>
+
+      <div class="lpick">
+        <input id="l-types" name="layer" type="radio">
+        <input id="l-config" name="layer" type="radio">
+        <input id="l-repo" name="layer" type="radio" checked>
+        <input id="l-service" name="layer" type="radio">
+        <input id="l-runtime" name="layer" type="radio">
+        <input id="l-ui" name="layer" type="radio">
+
+        <div class="ltabs">
+          <label for="l-types" class="none"><b>types</b>复用</label>
+          <label for="l-config" class="none"><b>config</b>复用</label>
+          <label for="l-repo" class="has"><b>repo</b>有产物</label>
+          <label for="l-service" class="has"><b>service</b>有产物</label>
+          <label for="l-runtime" class="has"><b>runtime</b>有产物</label>
+          <label for="l-ui" class="none"><b>ui</b>无</label>
+        </div>
+
+        <!-- types 层 -->
+        <div class="lpane lp-types none-pane">
+          <h4>types/ · 复用 L2-01，本 L2 不新增</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>L2-03 的数据结构（ActionChunk/InferenceRequest/ObservationSnapshot/LatestQueue/SharedBuffer/RuntimeMetrics）携带 queue/lock/线程语义，属运行时状态对象，落 <code>runtime/shared_buffer.py</code>。16D 维度校验复用 L2-01 的 <code>StateSpec</code>/<code>ActionSpec</code>。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>复用：</b><code>StateSpec</code>(16D)、<code>ActionSpec</code>/<code>ACTION_DIM=16</code>、<code>ContractResult</code>。<br><b>验收确认：</b>L2-03 不产生 <code>types/*.py</code>；shape 校验引用 L2-01 的 16D 常量，非硬编码 14。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- config 层 -->
+        <div class="lpane lp-config none-pane">
+          <h4>config/ · 复用 L2-01 DeployConfig，本 L2 不新增</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>推理参数（device/dtype/chunk_size/inference_hz/task/compile_model/clamp_normalized_action）全部来自 L2-01 的 <code>DeployConfig.runtime</code> 和 <code>DeployConfig.safety</code>。不新增独立 inference config schema。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>明确不新增：</b><code>blend_steps</code>/<code>smoothstep_window</code>/<code>cross_chunk_fusion</code>/<code>rtc_alignment</code>。<br><b>验收确认：</b>L2-03 不产生 <code>config/*.py</code>；<code>rg</code> 检查无平滑字段作为可配置能力。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- repo 层 -->
+        <div class="lpane lp-repo">
+          <h4>repo/ · policy 加载层（1 个 class + 编排函数）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">加载真实或 fake 的 <code>ActPolicyRuntime</code>，持有统一推理接口。bundle 读取复用 L2-01 四件套。Pi0.5 参考：<code>deploy/models/policy_loader.py</code>（模型替换 Pi0.5 VLA → ACT，维度 14→16）。</p>
+
+          <div class="classbox repo">
+            <h5>ActPolicyRuntime（class，真实+fake 共用接口）</h5>
+            <p class="role">持有 model/policy/preprocessor/normalizer/device，提供统一 <code>predict_action_chunk(observation) → (chunk_size,16)</code>。Pi0.5 参考：<code>Pi05PolicyRuntime</code>。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：model/policy/preprocessor/state_normalizer/action_normalizer/device/task/action_dim(=16)/output_chunk_size/image_names/_predict_fn | 存储结构：class 实例字段 | 数值类型：torch.nn.Module、Any、torch.device、int、tuple[str,...]</span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><code>predict_action_chunk(observation)</code> — 编排逻辑：①build_batch ②preprocess ③move to device ④policy.predict ⑤cpu+clamp ⑥unnormalize ⑦校验 shape[1]==16 ⑧截断 chunk_size → 返回 <code>(chunk_size,16) float32 ndarray</code></span></div>
+              <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><code>_maybe_compile(compile_mode)</code> — 可选 <code>torch.compile</code> 包裹 _predict_fn（副作用：替换 predict 函数引用）</span></div>
+            </div>
+          </div>
+
+          <div class="classbox repo">
+            <h5>policy_loader.py 函数群（无 class，纯编排/读写）</h5>
+            <div class="mu-list">
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><code>load_act_policy_runtime(config)</code> — 编排逻辑：①校验 bundle（复用 L2-01）②按 mode 选 fake/real 分支 ③real：构建 ACT policy + processor + 加载权重 + normalizer ④fake：构造空壳 ⑤返回 <code>ActPolicyRuntime</code></span></div>
+              <div class="mu"><span class="kind io">数据读写</span><span class="desc"><span class="fn"><code>_build_act_policy_runtime_real(...)</code> — <b>从哪读：</b>bundle 权重文件（跨进程/设备边界）；<b>读出什么：</b>加载到 GPU 的 ACT policy + processor + normalizer</span><span class="fn"><code>_build_act_policy_runtime_fake(config)</code> — <b>从哪读：</b>无（纯构造）；<b>读出什么：</b>空壳 ActPolicyRuntime（ACT 增量，保证无 bundle 可验收）</span></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><code>_resolve_act_policy(model)</code> — <b>输入：</b>ACT model；<b>输出：</b>predict_action_chunk callable（ACT 无 LoRA 包裹，简化）</span><span class="fn"><code>_manifest_image_names(manifest)</code> — <b>输入：</b>manifest dict；<b>输出：</b>tuple[str,...]（相机名列表）</span></span></div>
+              <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><span class="fn"><code>_move_tensors_to_device(value, device)</code> — <b>修改对象：</b>tensor 的 device 属性；<b>如何修改：</b>pin_memory + non_blocking 移到指定 device</span><span class="fn"><code>_configure_cuda_runtime(device)</code> — <b>修改对象：</b>全局 CUDA 精度/SDP 配置；<b>如何修改：</b>设置 torch 全局精度与 SDP 参数</span><span class="fn"><code>_require_cpu_float_tensor(tensor, name)</code> — <b>修改对象：</b>无（校验函数）；<b>如何修改：</b>非 CPU float 时抛异常</span></span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">文件：<code>repo/policy_loader.py</code>。复用 L2-01：<code>bundle_reader/manifest_parser/normalizer_loader/experiment_config_loader</code>。验收覆盖：fake 构造成功且 predict 返回 <code>(chunk_size,16)</code>；缺 bundle 抛异常；real dry-run 同 shape。<br>参考 Pi0.5：<code>deploy/models/policy_loader.py</code>（结构复用，模型与维度重写）。</p>
+        </div>
+
+        <!-- service 层 -->
+        <div class="lpane lp-service">
+          <h4>service/ · batch 构造层（函数，无 class）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">把 ObservationSnapshot 加工成 ACT batch（纯 RAM 内 dict 构造）+ normalizer 使用。不安排线程、不持有 queue。Pi0.5 参考：<code>Pi05PolicyRuntime._build_batch</code>。</p>
+
+          <div class="classbox svc">
+            <h5>batch_adapter.py（函数，无 class）</h5>
+            <p class="role">为什么无 class？batch 构造是无状态纯转换（不持有 buffer/queue/cache），每次调用独立。按认知框架第 3.25 层判断原则：纯输入到输出转换 → 优先函数。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><code>build_act_batch(observation, state_normalizer, task, image_names)</code> — 输入 <code>ObservationSnapshot + ActionStateNormalizer + str + tuple</code> → 输出 <code>dict[str, CPU float Tensor]</code>（含 <code>observation.state</code>(16,) normalized、<code>observation.images.*</code>、<code>task</code>）。调 <code>state_normalizer.normalize(encoded_state)</code>。缺图像 key 抛 <code>KeyError</code></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><code>normalize_state(state, normalizer)</code> / <code>unnormalize_action_chunk(norm_chunk, normalizer)</code>（可选薄封装）— 纯 RAM 内 min-max 变换。或直接复用 repo 持有的 <code>ActionStateNormalizer</code> method</span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">文件：<code>service/batch_adapter.py</code>（可选 <code>service/normalizer.py</code>）。验收覆盖：合法 snapshot→正确 batch dict；缺 key 抛 KeyError；normalize→unnormalize 往返一致。<br>参考 Pi0.5：<code>Pi05PolicyRuntime._build_batch</code>（落点可选 method 或独立函数，推荐独立函数保持六层清晰）。</p>
+        </div>
+
+        <!-- runtime 层 -->
+        <div class="lpane lp-runtime">
+          <h4>runtime/ · 后台推理层（2 个文件，多个 class）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">承载共享数据结构 + 后台推理线程。被 L2-02/L2-03/L2-06 共同使用。Pi0.5 参考：<code>deploy/runtime/shared_buffer.py</code> + <code>inference_worker.py</code>（直接复用）。</p>
+
+          <div class="classbox rt">
+            <h5>InferenceWorker（class，继承 threading.Thread）</h5>
+            <p class="role">后台 daemon 线程，异步消费 request→推理→写 chunk+metrics。与 ControlLoop 并行。Pi0.5 直接复用。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：policy_runtime/request_queue/result_queue/shared_buffer/period_s/action_dt/log_info/log_debug/log_warning | 存储结构：Thread 实例字段</span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><code>run()</code> — 编排逻辑：循环 ①get_latest_or_none ②无则 wait 0.001s continue ③按 inference_hz 限速 ④_run_request；<code>_run_request(request)</code> — 编排：①infer_start ②try predict_action_chunk except record_inference_error+return ③构造 ActionChunk ④record latency/count ⑤result_queue.put_latest</span></div>
+              <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><code>stop()</code> — set _stop_event，停止后台循环；<code>_last_infer_start_s</code> — 限速基准</span></div>
+            </div>
+          </div>
+
+          <div class="classbox rt">
+            <h5>shared_buffer.py 数据结构（frozen dataclass + queue + buffer）</h5>
+            <p class="role">跨模块共享的 RAM 对象。第一版由 L2-03 落地，L2-02/L2-06 import 复用。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><code>ActionChunk</code>(frozen)：actions/obs_time/infer_start_time/ready_time/action_dt/request_id/cursor + <code>__post_init__</code> 校验 rank-2+action_dt&gt;0 + <code>aligned_index(now)</code>（14→16）；<code>InferenceRequest</code>(frozen)：observation/obs_time/request_id/trigger_step；<code>ObservationSnapshot</code>(frozen)：images/state/encoded_state/captured_at_s</span></div>
+              <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><code>LatestQueue[T]</code>：put_latest/get_latest_or_none（deque+锁，latest-only）；<code>SharedBuffer</code>：聚合 latest_observation/request_queue/result_queue/metrics + record_* 方法；<code>RuntimeMetrics</code>：inference_count/error_count/request_count + latency EMA + last_error + record_latency/as_dict</span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">文件：<code>runtime/inference_worker.py</code>、<code>runtime/shared_buffer.py</code>。验收覆盖：ActionChunk 非法 rank 抛异常；LatestQueue latest-only；record_* 计数；worker 消费→写 chunk→metrics→不阻塞；异常→error_count→不崩溃；inference_hz 限速。<br>参考 Pi0.5：<code>deploy/runtime/{shared_buffer,inference_worker}.py</code>（直接复用，14→16）。</p>
+        </div>
+
+        <!-- ui 层 -->
+        <div class="lpane lp-ui none-pane">
+          <h4>ui/ · 本 L2 不落点</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>L2-03 是后台计算角色，只消费 RAM 内 request、产出 RAM 内 chunk，<b>不直接与外部世界交换数据</b>。订阅 observation topic 归 L2-02；发布 policy_action/command 归 L2-05；启动 ROS node/timer 归 L2-06。<code>InferenceWorker</code> 是普通 <code>threading.Thread</code>，不是 ROS node。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>与去平滑的关系：</b>不定义 <code>/act/smoothed_action</code>、<code>/act/blended_action</code> 或 RTC 平滑相关 topic。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>验收确认：</b>L2-03 不产生 <code>ui/*.py</code> 或 launch 产物；<code>rg</code> 检查无 <code>import rospy/rclpy</code>。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+      </div>
+
+      <div class="callout warn">第一版<b>不实现</b>平滑：<code>InferenceWorker</code> 不含 <code>blend_steps/smoothstep_alpha/_blend_next_action</code>；<code>predict_action_chunk</code> 只输出整个 chunk，不做单步选择/cursor 推进/跨 chunk 融合。L2-06 后续若要引入平滑，必须重新设计并同步 L1/L2 文档与 Gate。</div>
+      <p class="src">权威来源：<code>agent_context/03_ACT微元设计与协作.md</code>（§2 ACT 微元 / §3 协作 / §4 去平滑影响 / §5 fake-policy）、<code>06-11_各层设计.md</code></p>
+    </section>
+
+    <!-- ============ 维度 4 · 人类验收标准 ============ -->
+    <section class="view acceptance" data-agent-source="agent_context/04_L2验收机制.md#2-Gate-验收项">
+      <h2>维度 4 · 人类验收标准</h2>
+      <div class="reading-path">📖 阅读路径：功能承诺来源见<a href="#" onclick="document.getElementById('v1').click()">维度1</a> → 下面验收动作逐个执行，每个都告诉你「做什么 → 看到什么 → 意味着什么」</div>
+      <p class="lead">人类验收只做两件事：<b>①</b> 跑一个 <code>.sh</code> 脚本，它会自动执行所有子功能模块的测试并在终端分层分组打印结果；<b>②</b> 用下面的「终端输出翻译表」对照终端每一行，搞清楚含义、出了问题该查哪个模块。核心目标：无 ROS / 无 GPU / 无真实 bundle 条件下，L2-03 能从 <code>ObservationSnapshot</code> 输入经 fake-policy 产出 shape 正确的 <code>ActionChunk</code>，且后台 worker 异步解耦、异常不崩溃。</p>
+
+      <h3>① 怎么验收：跑一个脚本</h3>
+      <div class="cmd-block"><span class="c"># /home/hit/ROS，无 ROS / 无 GPU / 无真实 bundle 环境</span>
+bash src/model_deploy/act/scripts/l2_03_verify.sh</div>
+      <p style="font-size:13px;color:var(--muted);margin:6px 0 0">脚本把所有子功能模块的测试自动跑完，终端按 <b>types / config / repo / service / runtime / ui·边界</b> 分层分组打印（与维度3 图②六层落点视觉对齐）。每行一个标签，结果为 <span style="color:var(--ok);font-weight:600">PASS</span> / <span style="color:var(--warn);font-weight:600">FAIL</span> / <span style="color:#b54708;font-weight:600">BLOCKED</span>；末行汇总。<b>FAIL 行会附简要定位</b>（文件 / class / 微元 / pytest 节点 / 错误摘要），<b>BLOCKED ≠ 失败</b>（环境约束）。</p>
+
+      <div class="callout ok" style="margin-top:8px"><b>脚本设计依据：</b><code>agent_context/04_L2验收机制.md §4</code> 给出了该 <code>.sh</code> 的完整设计需求（输出格式 / 退出码 / 标签→微元映射 / BLOCKED 判定），由后续 L3 微元任务据此生成脚本本身。</div>
+
+      <div class="term">
+        <div class="t-hdr">=== L2-03 ACT Inference 验收 ===</div>
+        <div class="t-grp">[ types ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">contract.action_dim</span><span class="note">16D action 维度校验</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">contract.importable</span><span class="note">契约可 import</span></div>
+        <div class="t-grp">[ config ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">config.reuse_only</span><span class="note">不新增 config 源码</span></div>
+        <div class="t-grp">[ repo ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">repo.fake_policy_shape</span><span class="note">fake-policy 输出 (chunk_size,16)</span></div>
+        <div class="t-row"><span class="fail">FAIL</span><span class="lbl">repo.fake_policy_interface</span><span class="note">统一推理接口 predict_action_chunk</span></div>
+        <div class="t-loc"><span>├─ 文件: repo/policy_loader.py</span><span>├─ class: ActPolicyRuntime</span><span>├─ 微元: predict_action_chunk() 编排函数</span><span>├─ pytest: tests/repo/test_policy_loader.py::test_unified_interface</span><span>└─ 摘要: AssertionError: predict_action_chunk not callable or wrong signature</span></div>
+        <div class="t-grp">[ service ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">service.batch_build</span><span class="note">snapshot → batch 构造</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">service.normalizer_roundtrip</span><span class="note">normalize→unnormalize 往返一致</span></div>
+        <div class="t-grp">[ runtime ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">runtime.worker_async</span><span class="note">worker 异步不阻塞调用线程</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">runtime.worker_error_recovery</span><span class="note">推理异常不崩溃</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">runtime.latest_queue</span><span class="note">LatestQueue latest-only 语义</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">runtime.shared_buffer</span><span class="note">SharedBuffer + metrics 计数</span></div>
+        <div class="t-grp">[ integration ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">integration.fake_full_loop</span><span class="note">fake-policy 全链路集成</span></div>
+        <div class="t-grp">[ ui / 边界 ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.no_smoothing</span><span class="note">无平滑逻辑泄漏</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.no_ros</span><span class="note">repo/service/runtime 无 ROS import</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.no_ui</span><span class="note">ui 层无 .py 产物</span></div>
+        <div class="t-row"><span class="blk">BLOCKED</span><span class="lbl">repo.real_policy_dryrun</span><span class="note">无真实 bundle + GPU</span></div>
+        <div class="t-sep">────────────────────────────────</div>
+        <div class="t-sum">14 PASS / 1 FAIL / 1 BLOCKED</div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin:-2px 0 0">↑ 上图是一次<b>有 FAIL 的范例</b>输出（演示 FAIL 定位格式）。正常通过时所有标签为 PASS/BLOCKED，汇总行无 FAIL。</p>
+
+      <h3>② 终端输出翻译表（每行什么含义 / 出问题查哪里）</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">终端任意一行都能在下表查到：它属于哪个层、对应维度3 图②的哪个微元、PASS 说明什么、FAIL 该查哪个文件/微元。这就是"翻译表"的作用。</p>
+
+      <table class="trtab">
+        <tr><th>标签</th><th>层</th><th>对应维度3 图②微元（文件 → class → 微元）</th><th>PASS 含义 / FAIL 查哪里</th></tr>
+        <tr class="types"><td class="lbl">contract.action_dim</td><td class="lyr">types</td><td class="mu"><span class="fpath">—（复用 L2-01 StateSpec/ActionSpec）</span><br>ACTION_DIM=16 常量校验<span class="kindtag data">数据</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>ActionChunk actions shape[1]==16，非法维度被拒绝</span><span class="fn"><span class="fp">FAIL 查：</span>ActionChunk 的 <code>__post_init__</code> 维度校验是否引用 16D 常量</span></td></tr>
+        <tr class="types"><td class="lbl">contract.importable</td><td class="lyr">types</td><td class="mu"><span class="fpath">—（复用 L2-01，不新增 types/ 文件）</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>无 ROS 可 import，不拉入 repo/service/runtime 实现细节</span><span class="fn"><span class="fp">FAIL 查：</span>L2-03 是否误新增 types/ 文件或 import 下游</span></td></tr>
+        <tr class="config"><td class="lbl">config.reuse_only</td><td class="lyr">config</td><td class="mu"><span class="fpath">—（复用 L2-01 DeployConfig，不新增 config/ 文件）</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>推理参数全部来自 L2-01 DeployConfig.runtime/safety</span><span class="fn"><span class="fp">FAIL 查：</span>是否新增 config/*.py 或独立 inference config schema</span></td></tr>
+        <tr class="repo"><td class="lbl">repo.fake_policy_shape</td><td class="lyr">repo</td><td class="mu"><span class="fpath">repo/policy_loader.py</span> → <span class="cls">ActPolicyRuntime</span><br><code>predict_action_chunk()</code><span class="kindtag orch">编排函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>fake-policy 返回 (chunk_size, 16) float32 ndarray</span><span class="fn"><span class="fp">FAIL 查：</span>ActPolicyRuntime.<code>predict_action_chunk()</code>（shape 错误如 14D 或 rank 不对）</span></td></tr>
+        <tr class="repo"><td class="lbl">repo.fake_policy_interface</td><td class="lyr">repo</td><td class="mu"><span class="fpath">repo/policy_loader.py</span> → <span class="cls">ActPolicyRuntime</span><br><code>predict_action_chunk(observation)</code><span class="kindtag orch">编排函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>fake/real 共用统一接口，签名一致，可互换</span><span class="fn"><span class="fp">FAIL 查：</span>ActPolicyRuntime 是否暴露统一 <code>predict_action_chunk</code> 方法</span></td></tr>
+        <tr class="service"><td class="lbl">service.batch_build</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/batch_adapter.py</span>（模块级函数，无 class）<br><code>build_act_batch()</code><span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>batch 含 observation.state(16,) normalized、images.*、task；缺 key 抛 KeyError</span><span class="fn"><span class="fp">FAIL 查：</span><code>build_act_batch()</code>（缺 key 或 state 未归一化到 [−1,1]）</span></td></tr>
+        <tr class="service"><td class="lbl">service.normalizer_roundtrip</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/batch_adapter.py</span>（模块级函数，无 class）<br><code>normalize_state()</code> / <code>unnormalize_action_chunk()</code><span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>16D 向量 normalize→unnormalize 往返后与原值一致（允许浮点误差）</span><span class="fn"><span class="fp">FAIL 查：</span>normalizer 维度不匹配 16D 或往返失真</span></td></tr>
+        <tr class="runtime"><td class="lbl">runtime.worker_async</td><td class="lyr">runtime</td><td class="mu"><span class="fpath">runtime/inference_worker.py</span> → <span class="cls">InferenceWorker</span><br><code>run()</code><span class="kindtag orch">编排函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>worker 消费 request → chunk 写入 result_queue → metrics 递增 → 调用线程不被阻塞</span><span class="fn"><span class="fp">FAIL 查：</span>InferenceWorker.<code>run()</code> 是否阻塞调用线程（异步解耦失败）</span></td></tr>
+        <tr class="runtime"><td class="lbl">runtime.worker_error_recovery</td><td class="lyr">runtime</td><td class="mu"><span class="fpath">runtime/inference_worker.py</span> → <span class="cls">InferenceWorker</span><br><code>_run_request()</code><span class="kindtag orch">编排函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>推理异常 → error_count 递增 + last_error 记录，worker 继续处理下一个 request 不崩溃</span><span class="fn"><span class="fp">FAIL 查：</span>InferenceWorker.<code>_run_request()</code> 的 try/except 是否捕获并记录</span></td></tr>
+        <tr class="runtime"><td class="lbl">runtime.latest_queue</td><td class="lyr">runtime</td><td class="mu"><span class="fpath">runtime/shared_buffer.py</span> → <span class="cls">LatestQueue</span><br><code>put_latest()</code> / <code>get_latest_or_none()</code><span class="kindtag state">内部状态更新函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>新 request 覆盖旧 request，latest-only 语义正确</span><span class="fn"><span class="fp">FAIL 查：</span>LatestQueue 是否保留旧值（非 latest-only）或丢新值</span></td></tr>
+        <tr class="runtime"><td class="lbl">runtime.shared_buffer</td><td class="lyr">runtime</td><td class="mu"><span class="fpath">runtime/shared_buffer.py</span> → <span class="cls">SharedBuffer</span> / <span class="cls">RuntimeMetrics</span><br><code>record_inference_*()</code><span class="kindtag state">内部状态更新函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>inference_count/error_count/request_count 正确计数，latency EMA 更新</span><span class="fn"><span class="fp">FAIL 查：</span>SharedBuffer 的 record_* 方法计数或锁保护</span></td></tr>
+        <tr class="boundary"><td class="lbl">integration.fake_full_loop</td><td class="lyr">集成</td><td class="mu"><span class="fpath">tests/integration/test_inference_loop_fake.py</span>（集成测试）<br>request→推理→chunk→result_queue 全链路<span class="kindtag orch">编排函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>全链路通，多 request 连续处理，inference_hz 限速生效</span><span class="fn"><span class="fp">FAIL 查：</span>链路某环节断裂或限速失效导致空转过载</span></td></tr>
+        <tr class="boundary"><td class="lbl">boundary.no_smoothing</td><td class="lyr">边界</td><td class="mu">—（L2 责任墙，维度1 图③；扫 repo/service/runtime 全部文件）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>无 smoothstep_alpha / _blend_next_action / blend_steps / cross_chunk_fusion 作为可执行能力</span><span class="fn"><span class="fp">FAIL 查：</span>命中行——若实现了平滑逻辑则 L2-03 越界（第一版不做平滑）</span></td></tr>
+        <tr class="boundary"><td class="lbl">boundary.no_ros</td><td class="lyr">边界</td><td class="mu">—（L2 责任墙，维度1 图③；扫 repo/service/runtime 全部 import）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>repo/service/runtime 无 <code>import rospy/rclpy</code> 或 ROS msg import</span><span class="fn"><span class="fp">FAIL 查：</span>推理代码出现 ROS import → 越界到 L2-02/L2-05/L2-06 职责</span></td></tr>
+        <tr class="boundary"><td class="lbl">boundary.no_ui</td><td class="lyr">边界</td><td class="mu">—（六层落点判定；查 <code>ui/</code> 目录）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>ui/ 无 L2-03 新增 .py，无 ROS node/timer/subscription</span><span class="fn"><span class="fp">FAIL 查：</span>ui/ 出现越界产物（后台推理不应直接操作 ROS）</span></td></tr>
+        <tr class="repo"><td class="lbl">repo.real_policy_dryrun</td><td class="lyr">repo</td><td class="mu"><span class="fpath">repo/policy_loader.py</span> → <span class="cls">ActPolicyRuntime</span><br><code>predict_action_chunk()</code>（真实 ACT 权重 + GPU）<span class="kindtag orch">编排函数</span></td><td class="pf"><span class="fn"><span class="blk">BLOCKED：</span>当前无真实 ACT bundle + GPU → <code>BLOCKED_ENV</code>，<b>不是失败</b>，等 bundle 就绪后补验</span><span class="fn"><span class="fp">（有 bundle+GPU 时 FAIL 查）：</span>ActPolicyRuntime 真实推理 shape 或延迟异常</span></td></tr>
+      </table>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 0">退出码：全 PASS（BLOCKED 可存在）→ <code>0</code>；任一 FAIL → <code>1</code>。签字时看汇总行 + 退出码即可。</p>
+
+      <div class="vfy-sep"></div>
+      <span class="vfy-section-tag">文档审查项（非脚本，人工查）</span>
+      <p style="font-size:12.5px;color:var(--muted);margin:0 0 6px">以下 5 项是文档/结构审查，不在 <code>.sh</code> 脚本内，由人类按 <code>05_人类验收机制.md §2</code> 逐条执行：① 设计包结构校验（validate 脚本）② 边界审查（L2-03 不订阅 topic / 不发布 topic / 不决定推理时机）③ Pi0.5 映射审查（InferenceWorker 结构复用，模型与维度重写）④ HTML-MD 对齐检查（data-agent-source / 语义对齐表）⑤ GPU 真机边界（real-policy blocked 记录，不得在无 GPU 时写成通过）。</p>
+
+      <div class="callout warn"><b>Blocked 项（不是失败，是环境约束）：</b>当前环境无真实 ACT bundle + GPU → <code>BLOCKED_ENV</code>，不影响 fake-policy mock Gate，真实推理验收等 bundle 就绪；L2-01 DeployConfig/ActionSpec 未落地 → <code>BLOCKED_ENV</code>（上游未完成）；无 ROS 环境 → <code>BLOCKED_ENV</code>（本 L2 是后台计算角色，本身不碰 ROS，但集成测试需要 L2-06 tick 驱动，等 L2-06 落成后联调）。签字位置：<code>DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-act-inference/验收结果.md</code>。</div>
+      <p class="src">权威来源：<code>agent_context/01_L2功能边界.md</code>（§4 负责 / §6 完成判据）、<code>agent_context/04_L2验收机制.md</code>（§2 Gate 验收项 / §4 .sh 验收脚本设计需求 / §5 下游放行 / §6 不允许合入）、<code>agent_context/05_人类验收机制.md</code>（§2 清单 / §3 签字 / §4 真机风险）</p>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>
