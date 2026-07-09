@@ -219,7 +219,7 @@ Use these dimension responsibilities:
 |---|---|---|
 | `boundary` / 维度1 功能边界 | 做什么 / 不做什么 / 输入输出契约是什么？ | status/positioning SVG, startup processing SVG, responsible vs non-responsible boundary-wall SVG, data contract cards |
 | `pi05map` / 维度2 Pi0.5 如何运作 | 参考源码如何运行，用白话讲清楚。 | plain-language callout, `details` terminology dictionary `.dict`, four-step `.flow`, `.trace`, bundle `.tree`, core-question cards |
-| `blueprint` / 维度3 开发蓝图 | 代码如何分层，每层有哪些 micro-units？ | runtime/assembly SVG, six-layer `.lpick` radio panes, `.classbox` + `.mu-list` micro-unit breakdown, no-artifact layer panes |
+| `blueprint` / 维度3 开发蓝图 | 代码如何分层，每层有哪些 micro-units？ | **图①** runtime collaboration call-chain SVG swimlane（not creation/assembly order!）：each step labelled with 3.5-layer micro-unit type, failure branch as red dashed, compile-time injection as dashed banner, callout below with key facts. **图②** six-layer `.lpick` radio panes with `.classbox` + `.mu-list` micro-unit breakdown（each micro-unit on its own `<span class="fn">` line per 排版铁律#1）, no-artifact layer panes with reason+upstream+acceptance. Layer tab colors per §7 color spec. |
 | `acceptance` / 维度4 人类验收标准 | 怎么验证，跑什么，看到什么算通过或失败？ | one `.sh` script command + `.term` terminal example block（layered grouping with FAIL `.t-loc` location）+ `.trtab` translation table（label → layer → micro-unit with complete file→class→micro-unit location chain → PASS meaning / FAIL where to look）|
 
 Do not reintroduce the old six-view contract as required HTML structure. Those architecture-report ideas may appear only as content inside the four approved dimensions when useful.

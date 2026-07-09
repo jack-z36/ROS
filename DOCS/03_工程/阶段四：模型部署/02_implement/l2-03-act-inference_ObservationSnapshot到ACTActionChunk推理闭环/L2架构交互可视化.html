@@ -746,8 +746,8 @@ td .errc{color:var(--warn);font-weight:600}
             <p class="role">后台 daemon 线程，异步消费 request→推理→写 chunk+metrics。与 ControlLoop 并行。Pi0.5 直接复用。</p>
             <div class="mu-list">
               <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：policy_runtime/request_queue/result_queue/shared_buffer/period_s/action_dt/log_info/log_debug/log_warning | 存储结构：Thread 实例字段</span></div>
-              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><code>run()</code> — 编排逻辑：循环 ①get_latest_or_none ②无则 wait 0.001s continue ③按 inference_hz 限速 ④_run_request；<code>_run_request(request)</code> — 编排：①infer_start ②try predict_action_chunk except record_inference_error+return ③构造 ActionChunk ④record latency/count ⑤result_queue.put_latest</span></div>
-              <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><code>stop()</code> — set _stop_event，停止后台循环；<code>_last_infer_start_s</code> — 限速基准</span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><span class="fn"><code>run()</code> — <b>顺序：</b>循环 ①get_latest_or_none ②无则 wait 0.001s continue ③按 inference_hz 限速 ④调 _run_request；<b>调用条件：</b>daemon 线程启动后持续循环；<b>失败处理：</b>_stop_event 触发时退出循环</span><span class="fn"><code>_run_request(request)</code> — <b>顺序：</b>①infer_start ②try predict_action_chunk ③except record_inference_error+return ④构造 ActionChunk ⑤record latency/count ⑥result_queue.put_latest；<b>调用条件：</b>有 request 且未超 inference_hz；<b>失败处理：</b>异常被 try/except 捕获，记录 error 后返回，不崩溃</span></span></div>
+              <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><span class="fn"><code>stop()</code> — <b>修改对象：</b><code>_stop_event</code>；<b>如何修改：</b>设置 event，触发 run() 循环退出</span><span class="fn"><code>_last_infer_start_s</code> — <b>修改对象：</b>实例字段；<b>如何修改：</b>每次 _run_request 开始时写入，作为 inference_hz 限速基准</span></span></div>
             </div>
           </div>
 
@@ -755,8 +755,8 @@ td .errc{color:var(--warn);font-weight:600}
             <h5>shared_buffer.py 数据结构（frozen dataclass + queue + buffer）</h5>
             <p class="role">跨模块共享的 RAM 对象。第一版由 L2-03 落地，L2-02/L2-06 import 复用。</p>
             <div class="mu-list">
-              <div class="mu"><span class="kind data">数据</span><span class="desc"><code>ActionChunk</code>(frozen)：actions/obs_time/infer_start_time/ready_time/action_dt/request_id/cursor + <code>__post_init__</code> 校验 rank-2+action_dt&gt;0 + <code>aligned_index(now)</code>（14→16）；<code>InferenceRequest</code>(frozen)：observation/obs_time/request_id/trigger_step；<code>ObservationSnapshot</code>(frozen)：images/state/encoded_state/captured_at_s</span></div>
-              <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><code>LatestQueue[T]</code>：put_latest/get_latest_or_none（deque+锁，latest-only）；<code>SharedBuffer</code>：聚合 latest_observation/request_queue/result_queue/metrics + record_* 方法；<code>RuntimeMetrics</code>：inference_count/error_count/request_count + latency EMA + last_error + record_latency/as_dict</span></div>
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><span class="fn"><code>ActionChunk</code>（frozen dataclass）— 结构：actions (chunk_size,16) + obs_time + infer_start_time + ready_time + action_dt + request_id + cursor；数值类型：np.ndarray float32 + float + int；含 <code>__post_init__</code> 校验 rank-2 + action_dt&gt;0</span><span class="fn"><code>InferenceRequest</code>（frozen dataclass）— 结构：observation + obs_time + request_id + trigger_step；数值类型：ObservationSnapshot + float + int</span><span class="fn"><code>ObservationSnapshot</code>（frozen dataclass）— 结构：images + state + encoded_state (16,) + captured_at_s；数值类型：dict + ObservationState + np.ndarray float + float</span></span></div>
+              <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><span class="fn"><code>LatestQueue[T]</code> — <b>修改对象：</b>内部 deque + lock；<b>如何修改：</b>put_latest 追加并覆盖旧值，get_latest_or_none 返回最新或 None（latest-only 语义）</span><span class="fn"><code>SharedBuffer</code> — <b>修改对象：</b>聚合 latest_observation/request_queue/result_queue/metrics；<b>如何修改：</b>record_* 方法更新对应计数器（inference_count/error_count/request_count）</span><span class="fn"><code>RuntimeMetrics</code> — <b>修改对象：</b>inference_count/error_count/request_count + latency EMA + last_error；<b>如何修改：</b>record_latency 更新 EMA，record_error 更新 last_error + error_count</span></span></div>
             </div>
           </div>
 
@@ -773,7 +773,7 @@ td .errc{color:var(--warn);font-weight:600}
       </div>
 
       <div class="callout warn">第一版<b>不实现</b>平滑：<code>InferenceWorker</code> 不含 <code>blend_steps/smoothstep_alpha/_blend_next_action</code>；<code>predict_action_chunk</code> 只输出整个 chunk，不做单步选择/cursor 推进/跨 chunk 融合。L2-06 后续若要引入平滑，必须重新设计并同步 L1/L2 文档与 Gate。</div>
-      <p class="src">权威来源：<code>agent_context/03_ACT微元设计与协作.md</code>（§2 ACT 微元 / §3 协作 / §4 去平滑影响 / §5 fake-policy）、<code>06-11_各层设计.md</code></p>
+      <p class="src">权威来源：<code>agent_context/03_ACT微元设计与协作.md</code>（§2 ACT 微元 / §3 协作 / §4 去平滑影响 / §5 fake-policy）、<code>agent_context/08_repo层设计.md</code>（§1~§5）、<code>agent_context/09_service层设计.md</code>（§1~§6）、<code>agent_context/10_runtime层设计.md</code>（§1~§6）、<code>agent_context/06_types层设计.md</code>、<code>agent_context/07_config层设计.md</code>、<code>agent_context/11_ui层设计.md</code></p>
     </section>
 
     <!-- ============ 维度 4 · 人类验收标准 ============ -->
