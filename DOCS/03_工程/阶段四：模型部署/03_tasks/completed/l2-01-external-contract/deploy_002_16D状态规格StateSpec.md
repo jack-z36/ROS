@@ -5,7 +5,7 @@
 - 所属阶段：阶段四：模型部署
 - 所属 L1：ACT
 - 所属 L2：`l2-01-external-contract`（外部参数加载与契约校验闭环）
-- L3 编号：`deploy_002`
+L3 编号：deploy_002
 - 改造类型：`source-adaptation`
 - 当前任务文件路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-01-external-contract/deploy_002_16D状态规格StateSpec.md`
 - 验收卡片路径：`DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-01-external-contract/deploy_002_验收卡片.md`

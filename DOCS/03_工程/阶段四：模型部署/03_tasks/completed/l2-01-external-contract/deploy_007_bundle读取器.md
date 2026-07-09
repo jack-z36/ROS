@@ -2,7 +2,9 @@
 
 ## 1. 任务定位
 
-本任务属于阶段四（模型部署），L1 ACT 模型部署线，L2 `l2-01-external-contract`（外部参数加载与契约校验闭环），L3 编号 `deploy_007`，改造类型 `source-adaptation`，验收模式 `direct-local`，真机风险 `none`，开发分支 `feat/model_deploy/l2-01-external-contract`，集成分支 `model_deploy`。
+L3 编号：deploy_007
+
+本任务属于阶段四（模型部署），L1 ACT 模型部署线，L2 `l2-01-external-contract`（外部参数加载与契约校验闭环），改造类型 `source-adaptation`，验收模式 `direct-local`，真机风险 `none`，开发分支 `feat/model_deploy/l2-01-external-contract`，集成分支 `model_deploy`。
 
 产物落点遵循六层架构规范：repo 层产物落在 `src/model_deploy/act/repo/`，对应测试落在 `src/model_deploy/act/tests/repo/`。repo 层不得向上引用 config/service/runtime/ui 层，不得执行维度业务校验。
 

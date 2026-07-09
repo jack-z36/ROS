@@ -35,7 +35,7 @@ dispatch:
 
 ## 1. 任务标识
 
-- **L3 编号**: deploy_009
+- L3 编号：deploy_009
 - **L3 标题**: 契约交叉校验与配置编排
 - **所属 L2**: l2-01-external-contract (外部参数加载与契约校验闭环)
 - **Wave / 并行组**: Wave 4 / `l2-01-external-contract-p4`
