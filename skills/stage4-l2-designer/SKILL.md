@@ -235,6 +235,26 @@ The acceptance dimension must follow the new paradigm, not the old `.vfy-item` c
 - **Script design basis:** Reference `agent_context/04_L2验收机制.md §4` for script design requirements. The script itself is built by a later L3 task; dimension 4 only defines the expected output format and labels.
 - **Document audit items**（non-script, human-reviewed）may follow Part B as a compact section, clearly separated from automated script tests.
 
+**Dimension 3 specific constraints（mandatory, per `html要求.md` §4.1/§4.2/§6.1/§7）:**
+
+The blueprint dimension has two critical components, each with strict rules:
+
+- **图① — Runtime collaboration call-chain SVG swimlane（§4.1）：**
+  - Must reflect **real runtime call direction**, never draw as dependency/creation/assembly order. This is the most common mistake.
+  - Horizontal axis = architecture layer swimlanes（the layers that participate at runtime）. Each step ①②③… lands in its owning swimlane.
+  - **Every step must be labeled with its 3.5-layer micro-unit type**（e.g. "②更新字段缓存（内部状态更新函数）"）, cross-referencing 图②.
+  - **Failure branch must use red dashed lines** with a separate box explaining where the flow stops.
+  - **Compile-time injection**（e.g. L2-01 config）must use a **dashed banner** at the top, visually distinct from runtime solid arrows.
+  - A **callout must follow the SVG**, calling out key collaboration facts: who is the driver, which layer has/lacks orchestration functions, state ownership, failure propagation.
+- **图② — Six-layer code landing radio panes（§4.2）：**
+  - 6 layer tabs driven by hidden radio inputs. "Has products" tabs highlighted with border color matching §7; "no products" tabs grey background.
+  - Each product-layer pane: layer title + one-line responsibility + one or more `.classbox` cards.
+  - Each `.classbox` must use layer-specific CSS class（`.classbox.repo`/`.svc`/`.rt`/`.ui`）, not inline styles, with `border-left-color` matching the layer's color in §7.
+  - **排版铁律#1**: Each micro-unit must occupy its own line. If one `.mu` contains multiple functions/fields, each must be wrapped in `<span class="fn">`（`display:block`）. **Never** cram multiple functions with `；`/`/` into one line.
+  - **排版铁律#2**: Micro-unit kind labels must be exactly the 5 approved types（数据/计算函数/内部状态更新函数/数据读写函数/编排函数）. Self-invented names are illegal.
+  - **排版铁律#3**: Descriptions must use `<b>输入：</b>` `<b>修改对象：</b>` `<b>如何修改：</b>` bold prefixes to explicitly mark mandatory dimensions per §3.3.
+- **lpick tab colors（§7）：** Selected tab background must match the architecture layer's emphasis color. Common error: using `--ok`（green）for service/runtime instead of `--config`（blue）and `--repo`（purple）. For L2s where config/repo have no products, use `--grey`.
+
 Stop for user confirmation after drafting the HTML information hierarchy and L2 Gate/human acceptance design.
 
 ### 6. Design Acceptance
