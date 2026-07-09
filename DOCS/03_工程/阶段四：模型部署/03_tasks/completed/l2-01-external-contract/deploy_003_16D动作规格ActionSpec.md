@@ -6,7 +6,7 @@
 > - **阶段**: stage4 (阶段四：模型部署)
 > - **L1**: model_deploy
 > - **L2**: l2-01-external-contract (外部参数加载与契约校验闭环)
-> - **L3**: deploy_003
+> - L3 编号：deploy_003
 > - **改造类型**: source-adaptation
 > - **验收模式**: direct-local
 > - **本地验收必需**: true
