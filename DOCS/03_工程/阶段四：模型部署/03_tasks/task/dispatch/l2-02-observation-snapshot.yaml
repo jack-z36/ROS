@@ -1,0 +1,206 @@
+# L2-02 传感器订阅与 ObservationSnapshot 组装闭环 调度索引
+
+> [!info] 归属
+> - 功能组：`l2-02-observation-snapshot`
+> - L2 设计目录：`DOCS/03_工程/阶段四：模型部署/02_implement/l2-02-observation-snapshot_ObservationSnapshot组装闭环/`
+> - L2 功能边界：`agent_context/01_L2功能边界.md`
+> - L2 验收机制：`agent_context/04_L2验收机制.md`
+> - 本文件是调度索引，主 Agent 据此判断并行 / 串行；不随单个 L3 归档移动。
+
+> [!warning] 旧版隔离
+> 旧 `l2-03-assembly` dispatch 已隔离到 `03_tasks/归档/_archived_pi05/dispatch/l2-03-assembly.yaml`，旧 `_legacy_layer_based_act` dispatch 已隔离到 `03_tasks/归档/_legacy_layer_based_act/task/dispatch/`，不得作为当前调度来源。
+
+```yaml
+dispatch_index:
+  group: l2-02-observation-snapshot
+  branch: feat/model_deploy/l2-02-observation-snapshot
+  integration_branch: model_deploy
+  source_l2: DOCS/03_工程/阶段四：模型部署/02_implement/l2-02-observation-snapshot_ObservationSnapshot组装闭环/agent_context/01_L2功能边界.md
+  max_parallel_agents: 2
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-observation-snapshot
+  cards_dir: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-observation-snapshot
+  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-observation-snapshot/l2-02-observation-snapshot_整体验收卡片.md
+  l2_acceptance_report: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-observation-snapshot/L2验收报告.md
+  acceptance_round_limit: 3
+
+  waves:
+    - wave: 1
+      parallel_group: l2-02-observation-snapshot-p1
+      tasks: [deploy_011]
+    - wave: 2
+      parallel_group: l2-02-observation-snapshot-p2
+      depends_on: [deploy_011]
+      tasks: [deploy_012, deploy_013]
+    - wave: 3
+      parallel_group: l2-02-observation-snapshot-p3
+      depends_on: [deploy_011]
+      tasks: [deploy_014]
+    - wave: 4
+      parallel_group: l2-02-observation-snapshot-p4
+      depends_on: [deploy_011, deploy_012, deploy_014]
+      tasks: [deploy_015]
+    - wave: 5
+      parallel_group: l2-02-observation-snapshot-p5
+      depends_on: [deploy_011, deploy_012, deploy_013, deploy_014, deploy_015]
+      tasks: [deploy_016]
+
+  tasks:
+    deploy_011:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-observation-snapshot/deploy_011_观测类型定义ObservationTypes.md
+      title: 观测类型定义 ObservationState / ObservationSnapshot / ObservationFreshnessResult
+      depends_on: []
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-observation-snapshot/deploy_011_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/types/observation.py
+          - src/model_deploy/act/tests/types/test_observation.py
+        modules:
+          - model_deploy.act.types.observation
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_012:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-observation-snapshot/deploy_012_观测收集器ObservationCollector.md
+      title: 观测收集器 ObservationCollector
+      depends_on: [deploy_011]
+      can_run_parallel_with: [deploy_013]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-observation-snapshot/deploy_012_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S2]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/service/observation_collector.py
+          - src/model_deploy/act/tests/service/test_observation_collector.py
+        modules:
+          - model_deploy.act.service.observation_collector
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_013:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-observation-snapshot/deploy_013_图像预处理ImagePreprocess.md
+      title: 图像预处理 preprocess_observation_image
+      depends_on: [deploy_011]
+      can_run_parallel_with: [deploy_012]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-observation-snapshot/deploy_013_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S3]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/service/image_preprocess.py
+          - src/model_deploy/act/tests/service/test_image_preprocess.py
+        modules:
+          - model_deploy.act.service.image_preprocess
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_014:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-observation-snapshot/deploy_014_观测缓冲区ObservationBuffer.md
+      title: 观测缓冲区 ObservationBuffer 与 ObservationMetrics
+      depends_on: [deploy_011]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-observation-snapshot/deploy_014_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S2, S4]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/runtime/observation_buffer.py
+          - src/model_deploy/act/tests/runtime/test_observation_buffer.py
+        modules:
+          - model_deploy.act.runtime.observation_buffer
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_015:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-observation-snapshot/deploy_015_ROS适配器ObservationRosAdapter.md
+      title: ROS 适配器 ObservationRosAdapter
+      depends_on: [deploy_011, deploy_012, deploy_014]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-observation-snapshot/deploy_015_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_secondary_modes: [env-blocked]
+      acceptance_scenarios: [S5]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/ui/observation_ros_adapter.py
+          - src/model_deploy/act/tests/ui/test_observation_ros_adapter.py
+        modules:
+          - model_deploy.act.ui.observation_ros_adapter
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_016:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-observation-snapshot/deploy_016_L2Gate集成测试与验收脚本.md
+      title: L2 Gate 集成测试与验收脚本 l2_02_verify.sh
+      depends_on: [deploy_011, deploy_012, deploy_013, deploy_014, deploy_015]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-observation-snapshot/deploy_016_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S2, S3, S4, S5, S6]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/tests/integration/test_l2_02_gate.py
+          - src/model_deploy/act/scripts/l2_02_verify.sh
+        modules:
+          - model_deploy.act.tests.integration.test_l2_02_gate
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+```
+
+## 调度说明
+
+### Wave 结构与依赖
+
+```text
+wave1 (types 层, 1 个 L3, 无依赖):
+  deploy_011  types/observation.py  ObservationState / ObservationSnapshot / ObservationFreshnessResult
+
+wave2 (service 层, 2 个 L3 并行, 依赖 types):
+  deploy_012  service/observation_collector.py   ─┐
+  deploy_013  service/image_preprocess.py         ─┘ 可并行 (不同文件)
+
+wave3 (runtime 层, 1 个 L3, 依赖 types):
+  deploy_014  runtime/observation_buffer.py  ObservationBuffer / ObservationMetrics
+
+wave4 (ui 层, 1 个 L3, 依赖 types + service + runtime):
+  deploy_015  ui/observation_ros_adapter.py  ObservationRosAdapter
+
+wave5 (集成测试, 1 个 L3, 依赖全部):
+  deploy_016  tests/integration/test_l2_02_gate.py + scripts/l2_02_verify.sh
+```
+
+### 冲突说明
+
+- 所有 L3 的 `conflict_scope.files` 互不重叠，无同文件冲突。
+- deploy_012 和 deploy_013 写不同的 service 文件，wave2 内可并行。
+- deploy_015 依赖 deploy_012（collector）和 deploy_014（buffer），必须在 wave4 串行执行。
+- `max_parallel_agents: 2`：wave2 有 2 个可并行 L3，恰好占满并行槽。
+
+### L2 Gate 场景覆盖矩阵
+
+| 场景 | 描述 | 主要覆盖 L3 | 辅助覆盖 L3 |
+|---|---|---|---|
+| S1 | Mock 全字段 snapshot 组装 | deploy_011, deploy_012, deploy_014, deploy_016 | deploy_013, deploy_015 |
+| S2 | 缺字段 / 过期拒绝 | deploy_012, deploy_014, deploy_016 | deploy_011 |
+| S3 | 图像预处理 | deploy_013, deploy_016 | — |
+| S4 | Latest-only buffer 语义 | deploy_014, deploy_016 | — |
+| S5 | 无 ROS 环境可 import | deploy_015, deploy_016 | deploy_011, deploy_012, deploy_014 |
+| S6 | 边界不越界 | deploy_016 | — |
+
+### 归档规则
+
+当某个 L3 验收卡片返回 `PASS_LOCAL` 后，主 Agent 必须把对应任务文件从 `03_tasks/task/active/l2-02-observation-snapshot/` 移动到 `03_tasks/completed/l2-02-observation-snapshot/`。验收 Agent 不得执行归档。
