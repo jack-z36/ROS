@@ -18,8 +18,10 @@ else
   DEFAULT_CONFIG_KIND="smoke test"
 fi
 DATA_CLEAN_SOURCE="${WORKSPACE_DIR}/src/data_clean"
-MCAP_PYTHON_SOURCE="${WORKSPACE_DIR}/src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap"
-MCAP_ROS2_SOURCE="${WORKSPACE_DIR}/src/data_collection/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support"
+# mcap / mcap-ros2-support are installed into the data-clean conda env from the
+# official wheels. Do NOT prepend the in-tree 3rdparty copy under VTLA_octopus:
+# that checkout is incomplete (missing mcap/_chunk_builder.py) and would shadow
+# the working env install, breaking `from mcap.writer import ...`.
 FORGE_SOURCE="${DATA_CLEAN_FORGE_SOURCE:-/home/hit/forge}"
 FORGE_VENV="${DATA_CLEAN_FORGE_VENV:-${FORGE_SOURCE}/.venv}"
 
@@ -102,12 +104,6 @@ export DATA_CLEAN_FORGE_VENV="${FORGE_VENV}"
 PYTHONPATH_ENTRIES=("${DATA_CLEAN_SOURCE}")
 if [[ -d "${FORGE_SOURCE}/forge" ]]; then
   PYTHONPATH_ENTRIES+=("${FORGE_SOURCE}")
-fi
-if [[ -d "${MCAP_PYTHON_SOURCE}" ]]; then
-  PYTHONPATH_ENTRIES+=("${MCAP_PYTHON_SOURCE}")
-fi
-if [[ -d "${MCAP_ROS2_SOURCE}" ]]; then
-  PYTHONPATH_ENTRIES+=("${MCAP_ROS2_SOURCE}")
 fi
 export PYTHONPATH="$(IFS=:; echo "${PYTHONPATH_ENTRIES[*]}"):${PYTHONPATH:-}"
 

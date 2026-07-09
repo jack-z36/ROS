@@ -1,0 +1,1203 @@
+
+下面是重新总结后的完整规格说明，已把本次会话迭代中踩过并修正的所有坑（自造微元类别、架构层≠功能微元、元素挤压、缺定位链、图①方向错）都固化为铁律。我把"为什么"也写进去——因为一个无上下文的 agent 最容易在"看着合理实则违反用户认知框架"的地方出错。
+
+---
+
+# L2 架构交互可视化 HTML · 生成规格说明（v2）
+
+> 把这份规格喂给一个无上下文 agent，它应能产出与本文件语义表达方式一致的 HTML。所有"铁律"都来自实际踩过的坑，违反任意一条都会让产物偏离用户预期。
+
+## 0. 文档定位
+
+- **是什么**：人类快速浏览入口，用 4 个交互维度把一个 L2（二级功能单元）讲清楚。
+- **不是什么**：L3 代码生成依据。权威细节在 `agent_context/*.md`，**HTML 与 MD 冲突时以 MD 为准**。
+- **强制溯源**：每个 `<section>` 带 `data-agent-source="agent_context/XX.md#anchor"`；每个维度结尾 `<p class="src">权威来源：…</p>` 列引用的 md + 章节号。不可凭空写内容。
+
+## 1. 顶层骨架（固定）
+
+```
+header（h1 标题 + subtitle + note："非L3依据，以MD为准"）
+4 个隐藏 radio（v1..v4）+ tabs 导航
+.views → 4 个 <section>（维度1~4）
+```
+
+- Tab 切换**纯 CSS**：隐藏 `<input type=radio>` + `:checked ~` 选择器，**不写 JS**。
+- 每个维度 section 必含三件套：`<div class="reading-path">📖 阅读路径：…→ 去<a>维度N</a></div>` + `<p class="lead">` 导语 + 至少一张 SVG 图。
+- 维度间用 `onclick="document.getElementById('vN').click()"` 互链。
+
+## 2. 四维度语义分工（核心叙事结构）
+
+每个维度回答**一个且只一个**问题，不可混淆：
+
+| 维度             | 回答的问题                              | 主要表达手段                                                               |
+| ---------------- | --------------------------------------- | -------------------------------------------------------------------------- |
+| 1 功能边界       | 做什么/不做什么？输入输出契约？         | 地位定位图、负责vs不负责边界墙、数据流契约图                               |
+| 2 Pi0.5 如何运作 | 参考源码怎么跑起来的？（白话）          | 术语词典、4步流程卡、跟一个字段走(trace)、参考对象+差异、四个核心问题      |
+| 3 开发蓝图       | 代码怎么分层？每层有哪些微元？          | **运行时协作调用链图**、**六层落点单选卡（classbox微元拆解）** |
+| 4 人类验收标准   | 怎么验证？跑什么？看到什么算通过/失败？ | **一个.sh脚本 + 终端范例块 + 终端输出翻译表**                        |
+
+维度3 是技术密度最高的一维（见 §4）；维度4 是刚定型的新范式（见 §5）。
+
+## 3. 核心语义模型（最重要、agent 最易出错）
+
+### 3.1 架构层职责 ≠ 功能微元类型 —— 必须分开，不可混用
+
+**这是整个会话中最容易犯的错。** 这两套是正交的：
+
+- **第 2 层架构层**（`types/config/repo/service/runtime/ui`）描述一个**文件夹的职责**。例如 `runtime/` 的架构职责是"时间/状态/队列/调度"。
+- **第 3.5 层功能微元**（5 种，见 §3.3）描述**单个函数/数据属于哪种功能单元**，由"它实际做什么"决定。
+
+**关键反例（务必理解）**：`runtime/` 的架构职责是"调度"，但落到 L2-02 里 runtime 被瘦身成只剩 latest-only buffer，所以它**内部可以完全没有"编排函数"微元**。绝不能因为"runtime 是调度层"就把 buffer 的方法标成"编排函数"。
+
+### 3.2 六层落点判定
+
+每个 L2 逐层判定"是否落点"。落点的层出产物；不落点的层（如 config/repo）必须说明**原因**（为何不落点）+ **使用的上游对象** + **验收确认**（如何证明没产物）。
+
+### 3.3 五种功能微元 —— 标签名固定，每种有强制描述维度
+
+**只能用这 5 个标签，不可自造**。"内部状态""状态更新"等都是**非法**的（这是真实踩过的坑）。
+
+| 微元类型（标签文本，固定） | 强制描述维度                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **数据**             | ①变量名 ②内部存储结构（dict/list/dataclass/标量…） ③内部存储数值类型（int/float/str/bool + shape） |
+| **计算函数**         | ①输入（类型+shape） ②输出（类型+shape）或抛什么异常                                                  |
+| **内部状态更新函数** | ①修改了哪个内存对象（变量名） ②如何修改（写入/追加/覆盖/累加计数）                                   |
+| **数据读写函数**     | ①从哪里读（文件路径/topic/硬件句柄）或写入哪个外部资源 ②读出什么（类型+shape）                       |
+| **编排函数**         | ①按什么顺序调哪些函数 ②调用条件（何时调/何时跳过） ③失败怎么办（抛异常/fallback/记诊断）            |
+
+## 4. 维度 3 的两个关键组件
+
+### 4.1 图① 运行时协作调用链（SVG 泳道图）
+
+- **必须反映运行时真实调用方向**，不能画成"依赖/创建顺序"（踩过的坑：原图画 service 同时指向 runtime 和 ui，与运行时数据流相反）。
+- 横轴 = 架构层泳道（ui / service / runtime / 下游），每个步骤①②③…落在其所属泳道。
+- **每一步都标注它对应的 3.5 层微元类型**（如"②更新字段缓存（内部状态更新函数）"），与图②对照。
+- 失败分支用红色虚线单独画出（缺字段/过期 → 停在此，不写下游）。
+- 编译时注入（如 L2-01 配置）用**虚线 banner**，与运行时实线调用区分。
+- 图下跟一个 callout，点明"谁是驱动方""谁没有编排函数"等关键协作事实。
+
+### 4.2 图② 六层代码落点（radio 驱动单选卡）
+
+- 6 个层 tab（radio），点一个只显示该层 pane。"有产物"的 tab 边框高亮，"无"的 tab 灰底。
+- 每个落点层 pane：层标题 + 一句职责 + 若干 **classbox 卡片**。
+- 每个 classbox（= 第 3.25 层 class）格式固定：
+  ```
+  <h5>ClassName（class/function/dataclass，文件名.py）</h5>
+  <p class="role">一句话角色 + Pi0.5 参考</p>
+  <div class="mu-list">  ← 按 §3.3 五种微元逐行拆
+    <div class="mu"><span class="kind data">数据</span><span class="desc">…</span></div>
+  ```
+- pane 结尾：文件路径 + 允许/禁止依赖 + 验收覆盖。
+
+## 5. 维度 4 新范式：一个脚本 + 翻译表（刚定型）
+
+> 这是本次会话最后定型的维度，与旧版（7 个分散命令卡）完全不同。
+
+人类验收只做两件事：① 跑一个 `.sh` 脚本（自动跑所有子功能模块测试，终端分层分组打印）；② 用"终端输出翻译表"对照终端每行含义。
+
+### 5.1 Part A：怎么验收
+
+- 一行命令 `bash src/model_deploy/act/scripts/l2_02_verify.sh` + 输出格式说明。
+- 配一个**终端范例块**（`.term`）：演示一次有 FAIL 的输出（含 FAIL 定位格式）。
+- 脚本设计依据指向 `04_L2验收机制.md §4`（本轮不建脚本，留给后续 L3）。
+
+### 5.2 终端输出格式（分层分组 + FAIL 定位 + 汇总）
+
+- 按架构层分块（types/service/runtime/ui·边界），每块下列标签——**与维度3 图②视觉对齐**。
+- 每标签一行：`PASS|FAIL|BLOCKED` + 标签名 + 一句话说明。
+- **FAIL 必须附简要定位**（缩进块）：文件 / class / 微元 / pytest 节点 / 错误摘要。
+- 末行汇总 `N PASS / N FAIL / N BLOCKED`。
+- **BLOCKED ≠ 失败**（环境约束）：退出码全 PASS→0；任一 FAIL→1；仅 BLOCKED→0。
+
+### 5.3 Part B：终端输出翻译表（核心）
+
+- 表格每行一个验证标签，列：标签 / 层 / **对应微元（完整定位链）** / PASS含义·FAIL查哪里。
+- **定位链必须完整**（踩过的坑：原版只写"snapshot() 计算函数"，没标文件/class）：
+  ```
+  文件路径 → class 名（模块级函数标"无 class"）→ 微元名 + 类型小标签
+  ```
+- 这样人类看终端任意一行 FAIL，都能查到对应的层、文件、3.5 层微元。
+
+## 6. 排版铁律（每条都来自实际踩坑）
+
+1. **每个微元独占一行**：一个 `.mu` 里若含多个函数/字段，每个用 `<span class="fn">` 包裹（`display:block`）。**禁止**用 `；`/`/` 把多个函数挤一行。
+2. **微元标签名只能是 §3.3 的 5 个**。自造名（内部状态/状态更新）一律非法。
+3. 描述里用 `<b>输入：</b>` `<b>修改对象：</b>` 等加粗前缀显式标出强制维度。
+4. **CSS 类名避撞**（踩过的坑）：翻译表用 `<td class="mu">` 会撞全局 `.mu{display:grid;grid-template-columns:90px 1fr}`，必须用 `.trtab td.mu{display:block}` 覆盖。跨区域复用类名时检查是否会命中冲突规则。
+5. **终端范例块用结构化 div 而非 `<pre>`**：`.t-row{display:grid;grid-template-columns:72px 232px 1fr}` 三列对齐，避免窄列折行挤压；FAIL 定位用独立 `.t-loc` 块，每条 `display:block` 独占一行。
+
+## 7. 配色语义（变量绑定，全程一致）
+
+**架构层**（有产物的层各一色；无产物的 config/repo 用灰）：
+
+| 层                      | 强调色 | CSS 变量             |
+| ----------------------- | ------ | -------------------- |
+| types                   | 青绿   | `--types` #0f766e  |
+| service                 | 蓝     | `--config` #2563eb |
+| runtime                 | 紫     | `--repo` #7c3aed   |
+| ui                      | 琥珀   | `--yellow` #b54708 |
+| config / repo（无产物） | 灰     | `--grey`           |
+
+**功能微元**（classbox `.kind.*` 与翻译表 `.kindtag`）：
+
+| 微元             | 色        |
+| ---------------- | --------- |
+| 数据             | 青绿      |
+| 计算函数         | 蓝        |
+| 数据读写         | 紫        |
+| 编排函数         | 琥珀      |
+| 内部状态更新函数 | 棕#92400e |
+
+**语义色**：`--ok` 绿（通过/合法）、`--warn` 红（失败/越界/不负责）、`--pi` 橙（Pi0.5 相关）、`--ctrl` 深灰（下游 L2/控制）。颜色必须与含义绑定，不可随意混用。
+
+## 8. 可复用组件库
+
+| 组件                         | 用途                                     | 变体                                                      |
+| ---------------------------- | ---------------------------------------- | --------------------------------------------------------- |
+| `.figure`+`<svg>`        | 所有示意图                               | 见 §9                                                    |
+| `.callout`                 | 段末强调                                 | `.warn`红/`.pi`橙/`.ok`绿/默认黄                    |
+| `.card`（`.grid.g2/g3`） | 卡片网格                                 | 按层/语义着色                                             |
+| `details/summary`          | 可折叠（术语词典）                       | ▸ 旋转                                                   |
+| `.flow`+`.step.s1..s4`   | 横向编号流程卡                           | 顶部色带分步                                              |
+| `.trace`                   | 深色代码追踪块                           | `.ln/.key/.val/.cmt/.ok/.err` 着色                      |
+| `.cmd`/`.cmd-block`      | 深色命令块                               | `.c` 注释色                                             |
+| `.term`                    | **维度4 终端范例块（结构化 div）** | `.t-hdr/.t-grp/.t-row/.t-loc/.t-sep/.t-sum`             |
+| `.trtab`                   | **维度4 翻译表**                   | `.lbl/.lyr/.mu(.fpath/.cls/.kindtag)/.pf(.pp/.fp/.blk)` |
+| `.dict` table              | 术语词典                                 | 首列等宽加粗                                              |
+| `.classbox`+`.mu-list`   | **维度3 class 微元拆解卡**         | `.svc/.rt/.ui` 左边框按层                               |
+
+## 9. SVG 图范式
+
+统一样式类：`.box`(白底框) `.band`(左侧色带，标识所属层) `.title`/`.sub`(文字层级) `.edge`(箭头，配 `<marker>`) `.elabel`(箭头标签) `.mono`(等宽)。`viewBox` 横向 ~920，`min-width:700px` 可横向滚动。四类图：
+
+1. **地位定位图**：左外部输入 → 中 L2 框（色带标题栏）→ 右产物 → 下游。
+2. **边界墙图**：竖虚线分左右；左 `✓负责`（绿），右 `✗不负责`（红底）；每条一个 `.box`。
+3. **数据流契约图**：线性 `输入→adapter→collector→buffer`，箭头上标数据类型。
+4. **协作调用链图**（维度3图①）：泳道序列图，见 §4.1。
+
+## 10. 写作语气与不变量
+
+- 维度2 用**白话**，术语首次出现要解释，配术语词典。
+- **边界不变量**显式写成 callout（如"缺字段/过期时绝不生成 snapshot"）。
+- 反模式（Gate 会判失败的事）单独列 callout.warn。
+- 文档审查项（非脚本、人工查的）与脚本测试项分开标注。
+
+---
+
+## 供参考的模范文件
+
+```HTML
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L2-01 外部参数加载与契约校验闭环 · 架构交互可视化</title>
+<style>
+:root{
+  --bg:#f6f7f9;--ink:#1f2937;--muted:#667085;--line:#d0d5dd;--panel:#ffffff;
+  --config:#2563eb;--types:#0f766e;--repo:#7c3aed;--warn:#b42318;--ok:#047857;
+  --ctrl:#344054;--pi:#c2410c;--grey:#98a2b3;--yellow:#b54708;
+  --types-bg:#ecfdf5;--config-bg:#eff6ff;--repo-bg:#f5f3ff;--warn-bg:#fef2f2;--ok-bg:#ecfdf5;--grey-bg:#f2f4f7;--pi-bg:#fff7ed;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.page{max-width:1240px;margin:0 auto;padding:22px}
+header{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start;margin-bottom:14px}
+h1{margin:0 0 6px;font-size:26px;line-height:1.2}
+h2{margin:0 0 6px;font-size:19px}
+h3{margin:14px 0 6px;font-size:15px}
+h4{margin:10px 0 4px;font-size:14px;color:var(--ctrl)}
+p{margin:0 0 8px;line-height:1.65}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.subtitle{color:var(--muted);max-width:820px}
+.note{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:11px 12px;color:var(--muted);font-size:12.5px;line-height:1.55}
+.note b{color:var(--ink)}
+
+input[name=tab]{position:absolute;opacity:0;pointer-events:none}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.tabs label{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:9px 13px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.tabs label .n{display:inline-flex;width:18px;height:18px;border-radius:999px;background:var(--grey-bg);color:var(--muted);font-size:11px;align-items:center;justify-content:center;font-weight:700}
+#v1:checked~.tabs label[for=v1]{background:var(--config);color:#fff;border-color:transparent}
+#v2:checked~.tabs label[for=v2]{background:var(--pi);color:#fff;border-color:transparent}
+#v3:checked~.tabs label[for=v3]{background:var(--types);color:#fff;border-color:transparent}
+#v4:checked~.tabs label[for=v4]{background:var(--ctrl);color:#fff;border-color:transparent}
+#v1:checked~.tabs label[for=v1] .n,#v2:checked~.tabs label[for=v2] .n,#v3:checked~.tabs label[for=v3] .n,#v4:checked~.tabs label[for=v4] .n{background:rgba(255,255,255,.25);color:#fff}
+
+.views>section{display:none}
+#v1:checked~.views .boundary,#v2:checked~.views .pi05map,#v3:checked~.views .blueprint,#v4:checked~.views .acceptance{display:block}
+
+.view{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.lead{color:var(--muted);margin:0 0 12px}
+.figure{border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:10px;margin-bottom:12px;overflow:auto}
+svg{width:100%;min-width:700px;height:auto;display:block}
+.box{fill:#fff;stroke:var(--line);stroke-width:1.4}
+.band{stroke:none}
+.title{font-size:13.5px;font-weight:760;fill:var(--ink)}
+.sub{font-size:11.5px;fill:var(--muted)}
+.edge{fill:none;stroke:#475467;stroke-width:1.8;marker-end:url(#arrow)}
+.queue{stroke:var(--repo);stroke-dasharray:7 5}
+.ctl{stroke:var(--ctrl);stroke-dasharray:4 4}
+.fedge{stroke:var(--warn)}
+.io{stroke:var(--ok)}
+.elabel{font-size:11px;fill:#475467}
+.mono{font-family:ui-monospace,monospace;font-size:11px;fill:var(--repo)}
+
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+	.card{border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:8px;background:#fff;padding:12px;transition:box-shadow .15s,transform .15s}
+	.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-1px)}
+	.card h3{margin-top:0}
+.card.types{border-left-color:var(--types)}
+.card.config{border-left-color:var(--config)}
+.card.repo{border-left-color:var(--repo)}
+.card.ok{border-left-color:var(--ok)}
+.card.warn{border-left-color:var(--warn)}
+.card.pi{border-left-color:var(--pi)}
+.card.grey{border-left-color:var(--grey);background:var(--grey-bg)}
+.card.yellow{border-left-color:var(--yellow);background:#fffbeb}
+.card ul{margin:6px 0 0;padding-left:18px;color:var(--muted);line-height:1.6;font-size:13px}
+.card p{font-size:13px;color:var(--muted);line-height:1.65}
+
+.tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin:2px 3px 2px 0;font-size:11.5px;color:var(--muted);background:#fff}
+.badge{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:600}
+.badge.layer{background:var(--grey-bg);color:var(--ctrl)}
+.badge.direct{background:var(--ok-bg);color:var(--ok)}
+.badge.struct{background:var(--config-bg);color:var(--config)}
+.badge.ref{background:#fff7ed;color:var(--yellow)}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;color:var(--muted);font-size:12px;margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+
+details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;margin-bottom:8px}
+details[open]{background:#fbfcfe}
+summary{cursor:pointer;font-weight:700;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details p,details ul{margin:8px 0 0;padding-left:0;color:var(--muted);line-height:1.7;font-size:13px}
+details ul{padding-left:18px}
+details .body{padding-top:8px}
+
+.callout{border:1px solid #fedf89;background:#fffbeb;color:#7a5c00;border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.6;font-size:13px}
+.callout.warn{border-color:#fecdca;background:var(--warn-bg);color:#912018}
+.callout.pi{border-color:#fed7aa;background:var(--pi-bg);color:#9a3412}
+.callout.ok{border-color:#a7f3d0;background:var(--ok-bg);color:#065f46}
+.src{color:var(--muted);font-size:12px;margin:10px 0 0}
+.src code{color:var(--repo)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+	th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:12px}
+	tr:nth-child(even) td{background:#fafbfc}
+	td .okc{color:var(--ok);font-weight:600}
+	td .errc{color:var(--warn);font-weight:600}
+
+	/* 阅读路径提示 */
+	.reading-path{font-size:11.5px;color:var(--muted);margin:-6px 0 10px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+	.reading-path a{color:var(--config);text-decoration:none;font-weight:600}
+	.reading-path a:hover{text-decoration:underline}
+
+	/* 两步验收标签 */
+	.step-label{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;background:var(--grey-bg);color:var(--ctrl);border-radius:999px;padding:2px 10px;margin-right:6px;font-weight:600}
+	.step-label.code{background:var(--config-bg);color:var(--config)}
+	.step-label.doc{background:var(--types-bg);color:var(--types)}
+
+	/* 验收矩阵专用行样式 */
+	.accept-table td:first-child{font-weight:600;color:var(--ctrl);font-size:13px;white-space:nowrap}
+	.accept-table td:nth-child(2){font-family:ui-monospace,monospace;font-size:12px;color:var(--repo)}
+	.accept-table td:nth-child(3){font-size:12px}
+	.accept-table td:nth-child(4){font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ctrl)}
+
+	/* 产物清单卡 */
+	.artifact-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
+	@media(max-width:800px){.artifact-grid{grid-template-columns:1fr}}
+	.artifact{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;font-size:12.5px;line-height:1.7}
+	.artifact .path{font-family:ui-monospace,monospace;font-size:12px;color:var(--repo);font-weight:600;display:block;margin-bottom:4px}
+	.artifact .contents{color:var(--muted);font-size:12px}
+	.artifact.types{border-left:4px solid var(--types)}
+	.artifact.config{border-left:4px solid var(--config)}
+	.artifact.repo{border-left:4px solid var(--repo)}
+	.artifact.none{border-left:4px solid var(--grey);background:var(--grey-bg);color:var(--muted)}
+	.artifact .tag{font-size:10.5px;margin-bottom:3px}
+
+	/* 反模式检查卡 */
+	.anti-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}
+	@media(max-width:700px){.anti-grid{grid-template-columns:1fr}}
+	.anti-card{border:1px solid #fecdca;border-left:4px solid var(--warn);border-radius:8px;background:var(--warn-bg);padding:10px 12px;font-size:12.5px;line-height:1.65}
+	.anti-card h4{margin:0 0 4px;color:var(--warn);font-size:13px}
+	.anti-card p{color:#912018;font-size:12px;margin:0}
+	.anti-card code{font-size:11.5px}
+
+.cmd{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:6px 8px;font-family:ui-monospace,monospace;font-size:12px;overflow:auto;display:block;margin-top:6px}
+.cmd .c{color:#94a3b8}
+
+.layer-matrix{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 12px}
+.lcell{border:1px solid var(--line);border-radius:8px;padding:10px;text-align:center;font-size:12px}
+.lcell.has{background:var(--types-bg);border-color:var(--types);color:var(--types)}
+.lcell.has b{display:block;font-size:13px}
+.lcell.none{background:var(--grey-bg);color:var(--muted)}
+.lcell.none b{display:block;font-size:13px;color:var(--ctrl)}
+
+/* 维度3 图② 单选切换层（radio driven，点一层只显示该层） */
+.lpick input{position:absolute;opacity:0;pointer-events:none}
+.lpick .ltabs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 12px}
+@media(max-width:780px){.lpick .ltabs{grid-template-columns:repeat(3,1fr)}}
+.lpick .ltabs label{border:1px solid var(--line);border-radius:8px;padding:12px 8px;text-align:center;font-size:13px;cursor:pointer;background:#fff;color:var(--muted);display:block;transition:all .12s}
+.lpick .ltabs label b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+.lpick .ltabs label.has{border-color:var(--types)}
+.lpick .ltabs label.none{border-color:var(--line);background:var(--grey-bg)}
+.lpick .lpane{display:none;border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:14px}
+.lpick .lpane h4{margin:0 0 6px;color:var(--types)}
+.lpick .lpane.none-pane h4{color:var(--ctrl)}
+/* radio → 面板：radio 和 lpane 是同级兄弟，直接用 ~ combinator */
+#l-types:checked~.lp-types,
+#l-config:checked~.lp-config,
+#l-repo:checked~.lp-repo,
+#l-service:checked~.lp-service,
+#l-runtime:checked~.lp-runtime,
+#l-ui:checked~.lp-ui{display:block}
+/* radio → label 高亮 */
+#l-types:checked~.ltabs label[for=l-types]{background:var(--types);border-color:var(--types);color:#fff}
+#l-types:checked~.ltabs label[for=l-types] b{color:#fff}
+#l-config:checked~.ltabs label[for=l-config]{background:var(--config);border-color:var(--config);color:#fff}
+#l-config:checked~.ltabs label[for=l-config] b{color:#fff}
+#l-repo:checked~.ltabs label[for=l-repo]{background:var(--repo);border-color:var(--repo);color:#fff}
+#l-repo:checked~.ltabs label[for=l-repo] b{color:#fff}
+#l-service:checked~.ltabs label[for=l-service]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-service:checked~.ltabs label[for=l-service] b{color:#fff}
+#l-runtime:checked~.ltabs label[for=l-runtime]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-runtime:checked~.ltabs label[for=l-runtime] b{color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui] b{color:#fff}
+
+/* class 封装拆解卡 */
+.classbox{border:1px solid var(--line);border-left:4px solid var(--config);border-radius:8px;background:#fff;padding:12px;margin:8px 0}
+.classbox h5{margin:0 0 4px;font-size:13.5px;color:var(--config);font-family:ui-monospace,monospace}
+.classbox .role{font-size:12px;color:var(--muted);margin:0 0 8px}
+.mu-list{display:grid;gap:6px;margin-top:6px}
+.mu{display:grid;grid-template-columns:90px 1fr;gap:10px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:6px}
+.mu .kind{font-weight:700;text-align:right}
+.mu .kind.data{color:var(--types)}
+.mu .kind.calc{color:var(--config)}
+.mu .kind.io{color:var(--repo)}
+.mu .kind.orch{color:var(--yellow)}
+.mu .kind.state{color:#92400e}
+.mu .desc{color:var(--muted);line-height:1.6}
+
+/* 维度2 专用：流程步骤 */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:6px 0}
+@media(max-width:980px){.flow{grid-template-columns:1fr}}
+      .step{background:#fff;border:1px solid var(--line);border-top:4px solid var(--config);border-radius:8px;padding:16px 14px;position:relative;font-size:13px}
+      .step.s1{border-top-color:var(--repo)}
+      .step.s2{border-top-color:var(--config)}
+      .step.s3{border-top-color:var(--yellow)}
+      .step.s4{border-top-color:var(--ok)}
+      .step .no{position:absolute;top:-12px;left:12px;background:var(--ctrl);color:#fff;width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+      .step h4{margin:4px 0 6px;color:var(--ink)}
+      .step .what{font-size:12.5px;color:var(--muted);line-height:1.7}
+.arrow-r{display:flex;align-items:center;justify-content:center;color:var(--grey);font-size:20px}
+@media(min-width:981px){.arrow-r{padding:0 2px}}
+
+/* 配置项跟踪 */
+.trace{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 20px;font-family:ui-monospace,monospace;font-size:13px;line-height:2.4;overflow:auto;letter-spacing:.3px}
+.trace .ln{color:#64748b;font-weight:700;margin-right:6px}
+.trace .key{color:#7dd3fc}
+.trace .val{color:#fde68a}
+.trace .cmt{color:#64748b}
+.trace .ok{color:#86efac}
+.trace .err{color:#fca5a5}
+.trace .gap{display:block;height:8px}
+
+/* bundle 目录树 */
+.tree{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 16px;font-family:ui-monospace,monospace;font-size:12.5px;line-height:2.2;color:var(--ink)}
+.tree .dir{color:var(--repo);font-weight:700}
+.tree .file{color:var(--ink)}
+.tree .cmt{color:var(--muted);font-family:system-ui,sans-serif;font-size:11.5px}
+.tree .arrow{color:var(--grey)}
+
+/* 术语词典表 */
+.dict{width:100%}
+.dict td:first-child{width:24%;font-weight:600;color:var(--ctrl);font-family:ui-monospace,monospace;font-size:12.5px;vertical-align:top}
+.dict td{font-size:13px;line-height:1.65}
+
+	.faq-q{font-weight:700;color:var(--ctrl);font-size:13.5px;margin:10px 0 4px}
+
+	/* 维度4 验收动作卡 */
+	.vfy{margin:10px 0}
+	.vfy-item{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+	.vfy-item .num{width:28px;height:28px;border-radius:999px;background:var(--ctrl);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:2px}
+	.vfy-item .body{min-width:0}
+	.vfy-item .do{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 6px}
+	.vfy-item .cmd-block{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:8px 12px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;display:block;margin:6px 0}
+	.vfy-item .cmd-block .c{color:#94a3b8}
+	.vfy-item .result{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+	@media(max-width:700px){.vfy-item .result{grid-template-columns:1fr}}
+	.vfy-item .pass{border:1px solid #a7f3d0;border-radius:6px;background:var(--ok-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+	.vfy-item .pass::before{content:"✅ 通过 → ";font-weight:700;color:var(--ok)}
+	.vfy-item .fail{border:1px solid #fecdca;border-radius:6px;background:var(--warn-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+	.vfy-item .fail::before{content:"❌ 失败 → ";font-weight:700;color:var(--warn)}
+	.vfy-item .why{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
+	.vfy-item .why a{color:var(--config);font-weight:600;text-decoration:none}
+	.vfy-item .why a:hover{text-decoration:underline}
+	.vfy-sep{margin:18px 0 12px;border-top:2px dashed var(--line)}
+	.vfy-section-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);background:var(--grey-bg);border-radius:999px;padding:2px 10px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+	.vfy-item .do .tag{vertical-align:middle;margin-left:4px}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>L2-01 · 外部参数加载与契约校验闭环</h1>
+      <p class="subtitle">启动阶段把外部静态参数读入 RAM 并冻结为契约对象，是后续全部 L2 的静态地基。第一版不含 action 平滑配置。本页用 4 个维度交互呈现：功能边界、Pi0.5 对应部分如何运作、开发蓝图、人类验收标准。</p>
+    </div>
+    <div class="note">
+      <b>本页只是人类快速浏览入口，不作为 L3 生成依据。</b><br>
+      权威细节见 <code>agent_context/00_INDEX.md</code> 及其路由的 Markdown。HTML 与 MD 冲突时，以 MD 为准。
+    </div>
+  </header>
+
+  <input id="v1" name="tab" type="radio" checked>
+  <input id="v2" name="tab" type="radio">
+  <input id="v3" name="tab" type="radio">
+  <input id="v4" name="tab" type="radio">
+
+  <nav class="tabs" aria-label="维度视图">
+    <label for="v1"><span class="n">1</span>功能边界</label>
+    <label for="v2"><span class="n">2</span>Pi0.5 如何运作</label>
+    <label for="v3"><span class="n">3</span>开发蓝图</label>
+    <label for="v4"><span class="n">4</span>人类验收标准</label>
+  </nav>
+
+  <div class="views">
+
+    <!-- ============ 维度 1 · 功能边界 ============ -->
+	    <section class="view boundary" data-agent-source="agent_context/01_L2功能边界.md#1-一句话运行时职责">
+	      <h2>维度 1 · 功能边界</h2>
+	      <div class="reading-path">📖 阅读路径：先理解 L2-01 做什么、不做什么 → 然后去<a href="#" onclick="document.getElementById('v4').click()">维度4 图②</a>对照验收</div>
+	      <p class="lead">用四张图把 L2-01 的功能边界讲清楚：① 它在整个程序里的定位；② 启动期三步加工；③ 负责 vs 不负责的边界墙；④ 16D 数据契约的内容。</p>
+
+      <h3>图① 地基定位：L2-01 是静态契约地基</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 250" role="img" aria-label="L2-01 地基定位">
+          <defs><marker id="arrow" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker></defs>
+          <rect class="box" x="20" y="70" width="150" height="110" rx="8"></rect><rect class="band" x="20" y="70" width="6" height="110" fill="var(--yellow)"></rect>
+          <text class="title" x="36" y="94">外部文件</text>
+          <text class="sub" x="36" y="116">deploy.yaml</text>
+          <text class="sub" x="36" y="134">bundle/manifest</text>
+          <text class="sub" x="36" y="152">normalizers.json</text>
+          <text class="sub" x="36" y="170">experiment_config</text>
+          <path class="edge" d="M172 125 L242 125"></path>
+          <text class="elabel" x="176" y="118">进程边界读入</text>
+          <rect class="box" x="244" y="55" width="280" height="140" rx="10" fill="#fcfdff" stroke="var(--config)" stroke-width="2"></rect>
+          <rect class="band" x="244" y="55" width="280" height="28" fill="var(--config)"></rect>
+          <text x="384" y="74" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">L2-01（启动期一次性）</text>
+          <text class="title" x="260" y="106">静态契约地基</text>
+          <text class="sub" x="260" y="126">读入 → 合规校验 → 冻结</text>
+          <text class="sub" x="260" y="146">全生命周期只读</text>
+          <text class="sub" x="260" y="168" fill="var(--ok)">是后续全部 L2 的</text>
+          <text class="sub" x="260" y="184" fill="var(--ok)">稳定 import 来源</text>
+          <path class="edge" d="M526 125 L600 125"></path>
+          <text class="elabel" x="532" y="118">冻结为契约对象</text>
+          <rect class="box" x="602" y="40" width="140" height="170" rx="8"></rect><rect class="band" x="602" y="40" width="6" height="170" fill="var(--ok)"></rect>
+          <text class="title" x="618" y="64">RAM 契约对象</text>
+          <text class="sub" x="618" y="92">DeployConfig</text>
+          <text class="sub" x="618" y="110">StateSpec</text>
+          <text class="sub" x="618" y="128">ActionSpec</text>
+          <text class="sub" x="618" y="146">BundleContract</text>
+          <text class="sub" x="618" y="164">NormalizerContract</text>
+          <path class="edge io" d="M744 125 L800 70"></path>
+          <path class="edge io" d="M744 125 L800 110"></path>
+          <path class="edge io" d="M744 125 L800 150"></path>
+          <path class="edge io" d="M744 125 L800 190"></path>
+          <text class="elabel" x="756" y="50">下游全部 import</text>
+          <text class="title" x="804" y="74" fill="var(--ctrl)">L2-02</text>
+          <text class="title" x="804" y="114" fill="var(--ctrl)">L2-03</text>
+          <text class="title" x="804" y="154" fill="var(--ctrl)">L2-04/L2-05</text>
+          <text class="title" x="804" y="194" fill="var(--ctrl)">L2-06</text>
+        </svg>
+      </div>
+
+      <h3>图② 启动期三步加工：读入 → 校验 → 冻结</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 220" role="img" aria-label="启动期三步加工">
+          <defs><marker id="arrow" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker></defs>
+          <rect class="box" x="20" y="55" width="180" height="110" rx="8"></rect><rect class="band" x="20" y="55" width="6" height="110" fill="var(--repo)"></rect>
+          <text class="title" x="36" y="80">① 读入（跨进程边界）</text>
+          <text class="sub" x="36" y="104">yaml.safe_load</text>
+          <text class="sub" x="36" y="122">load_bundle_manifest</text>
+          <text class="sub" x="36" y="140">load_bundle_normalizers</text>
+          <text class="sub" x="36" y="158">resolve_adapter_dir</text>
+          <path class="edge" d="M202 110 L252 110"></path>
+          <text class="elabel" x="206" y="102">raw mapping</text>
+          <rect class="box" x="254" y="55" width="280" height="110" rx="8"></rect><rect class="band" x="254" y="55" width="6" height="110" fill="var(--config)"></rect>
+          <text class="title" x="270" y="80">② 合规校验（RAM 内）</text>
+          <text class="sub" x="270" y="104">类型化校验器 _str/_choice/_positive_float/_bool</text>
+          <text class="sub" x="270" y="122">__post_init__ 关系校验（hz>0、horizon≤chunk…）</text>
+          <text class="sub" x="270" y="140">bundle/normalizer ↔ 16D 维度一致性</text>
+          <text class="sub" x="270" y="160" fill="var(--warn)">非法 → 抛异常，阻止启动</text>
+          <path class="edge" d="M536 110 L586 110"></path>
+          <text class="elabel" x="540" y="102">typed 值</text>
+          <rect class="box" x="588" y="55" width="180" height="110" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect><rect class="band" x="588" y="55" width="6" height="110" fill="var(--ok)"></rect>
+          <text class="title" x="604" y="80" fill="var(--ok)">③ 冻结</text>
+          <text class="sub" x="604" y="104">frozen dataclass</text>
+          <text class="sub" x="604" y="122">全生命周期只读</text>
+          <text class="sub" x="604" y="140">下游零猜测</text>
+          <text class="sub" x="604" y="158">import 即用</text>
+          <path class="edge fedge" d="M394 165 L394 200"></path>
+          <text class="elabel" x="320" y="196" fill="var(--warn)">校验失败</text>
+          <text x="430" y="212" text-anchor="middle" font-size="12" font-weight="700" fill="var(--warn)">→ 阻止启动，不进入半初始化</text>
+          <rect class="box" x="788" y="55" width="120" height="110" rx="8"></rect><rect class="band" x="788" y="55" width="6" height="110" fill="var(--types)"></rect>
+          <text class="title" x="804" y="80">关键契约</text>
+          <text class="sub" x="804" y="104">state = 16D</text>
+          <text class="sub" x="804" y="122">action = 16D</text>
+          <text class="sub" x="804" y="140">/act/* topic</text>
+          <text class="sub" x="804" y="158">runtime/safety 参数</text>
+        </svg>
+      </div>
+
+      <h3>图③ 负责 vs 不负责：边界墙</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 230" role="img" aria-label="负责与不负责边界墙">
+          <rect x="430" y="20" width="60" height="190" fill="#fde68a" opacity="0.35"></rect>
+          <text x="460" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--yellow)">边界墙</text>
+          <line x1="460" y1="20" x2="460" y2="210" stroke="var(--yellow)" stroke-width="2" stroke-dasharray="6 4"></line>
+          <text class="title" x="30" y="36" fill="var(--ok)">✓ 负责（静态契约）</text>
+          <g><rect class="box" x="20" y="48" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="66">固定 16D state 维度 / 段序 / 字段语义 / 值域</text></g>
+          <g><rect class="box" x="20" y="82" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="100">固定 16D action 维度 / 段序 / 字段语义 / 值域</text></g>
+          <g><rect class="box" x="20" y="116" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="134">固定 /act/* observation / policy_action / status / metrics / command topic 名</text></g>
+          <g><rect class="box" x="20" y="150" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="168">固定 runtime（control_hz/inference_hz/chunk_size/mode/fallback）参数</text></g>
+          <g><rect class="box" x="20" y="184" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="202">校验 bundle 交付物 + normalizer 维度一致性；整理为类型化配置对象树</text></g>
+          <text class="title" x="510" y="36" fill="var(--warn)">✗ 不负责（归其他 L2）</text>
+          <g><rect class="box" x="500" y="48" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="66" fill="var(--warn)">不订阅 ROS topic（→ L2-02）</text></g>
+          <g><rect class="box" x="500" y="82" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="100" fill="var(--warn)">不创建 publisher / 不发布（→ L2-05）</text></g>
+          <g><rect class="box" x="500" y="116" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="134" fill="var(--warn)">不加载权重 / 不做前向推理（→ L2-03）</text></g>
+          <g><rect class="box" x="500" y="150" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="168" fill="var(--warn)">不启动控制循环 / 不维护 chunk cursor（→ L2-06）</text></g>
+          <g><rect class="box" x="500" y="184" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="202" fill="var(--warn)">不做 safety 检查（→ L2-04）· 不发硬件命令 · 不做平滑</text></g>
+        </svg>
+      </div>
+
+      <h3>图④ 16D 数据契约：state 与 action 的段序</h3>
+      <div class="grid g2">
+        <div class="card types"><h3>StateSpec · 16D observation state</h3><ul>
+          <li>左臂 TCP pose：7D（位置 3 + 四元数 4）</li>
+          <li>左夹爪 width：1D</li>
+          <li>右臂 TCP pose：7D</li>
+          <li>右夹爪 width：1D</li>
+          <li>合计 16D，段序与字段语义固定，值域校验</li></ul></div>
+        <div class="card types"><h3>ActionSpec · 16D single action</h3><ul>
+          <li>左臂 TCP pose：7D（位置 3 + 四元数 4）</li>
+          <li>左夹爪 width：1D</li>
+          <li>右臂 TCP pose：7D</li>
+          <li>右夹爪 width：1D</li>
+          <li>合计 16D，可拆分；不含 ActionChunk 生命周期 / cursor / 平滑</li></ul></div>
+      </div>
+
+      <div class="callout">边界不变量：L2-01 可检查 bundle contract，但<b>不做真实模型前向推理</b>；第一版不定义 action 平滑配置（blend/smoothstep/RTC 均不进 Gate）。</div>
+      <p class="src">权威来源：<code>agent_context/01_L2功能边界.md</code>（§1 职责 / §2 输入 / §3 输出 / §4 负责 / §5 不负责 / §8 上下游）</p>
+    </section>
+
+    <!-- ============ 维度 2 · Pi0.5 如何运作（小白友好版） ============ -->
+	    <section class="view pi05map" data-agent-source="agent_context/02_pi05源码3.5层微元拆解.md#0-5-给计算机小白的白话开场">
+	      <h2>维度 2 · Pi0.5 这部分是如何运作的</h2>
+	      <div class="reading-path">📖 阅读路径：理解源码的结构（读入→校验→冻结）可复用，但数值（26D/14D vs 16D/16D）必须重写 → 开发蓝图见<a href="#" onclick="document.getElementById('v3').click()">维度3</a></div>
+	      <p class="lead">这一维度只回答一个问题：<b>Pi0.5 部署代码中，负责"把外部参数读进内存并冻结成契约"的那部分代码，到底是怎么一步步跑起来的。</b>不涉及 ACT 怎么改。下面按"先懂概念 → 看整体 → 跟一个例子 → 看每个零件"的顺序讲。</p>
+
+      <div class="callout pi">这一节用<b>白话</b>讲。每个专业术语第一次出现时都会解释，点开"术语词典"可以随时查。看不懂任何一步，回到「术语词典」对一下就行。</div>
+
+      <!-- 第一部分：整体在干什么（白话） -->
+      <h3>① 这部分代码整体在干什么（一句话）</h3>
+      <div class="card yellow">
+        <p style="color:#7a5c00;font-size:14px;line-height:1.7">把一个写满运行参数的 <code>deploy.yaml</code> 文件（人写、人能读的文本），变成程序内存里一个<b>"只读、不会变、随时可查"</b>的配置对象——就像把一份纸质表格誊抄进一块刻好的石碑：誊抄时逐栏检查有没有填错，刻完之后谁都改不动，后面所有人只能读、不能改。</p>
+        <p style="color:#7a5c00;font-size:13px;margin-top:6px">这一步在程序<b>刚启动时只做一次</b>，做完就不再碰。后面所有模块（L2-02 ~ L2-06）都从这块"石碑"上读参数，不会再去翻原始文件，也不用自己判断参数对不对。</p>
+      </div>
+
+      <!-- 第二部分：术语词典（折叠） -->
+      <details open>
+        <summary>📖 术语词典（点开随时查，用《用户认知框架与讲解偏好》的概念体系解释）</summary>
+        <div class="body">
+        <table class="dict">
+          <tr><td>yaml 文件</td><td><b>对应认知框架</b>第 3.5 层"数据"（写在文件里的）。一个用缩进表示层级的文本文件，里面写满 <code>键: 值</code>，比如 <code>control_hz: 30</code>。人能直接读，程序也能读。这里它就是那张"纸质表格"。</td></tr>
+          <tr><td>raw mapping<br>（原始映射）</td><td><b>对应认知框架</b>第 3.5 层"数据读写函数"的产物。程序把 yaml 文件读进内存后，得到的"一整坨还没检查过的键值对"。它<b>还没有任何类型保证</b>——<code>control_hz</code> 可能是数字 30，也可能是手误写成字符串 <code>"三十"</code>。</td></tr>
+          <tr><td>校验<br>（validate）</td><td><b>对应认知框架</b>第 3.5 层"计算函数"（输入输出都在 RAM 内）。检查每个值是不是"该有的样子"：该是数字的是不是数字、是不是正数、是不是在允许的选项里。查出一个错就立刻报错停下。</td></tr>
+          <tr><td>类型化校验器<br>（typed validator）</td><td><b>对应认知框架</b>第 3.5 层"计算函数"。一个个"专门检查某一类值"的小函数。比如 <code>_positive_float</code> 专门负责"必须是正的小数"，<code>_choice</code> 专门负责"必须是这几个选项之一"。</td></tr>
+          <tr><td>typed 值<br>（类型确定的值）</td><td><b>对应认知框架</b>第 4 层"变量"。经过校验器检查通过后的值。程序拿到它时已确定它是某种类型（比如确定是正小数），后面不用再担心它变成别的东西。</td></tr>
+          <tr><td>dataclass</td><td><b>对应认知框架</b>第 3.25 层"class 打包函数"。一种"带固定字段的容器"，像一张预先印好栏位的卡片，每个栏位有名字。<code>RuntimeConfig</code> 就是这样一张卡片。</td></tr>
+          <tr><td>frozen dataclass<br>（冻结的 dataclass）</td><td><b>对应认知框架</b>第 3.25 层"class"。一张"刻了就不能改"的卡片。一旦把值填进去，谁都不能再改它的字段。L2-01 要的效果——配置进内存后就锁死。</td></tr>
+          <tr><td><code>__post_init__</code></td><td><b>对应认知框架</b>第 3.5 层"计算函数"。dataclass 卡片填完值之后自动触发的一段检查代码。它检查字段之间的<b>关系</b>，比如"<code>execute_horizon</code> 不能大于 <code>chunk_size</code>"。</td></tr>
+          <tr><td>bundle<br>（模型包）</td><td>训练好的模型导出成一个<b>目录</b>，里面装着权重、清单、归一化参数等文件。部署程序不重新训练，只读这个包。</td></tr>
+          <tr><td>manifest.json<br>（清单）</td><td>bundle 目录里的一个文件，像快递箱上的发货单，写清楚这个包里有什么、维度是多少、什么时候打的包。</td></tr>
+          <tr><td>normalizers.json<br>（归一化参数）</td><td>bundle 里的另一个文件，记录怎样把传感器原始数值"压"到 [-1, 1] 区间（模型只认这个区间的输入）。</td></tr>
+          <tr><td>抛异常 / 报错中止</td><td>程序发现配置不对时，不假装没事继续跑，而是当场报错退出。这比"带着错误配置勉强运行"安全得多。</td></tr>
+          <tr><td>抛异常 / 报错中止</td><td>程序发现配置不对时，不假装没事继续跑，而是当场报错退出。这比"带着错误配置勉强运行"安全得多。</td></tr>
+        </table>
+        </div>
+      </details>
+
+      <!-- 第三部分：整体流程 4 步卡片 -->
+      <h3>② 整体流程：四个步骤</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:6px">Pi0.5 这部分代码按严格顺序执行，只做一次。任一步出错，程序立刻停下，不会带着错误配置继续。</p>
+      <div class="flow">
+        <div class="step s1">
+          <span class="no">1</span>
+          <h4>读入</h4>
+          <div class="what">把硬盘上的 <code>deploy.yaml</code> 读进内存，得到一坨"还没检查的键值对"（raw mapping）。<b>跨进程边界</b>：从硬盘到内存。</div>
+        </div>
+        <div class="step s2">
+          <span class="no">2</span>
+          <h4>装配</h4>
+          <div class="what">按固定顺序逐个字段处理：<code>bundle → runtime → image → topics → safety → bridge → mux</code>。每个字段过对应校验器，得到"确定类型"的值。</div>
+        </div>
+        <div class="step s3">
+          <span class="no">3</span>
+          <h4>关系校验</h4>
+          <div class="what">卡片填完后自动检查字段之间关系：<code>hz>0</code>？<code>horizon≤chunk</code>？不满足就报错中止。<b>不会进入半初始化状态</b>。</div>
+        </div>
+        <div class="step s4">
+          <span class="no">4</span>
+          <h4>冻结</h4>
+          <div class="what">所有检查通过 → 装进 <code>DeployConfig</code> 这张"刻了不能改"的卡片 → 后续所有模块 import 它就能用，谁也改不动。</div>
+        </div>
+      </div>
+
+      <!-- 第四部分：跟一个配置项走全流程 -->
+      <h3>③ 跟一个配置项走完全流程</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">以 <code>runtime: control_hz: 30</code> 为例，看它怎么从 yaml 文本变成冻结的配置。这是理解<b>整个机制</b>最快的方式。</p>
+      <div class="trace">
+<span class="cmt"># deploy.yaml 里写着：</span>
+<span class="cmt">#   runtime:</span>
+<span class="cmt">#     control_hz: 30</span>
+<span class="gap"></span>
+<span class="ln">①</span> <span class="cmt"># 程序把文件读进内存（数据读写函数，从硬盘到 RAM）</span>
+   raw = {<span class="key">"runtime"</span>: {<span class="key">"control_hz"</span>: <span class="val">30</span>}, ...}       <span class="cmt"># raw mapping，还没检查</span>
+<span class="gap"></span>
+<span class="ln">②</span> <span class="cmt"># 把 control_hz 交给校验器（计算函数，纯 RAM 内）</span>
+   control_hz = _positive_float(raw, <span class="key">"control_hz"</span>, default=<span class="val">30.0</span>)
+   <span class="cmt">#  → 30 是数字 ✓、30 > 0 ✓ → 返回 typed 值 30.0</span>
+<span class="gap"></span>
+<span class="ln">③</span> <span class="cmt"># 填进 RuntimeConfig 卡片，卡片填完自动检查字段关系</span>
+   runtime = RuntimeConfig(control_hz=<span class="val">30.0</span>, ...)
+   <span class="cmt">#  → __post_init__ 检查: control_hz > 0 ? 通过 ✓</span>
+<span class="gap"></span>
+<span class="ln">④</span> <span class="cmt"># 装进 DeployConfig 并冻结，全生命周期只读</span>
+   <span class="ok">deploy_config.runtime.control_hz  →  永远 30.0，谁也改不了</span>
+<span class="gap"></span>
+<span class="cmt"># ── 如果手误写成 control_hz: "abc" 会怎样？</span>
+<span class="ln">②'</span> <span class="cmt"># _positive_float 尝试 float("abc") → 失败</span>
+   <span class="err">raise DeployConfigError("control_hz must be a float")</span>
+   <span class="cmt"># 程序当场报错退出，不进入③④。这就是"非法配置在入口处失败"。</span>
+      </div>
+
+      <!-- 第五部分：装配顺序（七段，用卡片不用 SVG） -->
+      <h3>④ deploy.yaml 里写了什么</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Pi0.5 的配置文件分<b>七个段落</b>，程序按固定顺序逐段读取、逐个字段校验。ACT 第一版<b>只保留前五段</b>，bridge 和 mux 去掉。</p>
+      <div class="grid g2">
+        <div>
+          <div style="border:1px solid var(--ok);border-radius:8px;background:var(--ok-bg);padding:14px">
+            <h4 style="margin:0 0 10px;color:var(--ok)">ACT 保留（5 段）</h4>
+            <div style="display:grid;gap:6px;font-size:13px">
+              <div><b>① bundle</b> — 模型包放在哪个目录。必填，缺失直接报错。</div>
+              <div><b>② runtime</b> — 控制频率、推理频率、chunk 大小、fallback 策略。<b>关系校验最密集</b>。</div>
+              <div><b>③ image</b> — 图像尺寸、缩放方式、传输格式。</div>
+              <div><b>④ topics</b> — 所有 ROS 话题名（订阅哪些、发布哪些）。</div>
+              <div><b>⑤ safety</b> — 单步位移上限、夹爪值域。只定义参数，<b>不执行检查</b>。</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="border:1px solid var(--line);border-radius:8px;background:var(--grey-bg);padding:14px">
+            <h4 style="margin:0 0 10px;color:var(--grey)">ACT 去掉（2 段）</h4>
+            <div style="display:grid;gap:6px;font-size:13px;color:var(--muted)">
+              <div><b>⑥ bridge</b> — 适配老执行栈的转发开关。</div>
+              <div><b>⑦ mux</b> — 遥操作 / VLA 命令复用器。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:6px">除此之外，Pi0.5 有 <code>blend_steps: 3</code>（平滑步数），ACT 第一版也删掉——因为不做平滑。</p>
+
+      <!-- 第六部分：bundle 装载（用目录树不用 SVG） -->
+      <h3>⑤ 模型包（bundle）里有什么</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">除了 yaml，程序还要读<b>模型包目录</b>（训练完成后导出，部署时只读不改）。Pi0.5 用三个函数各读一样：</p>
+      <div class="tree">
+<span class="dir">pi05_pour_water_v1/</span>  <span class="cmt">← bundle_dir 指向这里</span>
+<span class="arrow">├──</span> <span class="file">manifest.json</span>            <span class="cmt">← 清单：维度、模型信息、打包时间</span>
+<span class="arrow">├──</span> <span class="file">normalizers.json</span>         <span class="cmt">← 归一化参数：state/action 的最大最小值</span>
+<span class="arrow">├──</span> <span class="file">experiment_config.yaml</span>   <span class="cmt">← 训练配置（只读原值，做交叉校验）</span>
+<span class="arrow">└──</span> <span class="dir">adapter/</span>                <span class="cmt">← 模型权重目录（后续 L2-03 加载，本 L2 只检查它存在）</span>
+</div>
+      <p style="font-size:12.5px;color:var(--muted);margin:8px 0 0">三个读取函数 — <code>load_bundle_manifest</code> 读清单、<code>load_bundle_normalizers</code> 读归一化参数、<code>resolve_bundle_adapter_dir</code> 检查权重目录。读到的维度信息交 config 层做交叉校验。</p>
+
+      <!-- 第七部分：回答四个核心问题 -->
+      <h3>⑥ 回答四个核心问题（谁持有状态、谁跨边界、谁加工、谁管时序）</h3>
+      <div class="grid g2">
+        <div class="card repo"><h4>❶ 谁持有状态？</h4><p>两个对象持有"会长期存在"的状态：</p><ul>
+          <li><code>DeployConfig</code>：启动期创建一次，冻结，全生命周期只读。</li>
+          <li><code>ActionStateNormalizer</code>：bundle 加载后稳定持有 min/max/range/identity_mask。</li></ul>
+          <p style="font-size:12px;margin-top:4px">（除此之外没有 buffer、queue、cache 等会变化的状态）</p></div>
+        <div class="card repo"><h4>❷ 谁跨越外部边界？</h4><p>四个函数只读不写：</p><ul>
+          <li><code>yaml.safe_load</code>（读 yaml）</li>
+          <li><code>load_bundle_manifest</code>（读 manifest）</li>
+          <li><code>load_bundle_normalizers</code>（读 normalizers）</li>
+          <li><code>resolve_bundle_adapter_dir</code>（检查目录）</li></ul>
+          <p style="font-size:12px;margin-top:4px">本 L2 <b>不写</b>任何外部文件、<b>不订阅</b>任何 topic。</p></div>
+        <div class="card config"><h4>❸ 谁只负责加工 RAM 对象？</h4><ul>
+          <li>类型化校验器（<code>_str/_choice/_positive_float</code> 等）</li>
+          <li><code>__post_init__</code> 关系校验</li>
+          <li><code>normalize/unnormalize</code>（min-max 数值变换）</li></ul>
+          <p style="font-size:12px;margin-top:4px">这些都是"输入在内存、输出也在内存"的纯计算。</p></div>
+        <div class="card grey"><h4>❹ 谁负责 runtime 时序？</h4><p style="color:var(--ctrl);font-weight:600">答：无。</p>
+          <p>这部分代码启动期同步调用一次就结束，<b>不进入稳态 tick</b>。失败方式只有"抛异常阻止启动"，没有 fallback、没有重试、没有并发。时序调度是 L2-06 的事。</p></div>
+      </div>
+
+      <!-- 第八部分：5 种微元分类（折叠） -->
+      <details>
+        <summary>🔬 五种功能微元分类（对应你的认知框架第 3.5 层）—— 进阶，可先跳过</summary>
+        <div class="body">
+          <p>你建立的认知框架里，文件内的功能分成 5 类。这里把这部分代码对号入座，方便后续按微元拆 L3：</p>
+          <div class="grid g2">
+            <div class="card types"><h4>① 数据</h4><ul>
+              <li><code>DeployConfig/RuntimeConfig/SafetyConfig/TopicsConfig</code> 等 frozen dataclass</li>
+              <li>维度常量 <code>ARM_DOF/ACTION_DIM/STATE_DIM</code></li>
+              <li><code>/pi05_vla</code> namespace</li></ul></div>
+            <div class="card config"><h4>② 计算函数（RAM 内）</h4><ul>
+              <li>类型化校验器 <code>_str/_choice/_positive_float/_bool</code></li>
+              <li><code>__post_init__</code> 关系校验</li>
+              <li><code>normalize/unnormalize</code></li></ul></div>
+            <div class="card repo"><h4>③ 数据读写函数（跨进程边界）</h4><ul>
+              <li><code>yaml.safe_load</code></li>
+              <li><code>load_bundle_manifest</code></li>
+              <li><code>load_bundle_normalizers</code></li>
+              <li><code>resolve_bundle_adapter_dir</code></li></ul></div>
+            <div class="card yellow"><h4>④ 编排函数</h4><ul>
+              <li><code>load_deploy_config</code>（入口）</li>
+              <li><code>_deploy_from_mapping</code>（按七段顺序装配）</li></ul></div>
+            <div class="card grey"><h4>⑤ 内部状态更新函数</h4><ul>
+              <li><b>本 L2 范围内无</b>（不更新 buffer/queue/cache/metrics）</li></ul></div>
+          </div>
+        </div>
+      </details>
+
+      <div class="callout pi"><b>维度差异（决定不能照搬）：</b>Pi0.5 是 <b>26D state / 14D action</b>（关节角表示），含 <code>blend_steps=3</code> 平滑字段与 bridge/mux 段；ACT 第一版是 <b>16D / 16D</b>（TCP pose + gripper width），去掉平滑与 bridge/mux。所以这部分代码的<b>结构</b>（读入→校验→冻结）可复用，但<b>数值</b>（维度、字段、配置段）必须重写。详见维度 3 与权威 MD。</div>
+      <p class="src">权威来源：<code>agent_context/02_pi05源码3.5层微元拆解.md</code>（§0.5 白话开场 / §1 运行机制 / §2 范围匹配 / §3 3.5 层微元 / §4 class 封装 / §5 禁止继承）</p>
+    </section>
+
+    <!-- ============ 维度 3 · 开发蓝图 ============ -->
+	    <section class="view blueprint" data-agent-source="agent_context/03_ACT微元设计与协作.md#2-ACT-微元设计">
+	      <h2>维度 3 · 开发建议与蓝图</h2>
+	      <div class="reading-path">📖 阅读路径：了解代码如何组织 → 代码写完后用<a href="#" onclick="document.getElementById('v4').click()">维度4 图③</a>检查产物清单</div>
+	      <p class="lead">L2-01 只在启动阶段被同步调用一次。建议按「repo 读取 → types 提供规格 → config 装配与交叉校验」的顺序开发，落到六层中的三层。</p>
+
+      <h3>图① 启动期装配时序：repo → types → config 交叉校验 → 冻结</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 300" role="img" aria-label="启动期装配时序">
+          <defs><marker id="arrow3" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker></defs>
+          <g><rect class="box" x="30" y="40" width="180" height="220" rx="8"></rect><rect class="band" x="30" y="40" width="6" height="220" fill="var(--repo)"></rect>
+            <text class="title" x="46" y="64">① repo</text>
+            <text class="sub" x="46" y="92">bundle_reader.py</text>
+            <text class="sub" x="46" y="112">manifest_parser.py</text>
+            <text class="sub" x="46" y="132">normalizer_loader.py</text>
+            <text class="sub" x="46" y="152">experiment_config_loader.py</text>
+            <text class="sub" x="46" y="184" fill="var(--repo)">只做路径/存在性/格式</text>
+            <text class="sub" x="46" y="202" fill="var(--repo)">不做业务维度校验</text></g>
+          <path class="edge" d="M214 150 L284 150"></path>
+          <text class="elabel" x="220" y="142">raw 对象</text>
+          <g><rect class="box" x="286" y="40" width="180" height="220" rx="8"></rect><rect class="band" x="286" y="40" width="6" height="220" fill="var(--types)"></rect>
+            <text class="title" x="302" y="64">② types</text>
+            <text class="sub" x="302" y="92">state_spec.py</text>
+            <text class="sub" x="302" y="112">action_spec.py</text>
+            <text class="sub" x="302" y="132">contract_result.py</text>
+            <text class="sub" x="302" y="164" fill="var(--types)">16D 维度/段序/值域</text>
+            <text class="sub" x="302" y="182" fill="var(--types)">无下游依赖</text></g>
+          <path class="edge" d="M470 150 L540 150"></path>
+          <text class="elabel" x="476" y="142">规格 + 原值</text>
+          <g><rect class="box" x="542" y="40" width="200" height="220" rx="8"></rect><rect class="band" x="542" y="40" width="6" height="220" fill="var(--config)"></rect>
+            <text class="title" x="558" y="64">③ config</text>
+            <text class="sub" x="558" y="92">schema.py</text>
+            <text class="sub" x="558" y="112">DeployConfig.from_mapping</text>
+            <text class="sub" x="558" y="132">类型化校验器</text>
+            <text class="sub" x="558" y="160" fill="var(--config)">交叉校验：</text>
+            <text class="sub" x="558" y="178">manifest ↔ 16D</text>
+            <text class="sub" x="558" y="196">normalizer ↔ 16D</text>
+            <text class="sub" x="558" y="214">experiment ↔ 16D</text></g>
+          <path class="edge" d="M744 150 L800 150"></path>
+          <text class="elabel" x="750" y="142">冻结</text>
+          <g><rect class="box" x="802" y="100" width="100" height="100" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect>
+            <text class="title" x="852" y="132" text-anchor="middle" fill="var(--ok)">DeployConfig</text>
+            <text class="sub" x="852" y="156" text-anchor="middle">全生命周期</text>
+            <text class="sub" x="852" y="174" text-anchor="middle">只读</text></g>
+        </svg>
+      </div>
+
+      <h3>图② 六层代码落点（点击一层，只看这一层的内部）</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">点一个层，下方只显示该层的内容：它有哪些文件、每个 <b>class 封装了哪些子功能微元</b>（按你的认知框架第 3.5 层标注）。有产物的层是 <b>types / config / repo</b>；service / runtime / ui 不落点，点击可看原因。</p>
+
+      <div class="lpick">
+        <input id="l-types" name="layer" type="radio" checked>
+        <input id="l-config" name="layer" type="radio">
+        <input id="l-repo" name="layer" type="radio">
+        <input id="l-service" name="layer" type="radio">
+        <input id="l-runtime" name="layer" type="radio">
+        <input id="l-ui" name="layer" type="radio">
+
+        <div class="ltabs">
+          <label for="l-types" class="has"><b>types</b>有产物</label>
+          <label for="l-config" class="has"><b>config</b>有产物</label>
+          <label for="l-repo" class="has"><b>repo</b>有产物</label>
+          <label for="l-service" class="none"><b>service</b>无</label>
+          <label for="l-runtime" class="none"><b>runtime</b>无</label>
+          <label for="l-ui" class="none"><b>ui</b>无</label>
+        </div>
+
+        <!-- types 层 -->
+        <div class="lpane lp-types">
+          <h4>types/ · 数据规格层（4 个 class + 几个 codec 函数）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">这一层只定义"数据长什么样"——维度、段序、值域、契约结果对象。<b>不读配置、不依赖 ROS、不加载模型。</b></p>
+
+          <div class="classbox">
+            <h5>StateSpec（frozen dataclass）</h5>
+            <p class="role">定义 16D observation state 的维度、段序、字段语义、值域。Pi0.5 参考：<code>common/data/state_codec.py</code>。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：STATE_DIM（int，常量=16）、segment_order（tuple，记录每段名称→长度） | 存储结构：tuple[str, int] | 数值类型：int（维度）、str（段名）、float（值域边界）</span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><code>ensure_state_vector(flat)</code> — 输入 <code>np.ndarray（任意shape）</code> → 输出 <code>(16,) float32 ndarray</code> 或 <code>ValueError</code>；<code>encode_state(structured)</code> — 输入 <code>BimanualState 结构化对象</code> → 输出 <code>(16,) float32 ndarray</code></span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>ActionSpec（frozen dataclass）</h5>
+            <p class="role">定义 16D single action 的维度、段序、字段语义、值域。Pi0.5 参考：<code>common/robot/action_spec.py</code>（Pi0.5 是 14D）。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：ACTION_DIM（int，常量=16）、segment_order（tuple） | 存储结构：tuple[str, int] | 数值类型：int、str、float（值域边界）。<b>不含</b> ActionChunk 生命周期/cursor/平滑规则</span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><code>ensure_action_vector(flat)</code> — 输入 <code>np.ndarray</code> → 输出 <code>(16,) float32 ndarray</code> 或 <code>ValueError</code>；<code>split_action(flat)</code> — 输入 <code>(16,) ndarray</code> → 输出 <code>dict{"left_tcp":(7,), "left_grip":(1,), "right_tcp":(7,), "right_grip":(1,)}</code></span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>BundleContractResult（frozen dataclass，纯数据对象）</h5>
+            <p class="role">记录 bundle 契约检查的结果：这个 bundle 能不能用。ACT 增量产物（Pi0.5 无独立 result 类型）。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：passed（bool）、reason（str）、bundle_dir（str）、manifest_dim（int） | 存储结构：frozen dataclass 4字段 | 数值类型：bool、str、int</span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>NormalizerContractResult（frozen dataclass，纯数据对象）</h5>
+            <p class="role">记录 normalizer 契约检查的结果：归一化参数维度跟期望是否一致。ACT 增量产物。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：passed（bool）、reason（str）、state_dim（int）、action_dim（int）、expected_dim（int=16） | 存储结构：frozen dataclass 5字段 | 数值类型：bool、str、int</span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">文件：<code>state_spec.py</code>、<code>action_spec.py</code>、<code>contract_result.py</code>。验收覆盖：合法 16D 通过，非法维度失败。<br>参考 Pi0.5：<code>common/data/state_codec.py</code>（26D → 16D）、<code>common/robot/action_spec.py</code>（14D → 16D）。</p>
+        </div>
+
+        <!-- config 层 -->
+        <div class="lpane lp-config">
+          <h4>config/ · 配置 schema 层（1 个聚合根 class + 5 个子配置 class + 校验器函数群）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">这一层把 raw mapping 整理成类型化、校验过的配置对象树。<b>关系校验集中在这里</b>（<code>__post_init__</code>）。具体 <code>.yaml</code> 配置值放 <code>config_files/</code>，不放这里。</p>
+
+          <div class="classbox">
+            <h5>DeployConfig（frozen dataclass，聚合根）</h5>
+            <p class="role">把外部 <code>deploy.yaml</code> 里散落的配置项，<b>按类别整理进五个子对象</b>，最终装进一个冻结的容器。后续全部 L2 不翻原文件，直接从这个容器取参数——值已校验、类型已确定、谁也改不了。Pi0.5 参考：<code>deploy/config/schema.py</code>（去掉 bridge/mux）。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：bundle / runtime / image / topics / safety（5 个子配置对象实例） | 存储结构：frozen dataclass 内嵌 5 个 frozen 子 dataclass 字段 | 数值类型：各子配置均为 frozen dataclass 实例</span></div>
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：raw（dict） | 存储结构：Python dict 保留原始 yaml 键值对 | 数值类型：str → Any 映射（只供调试查看，<code>repr=False</code> 避免 print 刷屏）</span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><code>from_mapping(cls, raw, base_dir)</code> — 编排逻辑：①取根mapping → ②按 bundle→runtime→image→topics→safety 顺序逐段取子mapping → ③每段每个字段调用对应类型化校验器 → ④构造各子配置 → ⑤构造 DeployConfig → 返回</span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>RuntimeConfig（frozen dataclass，子配置）</h5>
+            <p class="role">运行节奏参数。Pi0.5 有 <code>blend_steps</code>，ACT 删掉。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：mode（str）、control_hz（float）、inference_hz（float）、chunk_size（int）、max_action_age_sec（float）、fallback_policy（str） | 存储结构：frozen dataclass 多字段 | 数值类型：str、float、int</span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><code>__post_init__</code> — 输入 <code>self 各字段值</code> → 输出 无（通过）或 抛出 <code>DeployConfigError</code>（校验 hz>0、execute_horizon≤chunk_size、prefetch≤execute_horizon、fallback 枚举）</span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>SafetyConfig（frozen dataclass，子配置）</h5>
+            <p class="role">安全参数——<b>只定义参数，不执行检查</b>（执行归 L2-04）。Pi0.5 参考：<code>deploy/config/schema.py</code>。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：max_joint_delta_rad（float）、clamp_normalized_action（bool）、hold_last_action（bool）、hand_min（float）、hand_max（float）、joint_limits（JointLimitsConfig 子对象） | 存储结构：frozen dataclass 6字段 | 数值类型：float、bool、JointLimitsConfig 实例</span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>TopicsConfig（frozen dataclass，子配置）</h5>
+            <p class="role">所有 <code>/act/*</code> topic 名。定义名字不等于创建 publisher/subscriber。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：namespace（str）、observation_topics（dict）、command_topics（dict） | 存储结构：frozen dataclass 内含 str + 嵌套 topic 名字典 | 数值类型：str</span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc">命名空间校验 — 输入 <code>raw topic 字符串</code> → 输出 <code>校验后的 topic 字符串</code> 或 <code>DeployConfigError</code></span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>BundleConfig（frozen dataclass，子配置）</h5>
+            <p class="role">模型包路径。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：bundle_dir（str 或 Path） | 存储结构：frozen dataclass 1字段 | 数值类型：str / Path</span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><code>resolved_bundle_dir</code> property — 输入 <code>self.bundle_dir</code> → 输出 <code>展开后的绝对路径 Path 对象</code> 或 <code>FileNotFoundError</code></span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>ImageConfig（frozen dataclass，子配置）</h5>
+            <p class="role">图像预处理参数。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：image_size（int，默认224）、resize_mode（str）、transport（str） | 存储结构：frozen dataclass 3字段 | 数值类型：int、str</span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc">值域校验 — 输入 <code>raw image_size / resize_mode / transport</code> → 输出 <code>校验后的值</code> 或 <code>DeployConfigError</code>（检查 image_size>0、resize_mode∈{resize_pad, resize_crop}、transport∈{raw, compressed}）</span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>校验器函数群（无 class，纯函数）</h5>
+            <p class="role">Pi0.5 校验器群结构复用。每个函数只做一类值的检查。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><code>_positive_float(raw, key, default)</code> — 输入 <code>raw dict + 字段名str + 默认值float</code> → 输出 <code>正float值</code> 或 <code>DeployConfigError</code>；<code>_choice(raw, key, choices, default)</code> — 输入 <code>raw dict + 字段名 + 允许值set + 默认值</code> → 输出 <code>str</code> 或 <code>DeployConfigError</code></span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><code>_deploy_from_mapping(cls, raw, base_dir)</code> — 编排逻辑：取根mapping → 逐段校验装配 → 构造子配置树 → 构造DeployConfig → 返回；<code>load_deploy_config(path)</code> — 编排逻辑：①<code>yaml.safe_load</code>读文件 → ②调<code>from_mapping</code> → ③返回<code>DeployConfig</code>（任一步失败抛异常中止）</span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">文件：<code>schema.py</code>。配置实例：<code>config_files/deploy.yaml</code>。验收覆盖：合法 mapping 构造成功、缺字段/非法 hz/非法 mode/维度非 16 抛异常、<code>rg</code> 检查无平滑字段。<br>参考 Pi0.5：<code>deploy/config/schema.py</code>（去掉 bridge/mux 段 + blend_steps）。</p>
+        </div>
+
+        <!-- repo 层 -->
+        <div class="lpane lp-repo">
+          <h4>repo/ · 外部资源读取层（4 个文件，全是函数，无 class）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">这一层<b>只做路径、文件存在性、格式读取</b>，<b>不做业务维度校验</b>（业务校验交 config 层）。全是跨进程边界读取（从硬盘到内存）。Pi0.5 参考：<code>common/runtime/bundle.py</code>。</p>
+
+          <div class="classbox" style="border-left-color:var(--repo)">
+            <h5 style="color:var(--repo)">bundle_reader.py（函数）</h5>
+            <div class="mu-list">
+              <div class="mu"><span class="kind io">数据读写</span><span class="desc"><code>resolve_bundle_dir(bundle_dir)</code> — 从 <code>{bundle_dir}</code> 路径读取 → 得到 <code>Path</code> 或 <code>FileNotFoundError</code>；<code>resolve_bundle_adapter_dir(bundle_dir)</code> — 从 <code>{bundle_dir}/adapter/</code> 读取 → 得到 <code>Path</code> 或 <code>FileNotFoundError</code></span></div>
+            </div>
+          </div>
+
+          <div class="classbox" style="border-left-color:var(--repo)">
+            <h5 style="color:var(--repo)">manifest_parser.py（函数）</h5>
+            <div class="mu-list">
+              <div class="mu"><span class="kind io">数据读写</span><span class="desc"><code>load_manifest(bundle_dir)</code> — 从 <code>{bundle_dir}/manifest.json</code> 文件读取 JSON → 得到 <code>dict</code>（含 schema/model/observation）或 <code>JSONDecodeError</code>/<code>FileNotFoundError</code></span></div>
+            </div>
+          </div>
+
+          <div class="classbox" style="border-left-color:var(--repo)">
+            <h5 style="color:var(--repo)">normalizer_loader.py（函数）</h5>
+            <div class="mu-list">
+              <div class="mu"><span class="kind io">数据读写</span><span class="desc"><code>load_normalizers(bundle_dir)</code> — 从 <code>{bundle_dir}/normalizers.json</code> 文件读取 JSON → 得到 <code>(state_normalizer, action_normalizer)</code> 两个 <code>ActionStateNormalizer</code> 对象（含 min_vals/max_vals/identity_mask）</span></div>
+            </div>
+          </div>
+
+          <div class="classbox" style="border-left-color:var(--repo)">
+            <h5 style="color:var(--repo)">experiment_config_loader.py（函数）</h5>
+            <div class="mu-list">
+              <div class="mu"><span class="kind io">数据读写</span><span class="desc"><code>load_experiment_config(bundle_dir)</code> — 从 <code>{bundle_dir}/experiment_config.yaml</code> 文件读取 YAML → 得到 <code>dict</code>（<b>不覆写维度</b>，原值留给 config 层交叉校验）</span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">为什么不封装成 class？因为这些函数<b>无内部状态</b>（不持有 buffer/queue/cache），每次读盘是独立的一次性调用。按你的认知框架第 3.25 层判断原则：纯输入到输出转换 → 优先函数，不封装 class。验收覆盖：合法文件可读、缺文件/坏 JSON·YAML 抛明确异常。<br>参考 Pi0.5：<code>common/runtime/bundle.py</code>。</p>
+        </div>
+
+        <!-- service 层 -->
+        <div class="lpane lp-service none-pane">
+          <h4>service/ · 本 L2 不落点</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>service 层负责 RAM 内业务计算、转换、校验（如 observation collector、batch builder、safety guard、action adapter）。L2-01 的类型化配置校验归 <code>config/</code>，外部文件读取归 <code>repo/</code>，数据规格归 <code>types/</code>，<b>本 L2 不做 observation/batch/safety/action 业务计算</b>。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>与去平滑的关系：</b>第一版没有独立 action smoothing service，本 L2 不创建 smoother/chunk blender/RTC aligner。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>验收确认：</b>L2-01 不产生 <code>src/model_deploy/act/service/*.py</code> 产物。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4 图③④</a></p>
+	        </div>
+
+	        <!-- runtime 层 -->
+	        <div class="lpane lp-runtime none-pane">
+	          <h4>runtime/ · 本 L2 不落点</h4>
+	          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>runtime 层负责时间、线程、队列、状态机、调度。L2-01 <b>只在程序启动阶段被同步调用一次</b>，不创建 timer/thread/queue，不维护 active chunk 与 cursor（那是 L2-06 的事）。</p>
+	          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>但 L2-01 通过 RuntimeConfig 提供给 runtime 层静态配置：</b><code>control_hz / inference_hz / chunk_size / mode / fallback_policy / max_action_age_sec</code>（只支持第一版 ControlLoop 的最小 cursor 直取模型）。</p>
+	          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>明确不提供：</b><code>blend_steps / smoothstep_window / cross_chunk_fusion / rtc_alignment / action_smoothing_state</code>。</p>
+	          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>验收确认：</b>L2-01 不产生 <code>runtime/*.py</code>，RuntimeConfig 中不存在平滑字段。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4 图③④</a></p>
+	        </div>
+
+	        <!-- ui 层 -->
+	        <div class="lpane lp-ui none-pane">
+	          <h4>ui/ · 本 L2 不落点</h4>
+	          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>ui 层负责外部交互边界（ROS node、subscriber、publisher、message converter）。L2-01 <b>只定义 topic 名</b>（在 TopicsConfig 里），不创建 ROS node，不订阅，不发布。</p>
+	          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>定义 topic 契约 ≠ 创建 publisher/subscriber。</b>订阅归 L2-02，发布归 L2-05。</p>
+	          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>与去平滑的关系：</b>不定义 <code>/act/smoothed_action</code>、<code>/act/blended_action</code> 或 RTC 平滑相关 topic。</p>
+	          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>验收确认：</b>L2-01 不产生 <code>ui/*.py</code> 或 launch 产物，topic 配置中不存在平滑专用 topic。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4 图③④</a></p>
+        </div>
+
+      </div>
+
+      <div class="callout warn">第一版<b>不定义</b>平滑配置：<code>blend_steps / smoothstep_window / smoothstep_alpha / cross_chunk_fusion / chunk_blend_mode / rtc_alignment / action_smoothing</code>。L2-06 后续若要引入，必须重新设计并同步 L1/L2 文档与 Gate，不得从 L2-01 暗含未声明配置。</div>
+      <p class="src">权威来源：<code>agent_context/03_ACT微元设计与协作.md</code>（§2 ACT 微元 / §3 协作 / §4 去平滑影响）、<code>06-11_各层设计.md</code>、<code>07_config层设计.md §4</code>、<code>10_runtime层设计.md §3</code></p>
+    </section>
+
+	    <!-- ============ 维度 4 · 人类验收标准 ============ -->
+	    <section class="view acceptance" data-agent-source="agent_context/04_L2验收机制.md#2-Gate-验收项">
+	      <h2>维度 4 · 人类验收标准</h2>
+	      <div class="reading-path">📖 阅读路径：功能承诺来源见<a href="#" onclick="document.getElementById('v1').click()">维度1 §4</a> → 下面 10 个验收动作逐个执行，每个都告诉你「做什么 → 看到什么 → 意味着什么」</div>
+	      <p class="lead">AI 生成代码之后，按顺序执行下面每一项。<b>每一项都告诉你三件事：该运行什么命令、看到什么说明通过、看到什么说明失败。</b></p>
+
+	      <div class="vfy">
+
+	        <!-- ===== 第一组：代码正确性（pytest） ===== -->
+	        <span class="vfy-section-tag">代码正确性 · 6 个测试</span>
+
+	        <div class="vfy-item">
+	          <span class="num">1</span>
+	          <div class="body">
+	            <p class="do">验证 16D state 维度/段序/值域 <span class="tag" style="font-size:10px;background:var(--types-bg);color:var(--types);border:1px solid var(--types)">types/state_spec.py</span></p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	pytest src/model_deploy/act/tests/types/test_state_spec.py -v</code>
+	            <div class="result">
+	              <div class="pass">全部 PASSED。确认 <code>ensure_state_vector</code> 拒绝非 16D 向量（如 15D、17D），接受合法 16D 向量。</div>
+	              <div class="fail">任何非 16D 向量静默通过、或 16D 被拒绝。说明 StateSpec 没有真正强制执行 16D 契约——这就是维度1 承诺的核心能力没实现。</div>
+	            </div>
+	            <p class="why">📎 对应维度1 §4 ❶「固定 16D state 维度/段序/字段语义/值域」</p>
+	          </div>
+	        </div>
+
+	        <div class="vfy-item">
+	          <span class="num">2</span>
+	          <div class="body">
+	            <p class="do">验证 16D action 维度/段序/值域 <span class="tag" style="font-size:10px;background:var(--types-bg);color:var(--types);border:1px solid var(--types)">types/action_spec.py</span></p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	pytest src/model_deploy/act/tests/types/test_action_spec.py -v</code>
+	            <div class="result">
+	              <div class="pass">全部 PASSED。<code>ensure_action_vector</code> 拒绝非 16D，<code>split_action</code> 正确拆分左右臂/夹爪段。</div>
+	              <div class="fail">非 16D 静默通过，或合法 16D 被拒绝。说明 ActionSpec 没有强制执行动作维度契约。</div>
+	            </div>
+	            <p class="why">📎 对应维度1 §4 ❷「固定 16D action 维度/段序/字段语义/值域」</p>
+	          </div>
+	        </div>
+
+	        <div class="vfy-item">
+	          <span class="num">3</span>
+	          <div class="body">
+	            <p class="do">验证 runtime 参数校验（hz/chunk/mode/fallback） <span class="tag" style="font-size:10px;background:var(--config-bg);color:var(--config);border:1px solid var(--config)">config/schema.py</span></p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	pytest src/model_deploy/act/tests/config/test_runtime_config.py -v</code>
+	            <div class="result">
+	              <div class="pass">hz≤0、mode 非法、chunk_size 非法、fallback 不在枚举内 → 均抛明确异常。合法值构造成功。</div>
+	              <div class="fail">非法参数静默通过。说明 RuntimeConfig.__post_init__ 没有做关系校验——带着非法 hz/chunk/mode 跑下去会导致运行时崩溃。</div>
+	            </div>
+	            <p class="why">📎 对应维度1 §4 ❹「固定 runtime 参数：control_hz/inference_hz/chunk_size/mode/fallback」</p>
+	          </div>
+	        </div>
+
+	        <div class="vfy-item">
+	          <span class="num">4</span>
+	          <div class="body">
+	            <p class="do">验证 safety 参数固定（TCP 限制/gripper 值域） <span class="tag" style="font-size:10px;background:var(--config-bg);color:var(--config);border:1px solid var(--config)">config/schema.py</span></p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	pytest src/model_deploy/act/tests/config/test_safety_config.py -v</code>
+	            <div class="result">
+	              <div class="pass">gripper width 越界、TCP 位移负值、quaternion 非法 → 均抛异常。合法值通过。</div>
+	              <div class="fail">越界值静默通过。说明 SafetyConfig 没有校验参数——后续 L2-04 依赖这些参数做安全检查时会失效。</div>
+	            </div>
+	            <p class="why">📎 对应维度1 §4 ❺「固定 safety 参数：TCP 单步限制、quaternion 检查、gripper width 值域」</p>
+	          </div>
+	        </div>
+
+	        <div class="vfy-item">
+	          <span class="num">5</span>
+	          <div class="body">
+	            <p class="do">验证 bundle 交付物校验 + normalizer 维度一致性 <span class="tag" style="font-size:10px;background:var(--repo-bg);color:var(--repo);border:1px solid var(--repo)">repo/</span> <span class="tag" style="font-size:10px;background:var(--config-bg);color:var(--config);border:1px solid var(--config)">config/</span></p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	pytest src/model_deploy/act/tests/repo/test_bundle_reader.py src/model_deploy/act/tests/config/test_contract.py -v</code>
+	            <div class="result">
+	              <div class="pass">缺 manifest → 抛明确文件异常；normalizer 长度≠16 → ContractResult.passed=False + 可读失败原因。</div>
+	              <div class="fail">缺文件静默通过，或 normalizer 不一致时无明确原因。说明契约闭环没闭合——后续 L2-03 可能加载错误维度的 normalizer。</div>
+	            </div>
+	            <p class="why">📎 对应维度1 §4 ❻「校验 bundle 交付物」+ ❼「校验 normalizer 维度与 16D 契约一致」</p>
+	          </div>
+	        </div>
+
+	        <div class="vfy-item">
+	          <span class="num">6</span>
+	          <div class="body">
+	            <p class="do">验证 DeployConfig 聚合 + 非法配置入口失败 <span class="tag" style="font-size:10px;background:var(--config-bg);color:var(--config);border:1px solid var(--config)">config/schema.py</span></p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	pytest src/model_deploy/act/tests/config/test_deploy_config.py src/model_deploy/act/tests/integration/test_startup_failure.py -v</code>
+	            <div class="result">
+	              <div class="pass">合法 deploy.yaml → from_mapping 构造成功，对象 frozen（不可修改）；非法 yaml（缺字段/类型错误）→ 抛异常，程序不进入运行循环。</div>
+	              <div class="fail">合法 yaml 也抛异常，或非法 yaml 静默通过。前者说明校验过严，后者说明 L2-01 的核心承诺「非法配置在入口处失败」没有兑现。</div>
+	            </div>
+	            <p class="why">📎 对应维度1 §4 ❽「类型化配置对象树」+ 完成判据「非法配置在入口处失败」</p>
+	          </div>
+	        </div>
+
+	        <!-- ===== 第二组：不应该存在的东西 ===== -->
+	        <div class="vfy-sep"></div>
+	        <span class="vfy-section-tag">不应该存在的东西 · 4 个检查</span>
+
+	        <div class="vfy-item">
+	          <span class="num">7</span>
+	          <div class="body">
+	            <p class="do">检查平滑配置是否泄漏到代码</p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	rg -n 'smoothstep|blend_steps|cross_chunk|rtc_alignment|action_smoothing' src/model_deploy/act/ DOCS/03_工程/阶段四：模型部署/02_implement/l2-01-external-contract_外部参数加载与契约校验闭环</code>
+	            <div class="result">
+	              <div class="pass">无输出。第一版 ACT 不做平滑，这些关键词不应出现在任何源码中。</div>
+	              <div class="fail">有输出。命中的行如果作为可配置字段存在 → 第一版混入了后续优化才该有的能力，需要删除。</div>
+	            </div>
+	            <p class="why">📎 对应维度1 完成判据「无平滑配置泄漏」+ 维度3 §4 去平滑影响</p>
+	          </div>
+	        </div>
+
+	        <div class="vfy-item">
+	          <span class="num">8</span>
+	          <div class="body">
+	            <p class="do">检查不应存在的代码层产物</p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	find src/model_deploy/act/{service,runtime,ui} -name "*.py" 2>/dev/null
+	<span class="c"># 期望：输出为空（上述三个目录无任何 .py 文件）</span></code>
+	            <div class="result">
+	              <div class="pass">输出为空。L2-01 只在启动期一次性调用，不创建 service/runtime/ui 层代码。</div>
+	              <div class="fail">有输出。说明 AI 在 L2-01 就创建了后续 L2 才该有的代码——越界了。这些文件应该属于 L2-02 ~ L2-06。</div>
+	            </div>
+	            <p class="why">📎 对应维度1 §7 代码层落点（L2-01 只落 types/config/repo）</p>
+	          </div>
+	        </div>
+
+	        <div class="vfy-item">
+	          <span class="num">9</span>
+	          <div class="body">
+	            <p class="do">检查 types 层是否被 ROS 依赖污染</p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	rg 'import rospy|from sensor_msgs|from std_msgs' src/model_deploy/act/types/</code>
+	            <div class="result">
+	              <div class="pass">无输出。types/ 是最上游层，不得依赖 ROS。</div>
+	              <div class="fail">有输出。types/ 出现了 ROS import → 违反了六层依赖方向（types → config → repo → service → runtime → ui），后续无法独立测试。</div>
+	            </div>
+	            <p class="why">📎 对应维度3 代码树分层约束「types 不得 import config/repo/service/runtime/ui」</p>
+	          </div>
+	        </div>
+
+	        <div class="vfy-item">
+	          <span class="num">10</span>
+	          <div class="body">
+	            <p class="do">检查 bridge/mux 残余 + 完整 import 链路</p>
+	            <code class="cmd-block"><span class="c"># 仓库根目录</span>
+	rg -n 'bridge|mux' src/model_deploy/act/config/ 2>/dev/null
+	<span class="c"># 以及：确认所有契约对象可正常 import</span>
+	python3 -c "from act.types import StateSpec, ActionSpec; from act.config import DeployConfig; print('OK')"</code>
+	            <div class="result">
+	              <div class="pass">bridge/mux 无输出（或仅在注释中作为"已删除"说明）；import 输出 OK——下游 L2 可以零猜测地使用这些对象。</div>
+	              <div class="fail">bridge/mux 作为配置段出现 → Pi0.5 残余未清除；ImportError → 模块路径或依赖出错，下游 L2 无法 import。</div>
+	            </div>
+	            <p class="why">📎 对应维度1 完成判据「下游零猜测」+ 维度2 §4 ACT 去掉 bridge/mux</p>
+	          </div>
+	        </div>
+
+	      </div>
+
+	      <p class="src">权威来源：<code>agent_context/01_L2功能边界.md</code>（§4 负责 / §6 完成判据）、<code>agent_context/04_L2验收机制.md</code>（§2 Gate / §3 命令）、<code>agent_context/03_ACT微元设计与协作.md</code>（§2 ACT 微元表 / §4 去平滑影响）</p>
+	    </section>
+
+  </div>
+</div>
+</body>
+</html>
+```

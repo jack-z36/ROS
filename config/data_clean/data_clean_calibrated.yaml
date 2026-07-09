@@ -170,3 +170,12 @@ web_pipeline:
       enabled: true
     - id: right_gripper_width_t_plus_1
       enabled: true
+web_file_management:
+  health_audited_mcap_dir: /media/hit/D085-8696/已通过健康审计文件
+  rejected_mcap_dir: /media/hit/D085-8696/数据清洗缺陷文件
+  completed_mcap_dir: /media/hit/D085-8696/已完成清洗文件
+  cleaning_failed_mcap_dir: /media/hit/D085-8696/清洗失败文件
+  artifact_retention: production_cleanup
+  failed_artifact_policy: failed_stage_input
+  space_estimate_multiplier: 4.0
+  space_safety_gb: 20
