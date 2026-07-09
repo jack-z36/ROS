@@ -96,6 +96,16 @@ data_clean_calibrated.yaml
 
 普通网页不再显示 preset、任务级算法覆盖或 bridge mode。历史 preset 文件不删除，但只作为兼容资产保留。
 
+普通网页新建任务采用分层预检，避免破坏原先快速扫描体验：
+
+- 扫描目录只做 `.mcap` 文件枚举，立即返回文件列表，状态为 `unchecked`。
+- preview 做 summary 级快速审计，检查 MCAP summary 可读性、左右相机图像、左右 Baton pose、启用的触觉 topic 和 schema。
+- create 做最终强审计，合并 Baton Mini 位姿采样审计，拦截位姿 topic 缺失、四元数异常和左右尺度疑似不一致。
+- 缺陷文件按 `web_file_management.rejected_mcap_dir` 自动移动到中文原因目录，job run 目录写出 `precheck_report.json`。
+- 批次正常收尾时，成功进入最终 dataset 的 raw MCAP 移动到 `web_file_management.completed_mcap_dir`，单文件清洗失败的 raw MCAP 移动到缺陷目录，输入目录只保留未处理数据。
+- 创建任务前做中间产物空间估算：`keep_all` 按全批累计估算；`production_cleanup` 按并发 worker 峰值中间产物、聚合前必须暂存的 bridge/dataset 产物和 `safety_gb` 估算，并按空间收紧实际 worker。
+- 默认 `production_cleanup` 策略会在成功阶段删除 cleaned/MCAP_A/aligned/forge_ready 等大型上游中间 MCAP，只保留最终 LeRobot dataset、摘要和必要报告。
+
 ## 4. 场景一：raw MCAP -> cleaned MCAP
 
 场景一负责从 raw MCAP 生成 cleaned MCAP，核心能力包括：
@@ -114,8 +124,11 @@ data_clean_calibrated.yaml
 | `repo/config/mcap_process_config.py` | 解析 batch、pose streams、gripper、`camera_from_tcp`、`work_frames` 和历史兼容配置。 |
 | `service/mcap_io.py`            | 单文件清洗核心；两遍读取 MCAP，第一遍生成中间 payload，第二遍写出结果。 |
 | `service/validator.py`          | 输入 topic/schema 与输出契约校验。                                      |
+| `schemas/mcap_health_audit.py`  | Web 新建任务前健康审计的数据结构、状态和缺陷分类目录契约。             |
+| `service/mcap_health_audit.py`  | 读取 raw MCAP summary，合并相机/位姿/触觉/schema 健康审计并移动缺陷 MCAP。 |
+| `service/mcap_file_management.py` | Web 批次收尾后移动 raw MCAP：成功样本进入已完成清洗目录，失败样本进入缺陷目录。 |
 | `service/gripper_width.py`      | ArUco 夹爪宽度提取、缺失帧插值和归一化。                                |
-| `service/baton_pose_audit.py`   | Web 端 Baton Mini 左右位姿 topic 审计、单位量级分类和确认后移动分类。    |
+| `service/baton_pose_audit.py`   | Baton Mini 左右位姿 topic 采样、单位量级分类；普通 Web 新建任务通过 `service/mcap_health_audit.py` 复用其审计思想。 |
 | `service/training_readiness.py` | 将 Forge quality、LeRobot stats、对齐、夹爪和 bridge feature schema 合成为面向训练前复查的可读摘要；按当前 LeRobot feature contract 判断 state/action 维度。 |
 | `service/tcp_transform.py`      | 将每帧 Baton Mini 动态 pose 与 `camera_from_tcp.translation_mm` 组合为动态 TCP 中间位姿；旧 common-frame helper 仅保留兼容。 |
 | `service/arm_base_transform.py` | arm-base pose 相关转换与契约支持。                                      |
@@ -252,6 +265,7 @@ mean, std, min, max
 | `service/forge_bridge.py`            | 消费 aligned MCAP，按 LeRobot feature 白名单拼接 state 和固定 `t+1 action`，写出 Forge-ready MCAP 与 sidecar；默认布局仍为 32 维 state 和 16 维 action。 |
 | `runtime/forge_bridge_check.py`      | bridge dev check，支持 `format-only` 与 `formal`。                                                                          |
 | `runtime/forge_bridge_to_lerobot.py` | Forge Python fallback，显式把 topic config 传给 `MCAPReader`；支持单 bridge 转换和多 bridge 聚合写出一个 LeRobot v3 dataset。 |
+| `service/lerobot_timestamp_rebase.py` | LeRobot v3 产物后处理：`write_dataset` 写出后，按 episode 把 `timestamp` 相对化（每 episode 第一帧 = 0.0，满足 LeRobot v3 训练要求）；只改 `data/chunk-*/file-*.parquet` 的 `timestamp` 列，不动 video/info/stats/episodes meta，不改 forge 源码。 |
 
 ### 7.1 LeRobot 临时 step 语义
 
@@ -278,6 +292,8 @@ mean, std, min, max
 ```
 
 最后一帧因没有 `t+1` action，会在 bridge 阶段丢弃。
+
+Forge writer 写入的 `timestamp` 是 MCAP 绝对 Unix 时间戳（`log_time/1e9`）。LeRobot v3 训练要求每个 episode 第一帧 `timestamp = 0.0`，因此 `convert_forge_bridges_to_lerobot` 在 `write_dataset` 之后会调用 `service/lerobot_timestamp_rebase.py`：按 episode 减去本 episode 第一帧时间戳，原地重写 `data/chunk-*/file-*.parquet`，保留真实帧间隔并保证幂等。该后处理不改 forge 生成逻辑，不动 video、`info.json`、`stats.json` 和 episodes meta。
 
 实际导出的 shape、offset、单位和语义会写入 `forge_bridge_schema.json`、`forge_bridge_report.json` 和每个 Web job 的 `config_snapshot.yaml`。
 
