@@ -78,15 +78,42 @@ If generating the L2 acceptance card, place it at:
 DOCS/03_工程/阶段四：模型部署/03_tasks/cards/<l2_id>/<l2_id>_整体验收卡片.md
 ```
 
-## Validation
+## Post-Generation Validation (Mandatory)
 
-After generating or changing L3 files, run:
+After generating or modifying any L3 files for a target L2, you **MUST spawn a validation sub-agent** to verify all outputs before declaring generation complete. This step is not optional — skipping it is blocked.
 
-```bash
-python3 skills/stage4-l3-orchestrator/scripts/validate_stage4_l3_cards.py
+### Why a sub-agent
+
+A fresh read-only agent catches cross-reference errors (wrong `depends_on`/`blocks`/`can_run_parallel_with` IDs, card ID mismatches, dispatch field typos) that the generating agent easily misses. The sub-agent runs the same scripts a downstream orchestrator would run, catching problems at generation time instead of at execution time.
+
+### Sub-agent protocol
+
+Launch a read-only sub-agent with this prompt:
+
+```text
+Validate the L3 generation outputs for <l2_id>. Run these commands in order:
+
+1. python3 skills/stage4-l3-generator/scripts/validate_l3_generation_outputs.py <l2_id>
+2. python3 skills/stage4-l3-orchestrator/scripts/validate_stage4_l3_cards.py
+
+Report the result of each command. If any command exits non-zero, 
+list every error with the exact file path and the field/mismatch found.
+Do NOT edit any files. Do NOT run any Git operations.
 ```
 
-If validation fails, fix task/card/dispatch consistency before handing off to `stage4-l3-orchestrator`.
+The main Agent MUST:
+- Wait for the sub-agent to complete before proceeding.
+- If any validation error exists: fix it, then re-spawn the validation sub-agent.
+- Only when both scripts return exit code 0 may generation be declared complete.
+
+### Manual backup check
+
+If a sub-agent cannot be spawned (e.g., single-turn mode), run both commands directly:
+
+```bash
+python3 skills/stage4-l3-generator/scripts/validate_l3_generation_outputs.py <l2_id>
+python3 skills/stage4-l3-orchestrator/scripts/validate_stage4_l3_cards.py
+```
 
 ## Handoff
 
@@ -96,6 +123,7 @@ End with:
 - generated task files;
 - generated dispatch file;
 - generated acceptance cards;
-- validation command result;
+- `validate_l3_generation_outputs.py` result for `<l2_id>`: `<PASS or N errors>`;
+- `validate_stage4_l3_cards.py` result: `<PASS or N errors>`;
 - open user decisions;
 - whether L3 execution is ready for `skills/stage4-l3-orchestrator/`.
