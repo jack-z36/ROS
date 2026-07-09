@@ -253,6 +253,7 @@ The blueprint dimension has two critical components, each with strict rules:
   - **排版铁律#1**: Each micro-unit must occupy its own line. If one `.mu` contains multiple functions/fields, each must be wrapped in `<span class="fn">`（`display:block`）. **Never** cram multiple functions with `；`/`/` into one line.
   - **排版铁律#2**: Micro-unit kind labels must be exactly the 5 approved types（数据/计算函数/内部状态更新函数/数据读写函数/编排函数）. Self-invented names are illegal.
   - **排版铁律#3**: Descriptions must use `<b>输入：</b>` `<b>修改对象：</b>` `<b>如何修改：</b>` bold prefixes to explicitly mark mandatory dimensions per §3.3.
+- **排版铁律#4 — 数据微元必须用表格**: Every `.mu` with `kind data` must use a `<table class="data-table">` inside `.desc` with exactly 3 columns: ①变量名（或字段名，对 frozen dataclass）②数据结构 ③内部存储的数据类型。Never use pipe-delimited text blobs (`变量名：… | 存储结构：… | 数值类型：…`) for data micro-units. Each variable/field gets its own row. CSS must define `.mu .desc .data-table` compact table styles（font-size 11.5px, padding 4px 7px, first column monospace）. The `.mu` grid layout（90px kind + 1fr desc）is preserved; the table is an inner element of `.desc`.
 - **lpick tab colors（§7）：** Selected tab background must match the architecture layer's emphasis color. Common error: using `--ok`（green）for service/runtime instead of `--config`（blue）and `--repo`（purple）. For L2s where config/repo have no products, use `--grey`.
 
 Stop for user confirmation after drafting the HTML information hierarchy and L2 Gate/human acceptance design.
@@ -281,6 +282,11 @@ Additional manual checks for dimension 4:
 - HTML must contain `.trtab` translation table with complete location chains（file path → class → micro-unit + kind tag）per row.
 - `.trtab td.mu` must have `display:block` override to prevent CSS collision with global `.mu` grid layout.
 - Terminal labels must be grouped by layer matching dimension 3's six-layer tabs.
+
+Additional manual checks for dimension 3:
+- All `.mu .kind.data` rows must use `<table class="data-table">` inside `.desc`（not inline `|` text, not `<span class="fn">`）.
+- `.data-table` must have exactly 3 columns: 变量名 / 数据结构 / 内部存储的数据类型.
+- CSS must define `.mu .desc .data-table` with compact table styles.
 
 ## Output Rules
 

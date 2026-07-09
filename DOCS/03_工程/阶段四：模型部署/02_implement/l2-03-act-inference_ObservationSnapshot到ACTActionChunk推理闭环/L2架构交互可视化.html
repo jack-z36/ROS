@@ -203,6 +203,14 @@ td .errc{color:var(--warn);font-weight:600}
 
 .faq-q{font-weight:700;color:var(--ctrl);font-size:13.5px;margin:10px 0 4px}
 
+		/* 数据微元专用表格 */
+		.mu .desc .data-table{width:100%;border-collapse:collapse;font-size:11.5px;margin:0}
+		.mu .desc .data-table th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:11px;padding:4px 7px;border:1px solid var(--line);text-align:left}
+		.mu .desc .data-table td{padding:4px 7px;border:1px solid var(--line);font-size:11.5px;vertical-align:top;color:var(--ink);line-height:1.55}
+		.mu .desc .data-table td:first-child{font-family:ui-monospace,monospace;white-space:nowrap;color:var(--ctrl)}
+		.mu .desc .data-table td:nth-child(2){font-size:11px;color:var(--muted)}
+		.mu .desc .data-table td:nth-child(3){font-family:ui-monospace,monospace;font-size:11px;color:var(--repo)}
+
 .vfy{margin:10px 0}
 .vfy-item{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
 .vfy-item .num{width:28px;height:28px;border-radius:999px;background:var(--ctrl);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:2px}
@@ -700,7 +708,22 @@ td .errc{color:var(--warn);font-weight:600}
             <h5>ActPolicyRuntime（class，真实+fake 共用接口）</h5>
             <p class="role">持有 model/policy/preprocessor/normalizer/device，提供统一 <code>predict_action_chunk(observation) → (chunk_size,16)</code>。Pi0.5 参考：<code>Pi05PolicyRuntime</code>。</p>
             <div class="mu-list">
-              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：model/policy/preprocessor/state_normalizer/action_normalizer/device/task/action_dim(=16)/output_chunk_size/image_names/_predict_fn | 存储结构：class 实例字段 | 数值类型：torch.nn.Module、Any、torch.device、int、tuple[str,...]</span></div>
+              <div class="mu"><span class="kind data">数据</span><span class="desc">
+                <table class="data-table">
+                  <tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                  <tr><td><code>model</code></td><td>class 实例字段</td><td>torch.nn.Module</td></tr>
+                  <tr><td><code>policy</code></td><td>class 实例字段</td><td>callable (predict fn)</td></tr>
+                  <tr><td><code>preprocessor</code></td><td>class 实例字段</td><td>Any (preprocessor callable)</td></tr>
+                  <tr><td><code>state_normalizer</code></td><td>class 实例字段</td><td>ActionStateNormalizer</td></tr>
+                  <tr><td><code>action_normalizer</code></td><td>class 实例字段</td><td>ActionStateNormalizer</td></tr>
+                  <tr><td><code>device</code></td><td>class 实例字段</td><td>torch.device</td></tr>
+                  <tr><td><code>task</code></td><td>class 实例字段</td><td>str</td></tr>
+                  <tr><td><code>action_dim</code></td><td>class 实例字段</td><td>int (=16)</td></tr>
+                  <tr><td><code>output_chunk_size</code></td><td>class 实例字段</td><td>int</td></tr>
+                  <tr><td><code>image_names</code></td><td>class 实例字段</td><td>tuple[str, …]</td></tr>
+                  <tr><td><code>_predict_fn</code></td><td>class 实例字段</td><td>callable（编译后包裹）</td></tr>
+                </table>
+              </span></div>
               <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><code>predict_action_chunk(observation)</code> — 编排逻辑：①build_batch ②preprocess ③move to device ④policy.predict ⑤cpu+clamp ⑥unnormalize ⑦校验 shape[1]==16 ⑧截断 chunk_size → 返回 <code>(chunk_size,16) float32 ndarray</code></span></div>
               <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><code>_maybe_compile(compile_mode)</code> — 可选 <code>torch.compile</code> 包裹 _predict_fn（副作用：替换 predict 函数引用）</span></div>
             </div>
@@ -745,7 +768,18 @@ td .errc{color:var(--warn);font-weight:600}
             <h5>InferenceWorker（class，继承 threading.Thread）</h5>
             <p class="role">后台 daemon 线程，异步消费 request→推理→写 chunk+metrics。与 ControlLoop 并行。Pi0.5 直接复用。</p>
             <div class="mu-list">
-              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：policy_runtime/request_queue/result_queue/shared_buffer/period_s/action_dt/log_info/log_debug/log_warning | 存储结构：Thread 实例字段</span></div>
+              <div class="mu"><span class="kind data">数据</span><span class="desc">
+                <table class="data-table">
+                  <tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                  <tr><td><code>policy_runtime</code></td><td>Thread 实例字段</td><td>ActPolicyRuntime</td></tr>
+                  <tr><td><code>request_queue</code></td><td>Thread 实例字段</td><td>LatestQueue[InferenceRequest]</td></tr>
+                  <tr><td><code>result_queue</code></td><td>Thread 实例字段</td><td>LatestQueue[ActionChunk]</td></tr>
+                  <tr><td><code>shared_buffer</code></td><td>Thread 实例字段</td><td>SharedBuffer</td></tr>
+                  <tr><td><code>period_s</code></td><td>Thread 实例字段</td><td>float（1/inference_hz）</td></tr>
+                  <tr><td><code>action_dt</code></td><td>Thread 实例字段</td><td>float（单步秒数）</td></tr>
+                  <tr><td><code>_stop_event</code></td><td>Thread 实例字段</td><td>threading.Event</td></tr>
+                </table>
+              </span></div>
               <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><span class="fn"><code>run()</code> — <b>顺序：</b>循环 ①get_latest_or_none ②无则 wait 0.001s continue ③按 inference_hz 限速 ④调 _run_request；<b>调用条件：</b>daemon 线程启动后持续循环；<b>失败处理：</b>_stop_event 触发时退出循环</span><span class="fn"><code>_run_request(request)</code> — <b>顺序：</b>①infer_start ②try predict_action_chunk ③except record_inference_error+return ④构造 ActionChunk ⑤record latency/count ⑥result_queue.put_latest；<b>调用条件：</b>有 request 且未超 inference_hz；<b>失败处理：</b>异常被 try/except 捕获，记录 error 后返回，不崩溃</span></span></div>
               <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><span class="fn"><code>stop()</code> — <b>修改对象：</b><code>_stop_event</code>；<b>如何修改：</b>设置 event，触发 run() 循环退出</span><span class="fn"><code>_last_infer_start_s</code> — <b>修改对象：</b>实例字段；<b>如何修改：</b>每次 _run_request 开始时写入，作为 inference_hz 限速基准</span></span></div>
             </div>
@@ -755,7 +789,36 @@ td .errc{color:var(--warn);font-weight:600}
             <h5>shared_buffer.py 数据结构（frozen dataclass + queue + buffer）</h5>
             <p class="role">跨模块共享的 RAM 对象。第一版由 L2-03 落地，L2-02/L2-06 import 复用。</p>
             <div class="mu-list">
-              <div class="mu"><span class="kind data">数据</span><span class="desc"><span class="fn"><code>ActionChunk</code>（frozen dataclass）— 结构：actions (chunk_size,16) + obs_time + infer_start_time + ready_time + action_dt + request_id + cursor；数值类型：np.ndarray float32 + float + int；含 <code>__post_init__</code> 校验 rank-2 + action_dt&gt;0</span><span class="fn"><code>InferenceRequest</code>（frozen dataclass）— 结构：observation + obs_time + request_id + trigger_step；数值类型：ObservationSnapshot + float + int</span><span class="fn"><code>ObservationSnapshot</code>（frozen dataclass）— 结构：images + state + encoded_state (16,) + captured_at_s；数值类型：dict + ObservationState + np.ndarray float + float</span></span></div>
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><b>ActionChunk</b>（frozen dataclass，含 <code>__post_init__</code> 校验 rank-2 + action_dt&gt;0）
+                <table class="data-table">
+                  <tr><th>字段名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                  <tr><td><code>actions</code></td><td>np.ndarray</td><td>float32，shape (chunk_size, 16)</td></tr>
+                  <tr><td><code>obs_time</code></td><td>标量字段</td><td>float（monotonic 秒）</td></tr>
+                  <tr><td><code>infer_start_time</code></td><td>标量字段</td><td>float（monotonic 秒）</td></tr>
+                  <tr><td><code>ready_time</code></td><td>标量字段</td><td>float（monotonic 秒）</td></tr>
+                  <tr><td><code>action_dt</code></td><td>标量字段</td><td>float（单步秒数，&gt;0）</td></tr>
+                  <tr><td><code>request_id</code></td><td>标量字段</td><td>int</td></tr>
+                  <tr><td><code>cursor</code></td><td>标量字段</td><td>int（当前消费位置）</td></tr>
+                </table>
+              </span></div>
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><b>InferenceRequest</b>（frozen dataclass）
+                <table class="data-table">
+                  <tr><th>字段名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                  <tr><td><code>observation</code></td><td>frozen dataclass 引用</td><td>ObservationSnapshot</td></tr>
+                  <tr><td><code>obs_time</code></td><td>标量字段</td><td>float（monotonic 秒）</td></tr>
+                  <tr><td><code>request_id</code></td><td>标量字段</td><td>int</td></tr>
+                  <tr><td><code>trigger_step</code></td><td>标量字段</td><td>int（L2-06 tick 计数）</td></tr>
+                </table>
+              </span></div>
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><b>ObservationSnapshot</b>（frozen dataclass）
+                <table class="data-table">
+                  <tr><th>字段名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                  <tr><td><code>images</code></td><td>dict（key=str 相机名）</td><td>np.ndarray（图像张量）</td></tr>
+                  <tr><td><code>state</code></td><td>frozen dataclass 引用</td><td>ObservationState</td></tr>
+                  <tr><td><code>encoded_state</code></td><td>np.ndarray</td><td>float，shape (16,)</td></tr>
+                  <tr><td><code>captured_at_s</code></td><td>标量字段</td><td>float（monotonic 秒）</td></tr>
+                </table>
+              </span></div>
               <div class="mu"><span class="kind state">内部状态更新</span><span class="desc"><span class="fn"><code>LatestQueue[T]</code> — <b>修改对象：</b>内部 deque + lock；<b>如何修改：</b>put_latest 追加并覆盖旧值，get_latest_or_none 返回最新或 None（latest-only 语义）</span><span class="fn"><code>SharedBuffer</code> — <b>修改对象：</b>聚合 latest_observation/request_queue/result_queue/metrics；<b>如何修改：</b>record_* 方法更新对应计数器（inference_count/error_count/request_count）</span><span class="fn"><code>RuntimeMetrics</code> — <b>修改对象：</b>inference_count/error_count/request_count + latency EMA + last_error；<b>如何修改：</b>record_latency 更新 EMA，record_error 更新 last_error + error_count</span></span></div>
             </div>
           </div>
