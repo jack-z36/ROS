@@ -34,6 +34,8 @@ dispatch:
 
 # deploy_008 — DeployConfig 核心 schema 与校验器
 
+L3 编号：deploy_008
+
 ## 1. 任务元信息
 
 | 字段 | 值 |
