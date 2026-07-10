@@ -1,105 +1,269 @@
 # ACT 微元设计与协作：L2-03
 
-## 1. 设计原则
+## 1. 总体结构
 
-L2-03 是后台计算角色，只消费 `InferenceRequest` 产出 `ActionChunk`，不决定 action 何时执行。它通过 request/result queue 与 L2-06 异步解耦，保证 GPU 推理不阻塞 control tick。
-
-第一版已去除独立平滑处理：本 L2 不实现 action smoothing、smoothstep blend、跨 chunk 融合、RTC 类平滑或复杂时间对齐。L2-06 第一版只按 cursor 直取 active chunk 的当前 step。
-
-设计上 L2-03 与 Pi0.5 推理链路高度同构（`InferenceWorker` + policy runtime + queue 三件套几乎可直接复用），主要差异在模型框架（Pi0.5 VLA → ACT）和维度（14→16）。
-
-## 2. ACT 微元设计
-
-| ACT 微元 | 3.5 类型 | target layer | target file | function/class | 输入 | 输出 | 副作用 | Pi0.5 参考 |
-|---|---|---|---|---|---|---|---|---|
-| ActPolicyRuntime（真实） | 数据+计算+编排 | repo | `src/model_deploy/act/repo/policy_loader.py` | class | DeployConfig + bundle | 加载好的 policy runtime 对象 | 加载权重到 RAM/GPU | `Pi05PolicyRuntime`（结构复用） |
-| ActPolicyRuntime（fake） | 数据+计算 | repo | `src/model_deploy/act/repo/policy_loader.py` | class | DeployConfig（mode=fake） | fake policy runtime 对象 | 无（不加载权重） | ACT 增量（保证无 bundle 可验收） |
-| load_act_policy_runtime | 编排函数+数据读写 | repo | `src/model_deploy/act/repo/policy_loader.py` | function | DeployConfig | ActPolicyRuntime | 读 bundle 文件 | `load_policy_runtime`（结构复用） |
-| act batch adapter | 计算函数 | service | `src/model_deploy/act/service/batch_adapter.py` | function | ObservationSnapshot | dict[str, Tensor]（ACT batch） | 无 | `_build_batch`（结构复用） |
-| act predict action chunk | 编排函数 | service | `src/model_deploy/act/service/policy_runtime.py` 或 repo 内 method | method | ObservationSnapshot | np.ndarray (chunk_size,16) | GPU 推理 | `predict_action_chunk`（结构复用） |
-| normalizer 使用（normalize/unnormalize） | 计算函数 | service | `src/model_deploy/act/service/normalizer.py` 或复用 repo normalizer | function/method | RAM 向量 | RAM 向量 | 无 | `ActionStateNormalizer.normalize/unnormalize`（直接复用） |
-| ActionChunk 数据结构 | 数据 | runtime | `src/model_deploy/act/runtime/shared_buffer.py` | frozen dataclass | actions/times/request_id | 值对象 | 无 | `ActionChunk`（直接复用，14→16） |
-| InferenceRequest 数据结构 | 数据 | runtime | `src/model_deploy/act/runtime/shared_buffer.py` | frozen dataclass | observation/obs_time/request_id | 值对象 | 无 | `InferenceRequest`（直接复用） |
-| ObservationSnapshot 引用 | 数据 | runtime | `src/model_deploy/act/runtime/shared_buffer.py` | frozen dataclass | images/state/encoded_state/captured_at_s | 值对象 | 无 | `ObservationSnapshot`（直接复用，L2-02 也用） |
-| LatestQueue | 内部状态更新+数据 | runtime | `src/model_deploy/act/runtime/shared_buffer.py` | class | T | put_latest/get_latest_or_none | 锁保护 deque | `LatestQueue`（直接复用） |
-| SharedBuffer 引用 | 数据+内部状态更新 | runtime | `src/model_deploy/act/runtime/shared_buffer.py` | class | — | 聚合 observation/request/result/metrics | record_* 方法 | `SharedBuffer`（直接复用） |
-| RuntimeMetrics 引用 | 数据+计算 | runtime | `src/model_deploy/act/runtime/shared_buffer.py` | dataclass | — | 计数器 + latency EMA | record_latency/as_dict | `RuntimeMetrics`（直接复用） |
-| InferenceWorker | 编排+内部状态更新 | runtime | `src/model_deploy/act/runtime/inference_worker.py` | class | policy_runtime + queues + hz | 后台循环副作用 | 写 result_queue + metrics | `InferenceWorker`（直接复用） |
-
-> [!note] shared_buffer 落点说明
-> `shared_buffer.py` 同时被 L2-02（写 latest_observation）、L2-03（读写 request/result/metrics）、L2-06（读写所有）使用。第一版推荐由 L2-03 首先落地该文件（因为它定义了推理链路全部数据结构），L2-02 和 L2-06 后续 import 复用。若 L2-01 在 types 层统一提供这些数据结构，则本 L2 改为 import 复用，不在 runtime 层重复定义（见 `01_L2功能边界.md` §9 待决策项 1）。
-
-## 3. 内部协作关系
+L2-03 对 L2-06 只暴露一个同步入口：
 
 ```text
-Creation order（启动期，由 L2-06 或装配代码触发）:
-1. L2-01 加载 DeployConfig + bundle 契约校验。
-2. repo 层 load_act_policy_runtime(config) 加载真实或 fake ActPolicyRuntime。
-   2a. 复用 L2-01 的 bundle_reader/manifest_parser/normalizer_loader/experiment_config_loader。
-   2b. 构建 ACT policy + preprocessor（fake 分支跳过权重加载）。
-   2c. 加载 state/action normalizer（长度校验 16D，复用 L2-01 契约）。
-3. runtime 层创建 SharedBuffer（含 inference_request_queue、chunk_result_queue、metrics）。
-   - 注：SharedBuffer 也被 L2-02（latest_observation）和 L2-06 使用。
-4. runtime 层创建 InferenceWorker(policy_runtime, request_queue, result_queue, shared_buffer, inference_hz, control_hz)。
-5. 启动 InferenceWorker 后台线程（daemon=True）。
-
-State owner:
-- ActPolicyRuntime：model/policy/preprocessor/normalizer/device，启动期创建后稳定只读。
-- InferenceWorker：_stop_event/period_s/action_dt，后台线程生命周期。
-- SharedBuffer.metrics：全局计数器，锁保护，被 InferenceWorker 和 L2-06 共同更新。
-
-Pure RAM calculations:
-- act batch adapter（snapshot→batch dict）
-- normalizer.normalize（state 推理前）/ unnormalize（action 推理后）
-- clamp_normalized_action（可选，推理后 clamp 到 [-1,1]）
-- shape 校验（actions.shape[1]==16）
-- aligned_index（时间对齐，供 L2-06 用）
-
-External boundary reads/writes:
-- 启动期：load_act_policy_runtime 读 bundle 文件 + 加载权重到 GPU（跨进程/设备边界）。
-- 稳态：policy.predict_action_chunk 调 GPU 推理（跨进程-设备边界，最耗时的边界跨越）。
-- 本 L2 不写外部文件、不订阅 topic、不发布 topic。
-
-Runtime orchestration point:
-- InferenceWorker.run()：后台循环，按 inference_hz 限速，消费 request→推理→写 result。
-- 本 L2 不进入 ControlLoop.tick()；tick 由 L2-06 驱动，通过 queue 与本 L2 协作。
-
-Failure propagation:
-- 推理异常：InferenceWorker._run_request 用 try/except 捕获 → record_inference_error(message) → log_warning → 继续下一个 request，不崩溃。
-- L2-06 在 tick 时发现 chunk_result_queue 长期无新 chunk / metrics.inference_error_count 增长 → 进入 fallback（hold/continue_old_chunk/safe_stop）。
-- shape 非法（policy 输出非 16D）：predict_action_chunk 内抛 ValueError → 被同 try/except 捕获 → record_inference_error。
+ObservationSnapshot -> ActionChunk
 ```
 
-## 4. 去除平滑处理后的协作影响
-
-- `InferenceWorker` **不包含** `blend_steps`、`smoothstep_alpha`、`_blend_next_action`、`_start_blend_or_switch` 任何平滑逻辑。
-- `predict_action_chunk` 只输出整个 chunk，**不做** 单步选择、cursor 推进或跨 chunk 加权融合。
-- `ActionChunk` 保留 `cursor` 字段（向后兼容），但第一版由 L2-06 按 cursor 直取，**不在本 L2 内推进 cursor**。
-- `RuntimeMetrics` 不包含 `blend_active` 等平滑状态字段（这些若需要归 L2-06）。
-- L2-06 若后续要引入平滑优化，必须新增设计变更并同步更新 L1/L2 文档和 Gate；不得从 L2-03 暗含未声明能力。
-- `load_act_policy_runtime` 不读取 `blend_steps` 配置；该字段在 L2-01 的 `RuntimeConfig` 中已去除。
-
-## 5. fake-policy 设计
-
-为保证无真实 bundle / 无 GPU 时仍能本地验收推理链路与调度行为，本 L2 提供统一推理接口的 fake 实现：
+内部第一次封装为三个一级阶段：
 
 ```text
-fake-policy runtime 实现 predict_action_chunk(observation) -> np.ndarray (chunk_size, 16):
-  - 不加载真实权重，不调用 GPU。
-  - 输出 shape 严格 (chunk_size, 16) float32。
-  - 生成策略可配置（默认推荐：零向量，或基于 request_id 的可复现伪随机），保证：
-    a. shape 契约与 real-policy 完全一致；
-    b. 延迟可观察（fake 可注入可配置 sleep 模拟推理耗时）；
-    c. InferenceWorker 的 queue 消费、metrics 记录、失败处理链路与 real 完全一致。
-  - 通过 DeployConfig.runtime.mode 或独立 fake 标志选择 fake/real 分支。
+总编排入口
+│
+├── ① Observation 批次准备
+│      ObservationSnapshot
+│      -> ACT batch on policy device
+│
+├── ② ACT 前向推理
+│      ACT batch
+│      -> raw normalized action tensor
+│
+└── ③ ActionChunk 后处理
+       raw normalized action tensor
+       -> physical ActionChunk
 ```
 
-fake-policy 是 L2-03 Gate 的**必选项**：fake 路径必须通过，real 路径在真实 bundle 就绪后补验（可标 `env-blocked` 或 `hardware-blocked` 直到 bundle 可用）。
+batch 和 raw tensor 都是 service 内部临时数据，不进入 `types/`，也不允许 L2-06 逐阶段调用。
 
-## 6. 待用户确认的阻断项
+## 2. 3.25 层聚合
 
-以下决策若未确认，L3 生成时必须标记为 blocking（当前已给出推荐默认）：
+### 2.1 唯一 service class
 
-1. `shared_buffer.py`（ActionChunk/InferenceRequest/ObservationSnapshot/LatestQueue/SharedBuffer/RuntimeMetrics）由本 L2 在 runtime 层落地，还是由 L2-01 在 types 层统一提供？**推荐**：runtime 层落地，与 Pi0.5 一致。
-2. ACT 模型复用 LeRobot `lerobot.policies.act`？**推荐**：是。
-3. fake-policy 默认生成策略？**推荐**：零向量 + 可配置 sleep。
+推荐 `ActInferenceService` 统一持有：
+
+```text
+config: DeployConfig
+state_normalizer: ActionStateNormalizer
+action_normalizer: ActionStateNormalizer
+policy: loaded ACT policy
+derived policy input specification（只读）
+```
+
+选择 class 的原因：四项资源在程序全生命周期稳定存在，并被多次同步调用复用。class 只打包稳定依赖和总入口，不拥有运行调度状态。
+
+禁止放入实例字段：
+
+```text
+current/last snapshot
+current batch or raw chunk
+request_id or request status
+thread/event/queue/lock
+active chunk/cursor/history
+latency/error/metrics
+retry/fallback state
+last selected/published action
+```
+
+### 2.2 三个一级阶段不分别建 class
+
+三个阶段没有独立生命周期、可变状态或资源所有权，使用函数即可。为每个阶段创建 class 只会隐藏输入输出，不提供状态封装价值。
+
+## 3. 启动期只读上下文
+
+L2-06 在启动组装阶段把 L2-01 产出的四项资源注入 service。service 只在 RAM 内完成以下适配准备：
+
+1. 确认 policy 暴露 `predict_action_chunk`。
+2. 从 config/policy RAM 元数据得到预期 `state_dim=16`、`action_dim=16`、`chunk_size`、device。
+3. 从 policy input features 得到完整图像 feature key 和 shape。
+4. 建立 `observation.images.<camera>` 到 snapshot logical camera key `<camera>` 的确定性映射。
+
+这些是模型适配契约提取，不是 bundle 契约重验：不读文件、不加载权重、不修改 policy、不创建第五项 processor 依赖。
+
+若 L2-01 已保证的 policy/config/normalizer 契约在 RAM 中仍然互相矛盾，service 应在创建或首次调用前失败，不得运行中裁剪输出补救。
+
+## 4. 一级阶段一：Observation 批次准备
+
+### 4.1 输入输出
+
+```text
+输入:
+  ObservationSnapshot
+  state_normalizer
+  只读 policy input specification
+  policy device
+
+输出:
+  dict[str, torch.Tensor]
+  observation.state               -> (1, 16)
+  observation.images.<camera>     -> (1, C, H, W)
+  所有 tensor 位于 policy device
+```
+
+batch 不含 `task`、`action`、时间、request ID 或 runtime metadata。
+
+### 4.2 七个子功能模块
+
+| 顺序 | 子功能 | 3.5 类型 | 输入 | 输出/失败 | 精确边界 |
+|---|---|---|---|---|---|
+| 1 | 模型输入兼容性检查 | 计算函数 | snapshot + expected input spec | 通过或异常 | 检查 state 16D/有限值、必需相机、图像 shape/dtype/数值契约；不检查 freshness |
+| 2 | State tensor 表达转换 | 计算函数 | physical `np.ndarray (16,)` | CPU `torch.float32 Tensor (16,)` | 只改变表示/dtype/连续性，不改变数值尺度 |
+| 3 | State 数值归一化 | 计算函数 | physical state tensor + state normalizer | normalized Tensor `(16,)` | 只调用一次 `normalize()`；检查 shape 与有限值 |
+| 4 | Image tensor 绑定 | 计算函数 | snapshot images + expected feature keys | `{full_policy_key: Tensor(C,H,W)}` | 精确相机键绑定和 tensor 化；不做像素级预处理 |
+| 5 | Batch 维度添加 | 计算函数 | state/image single-sample tensors | state `(1,16)`、image `(1,C,H,W)` | 只增加 B=1；不 squeeze 其他维 |
+| 6 | ACT batch 组装 | 计算函数 | batched state/images | batch dict | 只写 ACT policy 需要的 observation keys |
+| 7 | Device 对齐 | 计算函数 | CPU batch + policy device | device-aligned batch | 产生 device tensors；不改 snapshot、不缓存 batch、不自动切换 device |
+
+### 4.3 为什么 State 拆成两步
+
+```text
+physical ndarray (16,)
+-> physical torch.float32 tensor (16,)    # 表达转换
+-> normalized tensor (16,)                # 数值尺度转换
+-> normalized batch tensor (1,16)         # batch 结构转换
+```
+
+这样可独立区分三类失败：输入不能 tensor 化、normalizer 计算失败、batch 结构错误。不得把 tensor 化和 normalize 合成一个不可观察步骤。
+
+### 4.4 图像边界
+
+L2-02 必须产出模型就绪单帧图像。L2-03 允许：
+
+- 确认逻辑相机 key。
+- 确认单帧 shape/dtype/数值约定。
+- `np.ndarray`/tensor 到 policy tensor 表示适配。
+- 添加 batch 维、移动 device。
+
+L2-03 禁止：
+
+- 解码 ROS image。
+- BGR/RGB 转换。
+- resize/crop/pad。
+- HWC/CHW 等像素布局的猜测性修正。
+- `/255`、mean/std 或其他未由上游契约声明的数值变换。
+- 缺相机时复制另一相机图像。
+
+## 5. 一级阶段二：ACT 前向推理
+
+### 5.1 输入输出
+
+```text
+输入: ACT batch on policy device
+输出: raw action tensor，预期 (1, chunk_size, 16)，仍是模型尺度
+```
+
+### 5.2 子功能模块
+
+| 顺序 | 子功能 | 3.5 类型 | 职责 |
+|---|---|---|---|
+| 1 | 推理执行上下文 | 计算保护 | 禁止梯度记录，保证本次调用只有推理语义 |
+| 2 | ACT chunk API 调用 | 计算函数 | 调用一次 `policy.predict_action_chunk(batch)` |
+| 3 | 原始结果交接 | 数据边界 | 将 policy 返回对象交给阶段三；不在此 unnormalize、裁剪或选单步 |
+
+该阶段故意保持很薄。它不调用 `select_action`，不捕获后重试，不记录时间，不更新任何 service-owned 状态。
+
+## 6. 一级阶段三：ActionChunk 后处理
+
+### 6.1 输入输出
+
+```text
+输入: raw model-scale tensor，必须是 (1, chunk_size, 16)
+输出: ActionChunk(actions=(chunk_size,16), float32, physical semantics)
+```
+
+### 6.2 六个子功能模块
+
+| 顺序 | 子功能 | 3.5 类型 | 输入 | 输出/失败 | 精确边界 |
+|---|---|---|---|---|---|
+| 1 | Raw 输出结构检查 | 计算函数 | policy return value | 合法 tensor 或异常 | 类型为 Tensor、rank=3、B=1、N=chunk_size、D=16、有限值；不修补 |
+| 2 | Batch 维移除 | 计算函数 | `(1,N,16)` | `(N,16)` | 只移除已验证的 B=1 维 |
+| 3 | Action 反归一化 | 计算函数 | normalized `(N,16)` + action normalizer | physical `(N,16)` | 只调用一次 `unnormalize()`；不 clamp |
+| 4 | CPU float32 array 转换 | 计算函数 | physical tensor | contiguous CPU `np.ndarray float32` | 最终跨 L2 表示固定为 numpy float32 |
+| 5 | 最终输出契约检查 | 计算函数 | physical array | 合法 array 或异常 | 严格 `(chunk_size,16)`、float32、有限值；不做 L2-04 安全范围判断 |
+| 6 | ActionChunk 构造 | 数据构造 | validated physical array | `ActionChunk` | 只写 actions，不写任何运行元数据 |
+
+### 6.3 不允许的“预处理”
+
+阶段三的“后处理”只指模型表示到部署表示的转换，不等于安全处理。明确禁止：
+
+- normalized action clamp 到 `[-1,1]`。
+- 用 `[:chunk_size]` 截断过长输出。
+- 对过短输出 padding/repeat。
+- 重排左右 TCP/gripper 段。
+- quaternion 归一化、gripper clamp、TCP delta 限制。
+
+最后三项安全修正属于 L2-04，不得提前发生。
+
+## 7. 总编排入口
+
+总入口的唯一编排逻辑：
+
+```text
+predict_action_chunk(observation):
+    batch = prepare_observation_batch(observation, ...)
+    raw_chunk = run_act_inference(policy, batch)
+    action_chunk = postprocess_action_chunk(raw_chunk, ...)
+    return action_chunk
+```
+
+调用条件由 L2-06 决定。总入口内部没有 skip/retry/timeout/fallback 分支；任一步失败立即终止，不构造 `ActionChunk`。
+
+## 8. 3.5 层总账
+
+| 微元类型 | L2-03 数量/内容 |
+|---|---|
+| 数据 | 四项稳定依赖、只读派生输入规格、`ActionChunk`；batch/raw tensor 为单次临时变量 |
+| 计算函数 | 阶段一 7 个、阶段二 policy 计算、阶段三 5 个转换/判断 |
+| 内部状态更新函数 | 0；不修改 queue/cache/cursor/metrics |
+| 数据读写函数 | 0；不读文件/ROS/网络，不写机器人硬件 |
+| 编排函数 | 阶段一、阶段三、总入口；阶段二是一级计算边界 |
+
+## 9. 变量所有权与生命周期
+
+| 变量/对象 | 创建方 | 持有方 | 生命周期 | 可否跨 L2 |
+|---|---|---|---|---|
+| DeployConfig | L2-01 | service 只读引用 | 程序生命周期 | 是 |
+| state/action normalizer | L2-01 | service 只读引用 | 程序生命周期 | 是 |
+| loaded policy | L2-01 | service 只读引用；模型内部计算由 policy 自身完成 | 程序生命周期 | 是 |
+| policy input specification | L2-03 从 RAM 元数据派生 | service 只读 | service 生命周期 | 否 |
+| ObservationSnapshot | L2-02 | 当前调用局部引用 | 单次调用 | 是 |
+| state/image tensors | L2-03 阶段一 | 当前调用栈 | 单次调用 | 否 |
+| ACT batch | L2-03 阶段一 | 当前调用栈 | 阶段一至二 | 否 |
+| raw action tensor | policy/L2-03 阶段二 | 当前调用栈 | 阶段二至三 | 否 |
+| physical action array | L2-03 阶段三 | ActionChunk | chunk 生命周期 | 仅经 ActionChunk |
+| ActionChunk | L2-03 | L2-06 接收后只读消费 | 单次推理结果 | 是 |
+
+## 10. 失败传播
+
+```text
+任一叶子计算失败
+-> 当前一级阶段立即失败
+-> 总入口不继续后续阶段
+-> 异常返回 L2-06
+-> L2-06 记录 request/time/error/metrics
+-> L2-06 决定继续旧 chunk、等待或 fallback
+```
+
+L2-03 可以给异常增加“处于哪个阶段”的静态上下文，但不能吞掉原始原因，也不能把异常转换为零 chunk、`None` 或旧结果。
+
+## 11. L2 协作边界
+
+| 协作者 | 向 L2-03 提供/从 L2-03 接收 | L2-03 不得反向承担 |
+|---|---|---|
+| L2-01 | config、两个 normalizer、loaded policy | 文件读取、policy 加载或 test/real 选择 |
+| L2-02 | 模型就绪图像 + 16D state 的 snapshot | 图像预处理、freshness、字段缓存 |
+| L2-06 | 调用和资源组装；接收 ActionChunk/异常 | thread、queue、时间、metrics、active chunk、cursor、fallback |
+| L2-04 | 间接接收 L2-06 选择的单步 action | 安全校验和必要修正 |
+| L2-05 | 无直接数据调用 | ROS message 适配和 publish |
+
+## 12. 推荐代码聚合
+
+```text
+types/action_chunk.py
+  ActionChunk
+
+service/observation_batch.py
+  一级阶段一 + 7 个输入计算微元
+
+service/action_chunk_postprocess.py
+  一级阶段三 + 6 个输出微元
+
+service/act_inference.py
+  ActInferenceService
+  总编排入口
+  一级阶段二
+```
+
+具体字段、函数职责和测试落点分别见 `06_types层设计.md` 与 `09_service层设计.md`。

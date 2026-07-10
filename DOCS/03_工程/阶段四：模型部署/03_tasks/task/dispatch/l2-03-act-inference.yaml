@@ -1,0 +1,137 @@
+# L2-03 ObservationSnapshot 到 ACT ActionChunk 推理闭环 调度索引
+
+> [!info] 归属
+> - 功能组：`l2-03-act-inference`
+> - L2 设计目录：`DOCS/03_工程/阶段四：模型部署/02_implement/l2-03-act-inference_ObservationSnapshot到ACTActionChunk推理闭环/`
+> - L2 功能边界：`agent_context/01_L2功能边界.md`
+> - L2 验收机制：`agent_context/04_L2验收机制.md`
+> - 本文件是调度索引，主 Agent 据此判断并行 / 串行；不随单个 L3 归档移动。
+
+> [!warning] 旧版隔离
+> 旧 layer-based L2 ID dispatch 已隔离到 `03_tasks/归档/`，不得作为当前调度来源。
+
+```yaml
+dispatch_index:
+  group: l2-03-act-inference
+  branch: feat/model_deploy/l2-03-act-inference
+  integration_branch: model_deploy
+  source_l2: DOCS/03_工程/阶段四：模型部署/02_implement/l2-03-act-inference_ObservationSnapshot到ACTActionChunk推理闭环/agent_context/01_L2功能边界.md
+  max_parallel_agents: 3
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-act-inference
+  cards_dir: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-act-inference
+  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-act-inference/l2-03-act-inference_整体验收卡片.md
+  l2_acceptance_report: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-act-inference/L2验收报告.md
+  acceptance_round_limit: 3
+
+  waves:
+    - wave: 1
+      parallel_group: l2-03-act-inference-p1
+      tasks: [deploy_021]
+    - wave: 2
+      parallel_group: l2-03-act-inference-p2
+      depends_on: [deploy_021]
+      tasks: [deploy_022, deploy_023]
+    - wave: 3
+      parallel_group: l2-03-act-inference-p3
+      depends_on: [deploy_021, deploy_022, deploy_023]
+      tasks: [deploy_024]
+    - wave: 4
+      parallel_group: l2-03-act-inference-p4
+      depends_on: [deploy_021, deploy_022, deploy_023, deploy_024]
+      tasks: [deploy_025]
+
+  tasks:
+    deploy_021:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-act-inference/deploy_021_ActionChunk类型定义.md
+      title: ActionChunk 类型定义
+      depends_on: []
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-act-inference/deploy_021_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/types/action_chunk.py
+          - src/model_deploy/act/tests/types/test_action_chunk.py
+        modules:
+          - model_deploy.act.types.action_chunk
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_022:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-act-inference/deploy_022_Observation批次准备.md
+      title: Observation 批次准备（一级阶段一）
+      depends_on: [deploy_021]
+      can_run_parallel_with: [deploy_023]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-act-inference/deploy_022_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S2]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/service/observation_batch.py
+          - src/model_deploy/act/tests/service/test_observation_batch.py
+        modules:
+          - model_deploy.act.service.observation_batch
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_023:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-act-inference/deploy_023_ActionChunk后处理.md
+      title: ActionChunk 后处理（一级阶段三）
+      depends_on: [deploy_021]
+      can_run_parallel_with: [deploy_022]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-act-inference/deploy_023_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S4]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/service/action_chunk_postprocess.py
+          - src/model_deploy/act/tests/service/test_action_chunk_postprocess.py
+        modules:
+          - model_deploy.act.service.action_chunk_postprocess
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_024:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-act-inference/deploy_024_ActInferenceService与编排入口.md
+      title: ActInferenceService 与编排入口
+      depends_on: [deploy_021, deploy_022, deploy_023]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-act-inference/deploy_024_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S2, S3, S4]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/service/act_inference.py
+          - src/model_deploy/act/tests/service/test_act_inference.py
+        modules:
+          - model_deploy.act.service.act_inference
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_025:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-03-act-inference/deploy_025_Gate集成测试与验收脚本.md
+      title: L2-03 Gate 集成测试与验收脚本
+      depends_on: [deploy_021, deploy_022, deploy_023, deploy_024]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-03-act-inference/deploy_025_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S2, S3, S4, S5]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/tests/integration/test_l2_03_gate.py
+          - src/model_deploy/act/scripts/l2_03_verify.sh
+        modules: []
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+```
