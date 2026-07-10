@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L2-03 ObservationSnapshot 到 ACT ActionChunk 推理闭环 · 架构交互可视化</title>
+<style>
+:root{
+  --bg:#f6f7f9;--ink:#1f2937;--muted:#667085;--line:#d0d5dd;--panel:#ffffff;
+  --config:#2563eb;--types:#0f766e;--repo:#7c3aed;--warn:#b42318;--ok:#047857;
+  --ctrl:#344054;--pi:#c2410c;--grey:#98a2b3;--yellow:#b54708;
+  --types-bg:#ecfdf5;--config-bg:#eff6ff;--repo-bg:#f5f3ff;--warn-bg:#fef2f2;--ok-bg:#ecfdf5;--grey-bg:#f2f4f7;--pi-bg:#fff7ed;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.page{max-width:1240px;margin:0 auto;padding:22px}
+header{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start;margin-bottom:14px}
+h1{margin:0 0 6px;font-size:26px;line-height:1.2}
+h2{margin:0 0 6px;font-size:19px}
+h3{margin:14px 0 6px;font-size:15px}
+h4{margin:10px 0 4px;font-size:14px;color:var(--ctrl)}
+p{margin:0 0 8px;line-height:1.65}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.subtitle{color:var(--muted);max-width:820px}
+.note{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:11px 12px;color:var(--muted);font-size:12.5px;line-height:1.55}
+.note b{color:var(--ink)}
+
+input[name=tab]{position:absolute;opacity:0;pointer-events:none}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.tabs label{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:9px 13px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.tabs label .n{display:inline-flex;width:18px;height:18px;border-radius:999px;background:var(--grey-bg);color:var(--muted);font-size:11px;align-items:center;justify-content:center;font-weight:700}
+#v1:checked~.tabs label[for=v1]{background:var(--config);color:#fff;border-color:transparent}
+#v2:checked~.tabs label[for=v2]{background:var(--pi);color:#fff;border-color:transparent}
+#v3:checked~.tabs label[for=v3]{background:var(--types);color:#fff;border-color:transparent}
+#v4:checked~.tabs label[for=v4]{background:var(--ctrl);color:#fff;border-color:transparent}
+#v1:checked~.tabs label[for=v1] .n,#v2:checked~.tabs label[for=v2] .n,#v3:checked~.tabs label[for=v3] .n,#v4:checked~.tabs label[for=v4] .n{background:rgba(255,255,255,.25);color:#fff}
+
+.views>section{display:none}
+#v1:checked~.views .boundary,#v2:checked~.views .pi05map,#v3:checked~.views .blueprint,#v4:checked~.views .acceptance{display:block}
+
+.view{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.lead{color:var(--muted);margin:0 0 12px}
+.figure{border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:10px;margin-bottom:12px;overflow:auto}
+svg{width:100%;min-width:700px;height:auto;display:block}
+.box{fill:#fff;stroke:var(--line);stroke-width:1.4}
+.band{stroke:none}
+.title{font-size:13.5px;font-weight:760;fill:var(--ink)}
+.sub{font-size:11.5px;fill:var(--muted)}
+.edge{fill:none;stroke:#475467;stroke-width:1.8;marker-end:url(#arrow)}
+.queue{stroke:var(--repo);stroke-dasharray:7 5}
+.ctl{stroke:var(--ctrl);stroke-dasharray:4 4}
+.fedge{stroke:var(--warn)}
+.io{stroke:var(--ok)}
+.elabel{font-size:11px;fill:#475467}
+.mono{font-family:ui-monospace,monospace;font-size:11px;fill:var(--repo)}
+
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:8px;background:#fff;padding:12px;transition:box-shadow .15s,transform .15s}
+.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-1px)}
+.card h3{margin-top:0}
+.card.types{border-left-color:var(--types)}
+.card.config{border-left-color:var(--config)}
+.card.repo{border-left-color:var(--repo)}
+.card.ok{border-left-color:var(--ok)}
+.card.warn{border-left-color:var(--warn)}
+.card.pi{border-left-color:var(--pi)}
+.card.grey{border-left-color:var(--grey);background:var(--grey-bg)}
+.card.yellow{border-left-color:var(--yellow);background:#fffbeb}
+.card ul{margin:6px 0 0;padding-left:18px;color:var(--muted);line-height:1.6;font-size:13px}
+.card p{font-size:13px;color:var(--muted);line-height:1.65}
+
+.tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin:2px 3px 2px 0;font-size:11.5px;color:var(--muted);background:#fff}
+.badge{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:600}
+.badge.layer{background:var(--grey-bg);color:var(--ctrl)}
+.badge.direct{background:var(--ok-bg);color:var(--ok)}
+.badge.struct{background:var(--config-bg);color:var(--config)}
+.badge.ref{background:#fff7ed;color:var(--yellow)}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;color:var(--muted);font-size:12px;margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+
+details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;margin-bottom:8px}
+details[open]{background:#fbfcfe}
+summary{cursor:pointer;font-weight:700;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details p,details ul{margin:8px 0 0;padding-left:0;color:var(--muted);line-height:1.7;font-size:13px}
+details ul{padding-left:18px}
+details .body{padding-top:8px}
+
+.callout{border:1px solid #fedf89;background:#fffbeb;color:#7a5c00;border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.6;font-size:13px}
+.callout.warn{border-color:#fecdca;background:var(--warn-bg);color:#912018}
+.callout.pi{border-color:#fed7aa;background:var(--pi-bg);color:#9a3412}
+.callout.ok{border-color:#a7f3d0;background:var(--ok-bg);color:#065f46}
+.src{color:var(--muted);font-size:12px;margin:10px 0 0}
+.src code{color:var(--repo)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:12px}
+tr:nth-child(even) td{background:#fafbfc}
+td .okc{color:var(--ok);font-weight:600}
+td .errc{color:var(--warn);font-weight:600}
+
+.reading-path{font-size:11.5px;color:var(--muted);margin:-6px 0 10px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.reading-path a{color:var(--config);text-decoration:none;font-weight:600}
+.reading-path a:hover{text-decoration:underline}
+
+.step-label{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;background:var(--grey-bg);color:var(--ctrl);border-radius:999px;padding:2px 10px;margin-right:6px;font-weight:600}
+.step-label.code{background:var(--config-bg);color:var(--config)}
+.step-label.doc{background:var(--types-bg);color:var(--types)}
+
+.lpick input{position:absolute;opacity:0;pointer-events:none}
+.lpick .ltabs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 12px}
+@media(max-width:780px){.lpick .ltabs{grid-template-columns:repeat(3,1fr)}}
+.lpick .ltabs label{border:1px solid var(--line);border-radius:8px;padding:12px 8px;text-align:center;font-size:13px;cursor:pointer;background:#fff;color:var(--muted);display:block;transition:all .12s}
+.lpick .ltabs label b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+.lpick .ltabs label.has{border-color:var(--types)}
+.lpick .ltabs label.none{border-color:var(--line);background:var(--grey-bg)}
+.lpick .lpane{display:none;border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:14px}
+.lpick .lpane h4{margin:0 0 6px;color:var(--types)}
+.lpick .lpane.none-pane h4{color:var(--ctrl)}
+#l-types:checked~.lp-types,
+#l-config:checked~.lp-config,
+#l-repo:checked~.lp-repo,
+#l-service:checked~.lp-service,
+#l-runtime:checked~.lp-runtime,
+#l-ui:checked~.lp-ui{display:block}
+#l-types:checked~.ltabs label[for=l-types]{background:var(--types);border-color:var(--types);color:#fff}
+#l-types:checked~.ltabs label[for=l-types] b{color:#fff}
+#l-config:checked~.ltabs label[for=l-config]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-config:checked~.ltabs label[for=l-config] b{color:#fff}
+#l-repo:checked~.ltabs label[for=l-repo]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-repo:checked~.ltabs label[for=l-repo] b{color:#fff}
+#l-service:checked~.ltabs label[for=l-service]{background:var(--config);border-color:var(--config);color:#fff}
+#l-service:checked~.ltabs label[for=l-service] b{color:#fff}
+#l-runtime:checked~.ltabs label[for=l-runtime]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-runtime:checked~.ltabs label[for=l-runtime] b{color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui] b{color:#fff}
+
+.classbox{border:1px solid var(--line);border-left:4px solid var(--config);border-radius:8px;background:#fff;padding:12px;margin:8px 0}
+.classbox.repo{border-left-color:var(--repo)}
+.classbox.svc{border-left-color:var(--config)}
+.classbox.rt{border-left-color:var(--repo)}
+.classbox h5{margin:0 0 4px;font-size:13.5px;color:var(--config);font-family:ui-monospace,monospace}
+.classbox.repo h5{color:var(--repo)}
+.classbox.svc h5{color:var(--config)}
+.classbox.rt h5{color:var(--repo)}
+.classbox .role{font-size:12px;color:var(--muted);margin:0 0 8px}
+.mu-list{display:grid;gap:6px;margin-top:6px}
+.mu{display:grid;grid-template-columns:90px 1fr;gap:10px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:6px}
+.mu .kind{font-weight:700;text-align:right}
+.mu .kind.data{color:var(--types)}
+.mu .kind.calc{color:var(--config)}
+.mu .kind.io{color:var(--repo)}
+.mu .kind.orch{color:var(--yellow)}
+.mu .kind.state{color:#92400e}
+.mu .desc{color:var(--muted);line-height:1.6}
+
+/* 排版铁律#1：每个函数/字段独占一行 */
+.mu .desc .fn{display:block}
+
+/* 数据微元专用表格 */
+.mu .desc .data-table{width:100%;border-collapse:collapse;font-size:11.5px;margin:0}
+.mu .desc .data-table th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:11px;padding:4px 7px;border:1px solid var(--line);text-align:left}
+.mu .desc .data-table td{padding:4px 7px;border:1px solid var(--line);font-size:11.5px;vertical-align:top;color:var(--ink);line-height:1.55}
+.mu .desc .data-table td:first-child{font-family:ui-monospace,monospace;white-space:nowrap;color:var(--ctrl)}
+.mu .desc .data-table td:nth-child(2){font-size:11px;color:var(--muted)}
+.mu .desc .data-table td:nth-child(3){font-family:ui-monospace,monospace;font-size:11px;color:var(--repo)}
+
+/* 非数据微元通用表格 */
+.mutab{width:100%;border-collapse:collapse;font-size:11.5px;margin:2px 0}
+.mutab th,.mutab td{border:1px solid var(--line);padding:3px 6px;text-align:left;vertical-align:top}
+.mutab th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:10.5px;white-space:nowrap}
+.mutab td{color:var(--muted);line-height:1.5;font-size:11px}
+.mutab td:first-child{font-family:ui-monospace,monospace;font-size:11px;white-space:nowrap}
+
+/* trace 追溯表 */
+.tracetab{width:100%;border-collapse:collapse;font-size:12px;margin:4px 0;background:#0f172a;color:#e2e8f0}
+.tracetab th,.tracetab td{border:1px solid #334155;padding:5px 8px;text-align:left;vertical-align:top}
+.tracetab th{background:#1e293b;color:#94a3b8;font-weight:600;font-size:11px;white-space:nowrap}
+.tracetab td{line-height:1.6;font-size:12px;color:#e2e8f0}
+.tracetab td:first-child{font-family:ui-monospace,monospace;color:#64748b;font-weight:700;font-size:12px;white-space:nowrap;text-align:center;width:28px}
+.tracetab td:nth-child(2){font-family:ui-monospace,monospace;font-size:11.5px;color:#e2e8f0}
+.tracetab td:nth-child(3){font-size:11px;color:#94a3b8}
+.tracetab td:nth-child(4){font-size:10.5px;color:#7dd3fc;white-space:nowrap}
+.tracetab .c{color:#64748b}
+.tracetab .v{color:#fde68a}
+.tracetab .k{color:#7dd3fc}
+.tracetab .ok{color:#86efac}
+.tracetab .err{color:#fca5a5}
+.tracetab .grp{background:#1e293b;color:#94a3b8;font-weight:700;font-size:11px}
+.tracetab tr:nth-child(even) td{background:transparent}
+
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:6px 0}
+@media(max-width:980px){.flow{grid-template-columns:1fr}}
+.step{background:#fff;border:1px solid var(--line);border-top:4px solid var(--config);border-radius:8px;padding:16px 14px;position:relative;font-size:13px}
+.step.s1{border-top-color:var(--repo)}
+.step.s2{border-top-color:var(--config)}
+.step.s3{border-top-color:var(--yellow)}
+.step.s4{border-top-color:var(--ok)}
+.step .no{position:absolute;top:-12px;left:12px;background:var(--ctrl);color:#fff;width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.step h4{margin:4px 0 6px;color:var(--ink)}
+.step .what{font-size:12.5px;color:var(--muted);line-height:1.7}
+.arrow-r{display:flex;align-items:center;justify-content:center;color:var(--grey);font-size:20px}
+@media(min-width:981px){.arrow-r{padding:0 2px}}
+
+.trace{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 20px;font-family:ui-monospace,monospace;font-size:13px;line-height:2.4;overflow:auto;letter-spacing:.3px}
+.trace .ln{color:#64748b;font-weight:700;margin-right:6px}
+.trace .key{color:#7dd3fc}
+.trace .val{color:#fde68a}
+.trace .cmt{color:#64748b}
+.trace .ok{color:#86efac}
+.trace .err{color:#fca5a5}
+.trace .gap{display:block;height:8px}
+
+.tree{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 16px;font-family:ui-monospace,monospace;font-size:12.5px;line-height:2.2;color:var(--ink)}
+.tree .dir{color:var(--repo);font-weight:700}
+.tree .file{color:var(--ink)}
+.tree .cmt{color:var(--muted);font-family:system-ui,sans-serif;font-size:11.5px}
+.tree .arrow{color:var(--grey)}
+
+.dict{width:100%}
+.dict td:first-child{width:24%;font-weight:600;color:var(--ctrl);font-family:ui-monospace,monospace;font-size:12.5px;vertical-align:top}
+.dict td{font-size:13px;line-height:1.65}
+
+.faq-q{font-weight:700;color:var(--ctrl);font-size:13.5px;margin:10px 0 4px}
+
+/* 维度4 终端范例块 + 翻译表 */
+.term{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 18px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;margin:8px 0}
+.term .t-hdr{color:#94a3b8;font-weight:700;margin-bottom:10px}
+.term .t-grp{color:#7dd3fc;font-weight:700;margin:12px 0 5px}
+.term .t-grp:first-of-type{margin-top:0}
+.term .t-row{display:grid;grid-template-columns:72px 260px 1fr;gap:6px;line-height:2.0;align-items:baseline}
+.term .t-row .ok{color:#86efac;font-weight:700}
+.term .t-row .fail{color:#fca5a5;font-weight:700}
+.term .t-row .blk{color:#fde68a;font-weight:700}
+.term .t-row .lbl{color:#e2e8f0;overflow:hidden;text-overflow:ellipsis}
+.term .t-row .note{color:#64748b}
+.term .t-loc{color:#94a3b8;line-height:1.75;padding:2px 0 4px 24px;font-size:11.5px;border-left:2px solid #334155;margin-left:6px}
+.term .t-loc span{display:block}
+.term .t-sep{color:#475569;margin-top:8px}
+.term .t-sum{color:#e2e8f0;font-weight:700;margin-top:4px}
+.trtab{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.trtab th,.trtab td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.trtab th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:11.5px}
+.trtab td.lbl{font-family:ui-monospace,monospace;color:var(--repo);font-size:12px;white-space:nowrap}
+.trtab td.lyr{font-weight:600;white-space:nowrap}
+.trtab tr.types td.lyr{color:var(--types)}
+.trtab tr.config td.lyr{color:var(--config)}
+.trtab tr.repo td.lyr{color:var(--repo)}
+.trtab tr.service td.lyr{color:var(--config)}
+.trtab tr.runtime td.lyr{color:var(--repo)}
+.trtab tr.ui td.lyr,.trtab tr.boundary td.lyr{color:var(--yellow)}
+.trtab td.mu{display:block;font-size:11.5px;color:var(--muted);line-height:1.7}
+.trtab td.mu .fpath{color:var(--repo);font-family:ui-monospace,monospace;font-size:11px}
+.trtab td.mu .cls{color:var(--config);font-weight:600}
+.trtab td.mu .kindtag{font-size:10.5px;background:var(--grey-bg);color:var(--ctrl);border-radius:3px;padding:0 5px;margin-left:2px;white-space:nowrap}
+.trtab td.mu .kindtag.data{color:var(--types)}
+.trtab td.mu .kindtag.calc{color:var(--config)}
+.trtab td.mu .kindtag.io{color:var(--repo)}
+.trtab td.mu .kindtag.orch{color:var(--yellow)}
+.trtab td.mu .kindtag.state{color:#92400e}
+.trtab td.pf{display:block;font-size:12px;line-height:1.8}
+.trtab td.pf .fp{color:var(--warn);font-weight:600}
+.trtab td.pf .pp{color:var(--ok);font-weight:600}
+.trtab td.pf .blk{color:#b54708;font-weight:600}
+.trtab td.pf .fn{display:block}
+
+/* 消费→模块→产出 流式布局 */
+.io-flow{display:flex;align-items:flex-start;gap:0;margin:0}
+.io-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.io-col.input{flex:1.2}
+.io-col.output{flex:1}
+.io-arrow{display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--grey);padding:0 10px;flex-shrink:0;align-self:center;margin-bottom:20px}
+.io-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-bottom:2px}
+.io-card{border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:8px;background:#fff;padding:0;transition:box-shadow .15s}
+.io-card.types{border-left-color:var(--types)}
+.io-card.config{border-left-color:var(--config)}
+.io-card.repo{border-left-color:var(--repo)}
+.io-card.ok{border-left-color:var(--ok)}
+.io-card>summary{cursor:pointer;font-weight:700;font-size:13.5px;padding:10px 12px;display:flex;align-items:center;gap:8px;list-style:none;color:var(--ink)}
+.io-card>summary::-webkit-details-marker{display:none}
+.io-card>summary::before{content:"▸";color:var(--muted);font-size:11px;transition:transform .15s;flex-shrink:0}
+.io-card[open]>summary::before{transform:rotate(90deg)}
+.io-card>summary code{font-family:ui-monospace,monospace;font-size:13px;color:var(--repo)}
+.io-src{font-size:10.5px;font-weight:400;color:var(--muted);background:var(--grey-bg);border-radius:999px;padding:1px 7px;margin-left:auto}
+.io-body{padding:0 12px 12px;border-top:1px dashed var(--line);font-size:12.5px}
+.io-body table{width:100%;border-collapse:collapse;font-size:11.5px;margin:8px 0}
+.io-body table th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:10.5px;padding:4px 7px;border:1px solid var(--line);text-align:left}
+.io-body table td{padding:4px 7px;border:1px solid var(--line);font-size:11.5px;vertical-align:top;color:var(--muted);line-height:1.55}
+.io-body table td:first-child{font-family:ui-monospace,monospace;white-space:nowrap;color:var(--ctrl);font-weight:600}
+.io-body table td:nth-child(2){font-family:ui-monospace,monospace;font-size:11px;color:var(--repo)}
+.io-module{border:2.5px solid var(--repo);border-radius:10px;background:#fcfdff;padding:14px;text-align:center}
+.io-module .pipe{text-align:left;margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.nested-detail{border:1px solid var(--line);border-radius:6px;margin:6px 0}
+.nested-detail>summary{cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;background:var(--grey-bg);border-radius:6px;list-style:none;color:var(--ctrl)}
+.nested-detail>summary::-webkit-details-marker{display:none}
+.nested-detail>summary::before{content:"▸ ";color:var(--muted)}
+.nested-detail[open]>summary::before{content:"▾ "}
+.nested-detail .body{padding:8px 10px;font-size:11.5px}
+
+.vfy-sep{margin:18px 0 12px;border-top:2px dashed var(--line)}
+.vfy-section-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);background:var(--grey-bg);border-radius:999px;padding:2px 10px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+
+.cmd-block{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:8px 12px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;display:block;margin:6px 0}
+.cmd-block .c{color:#94a3b8}
+	</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>L2-03 · ObservationSnapshot 到 ACT ActionChunk 推理闭环</h1>
+      <p class="subtitle">纯同步推理服务：被 L2-06 按需调用，输入 <code>ObservationSnapshot</code>，同步返回只含 <code>actions</code> 的 <code>ActionChunk</code>。不管理线程、不管理队列、不记录 metrics、不持有运行元数据。L2-06 负责调度、队列、chunk 生命周期和运行记录。第一版不做 action 平滑。<br><code>l2_id: l2-03-act-inference</code></p>
+    </div>
+    <div class="note">
+      <b>本页只是人类快速浏览入口，不作为 L3 生成依据。</b><br>
+      权威细节见 <code>agent_context/00_INDEX.md</code> 及其路由的 Markdown。HTML 与 MD 冲突时，以 MD 为准。
+    </div>
+  </header>
+
+  <input id="v1" name="tab" type="radio" checked>
+  <input id="v2" name="tab" type="radio">
+  <input id="v3" name="tab" type="radio">
+  <input id="v4" name="tab" type="radio">
+
+  <nav class="tabs" aria-label="维度视图">
+    <label for="v1"><span class="n">1</span>功能边界</label>
+    <label for="v2"><span class="n">2</span>Pi0.5 如何运作</label>
+    <label for="v3"><span class="n">3</span>开发蓝图</label>
+    <label for="v4"><span class="n">4</span>人类验收标准</label>
+  </nav>
+
+  <div class="views">
+
+    <!-- ============ 维度 1 · 功能边界 ============ -->
+    <section class="view boundary" data-agent-source="agent_context/01_L2功能边界.md#1-一句话职责">
+      <h2>维度 1 · 功能边界</h2>
+      <div class="reading-path">📖 阅读路径：下图展示 L2-03 消费什么、产出什么 → 详细内部拆解见<a href="#" onclick="document.getElementById('v3').click()">维度3 · 开发蓝图</a></div>
+      <p class="lead">L2-03 是 L2-06 的纯同步推理服务。被 L2-06 按需调用，不管理线程、队列、metrics。一张图讲清边界。</p>
+
+      <h3>图① 消费 → 功能模块 → 产出</h3>
+      <div class="figure">
+        <div class="io-flow">
+
+          <!-- ======== 左列：消费 ======== -->
+          <div class="io-col input">
+            <div class="io-label">消费（上游提供）</div>
+
+            <!-- DeployConfig -->
+            <details class="io-card config">
+              <summary><code>DeployConfig</code><span class="io-src">L2-01 注入</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-01 创建并校验后，由 L2-06 在组装阶段注入 L2-03。L2-03 只读引用，不读文件、不修改。</p>
+                <p style="font-size:12px;color:var(--ctrl);font-weight:700;margin:10px 0 4px">L2-03 实际消费的配置语义（5 项）：</p>
+                <table>
+                  <tr><th>配置语义</th><th>来源</th><th>L2-03 用途</th></tr>
+                  <tr><td>runtime.state_dim</td><td>DeployConfig</td><td>确认 state 维度为 16，与 normalizer 契约一致</td></tr>
+                  <tr><td>runtime.action_dim</td><td>DeployConfig</td><td>确认输出最后一维为 16，不一致则失败</td></tr>
+                  <tr><td>runtime.chunk_size</td><td>DeployConfig</td><td>确认 raw/final 的行数严格相等</td></tr>
+                  <tr><td>runtime.device</td><td>DeployConfig</td><td>batch 与已加载 policy device 对齐</td></tr>
+                  <tr><td>policy input features</td><td>已加载 policy RAM 元数据</td><td>获取必需图像 full key、shape 与顺序</td></tr>
+                </table>
+                <details class="nested-detail">
+                  <summary>DeployConfig 中不由 L2-03 消费的字段（归其他 L2）</summary>
+                  <div class="body">
+                    <table>
+                      <tr><th>字段类别</th><th>所有者</th><th>原因</th></tr>
+                      <tr><td>bundle 路径 / checkpoint / manifest</td><td>L2-01</td><td>L2-03 不读资源、不加载 policy</td></tr>
+                      <tr><td>mode（real/test 选择）</td><td>L2-01 / L2-06</td><td>L2-03 只接受已注入 policy</td></tr>
+                      <tr><td>inference_hz / control_hz / execute_horizon / prefetch</td><td>L2-06</td><td>调度频率和 chunk 消费不属于同步服务</td></tr>
+                      <tr><td>compile_model / compile_mode</td><td>L2-01</td><td>policy 在注入前已完成启动配置</td></tr>
+                      <tr><td>queue 容量 / fallback / warmup / metrics 周期</td><td>L2-06</td><td>属于 runtime 状态机</td></tr>
+                      <tr><td>safety TCP/gripper 限制</td><td>L2-04</td><td>L2-03 不做 safety 或 clamp</td></tr>
+                    </table>
+                  </div>
+                </details>
+              </div>
+            </details>
+
+            <!-- ActionStateNormalizer -->
+            <details class="io-card config">
+              <summary><code>ActionStateNormalizer</code> × 2<span class="io-src">L2-01 注入</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-01 加载并校验后注入两个独立实例：<code>state_normalizer</code>（阶段一用）和 <code>action_normalizer</code>（阶段三用）。L2-03 不读 normalizer 文件、不构造实例、不假定内部公式。</p>
+                <p style="font-size:12px;color:var(--ctrl);font-weight:700;margin:10px 0 4px">数据字段（每个实例）：</p>
+                <table>
+                  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+                  <tr><td>min_vals</td><td>np.ndarray (16,) float32</td><td>各维度训练集最小值</td></tr>
+                  <tr><td>max_vals</td><td>np.ndarray (16,) float32</td><td>各维度训练集最大值</td></tr>
+                  <tr><td>vector_dim</td><td>int (=16)</td><td>向量维度（L2-01 已校验）</td></tr>
+                </table>
+                <p style="font-size:12px;color:var(--ctrl);font-weight:700;margin:10px 0 4px">L2-03 调用的方法：</p>
+                <table>
+                  <tr><th>方法</th><th>调用阶段</th><th>调用次数</th></tr>
+                  <tr><td>state_normalizer.normalize(data)</td><td>阶段一（推理前）</td><td>恰好一次</td></tr>
+                  <tr><td>action_normalizer.unnormalize(data)</td><td>阶段三（推理后）</td><td>恰好一次</td></tr>
+                </table>
+                <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">两个 normalizer 不得交换或合并。L2-03 不调用 <code>action_normalizer.normalize()</code> 或 <code>state_normalizer.unnormalize()</code>。</p>
+              </div>
+            </details>
+
+            <!-- ObservationSnapshot -->
+            <details class="io-card types">
+              <summary><code>ObservationSnapshot</code><span class="io-src">L2-02</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">定义于 <code>types/observation.py</code>（L2-02）。冻结 dataclass——创建后只读，跨线程安全。由 L2-02 的 ObservationCollector 组装；L2-06 从 buffer 取出后传入本 L2-03。</p>
+                <p style="font-size:12px;color:var(--ctrl);font-weight:700;margin:10px 0 4px">L2-03 直接消费的字段：</p>
+                <table>
+                  <tr><th>字段</th><th>类型</th><th>L2-03 用途</th></tr>
+                  <tr><td>images</td><td>Mapping[str, object]</td><td>key=逻辑相机名，value=模型就绪图像。按 policy image feature key 精确绑定，放入 batch 的 <code>observation.images.{name}</code></td></tr>
+                  <tr><td>encoded_state</td><td>np.ndarray (16,) float32</td><td>已编码的 16D 物理状态向量。先做 tensor 表达转换，再用 state_normalizer.normalize() 归一化后放入 batch 的 <code>observation.state</code></td></tr>
+                </table>
+                <details class="nested-detail">
+                  <summary>encoded_state 的 16D 段序</summary>
+                  <div class="body">
+                    <table>
+                      <tr><th>段</th><th>物理语义</th><th>坐标系</th></tr>
+                      <tr><td>[0:3)</td><td>左 TCP position (m)</td><td>left_arm_base</td></tr>
+                      <tr><td>[3:7)</td><td>左 TCP quaternion (x,y,z,w)</td><td>left_arm_base</td></tr>
+                      <tr><td>[7:10)</td><td>右 TCP position (m)</td><td>right_arm_base</td></tr>
+                      <tr><td>[10:14)</td><td>右 TCP quaternion (x,y,z,w)</td><td>right_arm_base</td></tr>
+                      <tr><td>[14]</td><td>左夹爪开合值</td><td>ACT [0,1]</td></tr>
+                      <tr><td>[15]</td><td>右夹爪开合值</td><td>ACT [0,1]</td></tr>
+                    </table>
+                    <p style="font-size:11px;color:var(--muted);margin:6px 0 0">L2-03 <b>只消费 encoded_state</b>（已编码的扁平向量），不重新编码，不直接使用 ObservationState 子字段。</p>
+                  </div>
+                </details>
+                <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">图像前置契约：snapshot 中的图像必须已由 L2-02 完成模型像素级预处理（相机、颜色、尺寸、通道布局、dtype）。L2-03 不 resize、不换色、不缩放、不做视觉归一化。</p>
+              </div>
+            </details>
+          </div>
+
+          <!-- ======== 箭头 ======== -->
+          <div class="io-arrow">→</div>
+
+          <!-- ======== 中列：功能模块 ======== -->
+          <div class="io-col" style="flex:1.1">
+            <div class="io-label">功能模块</div>
+            <div class="io-module" style="padding:14px;text-align:center">
+              <p style="font-size:14px;font-weight:700;color:var(--repo);margin:0 0 4px;font-family:ui-monospace,monospace">predict_action_chunk(observation)</p>
+              <p style="font-size:12px;color:var(--muted);margin:0 0 6px">→ ActionChunk</p>
+              <p style="font-size:11.5px;color:var(--muted);margin:0;line-height:1.5">纯同步推理服务，由 <code>ActInferenceService</code>（class）持有<br>被 L2-06 按需调用，不管理线程/队列/metrics</p>
+              <p style="font-size:11.5px;color:var(--muted);margin:4px 0 0;line-height:1.5">内部三阶段：prepare_observation_batch →<br>run_act_inference → postprocess_action_chunk</p>
+              <p style="font-size:11px;color:var(--config);margin:8px 0 0">详细拆解见 <a href="#" onclick="document.getElementById('v3').click()" style="color:var(--config);font-weight:600">维度3 · 开发蓝图</a></p>
+            </div>
+          </div>
+
+          <!-- ======== 箭头 ======== -->
+          <div class="io-arrow">→</div>
+
+          <!-- ======== 右列：产出 ======== -->
+          <div class="io-col output">
+            <div class="io-label">产出（交付下游）</div>
+
+            <details class="io-card ok">
+              <summary><code>ActionChunk</code><span class="io-src">→ L2-06</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">Frozen dataclass，构造后只读。L2-03 的 <code>predict_action_chunk</code> 创建并返回，L2-06 消费。只表示"一次 ACT 前向业务计算已完成后的 physical actions"，不是 runtime result record。</p>
+                <table>
+                  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+                  <tr><td>actions</td><td>np.ndarray (chunk_size, 16) float32</td><td>chunk_size 步连续动作，已 unnormalize 到物理尺度，所有元素有限</td></tr>
+                </table>
+                <p style="font-size:11.5px;color:var(--warn);font-weight:700;margin:10px 0 4px">明确不含的字段（归 L2-06）：</p>
+                <table>
+                  <tr><th>禁止字段</th><th>归属</th></tr>
+                  <tr><td>obs_time / ready_time / action_dt</td><td>L2-06 运行记录</td></tr>
+                  <tr><td>request_id / cursor</td><td>L2-06 请求追踪</td></tr>
+                  <tr><td>latency / error / metrics</td><td>L2-06 观测</td></tr>
+                  <tr><td>aligned_index(now)</td><td>L2-06 chunk 消费逻辑</td></tr>
+                </table>
+                <p style="font-size:11px;color:var(--muted);margin:8px 0 0">L2-06 接收后可创建自己的 result record 包装运行元数据，但不得反向向 <code>ActionChunk</code> 添加字段。L2-06 选择单步 raw action 后交给 L2-04；L2-04 不直接消费整个 chunk。</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </div>
+
+      <p class="src">权威来源：<code>agent_context/01_L2功能边界.md</code>（§1 职责 / §2 输入 / §3 输出 / §4 宏观流程 / §5 负责 / §6 不负责 / §8 失败边界 / §9 层落点 / §10 上下游）、<code>agent_context/06_types层设计.md</code>（§2~§5 ActionChunk 字段）、<code>agent_context/07_config层设计.md</code>（§2 消费语义 / §3 不消费语义）</p>
+    </section>
+
+    <!-- ============ 维度 2 · Pi0.5 如何运作 ============ -->
+    <section class="view pi05map" data-agent-source="agent_context/02_pi05源码3.5层微元拆解.md#1-实际检查的源码">
+      <h2>维度 2 · Pi0.5 这部分是如何运作的</h2>
+      <div class="reading-path">📖 阅读路径：理解源码结构（后台 worker + policy runtime + queue）可复用，但模型框架（Pi0.5 VLA → ACT）和维度（14→16）必须重写 → 开发蓝图见<a href="#" onclick="document.getElementById('v3').click()">维度3</a></div>
+      <p class="lead">这一维度只回答一个问题：<b>Pi0.5 部署代码中，负责"把观测变成动作块"的那部分代码，到底是怎么一步步跑起来的。</b>不涉及 ACT 怎么改。下面按"先懂概念 → 看整体 → 跟一次推理 → 看每个零件"的顺序讲。</p>
+
+      <div class="callout pi">这一节用<b>白话</b>讲。每个专业术语第一次出现时都会解释，点开"术语词典"可以随时查。</div>
+
+      <h3>① 这部分代码整体在干什么（一句话）</h3>
+      <div class="card yellow">
+        <p style="color:#7a5c00;font-size:14px;line-height:1.7">像一个<b>"后台厨师"</b>——前面（L2-06）下单说"这盘观测数据给我做成一批动作"，厨师就在后厨默默把食材（snapshot）处理成模型能吃的样子（batch），喂给模型（policy），等模型吐出一串动作（action chunk），再装盘递回前面（result queue）。<b>全程不卡住前台</b>，因为厨师在独立的后厨（后台线程）干活。</p>
+        <p style="color:#7a5c00;font-size:13px;margin-top:6px">厨师循环很简单：看订单队列有没有新单 → 有就拿去做 → 做好放结果队列 → 继续看。和前台（ControlLoop）通过两个队列沟通，互不阻塞。</p>
+      </div>
+
+      <details open>
+        <summary>📖 术语词典（点开随时查）</summary>
+        <div class="body">
+        <table class="dict">
+          <tr><td>ObservationSnapshot</td><td><b>对应认知框架</b>第 3.5 层"数据"。"一盘刚拍好的食材"——某一瞬间所有传感器数据（图像 + 状态）冻结成一个完整对象。由 L2-02 准备好，本 L2 只负责拿来做菜。</td></tr>
+          <tr><td>batch</td><td><b>对应认知框架</b>第 3.5 层"计算函数"的产物。"模型能吃的标准化摆盘"。模型不直接吃原始 snapshot，要先把 state 归一化到 [−1,1]、图像整理成指定格式。ACT 是纯视觉-动作模型，不需要注入语言指令（Pi0.5 VLA 需要 task 标签）。</td></tr>
+          <tr><td>policy（策略模型）</td><td>"厨师的大脑"——一个训练好的神经网络。给它一盘标准化观测，它预测接下来该怎么动。本 L2 不训练它，只调用它。</td></tr>
+          <tr><td>predict_action_chunk</td><td><b>对应认知框架</b>第 3.5 层"编排函数"。"厨师做一次菜"——调模型一次，产出一串动作（不是单个）。比如一次产出 chunk_size 步连续动作。</td></tr>
+          <tr><td>normalize / unnormalize</td><td><b>对应认知框架</b>第 3.5 层"计算函数"（RAM 内）。模型只认 [−1,1]。<b>normalize</b> 把物理值压到 [−1,1]（推理前）；<b>unnormalize</b> 把模型输出的 [−1,1] 还原回物理尺度（推理后）。两个方向都要做。</td></tr>
+          <tr><td>InferenceWorker（推理工人）</td><td><b>对应认知框架</b>第 3.5 层"编排函数"+"内部状态更新函数"。一个后台不停转的线程。在 ACT 设计中完全归 L2-06；L2-03 只是被同步调用的纯函数。</td></tr>
+          <tr><td>latest-only queue</td><td>一个特殊队列：新订单来了，旧的直接扔掉。推理要低延迟，过时观测做了也没意义。归 L2-06。</td></tr>
+          <tr><td>fake-policy（假模型）</td><td>一个"假装是模型"的替身——不加载真实权重，直接返回 shape 正确的假动作块。在 ACT 设计中，fake-policy 的选择和构造归 L2-01；L2-03 只接收已注入的 policy（无论真假）。</td></tr>
+          <tr><td>async 解耦</td><td>"前台点完单就能去干别的，不用等厨师做完"。control tick 每 1/30 秒跑一次，不能卡在等模型（可能几十毫秒）。所以推理放后台线程，前台只管下单和取菜。在 ACT 中归 L2-06。</td></tr>
+        </table>
+        </div>
+      </details>
+
+      <h3>② 整体流程：四个步骤（后台推理轴）</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:6px">Pi0.5 这部分代码在后台线程里循环执行。任一次推理出错，记录后继续下一个，不崩溃。</p>
+      <div class="flow">
+        <div class="step s1">
+          <span class="no">1</span>
+          <h4>取订单</h4>
+          <div class="what">从 <code>inference_request_queue</code> 取最新 request（取前先按 <code>inference_hz</code> 限速）。无单就等 1ms 再看。<b>latest-only</b>：旧订单被新订单覆盖。</div>
+        </div>
+        <div class="step s2">
+          <span class="no">2</span>
+          <h4>备料+做菜</h4>
+          <div class="what"><code>predict_action_chunk</code>：snapshot→batch（normalize state）→preprocess→GPU 推理→unnormalize→校验 shape→截断。</div>
+        </div>
+        <div class="step s3">
+          <span class="no">3</span>
+          <h4>装盘递回</h4>
+          <div class="what">构造 <code>ActionChunk</code>（含时间戳 + request_id），写入 <code>chunk_result_queue</code>。</div>
+        </div>
+        <div class="step s4">
+          <span class="no">4</span>
+          <h4>记账</h4>
+          <div class="what">记录 metrics（延迟/计数）；失败则记 <code>inference_error</code>，不崩溃。</div>
+        </div>
+      </div>
+
+      <h3>③ 跟一次推理走完全流程</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">假设 L2-06 在 tick 时决定要新 chunk，创建 <code>InferenceRequest</code> 丢进队列。跟着它走一遍：</p>
+      <div class="trace">
+<span class="cmt"># L2-06 在 tick 时创建 request（L2-06 职责，不是本 L2）</span>
+<span class="gap"></span>
+<span class="ln">①</span> <span class="cmt"># InferenceWorker 后台线程从队列取最新 request（归 L2-06）</span>
+   request = request_queue.<span class="key">get_latest_or_none</span>()       <span class="cmt"># latest-only</span>
+<span class="gap"></span>
+<span class="ln">②</span> <span class="cmt"># 按 inference_hz 限速（归 L2-06）</span>
+   remaining = period_s - (now - last_start)
+<span class="gap"></span>
+<span class="ln">③</span> <span class="cmt"># 调核心推理（编排函数 → 三个一级阶段）</span>
+   actions = policy_runtime.<span class="key">predict_action_chunk</span>(request.observation)
+   <span class="cmt">#  3a. build_batch: state normalizer.normalize(encoded_state) → batch  [计算函数]</span>
+   <span class="cmt">#  3b. preprocessor(batch)  [计算函数]</span>
+   <span class="cmt">#  3c. batch move to cuda  [计算函数]</span>
+   <span class="cmt">#  3d. policy.predict(batch) → norm_chunk [−1,1]  [GPU 推理]</span>
+   <span class="cmt">#  3e. cpu() + clamp(−1,1)  [注意：ACT 第一版不去 clamp]</span>
+   <span class="cmt">#  3f. action_normalizer.unnormalize → 物理尺度  [计算函数]</span>
+   <span class="cmt">#  3g. 校验 shape[1]==16, 截断 chunk_size  [注意：ACT 不截断]</span>
+<span class="gap"></span>
+<span class="ln">④</span> <span class="cmt"># 构造 ActionChunk 并写回（归 L2-06）</span>
+   chunk = <span class="ok">ActionChunk(actions, obs_time, infer_start, ready_time, action_dt, request_id)</span>
+   shared_buffer.<span class="key">record_inference_latency</span>(ready_time - infer_start)
+   result_queue.<span class="key">put_latest</span>(chunk)
+<span class="gap"></span>
+<span class="cmt"># ── 如果第③步模型抛异常会怎样？</span>
+<span class="ln">③'</span> <span class="cmt"># _run_request 用 try/except 捕获（归 L2-06）</span>
+   <span class="err">except Exception: shared_buffer.record_inference_error(message)</span>
+   <span class="cmt"># L2-06 下个 tick 发现长期无新 chunk / error 增长 → 进入 fallback</span>
+      </div>
+
+      <h3>④ 模型包（bundle）里有什么</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">推理链路启动时要读<b>模型包目录</b>（训练完成后导出，部署只读不改）。在 ACT 设计中，bundle 读取、normalizer 加载和 policy 构建全部归 L2-01。</p>
+      <div class="tree">
+<span class="dir">act_pour_water_v1/</span>  <span class="cmt">← bundle_dir（L2-01 校验和管理）</span>
+<span class="arrow">├──</span> <span class="file">manifest.json</span>            <span class="cmt">← 清单：维度(16)、模型信息、相机名</span>
+<span class="arrow">├──</span> <span class="file">normalizers.json</span>         <span class="cmt">← state/action 的 min/max（L2-01 加载并校验）</span>
+<span class="arrow">├──</span> <span class="file">experiment_config.yaml</span>   <span class="cmt">← ACT 训练配置（L2-01 只读交叉校验）</span>
+<span class="arrow">└──</span> <span class="dir">policy/</span>                 <span class="cmt">← ACT 策略权重（L2-01 加载到 GPU 后注入 L2-03）</span>
+</div>
+      <p style="font-size:12.5px;color:var(--muted);margin:8px 0 0">L2-03 不接收 bundle 路径，不读取任何 bundle 文件。它只接收 L2-01 已加载并注入的 policy + normalizer 引用。</p>
+
+      <h3>⑤ Pi0.5 推理链路的两个核心入口（ACT 归属对比）</h3>
+      <div class="grid g2">
+        <div class="card pi"><h4>启动期：load_policy_runtime</h4><p>Pi0.5：一次性加载 bundle→模型构建（VLA+LoRA）→adapter→preprocessor→normalizer→构造 <code>Pi05PolicyRuntime</code>。<br><b>ACT 归属：全部归 L2-01。</b>L2-03 只接收注入的 policy + normalizer 引用。</p></div>
+        <div class="card pi"><h4>稳态：InferenceWorker.run</h4><p>Pi0.5：后台 daemon 线程循环：取 request→限速→predict→构造 chunk→record→put。try/except 捕获失败。<br><b>ACT 归属：全部归 L2-06。</b>L2-03 只是被同步调用的纯函数，不拥有线程/队列/metrics。</p></div>
+      </div>
+
+      <h3>⑥ 回答四个核心问题</h3>
+      <div class="grid g2">
+        <div class="card repo"><h4>❶ 谁持有状态？</h4><ul>
+          <li><code>ActInferenceService</code>（L2-03）：config 引用、两个 normalizer 引用、policy 引用、只读输入规格——启动期注入后稳定只读。</li>
+          <li><code>InferenceWorker</code> / queue / metrics：全部归 L2-06。</li>
+          <li>L2-03 内部不持有 batch/raw tensor/chunk 缓存或跨调用状态。</li></ul></div>
+        <div class="card repo"><h4>❷ 谁跨越外部边界？</h4><ul>
+          <li>L2-01：启动期读 bundle + 加载权重到 GPU。</li>
+          <li>L2-03：<code>policy.predict_action_chunk</code> 调 GPU（跨设备边界，最耗时）。</li>
+          <li>L2-03 <b>不订阅/不发布</b> topic，不读文件，不写硬件。</li></ul></div>
+        <div class="card config"><h4>❸ 谁只负责加工 RAM 对象？</h4><ul>
+          <li><code>prepare_observation_batch</code>（snapshot→batch，7 个计算微元）</li>
+          <li><code>run_act_inference</code>（policy 前向）</li>
+          <li><code>postprocess_action_chunk</code>（raw→ActionChunk，6 个微元）</li></ul></div>
+        <div class="card yellow"><h4>❹ 谁负责 runtime 时序？</h4><p>全部归 L2-06：后台循环、inference_hz 限速、stop 控制、失败策略、metrics。L2-03 只是被同步调用的纯函数，不决定被调用时机。</p></div>
+      </div>
+
+      <details>
+        <summary>🔬 五种功能微元分类（对应你的认知框架第 3.5 层）—— 进阶，可先跳过</summary>
+        <div class="body">
+          <div class="grid g2">
+            <div class="card types"><h4>① 数据</h4><ul>
+              <li>四项稳定依赖（config/state_norm/action_norm/policy 引用）</li>
+              <li><code>ActionChunk</code>（只含 actions 的 frozen dataclass）</li>
+              <li>batch/raw tensor 为单次临时变量</li></ul></div>
+            <div class="card config"><h4>② 计算函数（RAM 内）</h4><ul>
+              <li>阶段一 7 个输入计算微元</li>
+              <li>阶段二 policy chunk 前向</li>
+              <li>阶段三 5 个转换/判断 + ActionChunk 构造</li></ul></div>
+            <div class="card grey"><h4>③ 数据读写函数（跨边界）</h4><ul>
+              <li>L2-03 自身为 0——不读文件/ROS/网络，不写机器人硬件</li>
+              <li>policy GPU 前向是业务计算，不产生持久化外部状态</li></ul></div>
+            <div class="card yellow"><h4>④ 编排函数</h4><ul>
+              <li>阶段一 prepare_observation_batch</li>
+              <li>阶段三 postprocess_action_chunk</li>
+              <li>总入口 predict_action_chunk</li></ul></div>
+            <div class="card grey"><h4>⑤ 内部状态更新函数</h4><ul>
+              <li>L2-03 自身为 0——不修改 queue/cache/cursor/metrics</li>
+              <li>InferenceWorker 的内部状态更新全部归 L2-06</li></ul></div>
+          </div>
+        </div>
+      </details>
+
+      <div class="callout pi"><b>维度差异（决定不能照搬）：</b>Pi0.5 是 <b>26D state / 14D action</b>（关节角），用 <b>VLA（PaliGemma+Gemma expert+LoRA）</b>。ACT 第一版是 <b>16D / 16D</b>（TCP pose + gripper width），用 <b>LeRobot ACT</b>。Pi0.5 的 bundle loader、InferenceWorker、queue、metrics、normalized action clamp、chunk crop 和 ActionChunk 运行元数据<b>全部不继承</b>——它们分别属于 L2-01、L2-06 或当前 L2-03 边界明确禁止的行为。</div>
+      <p class="src">权威来源：<code>agent_context/02_pi05源码3.5层微元拆解.md</code>（§1 源码范围 / §2 纯推理链 / §3 边界归属 / §4 LeRobot ACT API 差异 / §5 微元映射 / §6 3.5 层判断 / §8 禁止继承）</p>
+    </section>
+
+    <!-- ============ 维度 3 · 开发蓝图 ============ -->
+    <section class="view blueprint" data-agent-source="agent_context/03_ACT微元设计与协作.md#1-总体结构, agent_context/09_service层设计.md#1-目标源码树">
+      <h2>维度 3 · 开发建议与蓝图</h2>
+      <div class="reading-path">📖 阅读路径：了解代码如何组织（service 层一个 class + 三个文件）→ 代码写完后用<a href="#" onclick="document.getElementById('v4').click()">维度4</a>检查产物清单</div>
+      <p class="lead">L2-03 是纯同步推理服务。按「一个 service class + 三个一级阶段函数」组织。types 层新增 <code>ActionChunk</code>（只含 actions）；config / repo / runtime / ui 层不新增产物——四项稳定依赖全部由 L2-01 注入。第一版不做 action 平滑。</p>
+
+      <h3>图① L2-06 同步调用 L2-03 的运行时协作链</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">L2-06 每 tick 同步调用 <code>service.predict_action_chunk(observation)</code>，内部走 prepare_observation_batch → run_act_inference → postprocess_action_chunk → 返回 ActionChunk。成功则 L2-06 自行管理 chunk 生命周期；失败则异常向上传播给 L2-06。<b>虚线</b>=编译时注入，<b>实线</b>=运行时同步调用。</p>
+      <div class="figure">
+        <svg viewBox="0 0 960 540" role="img" aria-label="L2-06 同步调用 L2-03 service 运行时协作链">
+          <defs><marker id="arrow3" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker>
+            <marker id="arrowf2" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="var(--warn)"></path></marker></defs>
+          <!-- L2-01 编译时注入 banner -->
+          <rect class="box" x="30" y="12" width="900" height="34" rx="8" fill="var(--ok-bg)" stroke="var(--ok)" stroke-dasharray="5 4"></rect>
+          <text class="title" x="480" y="34" text-anchor="middle" fill="var(--ctrl)">L2-01 提供（编译时注入，虚线 ↓，不参与运行时调用）：DeployConfig + state/action normalizer + loaded policy</text>
+          <path class="edge" d="M303 46 L303 58" stroke="var(--ok)" stroke-dasharray="4 3"></path>
+          <path class="edge" d="M534 46 L534 58" stroke="var(--ok)" stroke-dasharray="4 3"></path>
+          <!-- 泳道表头 -->
+          <rect class="box" x="36" y="58" width="200" height="28" rx="6"></rect><rect class="band" x="36" y="58" width="5" height="28" fill="var(--ctrl)"></rect>
+          <text class="title" x="136" y="77" text-anchor="middle">L2-06（驱动 + 消费）</text>
+          <rect class="box" x="250" y="58" width="674" height="28" rx="6"></rect><rect class="band" x="250" y="58" width="5" height="28" fill="var(--config)"></rect>
+          <text class="title" x="587" y="77" text-anchor="middle">L2-03 service · ActInferenceService</text>
+          <!-- 泳道分隔虚线 -->
+          <line x1="242" y1="90" x2="242" y2="500" stroke="var(--line)" stroke-dasharray="3 4"></line>
+          <!-- ① L2-06 tick → 获取 snapshot 并调用 service -->
+          <rect class="box" x="46" y="106" width="180" height="72" rx="8"></rect>
+          <text class="title" x="56" y="126">① L2-06 tick() 调用</text>
+          <text class="sub" x="56" y="144">读 ObservationBuffer → obs</text>
+          <text class="sub" x="56" y="160">调用 service.predict_action_chunk(obs)</text>
+          <text class="sub" x="56" y="176" fill="var(--ctrl)">（编排函数，L2-06）</text>
+          <!-- Arrow ①→② -->
+          <path class="edge" d="M226 142 L250 142"></path>
+          <circle cx="238" cy="142" r="8" fill="var(--ctrl)"></circle><text x="238" y="146" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">A</text>
+          <!-- ② 总入口 -->
+          <rect class="box" x="262" y="106" width="380" height="40" rx="8"></rect>
+          <text class="title" x="272" y="126">② predict_action_chunk(obs) — 总编排入口</text>
+          <text class="sub" x="272" y="144" fill="var(--config)">（编排函数，service 层；串联三段，不暴露 batch/raw tensor 给 L2-06）</text>
+          <!-- Arrow ②→③ -->
+          <path class="edge" d="M452 146 L452 162"></path>
+          <circle cx="452" cy="154" r="8" fill="var(--config)"></circle><text x="452" y="158" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">B</text>
+          <!-- ③ 阶段一 -->
+          <rect class="box" x="262" y="162" width="420" height="56" rx="8"></rect>
+          <text class="title" x="272" y="182">③ prepare_observation_batch — 7 个输入计算微元</text>
+          <text class="sub" x="272" y="200">兼容性检查 → tensor 化 → normalize → 图像绑定 → batch 维 → 组装 → device</text>
+          <text class="sub" x="272" y="216" fill="var(--config)">（编排函数，service 层；state tensor 化与 normalize 解耦为两步）</text>
+          <!-- Arrow ③→④ -->
+          <path class="edge" d="M472 218 L472 236"></path>
+          <circle cx="472" cy="227" r="8" fill="var(--config)"></circle><text x="472" y="231" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">C</text>
+          <!-- ④ 阶段二 -->
+          <rect class="box" x="262" y="236" width="380" height="40" rx="8"></rect>
+          <text class="title" x="272" y="256">④ run_act_inference — policy.predict_action_chunk(batch)</text>
+          <text class="sub" x="272" y="274" fill="var(--config)">（计算函数，service 层；禁止 select_action；整条链路最耗时）</text>
+          <!-- Arrow ④→⑤ -->
+          <path class="edge" d="M452 276 L452 294"></path>
+          <circle cx="452" cy="285" r="8" fill="var(--config)"></circle><text x="452" y="289" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">D</text>
+          <!-- ⑤ 阶段三 -->
+          <rect class="box" x="262" y="294" width="420" height="56" rx="8"></rect>
+          <text class="title" x="272" y="314">⑤ postprocess_action_chunk — 6 个输出微元</text>
+          <text class="sub" x="272" y="332">raw 检查 → unbatch → unnormalize → CPU float32 → 契约检查 → 构造 ActionChunk</text>
+          <text class="sub" x="272" y="348" fill="var(--config)">（编排函数，service 层；不 clamp/crop/pad/reorder）</text>
+          <!-- Arrow ⑤→⑥ (return) -->
+          <path class="edge" d="M262 322 L226 322" stroke="var(--ok)"></path>
+          <circle cx="244" cy="322" r="8" fill="var(--ok)"></circle><text x="244" y="326" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">E</text>
+          <!-- ⑥ L2-06 消费 -->
+          <rect class="box" x="46" y="298" width="180" height="56" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect>
+          <text class="title" x="56" y="318" fill="var(--ok)">⑥ L2-06 消费 ActionChunk</text>
+          <text class="sub" x="56" y="336">管理 chunk / cursor / queue</text>
+          <text class="sub" x="56" y="352" fill="var(--ctrl)">（编排函数，L2-06）</text>
+          <!-- ✗ 失败分支 -->
+          <rect class="box" x="500" y="370" width="290" height="56" rx="8" fill="var(--warn-bg)" stroke="var(--warn)" stroke-dasharray="5 4"></rect>
+          <text class="title" x="510" y="390" fill="var(--warn)">✗ 失败分支（异常上抛）</text>
+          <text class="sub" x="510" y="408" fill="var(--warn)">任意阶段失败 → 后续不执行 → 异常返回 L2-06</text>
+          <text class="sub" x="510" y="424" fill="var(--warn)">L2-06 try/except → metrics/fallback</text>
+          <!-- Arrow ⑤→✗ (failure, diagonal) -->
+          <path d="M555 350 L600 370" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#arrowf2)"></path>
+          <circle cx="580" cy="360" r="8" fill="var(--warn)"></circle><text x="580" y="364" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">F</text>
+          <!-- 旁批图例 -->
+          <rect class="box" x="36" y="444" width="888" height="90" rx="8" fill="var(--grey-bg)" stroke="var(--line)"></rect>
+          <text class="title" x="48" y="464" fill="var(--ctrl)">箭头旁批（字母标记 → 含义）</text>
+          <text class="sub" x="48" y="482"><tspan font-weight="700" fill="var(--ctrl)">A</tspan>：ObservationSnapshot（L2-06 → L2-03 service，同步传入）</text>
+          <text class="sub" x="48" y="500"><tspan font-weight="700" fill="var(--config)">B</tspan>：总入口调用（snapshot 传入 service） <tspan font-weight="700" fill="var(--config)">C</tspan>：ACT batch（阶段一产出 → 阶段二消费） <tspan font-weight="700" fill="var(--config)">D</tspan>：raw tensor（阶段二产出 → 阶段三消费）</text>
+          <text class="sub" x="48" y="518"><tspan font-weight="700" fill="var(--ok)">E</tspan>：ActionChunk（L2-03 → L2-06，同步返回，只含 actions） <tspan font-weight="700" fill="var(--warn)">F</tspan>：异常上抛（任意阶段失败 → 不构造 ActionChunk → L2-06 捕获）</text>
+        </svg>
+      </div>
+
+      <div class="callout"><b>关键协作事实（对照图②）：</b><br>
+<b>「模型与推理」</b><code>predict_action_chunk</code> 是<b>编排函数</b>（串联三段）；<code>prepare_observation_batch</code> 是<b>编排函数</b>（7 个计算微元）；<code>run_act_inference</code> 是<b>计算函数</b>（只调 policy chunk API）；<code>postprocess_action_chunk</code> 是<b>编排函数</b>（6 个微元）。<br>
+<b>「归一化」</b>state/action normalizer 由 L2-01 注入，在 ③normalize 和 ⑤unnormalize 两步各被调用恰好一次。两个 normalizer 是独立实例，不得交换。<br>
+<b>「配置常量」</b><code>state_dim</code> / <code>action_dim</code> / <code>chunk_size</code> / <code>device</code> 均来自 L2-01 编译时注入的 DeployConfig，运行时只读。ACT 不需要 <code>task</code> 语言指令。<br>
+<b>「设备」</b><code>device</code> 决定所有 tensor 计算位置；L2-01 只注入配置和已加载 policy，不参与运行时调用。<br>
+<b>「驱动与失败」</b>L2-06 是驱动方，每 tick 同步调用触发整条链；失败时异常直接在 L2-06 侧被 try/except 捕获。L2-03 不自行捕获异常。</div>
+
+      <h3 style="margin-top:16px">predict_action_chunk 内部流水线展开（编排函数 trace）</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">总编排入口串联三个一级阶段。每行伪代码都能追溯到图②的对应位置：<b>层（六层之一）→ class → 微元 → 字段</b>。按四组聚类。</p>
+      <table class="tracetab">
+        <tr><th>步骤</th><th>伪代码</th><th>注释（这行在干什么）</th><th>对应图②位置（层 → class → 微元 → 字段）</th></tr>
+        <tr><td colspan="4" class="grp">组①「归一化 + 打包」— 消费 state_normalizer / input_spec</td></tr>
+        <tr><td>①</td><td><span class="v">s_tensor</span> = tensorize(<span class="v">obs.encoded_state</span>) <span class="c"># → CPU float32 (16,)</span></td><td>physical ndarray → CPU float32 tensor（只改变表示，不改变数值尺度）</td><td>service/ → 无 class → 计算函数·State tensor 表达转换（observation_batch.py）</td></tr>
+        <tr><td>②</td><td><span class="v">state</span> = <span class="v">self.state_normalizer</span>.normalize(<span class="v">s_tensor</span>)</td><td>把 16D physical state 用 min-max 归一化到 [−1,1]</td><td>service/ → ActInferenceService → 数据·state_normalizer 引用（ActionStateNormalizer）</td></tr>
+        <tr><td>③</td><td><span class="k">for</span> name <span class="k">in</span> <span class="v">self.input_spec.image_keys</span>:<br>&nbsp;&nbsp;batch[<span class="k">f"observation.images.{name}"</span>] = obs.images[name]</td><td>按 policy feature key 精确绑定图像，不按 dict 顺序猜测</td><td>service/ → ActInferenceService → 数据·input_spec（只读派生）</td></tr>
+        <tr><td colspan="4" class="grp">组②「预处理 + 上设备」— 消费 device</td></tr>
+        <tr><td>④</td><td>batch = add_batch_dim(batch) <span class="c"># state (1,16) / image (1,C,H,W)</span></td><td>为 state 和每张图像加 B=1 维</td><td>service/ → 无 class → 计算函数·Batch 维度添加（observation_batch.py）</td></tr>
+        <tr><td>⑤</td><td>batch = assemble_act_batch(batch) <span class="c"># 只含 observation.state/images.*</span></td><td>组装为 ACT policy 需要的 observation batch dict</td><td>service/ → 无 class → 计算函数·ACT batch 组装（observation_batch.py）</td></tr>
+        <tr><td>⑥</td><td>batch = move_to_device(batch, <span class="v">self.device</span>)</td><td>所有 tensor 从 CPU 搬到 policy device</td><td>service/ → ActInferenceService → 数据·device（从 DeployConfig 读取）</td></tr>
+        <tr><td colspan="4" class="grp">组③「模型推理」— 消费 policy</td></tr>
+        <tr><td>⑦</td><td><span class="k">with</span> torch.inference_mode():<br>&nbsp;&nbsp;norm_chunk = <span class="v">self.policy</span>.predict_action_chunk(batch)</td><td>GPU 前向推理，输出归一化动作 [−1,1]，整条链路最耗时。禁止 select_action</td><td>service/ → ActInferenceService → 数据·policy 引用（已加载 ACT policy）</td></tr>
+        <tr><td colspan="4" class="grp">组④「后处理 + 校验」— 消费 action_normalizer / action_dim / chunk_size</td></tr>
+        <tr><td>⑧</td><td><span class="k">assert</span> norm_chunk.shape == (<span class="err">1, chunk_size, 16</span>)</td><td>raw 输出结构检查：B=1、N=chunk_size、D=16、有限值</td><td>service/ → 无 class → 计算函数·Raw 输出结构检查（action_chunk_postprocess.py）</td></tr>
+        <tr><td>⑨</td><td>norm_chunk = norm_chunk[<span class="err">0</span>] <span class="c"># (N, 16)</span></td><td>移除已验证的 B=1 维</td><td>service/ → 无 class → 计算函数·Batch 维移除（action_chunk_postprocess.py）</td></tr>
+        <tr><td>⑩</td><td>actions = <span class="v">self.action_normalizer</span>.unnormalize(norm_chunk)</td><td>反归一化：从 [−1,1] 还原到物理尺度（米、弧度）</td><td>service/ → ActInferenceService → 数据·action_normalizer 引用（ActionStateNormalizer）</td></tr>
+        <tr><td>⑪</td><td>actions = to_cpu_float32(actions) <span class="c"># contiguous ndarray</span></td><td>转 CPU contiguous numpy float32</td><td>service/ → 无 class → 计算函数·CPU float32 array 转换（action_chunk_postprocess.py）</td></tr>
+        <tr><td>⑫</td><td><span class="k">assert</span> actions.shape == (<span class="v">self.chunk_size</span>, <span class="v">self.action_dim</span>) <span class="k">and</span> isfinite(actions)</td><td>最终契约检查：shape/dtype/finite；不匹配则失败，不修补</td><td>service/ → 无 class → 计算函数·最终输出契约检查（action_chunk_postprocess.py）</td></tr>
+        <tr><td>⑬</td><td><span class="k">return</span> <span class="ok">ActionChunk</span>(actions)</td><td>构造只含 actions 的 frozen dataclass，不写任何运行元数据</td><td>types/ → ActionChunk → 数据·actions（frozen dataclass）</td></tr>
+      </table>
+
+      <h3>图② 六层代码落点（点击一层，只看这一层的内部）</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">点一个层，下方只显示该层内容。有产物的层是 <b>types / service</b>；config / repo / runtime / ui 不落点——四项稳定依赖全部由 L2-01 注入。</p>
+
+      <div class="lpick">
+        <input id="l-types" name="layer" type="radio" checked>
+        <input id="l-config" name="layer" type="radio">
+        <input id="l-repo" name="layer" type="radio">
+        <input id="l-service" name="layer" type="radio">
+        <input id="l-runtime" name="layer" type="radio">
+        <input id="l-ui" name="layer" type="radio">
+
+        <div class="ltabs">
+          <label for="l-types" class="has"><b>types</b>有产物</label>
+          <label for="l-config" class="none"><b>config</b>无产物</label>
+          <label for="l-repo" class="none"><b>repo</b>无产物</label>
+          <label for="l-service" class="has"><b>service</b>有产物</label>
+          <label for="l-runtime" class="none"><b>runtime</b>无</label>
+          <label for="l-ui" class="none"><b>ui</b>无</label>
+        </div>
+
+        <!-- types 层 -->
+        <div class="lpane lp-types">
+          <h4>types/ · ActionChunk frozen dataclass（只含 actions）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>新增文件：</b><code>src/model_deploy/act/types/action_chunk.py</code>。定义 <code>ActionChunk</code>（frozen dataclass）——表示"一次 ACT 前向业务计算已完成后的 physical actions"，不是 runtime result record。</p>
+          <div class="classbox" style="border-left-color:var(--types)">
+            <h5 style="color:var(--types)">ActionChunk（frozen dataclass）</h5>
+            <p class="role">一次推理产出的动作块，构造后只读，多消费者线程安全。只含 actions——运行元数据（时间/request_id/cursor/metrics）全部归 L2-06。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">
+                <table class="data-table">
+                  <tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                  <tr><td><code>actions</code></td><td>np.ndarray (chunk_size, 16)</td><td>float32（有限值，已 unnormalize 到物理尺度）</td></tr>
+                </table>
+              </span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc">
+                <table class="mutab">
+                  <tr><th>函数名</th><th>输入（类型+shape）</th><th>输出（类型+shape）或抛什么异常</th></tr>
+                  <tr><td><code>__post_init__</code></td><td>self（构造时字段值）</td><td>校验 actions.ndim==2；shape[1]==16；dtype==float32；所有元素有限；行数>0；否则 ValueError</td></tr>
+                </table>
+              </span></div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>复用：</b><code>ObservationSnapshot</code>（L2-02）、<code>ACTION_DIM=16</code>（L2-01 types/action_spec.py）。<br><b>明确不存在：</b><code>obs_time</code>/<code>ready_time</code>/<code>action_dt</code>/<code>request_id</code>/<code>cursor</code>/<code>aligned_index(now)</code>——全部归 L2-06。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- config 层 -->
+        <div class="lpane lp-config none-pane">
+          <h4>config/ · 本 L2 不新增源码产物</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>L2-03 消费 L2-01 已构造并校验的 <code>DeployConfig</code>（只读引用），不创建第二套 inference schema，也不把业务计算放进 config。实际消费 5 项语义：<code>state_dim</code>/<code>action_dim</code>/<code>chunk_size</code>/<code>device</code> + policy input features（来自 RAM 元数据）。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>明确不做：</b>不新增 inference 子 schema、fake-policy 开关、<code>clamp_normalized_action</code>/<code>output_crop_size</code>/<code>pad_action_chunk</code>、<code>blend_steps</code>/<code>smoothing</code>/RTC/cursor 配置。<br><b>验收确认：</b>L2-03 不产生 <code>config/*.py</code>；静态扫描无新配置分支。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- repo 层 -->
+        <div class="lpane lp-repo none-pane">
+          <h4>repo/ · 本 L2 不新增源码产物</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>L2-03 没有 repo 层文件。它只接收已经进入 RAM 的资源（config、两个 normalizer、loaded policy），不能从 service 反向打开任何进程外资源。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>L2-01 提供、L2-03 复用的资源：</b><code>DeployConfig</code>（只读推理维度）、两个 <code>ActionStateNormalizer</code> 实例（调用 normalize/unnormalize）、ACT policy（调用 predict_action_chunk）。<br><b>明确禁止的 repo 产物：</b><code>repo/policy_loader.py</code>、<code>load_act_policy_runtime(...)</code>、bundle 读取、checkpoint 解析、normalizer 加载、model.to(device)、policy.eval() 启动配置、生产 fake-policy 构造或选择——全部归 L2-01。<br><b>验收确认：</b>L2-03 代码没有 repo loader、新 bundle I/O、模型权重加载或 real/fake 选择。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- service 层 -->
+        <div class="lpane lp-service">
+          <h4>service/ · 推理服务层（1 个 class + 3 个文件）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>新增文件：</b><code>service/act_inference.py</code>（class + 总入口 + 阶段二）、<code>service/observation_batch.py</code>（阶段一 + 7 计算微元）、<code>service/action_chunk_postprocess.py</code>（阶段三 + 6 微元）。service/ 只进行当前 Python 进程内的业务计算，不读文件、不碰 ROS、不向机器人发命令。</p>
+
+          <!-- ActInferenceService class -->
+          <div class="classbox svc">
+            <h5>ActInferenceService（class，唯一新增 class）</h5>
+            <p class="role">持有四项 L2-01 注入的只读依赖 + 派生的输入规格。选择 class 的原因：四项资源在程序全生命周期稳定存在，被多次同步调用复用。class 不拥有运行调度状态（无线程/队列/cursor/metrics/fallback）。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc">
+                <table class="data-table">
+                  <tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                  <tr><td><code>config</code></td><td>immutable config object 引用</td><td>DeployConfig（只读，读 5 项语义）</td></tr>
+                  <tr><td><code>state_normalizer</code></td><td>normalizer object 引用</td><td>ActionStateNormalizer（阶段一 normalize）</td></tr>
+                  <tr><td><code>action_normalizer</code></td><td>normalizer object 引用</td><td>ActionStateNormalizer（阶段三 unnormalize）</td></tr>
+                  <tr><td><code>policy</code></td><td>loaded model object 引用</td><td>ACT policy protocol（阶段二 chunk forward）</td></tr>
+                  <tr><td><code>input_spec</code></td><td>tuple/mapping 等只读内部结构</td><td>feature key、shape、device、dim（从 RAM 元数据派生）</td></tr>
+                </table>
+              </span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc">
+                <table class="mutab">
+                  <tr><th colspan="3"><code>predict_action_chunk(observation) → ActionChunk</code></th></tr>
+                  <tr><th>步骤</th><th>调用什么</th><th>这一步在干什么</th></tr>
+                  <tr><td>①</td><td><code>prepare_observation_batch(obs, …)</code></td><td>把 ObservationSnapshot 转成 device 上的 ACT batch dict：state tensor 化→normalize→图像绑定→batch 维→组装→device</td></tr>
+                  <tr><td>②</td><td><code>run_act_inference(policy, batch)</code></td><td>GPU 前向推理：只调用 policy.predict_action_chunk(batch) 一次，禁止 select_action</td></tr>
+                  <tr><td>③</td><td><code>postprocess_action_chunk(raw, …)</code></td><td>raw tensor → 结构检查 → unbatch → unnormalize → CPU float32 → 契约检查 → ActionChunk</td></tr>
+                </table>
+              </span></div>
+            </div>
+          </div>
+
+          <!-- observation_batch.py -->
+          <div class="classbox svc">
+            <h5>observation_batch.py（模块级函数，无 class）</h5>
+            <p class="role">阶段一：prepare_observation_batch。为什么无 class？batch 构造是无状态纯转换，每次调用独立——按认知框架第 3.25 层判断原则：纯输入到输出转换 → 优先函数。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc">
+                <table class="mutab">
+                  <tr><th colspan="3"><code>prepare_observation_batch(snapshot, state_normalizer, input_spec, device) → dict[str, Tensor]</code></th></tr>
+                  <tr><th>步骤</th><th>调用什么（计算微元）</th><th>这一步在干什么</th></tr>
+                  <tr><td>①</td><td><span class="fn">模型输入兼容性检查</span></td><td>检查 state 16D/有限值、必需相机 key 存在、图像 shape/dtype/数值契约；不检查 freshness</td></tr>
+                  <tr><td>②</td><td><span class="fn">State tensor 表达转换</span></td><td>physical ndarray (16,) → CPU float32 Tensor (16,)，只改变表示/dtype，不改变数值尺度</td></tr>
+                  <tr><td>③</td><td><span class="fn">State 数值归一化</span></td><td>只调用 state_normalizer.normalize() 一次，输出仍为 (16,)</td></tr>
+                  <tr><td>④</td><td><span class="fn">Image tensor 绑定</span></td><td>按 policy feature key 精确绑定相机图像；不做像素级预处理</td></tr>
+                  <tr><td>⑤</td><td><span class="fn">Batch 维度添加</span></td><td>state (1,16)、image (1,C,H,W)；只增加 B=1</td></tr>
+                  <tr><td>⑥</td><td><span class="fn">ACT batch 组装</span></td><td>只写 observation.state 和 observation.images.*；不写 task/action/time</td></tr>
+                  <tr><td>⑦</td><td><span class="fn">Device 对齐</span></td><td>所有 tensor 位于 policy device；不移动 policy，不自动切换 device</td></tr>
+                </table>
+              </span></div>
+            </div>
+          </div>
+
+          <!-- act_inference.py 阶段二 -->
+          <div class="classbox svc">
+            <h5>act_inference.py（class + 阶段二）</h5>
+            <p class="role">包含 ActInferenceService class 定义 + 总编排入口 + 阶段二 run_act_inference。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc">
+                <table class="mutab">
+                  <tr><th>函数名</th><th>输入（类型+shape）</th><th>输出（类型+shape）或抛什么异常</th></tr>
+                  <tr><td><code>run_act_inference(policy, batch)</code></td><td>loaded ACT policy + device batch dict</td><td>raw action tensor (1, chunk_size, 16) 或前向异常；只调用 predict_action_chunk，禁止 select_action</td></tr>
+                </table>
+              </span></div>
+            </div>
+          </div>
+
+          <!-- action_chunk_postprocess.py -->
+          <div class="classbox svc">
+            <h5>action_chunk_postprocess.py（模块级函数，无 class）</h5>
+            <p class="role">阶段三：postprocess_action_chunk。模型表示到部署表示的转换，不等于安全处理。不 clamp/crop/pad/reorder。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc">
+                <table class="mutab">
+                  <tr><th colspan="3"><code>postprocess_action_chunk(raw_chunk, action_normalizer, expected_chunk_size) → ActionChunk</code></th></tr>
+                  <tr><th>步骤</th><th>调用什么（计算微元）</th><th>这一步在干什么</th></tr>
+                  <tr><td>①</td><td><span class="fn">Raw 输出结构检查</span></td><td>仅接受 finite (1, chunk_size, 16) Tensor；不接受"接近正确"的输出</td></tr>
+                  <tr><td>②</td><td><span class="fn">Batch 维移除</span></td><td>只移除已验证的 B=1 维：(1,N,16) → (N,16)</td></tr>
+                  <tr><td>③</td><td><span class="fn">Action 反归一化</span></td><td>只调用 action_normalizer.unnormalize() 一次</td></tr>
+                  <tr><td>④</td><td><span class="fn">CPU float32 array 转换</span></td><td>physical tensor → contiguous numpy float32 (N,16)</td></tr>
+                  <tr><td>⑤</td><td><span class="fn">最终输出契约检查</span></td><td>严格 (chunk_size,16)、float32、有限值；不调用 L2-04 安全检查</td></tr>
+                  <tr><td>⑥</td><td><span class="fn">ActionChunk 构造</span></td><td>用 validated physical array 构造只含 actions 的 ActionChunk</td></tr>
+                </table>
+              </span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0"><b>依赖方向：</b>service → types (ObservationSnapshot/ActionChunk/ACTION_DIM) + config (DeployConfig 只读) + 已加载 ACT policy。<b>禁止依赖：</b>service → runtime/ui/bundle I/O。<br><b>验收覆盖：</b>每个一级阶段独立单测；总入口端到端 stub policy 单测；两个 normalizer 方向与调用次数测试；select_action spy 测试；raw 错 shape/NaN/Inf/policy 抛错的失败传播测试；静态检查无线程/队列/ROS/safety/smoothing 代码。</p>
+        </div>
+
+        <!-- runtime 层 -->
+        <div class="lpane lp-runtime none-pane">
+          <h4>runtime/ · 本 L2 不落点</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>L2-03 是一次性的同步 service，不新增 runtime 文件。runtime/ 负责时间、线程、queue、持续循环、运行状态和失败策略——全部归 L2-06。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0">
+          <b>明确归 L2-06 的运行对象：</b><br>
+          • worker/thread/timer<br>
+          • latest observation buffer<br>
+          • request/in-flight/result records<br>
+          • latest-only queues<br>
+          • request_id、timestamps、latency、metrics<br>
+          • active ActionChunk、cursor、selected raw step<br>
+          • fallback/stop/retry policy<br>
+          • ROS status/metrics publication
+          </p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>并发约束：</b>L2-03 不创建 lock，不承诺同一 policy 实例可被并发调用。L2-06 应默认串行化调用。<br><b>验收确认：</b>L2-03 不产生 <code>runtime/*.py</code>；service/types 中无 Thread/queue/timer/cursor/metrics/fallback 实现。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- ui 层 -->
+        <div class="lpane lp-ui none-pane">
+          <h4>ui/ · 本 L2 不落点</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>L2-03 不跨越进程外 I/O。订阅 observation topic 归 L2-02；发布 policy_action/command 归 L2-05；启动 ROS node/timer 归 L2-06。L2-03 的 batch、raw tensor 和 service class 都是 Python 进程内对象，不能被表述为 ROS message、topic 或 node。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>外部接口分工：</b>observation ROS message 订阅/解码归 L2-06；observation 业务缓存/图像预处理/snapshot 组装归 L2-02；policy/status/metrics ROS publish 归 L2-05/L2-06；arm/gripper command publish 归 L2-05。<br><b>验收确认：</b>L2-03 不产生 <code>ui/*.py</code> 或 launch 产物；静态扫描 types/service 不含 ROS/hardware import。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+      </div>
+
+      <div class="callout warn">第一版<b>不实现</b>平滑：<code>predict_action_chunk</code> 只输出整个 chunk 的 actions ndarray，不做单步选择/cursor 推进/跨 chunk 融合。L2-06 若后续要引入平滑，必须重新设计并同步 L1/L2 文档与 Gate。<br><b>基础设施归 L2-06：</b>InferenceWorker / LatestQueue / SharedBuffer / RuntimeMetrics / InferenceRequest / ActionChunk 运行元数据包装全部归 L2-06，L2-03 只暴露同步函数。</div>
+      <p class="src">权威来源：<code>agent_context/03_ACT微元设计与协作.md</code>（§1 总体结构 / §2 3.25 层聚合 / §4 阶段一 / §5 阶段二 / §6 阶段三 / §7 总入口 / §8 3.5 层总账 / §10 失败传播）、<code>agent_context/06_types层设计.md</code>（§2~§5）、<code>agent_context/07_config层设计.md</code>（§1~§4）、<code>agent_context/08_repo层设计.md</code>（§1~§4）、<code>agent_context/09_service层设计.md</code>（§2~§7）、<code>agent_context/10_runtime层设计.md</code>（§1~§4）、<code>agent_context/11_ui层设计.md</code>（§1~§4）</p>
+    </section>
+
+    <!-- ============ 维度 4 · 人类验收标准 ============ -->
+    <section class="view acceptance" data-agent-source="agent_context/04_L2验收机制.md#2-测试目录与职责, agent_context/05_人类验收机制.md#2-自动验收">
+      <h2>维度 4 · 人类验收标准</h2>
+      <div class="reading-path">📖 阅读路径：功能承诺来源见<a href="#" onclick="document.getElementById('v1').click()">维度1</a> → 下面验收动作逐个执行，每个都告诉你「做什么 → 看到什么 → 意味着什么」</div>
+      <p class="lead">人类验收只做两件事：<b>①</b> 跑一个 <code>.sh</code> 脚本，它会自动执行所有子功能模块的测试并在终端分层分组打印结果；<b>②</b> 用下面的「终端输出翻译表」对照终端每一行，搞清楚含义、出了问题该查哪个模块。核心目标：无 ROS / 无 GPU / 无真实 bundle 条件下，<code>predict_action_chunk(observation)</code> 输入合法 <code>ObservationSnapshot</code>，经 stub policy 返回只含 actions 的合法 <code>ActionChunk</code>，异常向上传播不吞没。</p>
+
+      <h3>① 怎么验收：跑一个脚本</h3>
+      <div class="cmd-block"><span class="c"># /home/hit/ROS，无 ROS / 无 GPU / 无真实 bundle 环境</span>
+bash src/model_deploy/act/scripts/l2_03_verify.sh</div>
+      <p style="font-size:13px;color:var(--muted);margin:6px 0 0">脚本把所有子功能模块的测试自动跑完，终端按 <b>types / config·repo / service / runtime·ui·boundary</b> 分层分组打印（与维度3 图②六层落点视觉对齐）。每行一个标签，结果为 <span style="color:var(--ok);font-weight:600">PASS</span> / <span style="color:var(--warn);font-weight:600">FAIL</span> / <span style="color:#b54708;font-weight:600">BLOCKED</span>；末行汇总。<b>FAIL 行会附简要定位</b>（文件 / class / 微元 / pytest 节点 / 错误摘要），<b>BLOCKED ≠ 失败</b>（环境约束）。</p>
+
+      <div class="callout ok" style="margin-top:8px"><b>脚本设计依据：</b><code>agent_context/04_L2验收机制.md §4</code> 给出了该 <code>.sh</code> 的完整设计需求（输出格式 / 退出码 / 标签→微元映射 / BLOCKED 判定），由后续 L3 微元任务据此生成脚本本身。</div>
+
+      <div class="term">
+        <div class="t-hdr">=== L2-03 ACT Inference 验收 ===</div>
+        <div class="t-grp">[ types ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">types.action_chunk_contract</span><span class="note">ActionChunk 只含合法 physical actions</span></div>
+        <div class="t-grp">[ config / repo ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.reuse_only</span><span class="note">未新增 config/repo 产物</span></div>
+        <div class="t-grp">[ service ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">service.batch.tensorize_state</span><span class="note">state 表达转换：physical ndarray → CPU float32 tensor</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">service.batch.normalize_state</span><span class="note">state 只归一化一次，正确 normalizer 调用</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">service.batch.bind_images</span><span class="note">相机 key 与 policy feature 精确对应</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">service.policy.predict_chunk</span><span class="note">只调用 policy.predict_action_chunk</span></div>
+        <div class="t-row"><span class="fail">FAIL</span><span class="lbl">service.output.no_repair</span><span class="note">不裁剪、不补齐、不 clamp raw 输出</span></div>
+        <div class="t-loc"><span>├─ 文件: src/model_deploy/act/service/action_chunk_postprocess.py</span><span>├─ class: 无 class</span><span>├─ 微元: Raw 输出结构检查（计算函数）</span><span>├─ pytest: tests/service/test_action_chunk_postprocess.py::test_raw_shape_rejected</span><span>└─ 摘要: AssertionError: 错 shape raw 输出未被拒绝（期望 ValueError）</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">service.output.unnormalize</span><span class="note">action normalizer 恰好调用一次</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">service.full_chain</span><span class="note">snapshot 到 ActionChunk 三阶段完整闭环</span></div>
+        <div class="t-grp">[ runtime / ui / boundary ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.no_runtime_state</span><span class="note">无 worker/queue/cursor/metrics</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.no_ros_or_hardware</span><span class="note">无 ROS/硬件交互</span></div>
+        <div class="t-row"><span class="blk">BLOCKED</span><span class="lbl">service.policy.real_dryrun</span><span class="note">无真实 ACT bundle + GPU</span></div>
+        <div class="t-sep">────────────────────────────────</div>
+        <div class="t-sum">10 PASS / 1 FAIL / 1 BLOCKED</div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin:-2px 0 0">↑ 上图是一次<b>有 FAIL 的范例</b>输出（演示 FAIL 定位格式）。正常通过时所有标签为 PASS/BLOCKED，汇总行无 FAIL。</p>
+
+      <h3>② 终端输出翻译表（每行什么含义 / 出问题查哪里）</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">终端任意一行都能在下表查到：它属于哪个层、对应维度3 图②的哪个微元、PASS 说明什么、FAIL 该查哪个文件/微元。</p>
+
+      <table class="trtab">
+        <tr><th>标签</th><th>层</th><th>对应维度3 图②微元（文件 → class → 微元）</th><th>PASS 含义 / FAIL 查哪里</th></tr>
+        <tr class="types"><td class="lbl">types.action_chunk_contract</td><td class="lyr">types</td><td class="mu"><span class="fpath">types/action_chunk.py</span> → <span class="cls">ActionChunk</span><br><code>actions</code> 字段<span class="kindtag data">数据</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>只有合法的 (N,16) float32 finite actions 能构造 ActionChunk；运行元数据字段不存在</span><span class="fn"><span class="fp">FAIL 查：</span>ActionChunk.__post_init__ 维度/dtype/finite 校验；是否存在 obs_time/request_id 等禁止字段</span></td></tr>
+        <tr class="service"><td class="lbl">service.batch.tensorize_state</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/observation_batch.py</span>（模块级函数，无 class）<br>State tensor 表达转换<span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>physical ndarray (16,) 正确变为 CPU float32 tensor (16,)，数值不改变</span><span class="fn"><span class="fp">FAIL 查：</span>tensorize 函数的 dtype/device/shape 是否正确</span></td></tr>
+        <tr class="service"><td class="lbl">service.batch.normalize_state</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/observation_batch.py</span>（模块级函数，无 class）<br>State 数值归一化<span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>正确 state normalizer 恰好调用一次，输出仍为 (16,)</span><span class="fn"><span class="fp">FAIL 查：</span>是否调用了错误的 normalizer（如 action normalizer）；调用次数不是 1</span></td></tr>
+        <tr class="service"><td class="lbl">service.batch.bind_images</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/observation_batch.py</span>（模块级函数，无 class）<br>Image tensor 绑定<span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>相机 key 与 policy feature 精确对应；缺必需相机时失败</span><span class="fn"><span class="fp">FAIL 查：</span>是否按 snapshot dict 顺序而非 policy feature key 绑定图像</span></td></tr>
+        <tr class="service"><td class="lbl">service.policy.predict_chunk</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/act_inference.py</span> → <span class="cls">ActInferenceService</span><br><code>run_act_inference()</code><span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>只调用 policy.predict_action_chunk(batch) 一次；不调用 select_action</span><span class="fn"><span class="fp">FAIL 查：</span>ActInferenceService.run_act_inference 是否误用了 select_action 或 action queue 消费语义</span></td></tr>
+        <tr class="service"><td class="lbl">service.output.unnormalize</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/action_chunk_postprocess.py</span>（模块级函数，无 class）<br>Action 反归一化<span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>action normalizer 恰好调用一次 unnormalize()，输入是 (N,16)</span><span class="fn"><span class="fp">FAIL 查：</span>是否调用了错误的 normalizer（如 state normalizer）；是否在 unnormalize 前做了 clamp</span></td></tr>
+        <tr class="service"><td class="lbl">service.output.no_repair</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/action_chunk_postprocess.py</span>（模块级函数，无 class）<br>Raw/最终输出检查<span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>错 shape/dtype/NaN/Inf 全部拒绝；未发生 clamp/crop/pad/reorder</span><span class="fn"><span class="fp">FAIL 查：</span>是否对超范围值做了 clamp、对错 shape 做了截断或补齐、对段序做了重排</span></td></tr>
+        <tr class="service"><td class="lbl">service.full_chain</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/act_inference.py</span> → <span class="cls">ActInferenceService</span><br><code>predict_action_chunk()</code><span class="kindtag orch">编排函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>合法 snapshot + stub policy + recording normalizer → 返回只含 actions 的 ActionChunk；两个 normalizer 各调用一次</span><span class="fn"><span class="fp">FAIL 查：</span>三阶段任一环节断裂——阶段一/二/三的独立测试先排查</span></td></tr>
+        <tr class="boundary"><td class="lbl">boundary.reuse_only</td><td class="lyr">边界</td><td class="mu"><span class="fpath">config/repo/runtime/ui</span>（L2 责任墙；四层均无新增产物）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>L2-03 新增实现只在 types/、service/、tests；config/repo/runtime/ui 无新 .py</span><span class="fn"><span class="fp">FAIL 查：</span>是否新增了 config/*.py、repo/*.py、runtime/*.py 或 ui/*.py</span></td></tr>
+        <tr class="boundary"><td class="lbl">boundary.no_runtime_state</td><td class="lyr">边界</td><td class="mu"><span class="fpath">service/</span> → <span class="cls">ActInferenceService</span>（L2 责任墙；禁止运行状态）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>service/types 中无 Thread/queue/timer/event/cursor/metrics/fallback 实现</span><span class="fn"><span class="fp">FAIL 查：</span>推理代码出现线程或队列基础设施 → 越界到 L2-06</span></td></tr>
+        <tr class="boundary"><td class="lbl">boundary.no_ros_or_hardware</td><td class="lyr">边界</td><td class="mu"><span class="fpath">types/service</span>（L2 责任墙；无数据读写微元）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>types/service 无 ROS import、publisher/subscriber、SDK/Modbus/serial 调用</span><span class="fn"><span class="fp">FAIL 查：</span>推理代码出现 ROS/hardware import → 越界到 L2-02/L2-05/L2-06 职责</span></td></tr>
+        <tr class="service"><td class="lbl">service.policy.real_dryrun</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/act_inference.py</span> → <span class="cls">ActInferenceService</span><br><code>predict_action_chunk()</code>（真实 ACT 权重 + GPU）<span class="kindtag orch">编排函数</span></td><td class="pf"><span class="fn"><span class="blk">BLOCKED：</span>当前无真实 ACT bundle + GPU → 不影响 stub policy Gate，等 bundle 就绪后补验</span><span class="fn"><span class="fp">（有 bundle+GPU 时 FAIL 查）：</span>ActInferenceService 真实推理 shape 或延迟异常</span></td></tr>
+      </table>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 0">退出码：全 PASS（BLOCKED 可存在）→ <code>0</code>；任一 FAIL → <code>1</code>。签字时看汇总行 + 退出码即可。</p>
+
+      <div class="vfy-sep"></div>
+      <span class="vfy-section-tag">文档审查项（非脚本，人工查）</span>
+      <p style="font-size:12.5px;color:var(--muted);margin:0 0 6px">以下 5 项是文档/结构审查，不在 <code>.sh</code> 脚本内，由人类按 <code>05_人类验收机制.md §3</code> 逐条执行：① L2 边界审查（对照 01_L2功能边界.md：输入只含四项稳定依赖和 snapshot；成功输出只含 ActionChunk actions）② 三段封装审查（snapshot→batch、policy forward、raw→ActionChunk 三段清晰；L2-06 只调用总入口）③ State 二次解耦（tensor 表达转换与数值归一化是两个独立微元和测试点）④ 层落点审查（只新增 types/、service/、tests；没有 repo loader、runtime worker 或 ui node）⑤ 输出严格性（无 clamp/crop/pad/reorder；ActionChunk 无运行元数据字段）。</p>
+
+      <div class="callout warn"><b>Blocked 项（不是失败，是环境约束）：</b>当前环境无真实 ACT bundle + GPU → <code>BLOCKED</code>，不影响 stub policy mock Gate，真实推理验收等 bundle 就绪；无 ROS 环境 → <code>BLOCKED</code>（本 L2 是纯同步函数，本身不碰 ROS，集成测试等 L2-06 落成后联调）。签字位置：<code>DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-03-act-inference/验收结果.md</code>。</div>
+      <p class="src">权威来源：<code>agent_context/01_L2功能边界.md</code>（§5 负责 / §6 不负责 / §11 完成判据）、<code>agent_context/04_L2验收机制.md</code>（§2 Gate 验收项 / §3 Gate 场景 / §4 .sh 验收脚本设计需求 / §5 可选真实 policy 补验 / §6 放行条件）、<code>agent_context/05_人类验收机制.md</code>（§2 自动验收 / §3 人工审查清单 / §4 可视化追踪 / §6 签字 / §7 风险边界）</p>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>
