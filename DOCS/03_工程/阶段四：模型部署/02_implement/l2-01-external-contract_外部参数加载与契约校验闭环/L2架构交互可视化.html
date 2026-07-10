@@ -197,6 +197,12 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 .mu .kind.orch{color:var(--yellow)}
 .mu .kind.state{color:#92400e}
 .mu .desc{color:var(--muted);line-height:1.6}
+		.mu .desc .data-table{width:100%;border-collapse:collapse;font-size:11.5px;margin:0}
+		.mu .desc .data-table th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:11px;padding:4px 7px;border:1px solid var(--line);text-align:left}
+		.mu .desc .data-table td{padding:4px 7px;border:1px solid var(--line);font-size:11.5px;vertical-align:top;color:var(--ink);line-height:1.55}
+		.mu .desc .data-table td:first-child{font-family:ui-monospace,monospace;white-space:nowrap;color:var(--ctrl)}
+		.mu .desc .data-table td:nth-child(2){font-size:11px;color:var(--muted)}
+		.mu .desc .data-table td:nth-child(3){font-family:ui-monospace,monospace;font-size:11px;color:var(--repo)}
 
 /* 维度2 专用：流程步骤 */
 .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:6px 0}
@@ -672,7 +678,7 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
             <h5>StateSpec（frozen dataclass）</h5>
             <p class="role">定义 16D observation state 的维度、段序、字段语义、值域。Pi0.5 参考：<code>common/data/state_codec.py</code>。</p>
             <div class="mu-list">
-              <div class="mu"><span class="kind data">数据</span><span class="desc">变量名：STATE_DIM（int，常量=16）、segment_order（tuple，记录每段名称→长度） | 存储结构：tuple[str, int] | 数值类型：int（维度）、str（段名）、float（值域边界）</span></div>
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table"><tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr><tr><td><code>STATE_DIM</code></td><td>int（类常量）</td><td>int（=16）</td></tr><tr><td><code>segment_order</code></td><td>tuple[str, int]</td><td>str（段名）、float（值域边界）</td></tr></table></span></div>
               <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><code>ensure_state_vector(flat)</code> — 输入 <code>np.ndarray（任意shape）</code> → 输出 <code>(16,) float32 ndarray</code> 或 <code>ValueError</code>；<code>encode_state(structured)</code> — 输入 <code>BimanualState 结构化对象</code> → 输出 <code>(16,) float32 ndarray</code></span></div>
             </div>
           </div>
