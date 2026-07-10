@@ -33,6 +33,8 @@ Read these before producing or changing artifacts:
 
 Read `references/l2-output-contract.md` when creating, migrating, or checking the final file tree.
 
+Read `html要求.md`（仓库根目录）as the authoritative HTML generation specification. All four dimensions, CSS components, SVG patterns, table formats, and terminal-block conventions must follow this spec. The dimension 4 paradigm in particular（one `.sh` script + `.term` terminal example + `.trtab` translation table）is fixed and must not revert to old-style `.vfy-item` cards.
+
 Use `DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视化.html` only as a visual quality reference. Do not copy ACT-wide content into a single-L2 visualization.
 
 ## Current L2 Identity Rules
@@ -217,10 +219,42 @@ Use these dimension responsibilities:
 |---|---|---|
 | `boundary` / 维度1 功能边界 | 做什么 / 不做什么 / 输入输出契约是什么？ | status/positioning SVG, startup processing SVG, responsible vs non-responsible boundary-wall SVG, data contract cards |
 | `pi05map` / 维度2 Pi0.5 如何运作 | 参考源码如何运行，用白话讲清楚。 | plain-language callout, `details` terminology dictionary `.dict`, four-step `.flow`, `.trace`, bundle `.tree`, core-question cards |
-| `blueprint` / 维度3 开发蓝图 | 代码如何分层，每层有哪些 micro-units？ | runtime/assembly SVG, six-layer `.lpick` radio panes, `.classbox` + `.mu-list` micro-unit breakdown, no-artifact layer panes |
-| `acceptance` / 维度4 人类验收标准 | 怎么验证，跑什么，看到什么算通过或失败？ | sample-style `.vfy` groups, `.vfy-item` cards, command blocks, pass/fail phenomena, rationale links |
+| `blueprint` / 维度3 开发蓝图 | 代码如何分层，每层有哪些 micro-units？ | **图①** runtime collaboration call-chain SVG swimlane（not creation/assembly order!）：each step labelled with 3.5-layer micro-unit type, failure branch as red dashed, compile-time injection as dashed banner, callout below with key facts. **图②** six-layer `.lpick` radio panes with `.classbox` + `.mu-list` micro-unit breakdown（each micro-unit on its own `<span class="fn">` line per 排版铁律#1）, no-artifact layer panes with reason+upstream+acceptance. Layer tab colors per §7 color spec. |
+| `acceptance` / 维度4 人类验收标准 | 怎么验证，跑什么，看到什么算通过或失败？ | one `.sh` script command + `.term` terminal example block（layered grouping with FAIL `.t-loc` location）+ `.trtab` translation table（label → layer → micro-unit with complete file→class→micro-unit location chain → PASS meaning / FAIL where to look）|
 
 Do not reintroduce the old six-view contract as required HTML structure. Those architecture-report ideas may appear only as content inside the four approved dimensions when useful.
+
+**Dimension 4 specific constraints（mandatory, per `html要求.md` §5）:**
+
+The acceptance dimension must follow the new paradigm, not the old `.vfy-item` card list:
+
+- **Part A — How to verify:** One `.sh` script command（e.g. `bash src/model_deploy/act/scripts/l2_XX_verify.sh`）with output format description. Must include a `.term` terminal example block showing a run with at least one FAIL, so humans can see the FAIL location format.
+- **Terminal output format:** Grouped by architecture layer（types/config/repo/service/runtime/ui·boundary）, visually aligned with dimension 3's six-layer `.lpick` tabs. Each line: `PASS|FAIL|BLOCKED` + label name + one-sentence description. FAIL lines must include a `.t-loc` sub-block with exact location: file / class / micro-unit / pytest node / error summary. Summary line: `N PASS / N FAIL / N BLOCKED`. BLOCKED ≠ failure（environment constraint）.
+- **Part B — Translation table（`.trtab`）:** Each row maps one terminal label to: layer → micro-unit with complete location chain（`文件路径 → class名（模块级函数标"无 class"）→ 微元名 + 类型小标签`）→ PASS meaning / FAIL where to look. The location chain must be complete—never abbreviate to just function name.
+- **CSS collision prevention:** `.trtab td.mu` must explicitly `display:block` to override the global `.mu{display:grid;grid-template-columns:90px 1fr}` rule. Terminal example block must use structured `.t-row` divs（not `<pre>`）with three-column grid alignment.
+- **Script design basis:** Reference `agent_context/04_L2验收机制.md §4` for script design requirements. The script itself is built by a later L3 task; dimension 4 only defines the expected output format and labels.
+- **Document audit items**（non-script, human-reviewed）may follow Part B as a compact section, clearly separated from automated script tests.
+
+**Dimension 3 specific constraints（mandatory, per `html要求.md` §4.1/§4.2/§6.1/§7）:**
+
+The blueprint dimension has two critical components, each with strict rules:
+
+- **图① — Runtime collaboration call-chain SVG swimlane（§4.1）：**
+  - Must reflect **real runtime call direction**, never draw as dependency/creation/assembly order. This is the most common mistake.
+  - Horizontal axis = architecture layer swimlanes（the layers that participate at runtime）. Each step ①②③… lands in its owning swimlane.
+  - **Every step must be labeled with its 3.5-layer micro-unit type**（e.g. "②更新字段缓存（内部状态更新函数）"）, cross-referencing 图②.
+  - **Failure branch must use red dashed lines** with a separate box explaining where the flow stops.
+  - **Compile-time injection**（e.g. L2-01 config）must use a **dashed banner** at the top, visually distinct from runtime solid arrows.
+  - A **callout must follow the SVG**, calling out key collaboration facts: who is the driver, which layer has/lacks orchestration functions, state ownership, failure propagation.
+- **图② — Six-layer code landing radio panes（§4.2）：**
+  - 6 layer tabs driven by hidden radio inputs. "Has products" tabs highlighted with border color matching §7; "no products" tabs grey background.
+  - Each product-layer pane: layer title + one-line responsibility + one or more `.classbox` cards.
+  - Each `.classbox` must use layer-specific CSS class（`.classbox.repo`/`.svc`/`.rt`/`.ui`）, not inline styles, with `border-left-color` matching the layer's color in §7.
+  - **排版铁律#1**: Each micro-unit must occupy its own line. If one `.mu` contains multiple functions/fields, each must be wrapped in `<span class="fn">`（`display:block`）. **Never** cram multiple functions with `；`/`/` into one line.
+  - **排版铁律#2**: Micro-unit kind labels must be exactly the 5 approved types（数据/计算函数/内部状态更新函数/数据读写函数/编排函数）. Self-invented names are illegal.
+  - **排版铁律#3**: Descriptions must use `<b>输入：</b>` `<b>修改对象：</b>` `<b>如何修改：</b>` bold prefixes to explicitly mark mandatory dimensions per §3.3.
+- **排版铁律#4 — 数据微元必须用表格**: Every `.mu` with `kind data` must use a `<table class="data-table">` inside `.desc` with exactly 3 columns: ①变量名（或字段名，对 frozen dataclass）②数据结构 ③内部存储的数据类型。Never use pipe-delimited text blobs (`变量名：… | 存储结构：… | 数值类型：…`) for data micro-units. Each variable/field gets its own row. CSS must define `.mu .desc .data-table` compact table styles（font-size 11.5px, padding 4px 7px, first column monospace）. The `.mu` grid layout（90px kind + 1fr desc）is preserved; the table is an inner element of `.desc`.
+- **lpick tab colors（§7）：** Selected tab background must match the architecture layer's emphasis color. Common error: using `--ok`（green）for service/runtime instead of `--config`（blue）and `--repo`（purple）. For L2s where config/repo have no products, use `--grey`.
 
 Stop for user confirmation after drafting the HTML information hierarchy and L2 Gate/human acceptance design.
 
@@ -228,7 +262,7 @@ Stop for user confirmation after drafting the HTML information hierarchy and L2 
 
 Produce both:
 
-- `agent_context/04_L2验收机制.md`: AI-side L2 Gate, required L3 draft, local/mock/dry-run/shadow-run checks, blocked items, pass/fail criteria.
+- `agent_context/04_L2验收机制.md`: AI-side L2 Gate, required L3 draft, local/mock/dry-run/shadow-run checks, blocked items, pass/fail criteria. **Must include §4** that defines the `.sh` verification script design: output format（PASS/FAIL/BLOCKED per label, layered grouping aligned with six-layer tabs）, exit code rules, label→micro-unit mapping, and BLOCKED judgment criteria. This §4 is the design basis for the HTML dimension 4 `.term` terminal example block and `.trtab` translation table.
 - `agent_context/05_人类验收机制.md`: human runnable checklist, commands, inputs, observation points, pass/fail phenomena, signature location, hardware safety notes.
 
 Human acceptance must never mark real-robot behavior as passed without real hardware, explicit authorization, emergency stop readiness, and shadow-run evidence.
@@ -242,6 +276,17 @@ python3 skills/stage4-l2-designer/scripts/validate_l2_design_package.py DOCS/03_
 ```
 
 Also inspect any reported contamination manually before treating the package as ready for L3 generation.
+
+Additional manual checks for dimension 4:
+- HTML must contain `.term` terminal example block with at least one FAIL row and `.t-loc` sub-block.
+- HTML must contain `.trtab` translation table with complete location chains（file path → class → micro-unit + kind tag）per row.
+- `.trtab td.mu` must have `display:block` override to prevent CSS collision with global `.mu` grid layout.
+- Terminal labels must be grouped by layer matching dimension 3's six-layer tabs.
+
+Additional manual checks for dimension 3:
+- All `.mu .kind.data` rows must use `<table class="data-table">` inside `.desc`（not inline `|` text, not `<span class="fn">`）.
+- `.data-table` must have exactly 3 columns: 变量名 / 数据结构 / 内部存储的数据类型.
+- CSS must define `.mu .desc .data-table` with compact table styles.
 
 ## Output Rules
 

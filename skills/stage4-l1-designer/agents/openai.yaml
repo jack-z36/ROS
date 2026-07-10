@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stage4 L1 Designer"
+  short_description: "Design aligned Stage 4 L1 cross-module Agent context and interactive HTML architecture visualization."
+  default_prompt: "Use $stage4-l1-designer to produce or migrate a Stage 4 ACT L1 cross-module design package with Agent Markdown under agent_context/ and a semantically aligned interactive HTML visualization showing the full L2 pipeline."
