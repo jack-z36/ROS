@@ -1,7 +1,7 @@
-"""L2-04 safety-check pure computation primitives (C4, C6-C15).
+"""L2-04 safety-check service: pure primitives (C4, C6-C15) + A1/B1-B5 orchestration.
 
-RAM-only geometric projection and input validation for single-step ACT actions.
-Does **not** implement A1 ``SafetyGuard`` or B1-B5 orchestration (deploy_034).
+RAM-only geometric projection, input validation, and single-step guard entry
+for ACT actions. Public entry: ``SafetyGuard.filter_action``.
 
 Internal quaternion order is fixed ``xyzw``. No ROS / runtime / hardware imports.
 """
@@ -9,13 +9,19 @@ Internal quaternion order is fixed ``xyzw``. No ROS / runtime / hardware imports
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Tuple
+from typing import Any, List, Literal, Optional, Tuple
 
 import numpy as np
 
-from model_deploy.act.types.action_spec import ACTION_DIM, ActionSpec
+from model_deploy.act.config.schema import SafetyConfig
+from model_deploy.act.types.action_spec import ACTION_DIM, ActionSpec, split_action
 from model_deploy.act.types.observation import ObservationSnapshot
-from model_deploy.act.types.safety_result import SafetyCode, SafetyFinding
+from model_deploy.act.types.safety_result import (
+    SafetyCode,
+    SafetyFinding,
+    SafetyResult,
+    SafetyStatus,
+)
 
 # ---------------------------------------------------------------------------
 # Exceptions (contract failures → B1 maps to REJECTED)
@@ -579,7 +585,233 @@ def validate_safe_action_invariants(
     return validated
 
 
-# Public primitive surface (no A1/B orchestration).
+# ---------------------------------------------------------------------------
+# A1 SafetyGuard + B1-B5 orchestration
+# ---------------------------------------------------------------------------
+
+
+class SafetyGuard:
+    """Immutable-policy safety guard for single-step absolute actions (A1).
+
+    Holds a frozen ``SafetyConfig`` only. Does **not** store
+    ``previous_safe_action``, metrics, or fallback policy across ticks.
+    Callers (L2-06) must pass references each call via ``filter_action``.
+    """
+
+    def __init__(self, config: SafetyConfig) -> None:
+        if not isinstance(config, SafetyConfig):
+            raise TypeError(
+                f"SafetyGuard config must be SafetyConfig, got {type(config)!r}"
+            )
+        # Frozen dataclass — treat as immutable policy; no defensive copy needed.
+        self._config = config
+
+    @property
+    def config(self) -> SafetyConfig:
+        """Read-only access to the injected safety policy."""
+        return self._config
+
+    # ------------------------------------------------------------------
+    # B1 filter_action — sole public entry
+    # ------------------------------------------------------------------
+
+    def filter_action(
+        self,
+        candidate: Any,
+        previous_safe_action: Optional[ActionSpec] = None,
+        latest_observation: Optional[ObservationSnapshot] = None,
+    ) -> SafetyResult:
+        """Validate, select reference, project, and return C5 ``SafetyResult``.
+
+        Result aggregation:
+        - no projection findings and success → ``PASS``
+        - projection findings → ``ADJUSTED`` with non-None action
+        - contract / no-reference / invariant failure → ``REJECTED``, action=None
+        """
+        try:
+            candidate_spec = self._validate_candidate_action(candidate)
+            reference = select_comparison_reference(
+                previous_safe_action,
+                latest_observation,
+                quaternion_norm_tolerance=self._config.quaternion_norm_tolerance,
+            )
+            safe_action, findings = self._project_bimanual_action(
+                candidate_spec, reference
+            )
+        except SafetyContractError as exc:
+            return SafetyResult(
+                status=SafetyStatus.REJECTED,
+                action=None,
+                findings=(
+                    SafetyFinding(
+                        code=exc.code,
+                        side=None,
+                        before=None,
+                        after=None,
+                        detail=str(exc),
+                    ),
+                ),
+            )
+
+        if findings:
+            return SafetyResult(
+                status=SafetyStatus.ADJUSTED,
+                action=safe_action,
+                findings=findings,
+            )
+        return SafetyResult(
+            status=SafetyStatus.PASS,
+            action=safe_action,
+            findings=(),
+        )
+
+    # ------------------------------------------------------------------
+    # B2 _validate_candidate_action
+    # ------------------------------------------------------------------
+
+    def _validate_candidate_action(self, candidate: Any) -> ActionSpec:
+        """Organize C6-C8 + ``split_action`` into a canonical ``ActionSpec``."""
+        # Accept ActionSpec by flattening; otherwise require exact (16,) vector.
+        if isinstance(candidate, ActionSpec):
+            raw = candidate.as_vector()
+        else:
+            raw = candidate
+        vector = require_action_vector_16(raw)
+        vector = require_finite_action(vector)
+        spec = split_action(vector)
+        tol = self._config.quaternion_norm_tolerance
+        left = np.asarray(spec.left_tcp_action, dtype=np.float64).copy()
+        right = np.asarray(spec.right_tcp_action, dtype=np.float64).copy()
+        left[3:7] = canonicalize_quaternion(left[3:7], tol=tol)
+        right[3:7] = canonicalize_quaternion(right[3:7], tol=tol)
+        return ActionSpec(
+            left_tcp_action=left.astype(np.float32, copy=False),
+            right_tcp_action=right.astype(np.float32, copy=False),
+            left_gripper=float(spec.left_gripper),
+            right_gripper=float(spec.right_gripper),
+        )
+
+    # ------------------------------------------------------------------
+    # B3 _project_arm_pose
+    # ------------------------------------------------------------------
+
+    def _project_arm_pose(
+        self,
+        target_tcp: Any,
+        reference_tcp: Any,
+        *,
+        side: Literal["left", "right"],
+    ) -> Tuple[np.ndarray, List[SafetyFinding]]:
+        """Organize C10-C11 for one arm TCP pose (7D xyz+xyzw)."""
+        target = np.asarray(target_tcp, dtype=np.float64).ravel()
+        ref = np.asarray(reference_tcp, dtype=np.float64).ravel()
+        if target.shape != (7,) or ref.shape != (7,):
+            raise SafetyContractError(
+                SafetyCode.INVALID_SHAPE,
+                f"{side} TCP pose must be shape (7,), got target={target.shape} ref={ref.shape}",
+            )
+        cfg = self._config
+        findings: List[SafetyFinding] = []
+        xyz, f_t = limit_translation_step(
+            target[:3],
+            ref[:3],
+            cfg.max_translation_step_m,
+            side=side,
+        )
+        if f_t is not None:
+            findings.append(f_t)
+        quat, f_r = limit_rotation_step(
+            target[3:7],
+            ref[3:7],
+            cfg.max_rotation_step_rad,
+            side=side,
+            quaternion_norm_tolerance=cfg.quaternion_norm_tolerance,
+        )
+        if f_r is not None:
+            findings.append(f_r)
+        pose = np.concatenate([xyz, quat]).astype(np.float64, copy=False)
+        return pose, findings
+
+    # ------------------------------------------------------------------
+    # B4 _project_gripper
+    # ------------------------------------------------------------------
+
+    def _project_gripper(
+        self,
+        value: float,
+        reference: float,
+        *,
+        side: Literal["left", "right"],
+    ) -> Tuple[float, List[SafetyFinding]]:
+        """Organize C12-C13 for one gripper scalar (range then step)."""
+        cfg = self._config
+        findings: List[SafetyFinding] = []
+        projected, f_range = clamp_gripper_range(
+            float(value),
+            cfg.gripper_min,
+            cfg.gripper_max,
+            side=side,
+        )
+        if f_range is not None:
+            findings.append(f_range)
+        projected, f_step = limit_gripper_step(
+            projected,
+            float(reference),
+            cfg.max_gripper_step,
+            side=side,
+        )
+        if f_step is not None:
+            findings.append(f_step)
+        return float(projected), findings
+
+    # ------------------------------------------------------------------
+    # B5 _project_bimanual_action
+    # ------------------------------------------------------------------
+
+    def _project_bimanual_action(
+        self,
+        candidate: ActionSpec,
+        reference: _ComparisonReference,
+    ) -> Tuple[ActionSpec, Tuple[SafetyFinding, ...]]:
+        """B3×2, B4×2, then C14-C15; return safe action and projection findings."""
+        findings: List[SafetyFinding] = []
+        left_pose, f_left = self._project_arm_pose(
+            candidate.left_tcp_action,
+            reference.left_tcp_action,
+            side="left",
+        )
+        findings.extend(f_left)
+        right_pose, f_right = self._project_arm_pose(
+            candidate.right_tcp_action,
+            reference.right_tcp_action,
+            side="right",
+        )
+        findings.extend(f_right)
+        left_g, f_lg = self._project_gripper(
+            candidate.left_gripper,
+            reference.left_gripper,
+            side="left",
+        )
+        findings.extend(f_lg)
+        right_g, f_rg = self._project_gripper(
+            candidate.right_gripper,
+            reference.right_gripper,
+            side="right",
+        )
+        findings.extend(f_rg)
+
+        assembled = build_safe_action(left_pose, right_pose, left_g, right_g)
+        cfg = self._config
+        validated = validate_safe_action_invariants(
+            assembled,
+            quaternion_norm_tolerance=cfg.quaternion_norm_tolerance,
+            gripper_min=cfg.gripper_min,
+            gripper_max=cfg.gripper_max,
+        )
+        return validated, tuple(findings)
+
+
+# Public surface: primitives + A1 orchestration.
 __all__ = [
     "SafetyContractError",
     "_ComparisonReference",
@@ -593,4 +825,5 @@ __all__ = [
     "limit_gripper_step",
     "build_safe_action",
     "validate_safe_action_invariants",
+    "SafetyGuard",
 ]
