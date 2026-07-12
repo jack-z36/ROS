@@ -52,7 +52,14 @@ topics:
     metrics: /act/metrics
 
 safety:
-  max_tcp_delta_per_step: 0.03
-  hand_min: 300.0
-  hand_max: 1000.0
-  quaternion_check: true
+  # ActionDomain-aligned thresholds (meters / radians / gripper 0~1).
+  # Legacy keys max_tcp_delta_per_step, hand_min/max, quaternion_check are rejected.
+  max_translation_step_m: 0.03
+  max_rotation_step_rad: 0.1
+  gripper_min: 0.0
+  gripper_max: 1.0
+  max_gripper_step: 0.2
+  quaternion_norm_tolerance: 0.001
+  pose_frame: base
+  quaternion_order: xyzw
+  gripper_domain: normalized_0_1
