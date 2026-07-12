@@ -18,13 +18,14 @@ Agent 权威上下文：本目录下 Markdown
 | 确认 L1 总目标、L2 清单、开发顺序和 L1 验收口径 | `01_L1_ACT部署程序任务文档.md` |
 | 确认每个 L2 的功能定义、输入、输出、负责/不负责、完成判据 | `02_L1_ACT功能模块边界.md` |
 | 确认模块间数据流、RAM 对象所有权、同步/异步边界、失败传播和 metrics/status | `03_L1_ACT功能模块协作架构.md` |
+| 确认 L2-04 raw action 的绝对位姿语义，以及 previous safe action / latest ObservationSnapshot 的比较基准边界 | `04_L2-04绝对位姿单步变化检查边界.md` |
 
 ## 3. HTML-MD 语义对齐表
 
 | HTML view id | HTML view label | Human-visible meaning | Authoritative Markdown | Required Markdown section | Markdown-only detail |
 |---|---|---|---|---|---|
 | `overview` | 整体架构 | L1 由哪些 L2 组成、开发顺序是什么 | `01_L1_ACT部署程序任务文档.md` | `L2 功能模块清单` / `L2 线性开发顺序` | L2 稳定 ID、依赖关系、L1 验收口径 |
-| `boundary` | 模块边界 | 每个 L2 负责什么、不负责什么 | `02_L1_ACT功能模块边界.md` | 各 L2 边界章节 | 输入输出、完成判据、代码层落点 |
+| `boundary` | 模块边界 | 每个 L2 负责什么、不负责什么 | `02_L1_ACT功能模块边界.md`；L2-04 绝对位姿细则见 `04_L2-04绝对位姿单步变化检查边界.md` | 各 L2 边界章节；L2-04 比较基准见原子文档 §1-§4 | 输入输出、完成判据、代码层落点；L2-04 两类比较基准的语义差异 |
 | `dataflow` | 宏观数据流 | observation、snapshot、chunk、action、status 如何流转 | `03_L1_ACT功能模块协作架构.md` | `宏观数据流契约` | RAM 对象所有权、同步/异步边界 |
 | `control-loop` | ControlLoop 调控 | `ControlLoop.tick()` 在调度什么 | `03_L1_ACT功能模块协作架构.md` | `ControlLoop 调控契约` | 启动、稳态、fallback、失败传播 |
 | `failure` | 失败传播 | 失败如何进入 fallback、blocked、status | `03_L1_ACT功能模块协作架构.md` | `失败传播关系` | 各 L2 失败来源和处理边界 |

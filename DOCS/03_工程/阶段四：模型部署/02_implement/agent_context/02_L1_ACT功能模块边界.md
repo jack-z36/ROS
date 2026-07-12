@@ -275,6 +275,8 @@ previous safe action
 SafetyConfig
 ```
 
+其中 raw single action 的左右 TCP 段表达**绝对目标位姿**，不是增量位姿。`previous safe action` 用于表达相邻安全目标指令的连续性基准；`latest ObservationSnapshot` 用于表达机器人当前实测位姿基准。完整原子语义见 `04_L2-04绝对位姿单步变化检查边界.md`。
+
 ### 5.3 输出
 
 ```text
@@ -292,12 +294,14 @@ SafetyResult(
 - 检查 quaternion 是否归一化。
 - 检查 gripper width 是否在 `[0, 1]`。
 - 检查 TCP 单步位移或姿态变化是否超限。
+- 对绝对目标位姿做单步变化检查时，区分“上一安全目标”与“当前实测位姿”两类比较基准，不把二者混为同一状态。
 - 根据配置执行 reject、clamp、hold-last-action 或 safe-stop 所需的安全返回。
 
 ### 5.5 不负责内容
 
 - 不产生 raw action。
 - 不管理 chunk 生命周期。
+- 不持有 previous safe action，不维护 latest ObservationSnapshot；二者分别由 L2-06 和 L2-02/L2-06 提供。
 - 不做 action 平滑、跨 chunk 融合或 RTC 类优化。
 - 不发布 `/act/policy_action`。
 - 不转换硬件命令格式。
@@ -314,8 +318,8 @@ SafetyResult(
 
 ### 5.8 上下游
 
-- 上游：L2-01（action spec / safety config）；运行时由 L2-06 产出 raw single action。设计和单测阶段可用 mock raw action。
-- 下游：L2-05 消费 safe action / `SafetyResult`。
+- 上游：L2-01 提供 action spec / safety config；L2-06 产出 raw single action 并持有 previous safe action；L2-02 通过 latest ObservationSnapshot 间接提供当前实测 TCP pose。
+- 下游：L2-06 消费 `SafetyResult` 并决定 fallback / publish；L2-05 消费 safe action / `SafetyResult`。
 - 协作细节见 `03_L1_ACT功能模块协作架构.md`。
 
 ## 6. L2-05 单步 Action 到执行器 Topic 适配发送闭环

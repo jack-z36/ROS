@@ -267,7 +267,7 @@ td .errc{color:var(--warn);font-weight:600}
 .term .t-loc span{display:block;color:#cbd5e1}
 .term .t-loc .lk{color:#fca5a5;font-weight:700;margin-right:4px}
 
-/* 数据微元表格（排版铁律#4）：3 列 变量名/数据结构/内部存储的数据类型 */
+/* 数据微元字段表（排版铁律#4）：3 列 变量名/内部存储结构/内部存储的数据类型 */
 .mu .desc .data-table{width:100%;border-collapse:collapse;font-size:11.5px;margin:2px 0}
 .mu .desc .data-table th,.mu .desc .data-table td{border:1px solid var(--line);padding:4px 7px;text-align:left;vertical-align:top;line-height:1.5}
 .mu .desc .data-table th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:10.5px}
@@ -495,7 +495,7 @@ td .errc{color:var(--warn);font-weight:600}
     </section>
 
     <!-- ============ 维度 2 · Pi0.5 如何运作 ============ -->
-    <section class="view pi05map" data-agent-source="agent_context/02_pi05源码3.5层微元拆解.md#1-源码范围">
+    <section class="view pi05map" data-agent-source="agent_context/02_pi05源码3.5层微元拆解.md#1-参考范围与降权规则">
       <h2>维度 2 · Pi0.5 这部分是如何运作的</h2>
       <div class="reading-path">📖 阅读路径：先懂 Pi0.5 安全检查结构可复用（骨架）→ 看检查链四步 → 看一个 action 怎么走 → 看 Pi0.5 关节空间与 ACT TCP 空间的根本差异 → ACT 怎么改见<a href="#" onclick="document.getElementById('v3').click()">维度3</a></div>
       <p class="lead">这一维度只回答：<b>Pi0.5 部署代码里，负责单步 action 安全检查的那部分是怎么跑的。</b>不涉及 ACT 怎么改。关键认知——Pi0.5 是<b>关节空间 14D</b>，ACT 是 <b>TCP 空间 16D</b>，数值必须重写。</p>
@@ -732,7 +732,7 @@ td .errc{color:var(--warn);font-weight:600}
             <p class="role">安全检查的冻结输出契约，跨模块 RAM 对象。结构复用 Pi0.5 <code>safety_guard.py::SafetyResult</code>，把 action/accepted/reason 三字段重写为 status + findings，使 ADJUSTED 的调整原因不丢失。</p>
             <div class="mu-list">
               <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
-                <tr><th>编号·变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
                 <tr><td>C1 <code>SafetyStatus</code></td><td>Enum[str]</td><td>三个字面量：<code>PASS</code> / <code>ADJUSTED</code> / <code>REJECTED</code></td></tr>
                 <tr><td>C2 <code>SafetyCode</code></td><td>Enum[str]</td><td>稳定原因码：<code>INVALID_SHAPE</code>、<code>NON_FINITE</code>、<code>INVALID_QUATERNION</code>、<code>NO_REFERENCE</code> 及各类调整 code</td></tr>
                 <tr><td>C3 <code>SafetyFinding</code></td><td>frozen dataclass</td><td>字段 <code>code: SafetyCode</code>、<code>side: left|right|None</code>、<code>before</code>、<code>after</code>、<code>detail</code>（before/after 只存可序列化标量或 tuple，不存 numpy view）</td></tr>
@@ -768,7 +768,7 @@ td .errc{color:var(--warn);font-weight:600}
             <p class="role">L2-04 主实现文件。纯 RAM 业务计算，无 ROS/timer/queue/文件 IO。模块级放无状态工具（纯函数 + 一个私有 dataclass），有状态的依赖与对外契约集中在 <code>SafetyGuard</code> class。结构复用 Pi0.5 <code>SafetyGuard</code>，去掉关节限位、改为绝对 TCP 目标几何投影。</p>
             <div class="mu-list">
               <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
-                <tr><th>编号·变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
                 <tr><td>C4 <code>_ComparisonReference</code></td><td>模块级 frozen dataclass（私有）</td><td>字段 <code>source</code>(str)、<code>left_xyz/right_xyz</code>(tuple[3])、<code>left_quat/right_quat</code>(tuple[4] xyzw)、<code>left_grip/right_grip</code>(float)；C9 产出的带来源标签基准对象</td></tr>
               </table></span></div>
               <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><table class="mutab">
@@ -786,7 +786,7 @@ td .errc{color:var(--warn);font-weight:600}
                 <tr><td>C15 <code>validate_safe_action_invariants</code></td><td>组装后的 ActionSpec + ActionDomain</td><td>校验通过的 ActionSpec；shape/finite/quaternion/域 gate 任一失败则抛错</td></tr>
               </table></span></div>
               <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
-                <tr><th>编号·变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr>
+                <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
                 <tr><td>A1 <code>_config</code></td><td>SafetyGuard 实例属性（immutable 引用）</td><td>SafetyConfig（L2-01 注入：平移米制阈值/旋转弧度阈值/夹爪同域范围与步长/quat 容差）</td></tr>
                 <tr><td>A1 <code>_domain</code></td><td>SafetyGuard 实例属性（immutable 引用）</td><td>ActionDomain（L2-01 注入：定义 16D 段序与夹爪域）</td></tr>
               </table></span></div>
@@ -826,7 +826,7 @@ td .errc{color:var(--warn);font-weight:600}
     </section>
 
     <!-- ============ 维度 4 · 人类验收标准 ============ -->
-    <section class="view acceptance" data-agent-source="agent_context/04_L2验收机制.md#3-验证标签表">
+    <section class="view acceptance" data-agent-source="agent_context/04_L2验收机制.md#3-验证标签">
       <h2>维度 4 · 人类验收标准</h2>
       <div class="reading-path">📖 阅读路径：先跑统一验收脚本（卡①）→ 看终端输出范例和翻译表（卡②）→ 边界/落点/值域检查（卡③④⑤）→ blocked 项和签字（卡⑥）</div>
       <p class="lead">这一维度回答：<b>怎么验证 L2-04，跑什么，看到什么算通过或失败。</b>核心是无 ROS/无硬件下 mock 验证安全检查逻辑；真机夹爪值域标 BLOCKED。</p>
