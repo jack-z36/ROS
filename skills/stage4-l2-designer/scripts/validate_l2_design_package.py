@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import re
 import sys
-from html import unescape
 from pathlib import Path
 
 
@@ -12,6 +11,7 @@ REQUIRED_AGENT_FILES = [
     "01_L2功能边界.md",
     "02_pi05源码3.5层微元拆解.md",
     "03_ACT微元设计与协作.md",
+    "03a_功能微元总览与组织结构.md",
     "04_L2验收机制.md",
     "05_人类验收机制.md",
     "06_types层设计.md",
@@ -54,8 +54,10 @@ REQUIRED_HTML_COMPONENTS = [
     (".lpick", 'class="lpick"', "HTML missing six-layer radio picker component: .lpick"),
     (".classbox", 'class="classbox"', "HTML missing classbox component"),
     (".mu-list", 'class="mu-list"', "HTML missing micro-unit list component"),
-    (".term", 'class="term"', "HTML missing terminal acceptance component: .term"),
-    (".trtab", 'class="trtab"', "HTML missing acceptance translation table: .trtab"),
+    (".vfy", 'class="vfy"', "HTML missing dimension-4 numbered acceptance checklist: .vfy"),
+    (".vfy-item", 'class="vfy-item"', "HTML missing dimension-4 acceptance checklist card: .vfy-item"),
+    (".term", 'class="term"', "HTML missing dimension-4 .term terminal example block"),
+    (".trtab", 'class="trtab"', "HTML missing dimension-4 .trtab translation table"),
 ]
 
 OLD_REQUIRED_HTML_VIEW_LABELS = [
@@ -136,7 +138,7 @@ def check_html(package: Path, l2_id: str, errors: list[str]) -> None:
     html_path = package / "L2架构交互可视化.html"
     if not html_path.is_file():
         return
-    text = unescape(html_path.read_text(encoding="utf-8"))
+    text = html_path.read_text(encoding="utf-8")
     lower = text.lower()
     if "<!doctype html>" not in lower:
         errors.append("HTML missing <!doctype html>")
@@ -178,7 +180,6 @@ def check_html(package: Path, l2_id: str, errors: list[str]) -> None:
     agent_dir = package / "agent_context"
     index_text = (agent_dir / "00_INDEX.md").read_text(encoding="utf-8") if (agent_dir / "00_INDEX.md").is_file() else ""
     for source in source_refs:
-        source = unescape(source)
         if not source.startswith("agent_context/"):
             errors.append(f"HTML data-agent-source must start with agent_context/: {source}")
             continue
@@ -188,6 +189,159 @@ def check_html(package: Path, l2_id: str, errors: list[str]) -> None:
             errors.append(f"HTML data-agent-source file does not exist: {source}")
         if file_part not in index_text:
             errors.append(f"00_INDEX.md semantic alignment table does not mention HTML source: {file_part}")
+
+
+def section_text(text: str, view_class: str, next_view_class: str | None = None) -> str:
+    """Return one approved view's HTML without requiring an HTML parser dependency."""
+    start = re.search(
+        rf'<section\b[^>]*class=["\'][^"\']*\b{view_class}\b[^"\']*["\'][^>]*>',
+        text,
+    )
+    if start is None:
+        return ""
+    end = (
+        re.search(
+            rf'<section\b[^>]*class=["\'][^"\']*\b{next_view_class}\b[^"\']*["\'][^>]*>',
+            text[start.end():],
+        )
+        if next_view_class
+        else None
+    )
+    return text[start.start(): start.end() + end.start()] if end else text[start.start():]
+
+
+def check_sample_pattern(package: Path, errors: list[str]) -> None:
+    """Guard the L2-04-derived four-dimension shape beyond marker-only checks."""
+    html_path = package / "L2架构交互可视化.html"
+    if not html_path.is_file():
+        return
+    text = html_path.read_text(encoding="utf-8")
+    sections = {
+        "boundary": section_text(text, "boundary", "pi05map"),
+        "pi05map": section_text(text, "pi05map", "blueprint"),
+        "blueprint": section_text(text, "blueprint", "acceptance"),
+        "acceptance": section_text(text, "acceptance"),
+    }
+    for view, content in sections.items():
+        if not content:
+            continue
+        if 'class="reading-path"' not in content:
+            errors.append(f"dimension {view} missing its own .reading-path")
+        if 'class="lead"' not in content:
+            errors.append(f"dimension {view} missing its own .lead")
+        if 'class="src"' not in content:
+            errors.append(f"dimension {view} missing its own authoritative .src note")
+
+    boundary = sections["boundary"]
+    if boundary:
+        if "<svg" in boundary.lower():
+            errors.append("dimension 1 boundary must use io-flow and must not contain <svg>")
+        for marker, message in [
+            ('class="io-flow"', "dimension 1 missing .io-flow"),
+            ('class="io-col input"', "dimension 1 missing input .io-col"),
+            ('class="io-module"', "dimension 1 missing central .io-module"),
+            ('class="io-col output"', "dimension 1 missing output .io-col"),
+            ('class="pipe"', "dimension 1 missing .pipe check-chain"),
+            ('class="io-card ok"', "dimension 1 missing output .io-card.ok"),
+            ('class="nested-detail"', "dimension 1 missing folded boundary detail: .nested-detail"),
+        ]:
+            if marker not in boundary:
+                errors.append(message)
+
+    blueprint = sections["blueprint"]
+    if blueprint:
+        if "03a_功能微元总览与组织结构.md" not in blueprint:
+            errors.append("dimension 3 must cite 03a_功能微元总览与组织结构.md for A/B/C organization")
+        for marker, message in [
+            ("<svg", "dimension 3 missing runtime swimlane SVG (图①)"),
+            ("stroke-dasharray", "dimension 3 runtime SVG missing dashed injection/failure distinction"),
+            ('class="ovtab"', "dimension 3 missing A/B/C overview table: .ovtab (图②)"),
+            ('class="layer-head A"', "dimension 3 missing A-layer overview table header"),
+            ('class="layer-head B"', "dimension 3 missing B-layer overview table header"),
+            ('class="layer-head C"', "dimension 3 missing C-layer overview table header"),
+            ('class="lpick"', "dimension 3 missing six-layer picker: .lpick (图③)"),
+            ('class="ltabs"', "dimension 3 missing six-layer labels: .ltabs"),
+            ('class="data-table"', "dimension 3 missing data-micro-unit field table: .data-table"),
+            ("内部存储结构", "dimension 3 data table must distinguish internal storage structure"),
+            ("内部存储的数据类型", "dimension 3 data table must distinguish internal stored data type"),
+        ]:
+            if marker not in blueprint:
+                errors.append(message)
+        if "图②" not in blueprint or "图③" not in blueprint:
+            errors.append("dimension 3 must include both A/B/C overview (图②) and six-layer landing (图③)")
+        if len(re.findall(r'<table\b[^>]*class=["\'][^"\']*\bovtab\b[^"\']*["\']', blueprint)) != 3:
+            errors.append("dimension 3 must contain exactly three .ovtab tables for A/B/C")
+        if len(re.findall(r'<input\b[^>]*\bname=["\']layer["\'][^>]*\btype=["\']radio["\']', blueprint)) != 6:
+            errors.append("dimension 3 must contain exactly six name=layer radio controls")
+        if len(re.findall(r'<div\b[^>]*class=["\'][^"\']*\blpane\b[^"\']*["\']', blueprint)) != 6:
+            errors.append("dimension 3 must contain exactly six .lpane layer panels")
+
+    acceptance = sections["acceptance"]
+    if acceptance:
+        for marker, message in [
+            ('class="vfy"', "dimension 4 missing .vfy checklist"),
+            ('class="vfy-item"', "dimension 4 missing .vfy-item checklist cards"),
+            ('class="term"', "dimension 4 missing .term terminal sample"),
+            ('class="trtab"', "dimension 4 missing .trtab translation table"),
+            ('class="t-loc"', "dimension 4 terminal sample missing FAIL location block: .t-loc"),
+        ]:
+            if marker not in acceptance:
+                errors.append(message)
+
+
+def check_dim3_classbox_nesting(package: Path, errors: list[str]) -> None:
+    """排版铁律#0: every .classbox in dimension 3 must live inside the .lpick region.
+
+    A six-layer tab must reveal its layer's full micro-unit breakdown inline. Placing a
+    .classbox (or a duplicate <h3>…微元拆解</h3>) after the .lpick closing </div> is the
+    regression seen in l2-04 — the content is hidden until the user clicks a tab AND scrolls
+    down. This check fails if any .classbox appears in the blueprint section after the .lpick.
+    """
+    html_path = package / "L2架构交互可视化.html"
+    if not html_path.is_file():
+        return
+    lines = html_path.read_text(encoding="utf-8").splitlines()
+
+    start = end = None
+    for i, line in enumerate(lines):
+        if re.search(r'<section\b[^>]*class="[^"]*\bblueprint\b', line):
+            start = i
+        elif start is not None and re.search(r'<section\b[^>]*class="[^"]*\bacceptance\b', line):
+            end = i
+            break
+    if start is None or end is None:
+        return  # structural view checks elsewhere already flag a missing blueprint section
+
+    # Locate the .lpick region and its matching close via div-depth tracking.
+    lpick_open = None
+    for i in range(start, end):
+        if 'class="lpick"' in lines[i]:
+            lpick_open = i
+            break
+    if lpick_open is None:
+        errors.append("dimension 3 (.blueprint) missing .lpick six-layer radio region")
+        return
+
+    depth = 0
+    lpick_close = None
+    for i in range(lpick_open, end):
+        depth += len(re.findall(r"<div\b", lines[i])) - len(re.findall(r"</div>", lines[i]))
+        if depth == 0 and i > lpick_open:
+            lpick_close = i
+            break
+    if lpick_close is None:
+        errors.append("dimension 3 .lpick region is not closed before .acceptance")
+        return
+
+    after_classboxes = 0
+    for i in range(lpick_close + 1, end):
+        if 'class="classbox' in lines[i]:
+            after_classboxes += 1
+    if after_classboxes:
+        errors.append(
+            f"dimension 3 has {after_classboxes} .classbox(es) after the .lpick region — "
+            "all classboxes must live inside their layer pane within .lpick (排版铁律#0)"
+        )
 
 
 def check_contamination(package: Path, errors: list[str]) -> None:
@@ -221,6 +375,8 @@ def main() -> int:
     check_root(package, errors)
     check_agent_context(package, errors)
     check_html(package, l2_id, errors)
+    check_sample_pattern(package, errors)
+    check_dim3_classbox_nesting(package, errors)
     check_contamination(package, errors)
 
     if errors:

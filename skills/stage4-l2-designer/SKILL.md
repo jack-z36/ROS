@@ -33,7 +33,7 @@ Read these before producing or changing artifacts:
 
 Read `references/l2-output-contract.md` when creating, migrating, or checking the final file tree.
 
-Read `html要求.md`（仓库根目录）as the authoritative HTML generation specification. All four dimensions, CSS components, SVG patterns, table formats, and terminal-block conventions must follow this spec. The dimension 4 paradigm in particular（one `.sh` script + `.term` terminal example + `.trtab` translation table）is fixed and must not revert to old-style `.vfy-item` cards.
+The authoritative HTML generation constraints live inline in the **Write Human HTML** section below（dimension-specific constraint blocks for dimension 1 / 3 / 4）. There is no separate `html要求.md` spec file. All four dimensions, CSS components, table formats, and terminal-block conventions must follow those inline constraints. The dimension 1 paradigm（io-flow 消费→功能模块→产出）is fixed; dimension 4 uses `.vfy-item` cards only as the numbered shell around its required `.sh` command, `.term` terminal example, and `.trtab` translation table.
 
 Use `DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视化.html` only as a visual quality reference. Do not copy ACT-wide content into a single-L2 visualization.
 
@@ -73,6 +73,7 @@ DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
     ├── 01_L2功能边界.md
     ├── 02_pi05源码3.5层微元拆解.md
     ├── 03_ACT微元设计与协作.md
+    ├── 03a_功能微元总览与组织结构.md
     ├── 04_L2验收机制.md
     ├── 05_人类验收机制.md
     ├── 06_types层设计.md
@@ -84,6 +85,8 @@ DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
 ```
 
 The package root is for humans. Keep all Agent Markdown inside `agent_context/`. Do not create `types/`, `config/`, `repo/`, `service/`, `runtime/`, or `ui/` subdirectories in the L2 design package.
+
+`03a_功能微元总览与组织结构.md` is a required Agent entry, not an optional appendix. It is the single authority for A/B/C numbering, totals, parent-child relationships, the runtime call tree, and reused upstream objects. `03_ACT微元设计与协作.md` keeps the input/output and failure semantics for those units; the six layer files keep their source landing details. Do not duplicate or renumber the A/B/C tree across those files.
 
 ## Semantic Alignment Rule
 
@@ -164,6 +167,8 @@ Write high-density Markdown under `agent_context/`.
 - `HTML-MD 语义对齐表`;
 - contamination checks.
 
+Write `03a_功能微元总览与组织结构.md` before the six-layer files. It must contain the A/B/C totals, one authoritative numbering table, a call tree, the overall collaboration trace, and an explicit list of upstream reused objects that are not newly numbered. Later L3 Agents must read this file before assigning implementation slices.
+
 Macro design files must carry the full detail needed by later Agents. Do not compress Agent Markdown for human readability.
 
 Six-layer design is represented by six files directly under `agent_context/`, not by six directories. If a layer adds no source artifact, keep its file and write:
@@ -217,43 +222,70 @@ Use these dimension responsibilities:
 
 | Dimension | Question answered | Required sample-pattern components |
 |---|---|---|
-| `boundary` / 维度1 功能边界 | 做什么 / 不做什么 / 输入输出契约是什么？ | status/positioning SVG, startup processing SVG, responsible vs non-responsible boundary-wall SVG, data contract cards |
+| `boundary` / 维度1 功能边界 | 做什么 / 不做什么 / 输入输出契约是什么？ | single **图① 消费 → 功能模块 → 产出** `.io-flow`：left column of collapsible `<details class="io-card">` inputs（one per upstream source, each with `<code>` name + `<span class="io-src">` source badge），center `.io-module`（the L2's main entry function signature + check-chain / pipeline summary in `.pipe`），right column `<details class="io-card ok">` output（the contract delivered downstream）. **No `<svg>` in dimension 1.** See Dimension 1 specific constraints below. |
 | `pi05map` / 维度2 Pi0.5 如何运作 | 参考源码如何运行，用白话讲清楚。 | plain-language callout, `details` terminology dictionary `.dict`, four-step `.flow`, `.trace`, bundle `.tree`, core-question cards |
-| `blueprint` / 维度3 开发蓝图 | 代码如何分层，每层有哪些 micro-units？ | **图①** runtime collaboration call-chain SVG swimlane（not creation/assembly order!）：each step labelled with 3.5-layer micro-unit type, failure branch as red dashed, compile-time injection as dashed banner, callout below with key facts. **图②** six-layer `.lpick` radio panes with `.classbox` + `.mu-list` micro-unit breakdown（each micro-unit on its own `<span class="fn">` line per 排版铁律#1）, no-artifact layer panes with reason+upstream+acceptance. Layer tab colors per §7 color spec. |
-| `acceptance` / 维度4 人类验收标准 | 怎么验证，跑什么，看到什么算通过或失败？ | one `.sh` script command + `.term` terminal example block（layered grouping with FAIL `.t-loc` location）+ `.trtab` translation table（label → layer → micro-unit with complete file→class→micro-unit location chain → PASS meaning / FAIL where to look）|
+| `blueprint` / 维度3 开发蓝图 | 代码如何分层，每层有哪些 micro-units？ | **图①** runtime collaboration call-chain SVG swimlane（not creation/assembly order!）：each step labelled with 3.5-layer micro-unit type, failure branch as red dashed, compile-time injection as dashed banner, callout below with key facts. **图②** A/B/C functional-micro-unit overview sourced from `03a`（one table each for class / orchestration / atomic units, plus the call tree). **图③** six-layer `.lpick` radio panes with `.classbox` + `.mu-list` micro-unit breakdown（each micro-unit on its own `<span class="fn">` line per 排版铁律#1）, no-artifact layer panes with reason+upstream+acceptance. Layer tab colors per §7 color spec. |
+| `acceptance` / 维度4 人类验收标准 | 怎么验证，跑什么，看到什么算通过或失败？ | a numbered `.vfy` / `.vfy-item` checklist: item 1 gives the one `.sh` script command; item 2 contains the `.term` terminal example（layered grouping with FAIL `.t-loc` location）and `.trtab` translation table（label → layer → micro-unit with complete file→class→micro-unit location chain → PASS meaning / FAIL where to look）; later items cover boundary, landing, coordination and hardware-blocked checks. |
 
 Do not reintroduce the old six-view contract as required HTML structure. Those architecture-report ideas may appear only as content inside the four approved dimensions when useful.
 
-**Dimension 4 specific constraints（mandatory, per `html要求.md` §5）:**
+**Dimension 1 specific constraints（mandatory）：**
 
-The acceptance dimension must follow the new paradigm, not the old `.vfy-item` card list:
+Dimension 1 must use the **io-flow**（消费 → 功能模块 → 产出）layout, not SVG diagrams. This is the only dimension where `<svg>` is forbidden. The whole dimension is one `<div class="figure">` wrapping a single `<div class="io-flow">`.
+
+- **No `<svg>` in dimension 1.** The old positioning diagram（图① 在程序中的定位）、reject/clamp 语义墙 SVG、input-output 契约 SVG、and the `.grid.g2` 负责/不负责 card pair are all **forbidden**. Fold that content（responsible / non-responsible, reject vs clamp, contract fields, coordination points）into `<details class="nested-detail">` blocks inside the relevant `.io-card` bodies instead of drawing it as SVG.
+- **Three-column structure inside `<div class="io-flow">`：**
+  - Left `<div class="io-col input">` with label `<div class="io-label">消费（上游提供）</div>`，then ≥1 `<details class="io-card">`. Each input card binds exactly one upstream source. Card variants by source layer：`io-card config`（config object）、`io-card repo`（repo/runtime-injected object）、`io-card types`（a types-layer dataclass）. Each `<summary>` shows the consumed object as `<code>` plus a `<span class="io-src">` source badge（e.g. `L2-01 注入`、`L2-06 cursor 直取`、`L2-02`）. The `.io-body` lists the actually-consumed fields in a `<table>` and notes what the L2 does **not** consume（folded in `<details class="nested-detail">` when long）.
+  - Center `<div class="io-col">`（`flex:1.1`）with one `<div class="io-module">`. Its title is the L2's main entry function signature in monospace（e.g. `predict_action_chunk(observation)`、`filter_action(raw_action, *, …)`），followed by `→ <return type>`. A `<div class="pipe">` lists the internal check-chain / pipeline steps compactly. End with a one-line pointer to 维度3 for the full breakdown.
+  - Right `<div class="io-col output">` with label `<div class="io-label">产出（交付下游）</div>`，then ≥1 `<details class="io-card ok">`. Each output card names the delivered contract type as `<code>` plus a `<span class="io-src">` consumer badge（e.g. `→ L2-06`）, then a `<table>` of its fields and any forbidden fields（归其他 L2）. reject/clamp、负责/不负责、coordination points go in nested `<details class="nested-detail">` here.
+  - Columns separated by `<div class="io-arrow">→</div>`.
+- **Required CSS vocabulary（define all in `<style>`；minimum set）：** `.io-flow`（flex row）、`.io-col`（`flex:1` column，`.input{flex:1.2}` `.output{flex:1}`）、`.io-arrow`、`.io-label`（uppercase tag）、`.io-card`（`border-left:5px`，variants `.types/.config/.repo/.ok`）、`.io-card>summary`（▸ marker，`<code>` + `.io-src` badge）、`.io-body`、`.io-module`（`2.5px solid var(--repo)` box）+ `.pipe`、`.nested-detail`. Reference template：the `.io-flow` … `.nested-detail` block in `DOCS/03_工程/阶段四：模型部署/02_implement/l2-03-act-inference_*/L2架构交互可视化.html`.
+- **Reading-path + lead templates（align with l2-03）：** reading-path points to「下图展示 &lt;L2-id&gt; 消费什么、产出什么 → &lt;next pivot&gt; → 细节见维度3」; lead is one sentence stating the runtime shape（e.g. 「纯同步推理服务，被 L2-06 按需调用，不管理线程/队列/metrics」）plus the key boundary distinction（what this L2 is **not**）.
+
+**Dimension 4 specific constraints（mandatory, per the approved L2-04 pattern）:**
+
+The acceptance dimension uses a numbered `.vfy` / `.vfy-item` checklist. It must not regress to a card-only checklist: the terminal sample and translation table below are mandatory parts of item 2.
 
 - **Part A — How to verify:** One `.sh` script command（e.g. `bash src/model_deploy/act/scripts/l2_XX_verify.sh`）with output format description. Must include a `.term` terminal example block showing a run with at least one FAIL, so humans can see the FAIL location format.
 - **Terminal output format:** Grouped by architecture layer（types/config/repo/service/runtime/ui·boundary）, visually aligned with dimension 3's six-layer `.lpick` tabs. Each line: `PASS|FAIL|BLOCKED` + label name + one-sentence description. FAIL lines must include a `.t-loc` sub-block with exact location: file / class / micro-unit / pytest node / error summary. Summary line: `N PASS / N FAIL / N BLOCKED`. BLOCKED ≠ failure（environment constraint）.
 - **Part B — Translation table（`.trtab`）:** Each row maps one terminal label to: layer → micro-unit with complete location chain（`文件路径 → class名（模块级函数标"无 class"）→ 微元名 + 类型小标签`）→ PASS meaning / FAIL where to look. The location chain must be complete—never abbreviate to just function name.
 - **CSS collision prevention:** `.trtab td.mu` must explicitly `display:block` to override the global `.mu{display:grid;grid-template-columns:90px 1fr}` rule. Terminal example block must use structured `.t-row` divs（not `<pre>`）with three-column grid alignment.
 - **Script design basis:** Reference `agent_context/04_L2验收机制.md §4` for script design requirements. The script itself is built by a later L3 task; dimension 4 only defines the expected output format and labels.
-- **Document audit items**（non-script, human-reviewed）may follow Part B as a compact section, clearly separated from automated script tests.
+- **Items 3+ — Document and environment checks:** keep boundary-cleanliness, source-landing, cross-L2 coordination, and real-hardware items as separate `.vfy-item` cards. Hardware checks must visibly be `BLOCKED` when the environment is unavailable; do not convert that state into a FAIL.
 
-**Dimension 3 specific constraints（mandatory, per `html要求.md` §4.1/§4.2/§6.1/§7）:**
+**Dimension 3 specific constraints（mandatory, per the approved L2-04 pattern）:**
 
-The blueprint dimension has two critical components, each with strict rules:
+The blueprint dimension has three critical components, each with strict rules:
 
 - **图① — Runtime collaboration call-chain SVG swimlane（§4.1）：**
   - Must reflect **real runtime call direction**, never draw as dependency/creation/assembly order. This is the most common mistake.
-  - Horizontal axis = architecture layer swimlanes（the layers that participate at runtime）. Each step ①②③… lands in its owning swimlane.
+  - Use one horizontal SVG with named architecture-layer swimlanes. The L2-04 pattern is runtime driver → service check chain → types result contract, but participating lanes must follow the current L2 boundary rather than copying its names.
+  - Show a dashed compile-time injection banner above the swimlanes; it names the static config/object injected into the service constructor and is visually distinct from runtime calls.
+  - Each numbered step is a rounded node in its owner lane, with a title, a 3.5-layer type subtitle, and an edge label when it carries a contract object. Show the final result contract returning to the runtime driver as an explicit return arrow.
   - **Every step must be labeled with its 3.5-layer micro-unit type**（e.g. "②更新字段缓存（内部状态更新函数）"）, cross-referencing 图②.
-  - **Failure branch must use red dashed lines** with a separate box explaining where the flow stops.
-  - **Compile-time injection**（e.g. L2-01 config）must use a **dashed banner** at the top, visually distinct from runtime solid arrows.
-  - A **callout must follow the SVG**, calling out key collaboration facts: who is the driver, which layer has/lacks orchestration functions, state ownership, failure propagation.
-- **图② — Six-layer code landing radio panes（§4.2）：**
-  - 6 layer tabs driven by hidden radio inputs. "Has products" tabs highlighted with border color matching §7; "no products" tabs grey background.
-  - Each product-layer pane: layer title + one-line responsibility + one or more `.classbox` cards.
+  - **Failure branch must use red dashed lines** to a separate stop box that names the rejected condition and states that downstream write/publish does not occur. Projection/adjustment paths must remain on the normal runtime path, not be drawn as a reject branch.
+  - End the SVG with a compact legend: solid line = runtime call, red dashed = failure stop, dashed banner = compile-time injection. A callout immediately after the SVG must name the driver, orchestration owner, state owner and failure propagation.
+- **图② — A/B/C functional-micro-unit overview：**
+  - Project the numbering table and call tree from `agent_context/03a_功能微元总览与组织结构.md`; it answers “what exists and who calls whom” before source placement.
+  - Use exactly three separate `.ovtab` tables, one each for A（3.25 class）, B（3.375 orchestration）, and C（3.5 atomic units）. Each table has a colored `.layer-head.A|B|C` title row carrying that layer's count, then the same four columns: 编号 / 名称 / 类型 / 基础介绍.
+  - The A row explains packaging, injected immutable policy and whether runtime state is owned. Each B row expresses the local orchestration chain and its reject/adjust propagation. Each C row identifies the atomic data or calculation and its RAM input/output. This is a readable functional inventory, not a six-layer landing table and not a copy of source-code signatures.
+  - A/B/C numbering, total counts, parent relationships and the call tree must match `03a` exactly. Add a one-sentence bridge from 图② to 图③: 图② answers the functional decomposition; 图③ answers the source landing and field-level contract.
+- **图③ — Six-layer code landing radio panes（§4.2）：**
+  - Use one `.lpick` region containing six hidden `name="layer" type="radio"` controls, six `.ltabs` labels, and six matching `.lpane` panels in fixed `types / config / repo / service / runtime / ui` order. Selecting a label must reveal that layer's pane without JavaScript.
+  - Each tab explicitly says `有产物`, `复用`, or `无`; has-product tabs use the owner-layer color, while reuse/no-product tabs use the neutral style. Do not omit a layer just because it has no source artifact.
+  - Each product-layer pane begins with `目录 / layer responsibility / covered micro-unit IDs`, then one or more `.classbox` cards that show source file, class-or-module ownership, role, and the `.mu-list` breakdown. A class is a 3.25 packaging unit, not a field: state explicitly which 3.5 micro-units it packages; show its instance state only through the data-micro-unit representation below. Tests may be mentioned as acceptance coverage, but never added as a seventh architecture tab.
+  - Each no-product pane must visibly provide all three facts: no-artifact reason, upstream object or L2 that owns the concern, and the concrete acceptance check proving this L2 did not grow an artifact in that layer.
+  - **排版铁律#0 — classbox 必须在 lpick 内**（结构性，最常见的 bug）：Every `.classbox` in dimension 3 **must live inside the `.lpick` region, inside the pane of the layer that owns it**（types classboxes in `.lpane.lp-types`, service classboxes in `.lpane.lp-service`, etc.）. **It is forbidden to place any `.classbox` after the `.lpick` closing `</div>`.** Do **not** add a separate `<h3>…classbox 微元拆解</h3>`（or any `<h3>`）after the `.lpick` block to re-show classboxes — that creates a duplicate which is invisible until the user clicks a tab and then scrolls down（the exact regression seen in l2-04）. The `.lpick` is the **single source** of classboxes in dimension 3；图③ is the only `<h3>` after 图②. Rationale：clicking a six-layer tab must immediately reveal that layer's full micro-unit breakdown inline, with no out-of-band duplicate to hunt for. Reference：`l2-03` puts all 5 classboxes（types ActionChunk + 4 service classboxes）inside their panes, 0 outside.
   - Each `.classbox` must use layer-specific CSS class（`.classbox.repo`/`.svc`/`.rt`/`.ui`）, not inline styles, with `border-left-color` matching the layer's color in §7.
   - **排版铁律#1**: Each micro-unit must occupy its own line. If one `.mu` contains multiple functions/fields, each must be wrapped in `<span class="fn">`（`display:block`）. **Never** cram multiple functions with `；`/`/` into one line.
   - **排版铁律#2**: Micro-unit kind labels must be exactly the 5 approved types（数据/计算函数/内部状态更新函数/数据读写函数/编排函数）. Self-invented names are illegal.
-  - **排版铁律#3**: Descriptions must use `<b>输入：</b>` `<b>修改对象：</b>` `<b>如何修改：</b>` bold prefixes to explicitly mark mandatory dimensions per §3.3.
-- **排版铁律#4 — 数据微元必须用表格**: Every `.mu` with `kind data` must use a `<table class="data-table">` inside `.desc` with exactly 3 columns: ①变量名（或字段名，对 frozen dataclass）②数据结构 ③内部存储的数据类型。Never use pipe-delimited text blobs (`变量名：… | 存储结构：… | 数值类型：…`) for data micro-units. Each variable/field gets its own row. CSS must define `.mu .desc .data-table` compact table styles（font-size 11.5px, padding 4px 7px, first column monospace）. The `.mu` grid layout（90px kind + 1fr desc）is preserved; the table is an inner element of `.desc`.
+  - **排版铁律#3 — 按 3.5 类型呈现内部字段与行为**: `.mu` 的说明标签必须匹配其 3.5 类型，不能用一个通用模板混淆纯计算、状态修改与外部读写：
+    - `数据`：使用下方数据表，只说明变量/字段本身；不把函数调用过程塞进表格。
+    - `计算函数`：逐行使用 `<b>输入：</b>`（RAM 对象类型 + shape/结构）和 `<b>输出：</b>`（新的 RAM 对象/判断结果 + shape/结构）或 `<b>异常：</b>`；明确“不读写进程外部资源”。
+    - `内部状态更新函数`：逐行使用 `<b>修改对象：</b>`（变量名 + RAM 内结构）和 `<b>如何修改：</b>`（替换/追加/累计/清空等）；不得伪装成纯计算函数。
+    - `数据读写函数`：逐行使用 `<b>外部边界：</b>`（文件路径 / topic / 硬件句柄 / 网络端点）和 `<b>读入/写出：</b>`（RAM 对象或外部结果的类型 + shape/结构）。
+    - `编排函数`：逐行使用 `<b>调用条件：</b>`、`<b>步骤：</b>`、`<b>失败：</b>`，说明调用顺序、跳过条件和失败传播；不要把其描述降格成单一输入输出函数。
+- **排版铁律#4 — 数据微元必须用字段表**: Every `.mu` with `kind data` must use a `<table class="data-table">` inside `.desc` with exactly 3 columns: ①变量名（或 `编号·变量名`；dataclass 逐字段）②内部存储结构（常量 / Enum / tuple / list / dict / dataclass / ndarray 的 shape 等）③内部存储的数据类型（`int` / `float` / `str` / `bool` / object reference；array 另写 element dtype）。Never use pipe-delimited text blobs (`变量名：… | 存储结构：… | 数值类型：…`) for data micro-units. Each variable/field gets its own row; Enum must list allowed values, ndarray must give shape plus element dtype, and frozen dataclass must list every field rather than saying only “a dataclass”. CSS must define `.mu .desc .data-table` compact table styles（font-size 11.5px, padding 4px 7px, first column monospace）. The `.mu` grid layout（90px kind + 1fr desc）is preserved; the table is an inner element of `.desc`.
 - **lpick tab colors（§7）：** Selected tab background must match the architecture layer's emphasis color. Common error: using `--ok`（green）for service/runtime instead of `--config`（blue）and `--repo`（purple）. For L2s where config/repo have no products, use `--grey`.
 
 Stop for user confirmation after drafting the HTML information hierarchy and L2 Gate/human acceptance design.
@@ -277,15 +309,27 @@ python3 skills/stage4-l2-designer/scripts/validate_l2_design_package.py DOCS/03_
 
 Also inspect any reported contamination manually before treating the package as ready for L3 generation.
 
-Additional manual checks for dimension 4:
-- HTML must contain `.term` terminal example block with at least one FAIL row and `.t-loc` sub-block.
-- HTML must contain `.trtab` translation table with complete location chains（file path → class → micro-unit + kind tag）per row.
-- `.trtab td.mu` must have `display:block` override to prevent CSS collision with global `.mu` grid layout.
-- Terminal labels must be grouped by layer matching dimension 3's six-layer tabs.
+Additional manual checks for dimension 4（`.term` + `.trtab` are now validator-enforced；the items below are the deeper checks the validator cannot do）:
+- `.term` terminal example block contains at least one FAIL row with a `.t-loc` sub-block（file / class / micro-unit / pytest node / error summary）.
+- `.trtab` translation table has complete location chains（file path → class → micro-unit + kind tag）per row — never abbreviated to just function name.
+- `.trtab td.mu` has `display:block` override to prevent CSS collision with global `.mu` grid layout.
+- Terminal labels are grouped by layer matching dimension 3's six-layer tabs.
+- `.vfy` has numbered `.vfy-item` cards: item 1 contains the verification command; item 2 contains both `.term` and `.trtab`; later cards keep the human-reviewed boundary, landing, coordination and hardware checks distinct.
 
-Additional manual checks for dimension 3:
+Additional manual checks for dimension 1（the validator checks structure; inspect the visual density and semantic accuracy manually）:
+- Dimension 1 contains **no `<svg>`** — the only figure is `<div class="figure"><div class="io-flow">…</div></div>`.
+- io-flow has the three-column shape：left `.io-col input`（≥1 `.io-card` with `.io-src` badges），center `.io-module`（main entry function + `.pipe`），right `.io-col output`（≥1 `.io-card ok`）.
+- Old-style positioning / boundary-wall / contract SVG and the `.grid.g2` 负责/不负责 card pair are absent；that content is folded into `.nested-detail` inside the relevant `.io-card`.
+- CSS defines the full `.io-flow` … `.nested-detail` vocabulary.
+
+Additional manual checks for dimension 3（`classbox-all-inside-lpick` is validator-enforced；the items below are the deeper checks the validator cannot do）:
+- 图① is a layer swimlane, not construction order: has a dashed compile-time injection banner, numbered runtime nodes, explicit result return arrow, red dashed reject-stop branches, a legend and a post-figure state/failure callout.
+- 图② uses exactly three `.ovtab` tables (A/B/C), each with `编号 / 名称 / 类型 / 基础介绍`; counts and IDs equal `03a`, and its descriptions explain functional ownership rather than duplicating the six-layer panel.
+- 图③ uses exactly six radio tabs and six matching panes in `types / config / repo / service / runtime / ui` order; no-product panes include reason + upstream owner/object + acceptance confirmation.
+- **排版铁律#0（structural）**: Every `.classbox` lives inside the `.lpick` region, in the pane of its owning layer；**zero `.classbox` after the `.lpick` closing `</div>`**, and no extra `<h3>`（e.g. `…classbox 微元拆解`）after 图③ re-showing classboxes. This is what makes a six-layer tab reveal its full content on click.
 - All `.mu .kind.data` rows must use `<table class="data-table">` inside `.desc`（not inline `|` text, not `<span class="fn">`）.
-- `.data-table` must have exactly 3 columns: 变量名 / 数据结构 / 内部存储的数据类型.
+- `.data-table` must have exactly 3 columns: 变量名 / 内部存储结构 / 内部存储的数据类型；dataclass 按字段逐行，Enum 列出合法值，array 同时写 shape 与 element dtype.
+- Compute / state-update / I-O / orchestration micro-units use their respective input-output / modified-object / external-boundary / call-condition-step-failure labels, not a shared prose template.
 - CSS must define `.mu .desc .data-table` with compact table styles.
 
 ## Output Rules
