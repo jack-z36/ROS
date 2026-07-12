@@ -154,18 +154,67 @@ class TopicsConfig:
     command: CommandTopicsConfig = field(default_factory=CommandTopicsConfig)
 
 
+# Legacy SafetyConfig YAML keys removed in deploy_032 (destructive migration).
+# Callers must use the ActionDomain-aligned field names below.
+_SAFETY_LEGACY_KEYS = frozenset(
+    {
+        "max_tcp_delta_per_step",
+        "hand_min",
+        "hand_max",
+        "quaternion_check",
+    }
+)
+
+
 @dataclass(frozen=True)
 class SafetyConfig:
-    """Runtime safety checks applied after policy inference (ACT version).
+    """Runtime safety policy applied after policy inference (ACT version).
 
-    ACT uses TCP-space limits instead of joint-space limits.
-    Bridge/mux/joint-limit fields are intentionally absent.
+    Thresholds are in the deployment ActionDomain:
+    - translation in meters, rotation in radians
+    - gripper range/step in the same domain as ActionSpec gripper (default 0~1)
+    - quaternion_norm_tolerance is unitless
+
+    Joint limits, F100 register domains (e.g. 0~100 / 300~1000), and
+    bridge/mux fields are intentionally absent.
     """
 
-    max_tcp_delta_per_step: float = 0.03
-    hand_min: float = 300.0
-    hand_max: float = 1000.0
-    quaternion_check: bool = True
+    max_translation_step_m: float = 0.03
+    max_rotation_step_rad: float = 0.1
+    gripper_min: float = 0.0
+    gripper_max: float = 1.0
+    max_gripper_step: float = 0.2
+    quaternion_norm_tolerance: float = 1e-3
+    pose_frame: str = "base"
+    quaternion_order: str = "xyzw"
+    gripper_domain: str = "normalized_0_1"
+
+    def __post_init__(self) -> None:
+        if self.max_translation_step_m <= 0.0:
+            raise DeployConfigError(
+                f"max_translation_step_m must be positive, got {self.max_translation_step_m}"
+            )
+        if self.max_rotation_step_rad <= 0.0:
+            raise DeployConfigError(
+                f"max_rotation_step_rad must be positive, got {self.max_rotation_step_rad}"
+            )
+        if self.gripper_min > self.gripper_max:
+            raise DeployConfigError(
+                f"gripper_min ({self.gripper_min}) must be <= gripper_max ({self.gripper_max})"
+            )
+        if self.max_gripper_step < 0.0:
+            raise DeployConfigError(
+                f"max_gripper_step must be >= 0, got {self.max_gripper_step}"
+            )
+        if self.quaternion_norm_tolerance <= 0.0:
+            raise DeployConfigError(
+                "quaternion_norm_tolerance must be positive, "
+                f"got {self.quaternion_norm_tolerance}"
+            )
+        if self.quaternion_order != "xyzw":
+            raise DeployConfigError(
+                f"quaternion_order must be 'xyzw', got {self.quaternion_order!r}"
+            )
 
 
 @dataclass(frozen=True)
@@ -274,13 +323,49 @@ def _deploy_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> DeployCon
                 metrics=_str(cmd_raw, "metrics", default="/act/metrics"),
             ),
         ),
-        safety=SafetyConfig(
-            max_tcp_delta_per_step=_positive_float(safety_raw, "max_tcp_delta_per_step", default=0.03),
-            hand_min=_float(safety_raw, "hand_min", default=300.0),
-            hand_max=_float(safety_raw, "hand_max", default=1000.0),
-            quaternion_check=_bool(safety_raw, "quaternion_check", default=True),
-        ),
+        safety=_safety_from_mapping(safety_raw),
         raw=dict(root),
+    )
+
+
+def _safety_from_mapping(safety_raw: Mapping[str, Any]) -> SafetyConfig:
+    """Parse and validate the ``safety:`` section into an immutable SafetyConfig.
+
+    Destructive migration (deploy_032): legacy keys
+    ``max_tcp_delta_per_step`` / ``hand_min`` / ``hand_max`` / ``quaternion_check``
+    are rejected with a clear error so meter-scale thresholds are never silently
+    reinterpreted as joint radians or F100 register domains.
+    """
+    present_legacy = sorted(k for k in _SAFETY_LEGACY_KEYS if k in safety_raw)
+    if present_legacy:
+        raise DeployConfigError(
+            "safety section uses removed legacy keys "
+            f"{present_legacy}; migrate to ActionDomain fields: "
+            "max_translation_step_m, max_rotation_step_rad, gripper_min, "
+            "gripper_max, max_gripper_step, quaternion_norm_tolerance "
+            "(optional: pose_frame, quaternion_order, gripper_domain). "
+            "Do not map hand_min/hand_max 300~1000 hardware registers into "
+            "the gripper training domain."
+        )
+
+    return SafetyConfig(
+        max_translation_step_m=_positive_float(
+            safety_raw, "max_translation_step_m", default=0.03
+        ),
+        max_rotation_step_rad=_positive_float(
+            safety_raw, "max_rotation_step_rad", default=0.1
+        ),
+        gripper_min=_float(safety_raw, "gripper_min", default=0.0),
+        gripper_max=_float(safety_raw, "gripper_max", default=1.0),
+        max_gripper_step=_non_negative_float(
+            safety_raw, "max_gripper_step", default=0.2
+        ),
+        quaternion_norm_tolerance=_positive_float(
+            safety_raw, "quaternion_norm_tolerance", default=1e-3
+        ),
+        pose_frame=_str(safety_raw, "pose_frame", default="base"),
+        quaternion_order=_str(safety_raw, "quaternion_order", default="xyzw"),
+        gripper_domain=_str(safety_raw, "gripper_domain", default="normalized_0_1"),
     )
 
 
@@ -378,6 +463,13 @@ def _positive_float(raw: Mapping[str, Any], key: str, default: float) -> float:
     value = _float(raw, key, default)
     if value <= 0.0:
         raise DeployConfigError(f"{key} must be positive, got {value}")
+    return value
+
+
+def _non_negative_float(raw: Mapping[str, Any], key: str, default: float) -> float:
+    value = _float(raw, key, default)
+    if value < 0.0:
+        raise DeployConfigError(f"{key} must be non-negative, got {value}")
     return value
 
 

@@ -126,7 +126,9 @@ def test_s1_legal_config_loads(tmp_path: Path) -> None:
     assert cfg.runtime.state_dim == 16
     assert cfg.runtime.action_dim == 16
     assert cfg.topics.namespace == "/act"
-    assert cfg.safety.max_tcp_delta_per_step > 0
+    assert cfg.safety.max_translation_step_m > 0
+    assert cfg.safety.max_rotation_step_rad > 0
+    assert cfg.safety.gripper_min <= cfg.safety.gripper_max
 
     # Verify types layer constants
     assert STATE_DIM == 16
