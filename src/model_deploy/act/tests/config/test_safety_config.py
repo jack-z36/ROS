@@ -1,9 +1,10 @@
-"""验收项 4: Safety 参数固定 — TCP 限制 / gripper 值域 / quaternion 检查.
+"""SafetyConfig contract — deploy_032 ActionDomain-aligned thresholds.
 
-Verifies that SafetyConfig carries the expected defaults and
-that invalid safety values are rejected at the from_mapping level.
+Verifies defaults (meters / radians / gripper 0~1), illegal rejection, and
+that hardware-register domains (300~1000) are not the schema defaults.
 """
 
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
@@ -12,20 +13,46 @@ from model_deploy.act.config.schema import DeployConfig, DeployConfigError, Safe
 
 
 class TestSafetyDefaults:
-    def test_default_tcp_limit(self) -> None:
+    def test_default_translation_and_rotation(self) -> None:
         s = SafetyConfig()
-        assert s.max_tcp_delta_per_step == 0.03
-        assert s.max_tcp_delta_per_step > 0
+        assert s.max_translation_step_m == 0.03
+        assert s.max_translation_step_m > 0
+        assert s.max_rotation_step_rad == 0.1
+        assert s.max_rotation_step_rad > 0
 
-    def test_default_gripper_range(self) -> None:
+    def test_default_gripper_is_action_domain_not_hardware_register(self) -> None:
         s = SafetyConfig()
-        assert s.hand_min == 300.0
-        assert s.hand_max == 1000.0
-        assert s.hand_min < s.hand_max
+        assert s.gripper_min == 0.0
+        assert s.gripper_max == 1.0
+        assert s.gripper_min <= s.gripper_max
+        assert s.max_gripper_step == 0.2
+        assert s.max_gripper_step >= 0
+        # Must not look like F100 / RM native hand register domain.
+        assert not (s.gripper_min >= 100 and s.gripper_max >= 300)
+        assert (s.gripper_min, s.gripper_max) != (300.0, 1000.0)
 
-    def test_default_quaternion_check(self) -> None:
+    def test_default_quaternion_and_domain_metadata(self) -> None:
         s = SafetyConfig()
-        assert s.quaternion_check is True
+        assert s.quaternion_norm_tolerance == 1e-3
+        assert s.quaternion_norm_tolerance > 0
+        assert s.pose_frame == "base"
+        assert s.quaternion_order == "xyzw"
+        assert s.gripper_domain == "normalized_0_1"
+
+    def test_safety_frozen(self) -> None:
+        s = SafetyConfig()
+        with pytest.raises(FrozenInstanceError):
+            s.max_translation_step_m = 0.99  # type: ignore[misc]
+
+    def test_no_legacy_fields(self) -> None:
+        s = SafetyConfig()
+        for legacy in (
+            "max_tcp_delta_per_step",
+            "hand_min",
+            "hand_max",
+            "quaternion_check",
+        ):
+            assert not hasattr(s, legacy), f"SafetyConfig still has legacy field: {legacy}"
 
 
 class TestSafetyInDeployConfig:
@@ -33,41 +60,113 @@ class TestSafetyInDeployConfig:
         return {
             "bundle": {"bundle_dir": "/tmp/test"},
             "runtime": {
-                "mode": "dry-run", "control_hz": 30.0, "inference_hz": 10.0,
-                "chunk_size": 30, "execute_horizon": 10, "state_dim": 16,
-                "action_dim": 16, "fallback_policy": "hold_last_action",
+                "mode": "dry-run",
+                "control_hz": 30.0,
+                "inference_hz": 10.0,
+                "chunk_size": 30,
+                "execute_horizon": 10,
+                "state_dim": 16,
+                "action_dim": 16,
+                "fallback_policy": "hold_last_action",
             },
             "image": {"image_size": 224},
             "topics": {"namespace": "/act"},
             "safety": safety_overrides,
         }
 
-    def test_tcp_delta_negative_rejected(self) -> None:
-        with pytest.raises(DeployConfigError):
-            DeployConfig.from_mapping(self._raw(max_tcp_delta_per_step=-0.01), base_dir=Path("/tmp"))
+    def test_empty_safety_uses_action_domain_defaults(self) -> None:
+        cfg = DeployConfig.from_mapping(self._raw(), base_dir=Path("/tmp"))
+        assert cfg.safety.max_translation_step_m == 0.03
+        assert cfg.safety.max_rotation_step_rad == 0.1
+        assert cfg.safety.gripper_min == 0.0
+        assert cfg.safety.gripper_max == 1.0
+        assert cfg.safety.max_gripper_step == 0.2
+        assert cfg.safety.quaternion_norm_tolerance == 1e-3
 
-    def test_tcp_delta_zero_rejected(self) -> None:
-        with pytest.raises(DeployConfigError):
-            DeployConfig.from_mapping(self._raw(max_tcp_delta_per_step=0.0), base_dir=Path("/tmp"))
+    def test_custom_values_parsed(self) -> None:
+        cfg = DeployConfig.from_mapping(
+            self._raw(
+                max_translation_step_m=0.05,
+                max_rotation_step_rad=0.2,
+                gripper_min=0.1,
+                gripper_max=0.9,
+                max_gripper_step=0.05,
+                quaternion_norm_tolerance=1e-4,
+                pose_frame="tcp",
+                gripper_domain="normalized_0_1",
+            ),
+            base_dir=Path("/tmp"),
+        )
+        assert cfg.safety.max_translation_step_m == 0.05
+        assert cfg.safety.max_rotation_step_rad == 0.2
+        assert cfg.safety.gripper_min == 0.1
+        assert cfg.safety.gripper_max == 0.9
+        assert cfg.safety.max_gripper_step == 0.05
+        assert cfg.safety.quaternion_norm_tolerance == 1e-4
+        assert cfg.safety.pose_frame == "tcp"
+
+    def test_translation_step_negative_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="max_translation_step_m"):
+            DeployConfig.from_mapping(
+                self._raw(max_translation_step_m=-0.01), base_dir=Path("/tmp")
+            )
+
+    def test_translation_step_zero_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="max_translation_step_m"):
+            DeployConfig.from_mapping(
+                self._raw(max_translation_step_m=0.0), base_dir=Path("/tmp")
+            )
+
+    def test_rotation_step_zero_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="max_rotation_step_rad"):
+            DeployConfig.from_mapping(
+                self._raw(max_rotation_step_rad=0.0), base_dir=Path("/tmp")
+            )
 
     def test_gripper_min_exceeds_max_rejected(self) -> None:
-        """hand_min > hand_max should be rejected or at least not silently accepted."""
-        # The schema doesn't enforce min<max at the dataclass level — that's
-        # for L2-04 to check at runtime. We verify the values are parsed correctly.
-        cfg = DeployConfig.from_mapping(self._raw(hand_min=800.0, hand_max=200.0), base_dir=Path("/tmp"))
-        assert cfg.safety.hand_min == 800.0
-        assert cfg.safety.hand_max == 200.0
+        with pytest.raises(DeployConfigError, match="gripper_min"):
+            DeployConfig.from_mapping(
+                self._raw(gripper_min=0.9, gripper_max=0.1), base_dir=Path("/tmp")
+            )
 
-    def test_quaternion_check_string_true(self) -> None:
-        cfg = DeployConfig.from_mapping(self._raw(quaternion_check="true"), base_dir=Path("/tmp"))
-        assert cfg.safety.quaternion_check is True
+    def test_max_gripper_step_negative_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="max_gripper_step"):
+            DeployConfig.from_mapping(
+                self._raw(max_gripper_step=-0.01), base_dir=Path("/tmp")
+            )
 
-    def test_quaternion_check_string_false(self) -> None:
-        cfg = DeployConfig.from_mapping(self._raw(quaternion_check="false"), base_dir=Path("/tmp"))
-        assert cfg.safety.quaternion_check is False
+    def test_max_gripper_step_zero_allowed(self) -> None:
+        cfg = DeployConfig.from_mapping(
+            self._raw(max_gripper_step=0.0), base_dir=Path("/tmp")
+        )
+        assert cfg.safety.max_gripper_step == 0.0
 
-    def test_safety_frozen(self) -> None:
-        from dataclasses import FrozenInstanceError
-        s = SafetyConfig()
-        with pytest.raises(FrozenInstanceError):
-            s.max_tcp_delta_per_step = 0.99  # type: ignore[misc]
+    def test_quaternion_norm_tolerance_zero_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="quaternion_norm_tolerance"):
+            DeployConfig.from_mapping(
+                self._raw(quaternion_norm_tolerance=0.0), base_dir=Path("/tmp")
+            )
+
+    def test_legacy_max_tcp_delta_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="legacy keys"):
+            DeployConfig.from_mapping(
+                self._raw(max_tcp_delta_per_step=0.03), base_dir=Path("/tmp")
+            )
+
+    def test_legacy_hand_min_max_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="legacy keys"):
+            DeployConfig.from_mapping(
+                self._raw(hand_min=300.0, hand_max=1000.0), base_dir=Path("/tmp")
+            )
+
+    def test_legacy_quaternion_check_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="legacy keys"):
+            DeployConfig.from_mapping(
+                self._raw(quaternion_check=True), base_dir=Path("/tmp")
+            )
+
+    def test_invalid_quaternion_order_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="quaternion_order"):
+            DeployConfig.from_mapping(
+                self._raw(quaternion_order="wxyz"), base_dir=Path("/tmp")
+            )

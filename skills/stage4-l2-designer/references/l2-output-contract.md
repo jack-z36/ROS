@@ -12,6 +12,7 @@ DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>/
     ├── 01_L2功能边界.md
     ├── 02_pi05源码3.5层微元拆解.md
     ├── 03_ACT微元设计与协作.md
+    ├── 03a_功能微元总览与组织结构.md
     ├── 04_L2验收机制.md
     ├── 05_人类验收机制.md
     ├── 06_types层设计.md
@@ -136,6 +137,16 @@ Failure propagation:
 
 This file is the main bridge from Pi0.5 source understanding to ACT implementation design. It must mark unresolved class/function, state ownership, runtime, or hardware decisions as blocking until user-confirmed.
 
+## agent_context/03a_功能微元总览与组织结构.md
+
+Must be the single source of truth for the L2 functional-micro-unit system:
+
+- A/B/C total counts and numbering convention.
+- One table mapping every unit to its 3.25/3.375/3.5 type, parent and responsibility.
+- Runtime call tree and overall collaboration trace.
+- Upstream reused objects explicitly marked as not newly numbered.
+- Statement that implementation, L3, validation and HTML blueprint work must read this file first when referring to unit IDs.
+
 ## agent_context/04_L2验收机制.md
 
 Must include:
@@ -204,6 +215,18 @@ Each file must include:
 - Pi0.5 reference.
 - Acceptance coverage.
 
+When a layer file describes a 3.5 micro-unit or its fields, use the user's cognitive presentation contract:
+
+| 3.5 type | Required representation |
+|---|---|
+| 数据 | For every variable/field: variable name, internal storage structure, and internal stored data type. Dataclasses list fields individually; arrays state shape and element dtype; Enum lists allowed values. |
+| 计算函数 | RAM input object type + shape/structure; RAM output or exception; explicit statement that it does not read/write process-external resources. |
+| 内部状态更新函数 | The RAM object/variable modified and how it changes (replace, append, accumulate, clear, etc.). |
+| 数据读写函数 | External boundary (path/topic/handle/endpoint) and the object read into RAM or written out, with type + shape/structure. |
+| 编排函数 | Call condition, ordered steps, skip condition, and failure propagation. |
+
+The same representation must appear in dimension-3 图③ `.mu-list`; human HTML may compress wording but must not merge these distinct types into a generic “field/type” or “input/output” description.
+
 If a layer adds no source artifact, the corresponding file must still exist and include:
 
 ```text
@@ -250,10 +273,10 @@ Required dimensions:
 
 | Dimension | Required content | Typical authoritative Markdown |
 |---|---|---|
-| `boundary` / 维度1 功能边界 | Explain what this L2 does and does not do. Use a status/positioning SVG, startup processing SVG, responsible vs non-responsible boundary-wall SVG, and data contract cards. | `01_L2功能边界.md` |
+| `boundary` / 维度1 功能边界 | Explain what this L2 does and does not do. Use a single **图① 消费 → 功能模块 → 产出** `.io-flow`（left `.io-card` inputs with `.io-src` badges, center `.io-module` with the main entry function + `.pipe`, right `.io-card ok` output contract）. **No `<svg>` in dimension 1.** Old positioning / boundary-wall / contract SVG and the `.grid.g2` 负责/不负责 card pair are forbidden; fold that content into `.nested-detail` inside the relevant `.io-card`. | `01_L2功能边界.md` |
 | `pi05map` / 维度2 Pi0.5 如何运作 | Explain the matching Pi0.5 source in plain language. Use a terminology dictionary `.dict`, four-step `.flow`, trace block `.trace`, bundle directory `.tree`, source-difference callouts, and core-question cards. | `02_pi05源码3.5层微元拆解.md` |
-| `blueprint` / 维度3 开发蓝图 | Explain ACT code landing and micro-units. Use a runtime/assembly SVG, six-layer `.lpick` radio panes, `.classbox` + `.mu-list` micro-unit cards, and no-artifact panes explaining reason, upstream object, and acceptance confirmation. | `03_ACT微元设计与协作.md`, `06-11_*层设计.md` |
-| `acceptance` / 维度4 人类验收标准 | Explain how a human verifies the L2. Use sample-style `.vfy` groups and `.vfy-item` cards with commands, pass phenomena, fail phenomena, and rationale links to the authoritative docs. | `04_L2验收机制.md`, `05_人类验收机制.md` |
+| `blueprint` / 维度3 开发蓝图 | Use three distinct visual representations: **图①** horizontal runtime SVG swimlane with numbered typed nodes, dashed compile-time injection banner, red dashed reject-stop branches, explicit result return arrow, legend and collaboration callout; **图②** exactly three A/B/C `.ovtab` tables (编号 / 名称 / 类型 / 基础介绍) from `03a`, each with colored count header; **图③** exactly six `types/config/repo/service/runtime/ui` radio tabs and panes, with `.classbox` + `.mu-list` for products and reason + owner + acceptance for no-product panes. Every `数据` `.mu` uses a three-column field table: 变量名 / 内部存储结构 / 内部存储的数据类型; the other four 3.5 types use their distinct behavior labels. **Every `.classbox` must live inside its layer's `.lpane` within the `.lpick` region；no `.classbox` and no extra `<h3>` after the `.lpick` closing tag**（so clicking a six-layer tab reveals the full micro-unit breakdown inline）. | `03a_功能微元总览与组织结构.md`, `03_ACT微元设计与协作.md`, `06-11_*层设计.md` |
+| `acceptance` / 维度4 人类验收标准 | Explain how a human verifies the L2 with numbered `.vfy-item` cards: item 1 gives one `.sh` script command; item 2 contains a `.term` terminal example（layered grouping with FAIL `.t-loc` location）and `.trtab` translation table（label → layer → complete file→class→micro-unit location chain → PASS meaning / FAIL where to look）; later items retain distinct boundary, landing, coordination and hardware-blocked checks. | `04_L2验收机制.md`, `05_人类验收机制.md` |
 
 The old six-view labels from the architecture-report pattern must not be required or used as top-level view labels. Their semantics may be folded into the four approved dimensions.
 
@@ -280,7 +303,7 @@ The L2 is ready for L3 generation only when:
 - Pi0.5 source range is mapped.
 - Pi0.5 3.5-layer source micro-units are explained.
 - ACT micro-units and class/function decisions are confirmed by the user.
-- All 12 `agent_context/` files exist.
+- All 13 `agent_context/` files exist, including the A/B/C overview and organization authority.
 - `00_INDEX.md` contains a valid `HTML-MD 语义对齐表`.
 - Each HTML view has a valid `data-agent-source` reference to existing Agent Markdown.
 - L2 Gate exists.
@@ -300,7 +323,7 @@ python3 skills/stage4-l2-designer/scripts/validate_l2_design_package.py DOCS/03_
 Expected result:
 
 - root contains only `L2架构交互可视化.html` and `agent_context/`;
-- all 12 fixed Markdown files exist;
+- all 13 fixed Markdown files exist;
 - no six-layer subdirectories exist;
 - HTML contains doctype, the four approved radio dimensions, sample-pattern visual components, `agent_context` references, stable L2 id, and valid `data-agent-source` links;
 - `00_INDEX.md` contains the semantic alignment table;

@@ -66,8 +66,11 @@ class TestValidConfig:
         assert cfg.runtime.action_dim == 16
         assert cfg.topics.namespace == "/act"
         assert cfg.image.image_size == 224
-        assert cfg.safety.max_tcp_delta_per_step == 0.03
-        assert cfg.safety.quaternion_check is True
+        assert cfg.safety.max_translation_step_m == 0.03
+        assert cfg.safety.max_rotation_step_rad == 0.1
+        assert cfg.safety.gripper_min == 0.0
+        assert cfg.safety.gripper_max == 1.0
+        assert cfg.safety.quaternion_norm_tolerance == 1e-3
 
     def test_raw_preserved(self) -> None:
         raw = _valid_raw()
@@ -229,6 +232,6 @@ class TestTypedValidators:
 
     def test_bool_accepts_strings(self) -> None:
         raw = _valid_raw()
-        raw["safety"]["quaternion_check"] = "true"
+        raw["runtime"]["compile_model"] = "true"
         cfg = DeployConfig.from_mapping(raw, base_dir=Path("/tmp"))
-        assert cfg.safety.quaternion_check is True
+        assert cfg.runtime.compile_model is True
