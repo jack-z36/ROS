@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import sys
+from html import unescape
 from pathlib import Path
 
 
@@ -53,7 +54,8 @@ REQUIRED_HTML_COMPONENTS = [
     (".lpick", 'class="lpick"', "HTML missing six-layer radio picker component: .lpick"),
     (".classbox", 'class="classbox"', "HTML missing classbox component"),
     (".mu-list", 'class="mu-list"', "HTML missing micro-unit list component"),
-    (".vfy-item", 'class="vfy-item"', "HTML missing sample acceptance card component: .vfy-item"),
+    (".term", 'class="term"', "HTML missing terminal acceptance component: .term"),
+    (".trtab", 'class="trtab"', "HTML missing acceptance translation table: .trtab"),
 ]
 
 OLD_REQUIRED_HTML_VIEW_LABELS = [
@@ -134,7 +136,7 @@ def check_html(package: Path, l2_id: str, errors: list[str]) -> None:
     html_path = package / "L2架构交互可视化.html"
     if not html_path.is_file():
         return
-    text = html_path.read_text(encoding="utf-8")
+    text = unescape(html_path.read_text(encoding="utf-8"))
     lower = text.lower()
     if "<!doctype html>" not in lower:
         errors.append("HTML missing <!doctype html>")
@@ -176,6 +178,7 @@ def check_html(package: Path, l2_id: str, errors: list[str]) -> None:
     agent_dir = package / "agent_context"
     index_text = (agent_dir / "00_INDEX.md").read_text(encoding="utf-8") if (agent_dir / "00_INDEX.md").is_file() else ""
     for source in source_refs:
+        source = unescape(source)
         if not source.startswith("agent_context/"):
             errors.append(f"HTML data-agent-source must start with agent_context/: {source}")
             continue
