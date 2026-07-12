@@ -1,0 +1,32 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/hit/ROS/worktrees/l2-04-safety-guard
+plugins: cov-4.1.0, colcon-core-0.20.1
+collecting ... collected 23 items
+
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyStatus::test_members PASSED [  4%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyStatus::test_is_str_enum PASSED [  8%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyCode::test_required_members_present PASSED [ 13%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyCode::test_is_str_enum PASSED [ 17%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyFinding::test_construct_valid PASSED [ 21%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyFinding::test_side_none_allowed PASSED [ 26%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyFinding::test_scalar_before_after PASSED [ 30%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyFinding::test_frozen_immutable PASSED [ 34%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyFinding::test_invalid_side_raises PASSED [ 39%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyFinding::test_numpy_before_rejected PASSED [ 43%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyFinding::test_numpy_after_rejected PASSED [ 47%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyFinding::test_code_type_enforced PASSED [ 52%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_pass_with_action PASSED [ 56%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_adjusted_with_findings PASSED [ 60%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_rejected_with_none_action PASSED [ 65%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_rejected_with_action_raises PASSED [ 69%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_pass_without_action_raises PASSED [ 73%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_adjusted_without_action_raises PASSED [ 78%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_findings_must_be_tuple PASSED [ 82%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_findings_elements_must_be_safety_finding PASSED [ 86%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_frozen_immutable PASSED [ 91%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestSafetyResult::test_status_type_enforced PASSED [ 95%]
+src/model_deploy/act/tests/types/test_safety_result.py::TestExports::test_package_exports PASSED [100%]
+
+============================== 23 passed in 0.06s ==============================
