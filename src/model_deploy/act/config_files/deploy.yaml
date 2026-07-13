@@ -63,3 +63,17 @@ safety:
   pose_frame: base
   quaternion_order: xyzw
   gripper_domain: normalized_0_1
+
+# Command-output mapping (deploy_041, C7). Static output mapping only.
+# The human master switch `enabled` is intentionally absent: it is a startup
+# decision supplied by the CLI caller (--enable-command-output) and must never
+# be persisted here, so an old config cannot silently turn on real commands.
+command_output:
+  pose_frame_id: base
+  gripper_input_min: 0.0
+  gripper_input_max: 1.0
+  gripper_output_min: 0.0
+  gripper_output_max: 100.0
+  gripper_deadband: 1.0
+  gripper_min_publish_interval_s: 0.05
+  qos_depth: 10

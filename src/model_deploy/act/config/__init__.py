@@ -1,6 +1,7 @@
 from .schema import (
     BundleConfig,
     CommandTopicsConfig,
+    CommandOutputConfig,
     DeployConfig,
     DeployConfigError,
     ImageConfig,
@@ -16,6 +17,7 @@ from .schema import (
 __all__ = [
     "BundleConfig",
     "CommandTopicsConfig",
+    "CommandOutputConfig",
     "DeployConfig",
     "DeployConfigError",
     "ImageConfig",

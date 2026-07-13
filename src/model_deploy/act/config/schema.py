@@ -3,11 +3,13 @@ contract cross-validation, and YAML loading orchestration.
 
 Provides frozen dataclasses (deploy_008), ``from_mapping`` (deploy_008),
 ``check_bundle_contract`` / ``check_normalizer_contract`` (deploy_009),
-and ``load_deploy_config`` (deploy_009).
+``load_deploy_config`` (deploy_009), and C7 ``CommandOutputConfig``
+(deploy_041).
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -227,6 +229,78 @@ class ImageConfig:
 
 
 @dataclass(frozen=True)
+class CommandOutputConfig:
+    """Command-output mapping + the human master switch for L2-05 (C7, deploy_041).
+
+    The master switch ``command_output_enabled`` is a startup-only decision:
+    it defaults to ``False`` and is set explicitly by the CLI caller (L2-06).
+    It must never be read from ``deploy.yaml`` — a persisted ``enabled`` key is
+    rejected so an old config file can never silently turn on real commands.
+
+    All remaining fields are the static output mapping loaded from YAML.
+    """
+
+    command_output_enabled: bool = False
+    pose_frame_id: str = "base"
+    gripper_input_min: float = 0.0
+    gripper_input_max: float = 1.0
+    gripper_output_min: float = 0.0
+    gripper_output_max: float = 100.0
+    gripper_deadband: float = 1.0
+    gripper_min_publish_interval_s: float = 0.05
+    qos_depth: int = 10
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.command_output_enabled, bool):
+            raise TypeError(
+                f"CommandOutputConfig.command_output_enabled must be bool, "
+                f"got {type(self.command_output_enabled)!r}"
+            )
+        if not isinstance(self.pose_frame_id, str) or self.pose_frame_id.strip() == "":
+            raise DeployConfigError(
+                "command_output.pose_frame_id must be a non-empty string"
+            )
+        # First version freezes the normalized gripper input domain to 0.0..1.0.
+        if self.gripper_input_min != 0.0 or self.gripper_input_max != 1.0:
+            raise DeployConfigError(
+                "command_output.gripper_input_min/max must be exactly 0.0/1.0 "
+                "in this version"
+            )
+        if not (self.gripper_input_min < self.gripper_input_max):
+            raise DeployConfigError(
+                "command_output.gripper_input_min must be < gripper_input_max"
+            )
+        if not (math.isfinite(self.gripper_output_min) and math.isfinite(self.gripper_output_max)):
+            raise DeployConfigError("command_output.gripper output range must be finite")
+        if not (self.gripper_output_min < self.gripper_output_max):
+            raise DeployConfigError(
+                "command_output.gripper_output_min must be < gripper_output_max"
+            )
+        if not math.isfinite(self.gripper_deadband) or self.gripper_deadband < 0.0:
+            raise DeployConfigError(
+                "command_output.gripper_deadband must be finite and >= 0"
+            )
+        output_span = self.gripper_output_max - self.gripper_output_min
+        if self.gripper_deadband > output_span:
+            raise DeployConfigError(
+                "command_output.gripper_deadband must not exceed the output span "
+                f"({output_span})"
+            )
+        if not math.isfinite(self.gripper_min_publish_interval_s) or (
+            self.gripper_min_publish_interval_s < 0.0
+        ):
+            raise DeployConfigError(
+                "command_output.gripper_min_publish_interval_s must be finite and >= 0"
+            )
+        if not isinstance(self.qos_depth, int) or isinstance(self.qos_depth, bool):
+            raise TypeError(
+                f"command_output.qos_depth must be int, got {type(self.qos_depth)!r}"
+            )
+        if self.qos_depth <= 0:
+            raise DeployConfigError("command_output.qos_depth must be a positive integer")
+
+
+@dataclass(frozen=True)
 class DeployConfig:
     """Complete ACT deployment configuration.
 
@@ -238,11 +312,20 @@ class DeployConfig:
     image: ImageConfig
     topics: TopicsConfig
     safety: SafetyConfig
+    command_output: CommandOutputConfig = field(default_factory=CommandOutputConfig)
     raw: Mapping[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
-    def from_mapping(cls, raw: Mapping[str, Any], *, base_dir: Path) -> "DeployConfig":
-        return _deploy_from_mapping(raw, base_dir=base_dir)
+    def from_mapping(
+        cls,
+        raw: Mapping[str, Any],
+        *,
+        base_dir: Path,
+        command_output_enabled: bool = False,
+    ) -> "DeployConfig":
+        return _deploy_from_mapping(
+            raw, base_dir=base_dir, command_output_enabled=command_output_enabled
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -250,10 +333,18 @@ class DeployConfig:
 # ---------------------------------------------------------------------------
 
 
-def _deploy_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> DeployConfig:
+def _deploy_from_mapping(
+    raw: Mapping[str, Any],
+    *,
+    base_dir: Path,
+    command_output_enabled: bool = False,
+) -> DeployConfig:
     """Assemble a DeployConfig from a raw mapping.
 
-    Assembly order is fixed: bundle → runtime → image → topics → safety → raw.
+    Assembly order is fixed: bundle → runtime → image → topics → safety →
+    command_output → raw. The command-output master switch is taken only from
+    the explicit *command_output_enabled* argument (default ``False``); it is
+    never read from YAML.
     """
     root = _mapping(raw, "<root>")
     namespace = _str(_mapping(root.get("topics", {}), "topics"), "namespace", default="/act")
@@ -263,6 +354,7 @@ def _deploy_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> DeployCon
     image_raw = _mapping(root.get("image", {}), "image")
     topics_raw = _mapping(root.get("topics", {}), "topics")
     safety_raw = _mapping(root.get("safety", {}), "safety")
+    command_output_raw = _mapping(root.get("command_output", {}), "command_output")
 
     obs_raw = _mapping(topics_raw.get("observation", {}), "topics.observation")
     cmd_raw = _mapping(topics_raw.get("command", {}), "topics.command")
@@ -324,6 +416,9 @@ def _deploy_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> DeployCon
             ),
         ),
         safety=_safety_from_mapping(safety_raw),
+        command_output=_command_output_from_mapping(
+            command_output_raw, command_output_enabled=command_output_enabled
+        ),
         raw=dict(root),
     )
 
@@ -366,6 +461,44 @@ def _safety_from_mapping(safety_raw: Mapping[str, Any]) -> SafetyConfig:
         pose_frame=_str(safety_raw, "pose_frame", default="base"),
         quaternion_order=_str(safety_raw, "quaternion_order", default="xyzw"),
         gripper_domain=_str(safety_raw, "gripper_domain", default="normalized_0_1"),
+    )
+
+
+def _command_output_from_mapping(
+    command_output_raw: Mapping[str, Any],
+    *,
+    command_output_enabled: bool,
+) -> CommandOutputConfig:
+    """Parse and validate the ``command_output:`` section into a C7 config.
+
+    The human master switch ``command_output_enabled`` is NOT read from YAML —
+    it is supplied by the startup caller (default ``False``). A persisted
+    ``enabled`` key in ``deploy.yaml`` is rejected so an old config file can
+    never silently turn on real command output.
+    """
+    if not isinstance(command_output_enabled, bool):
+        raise DeployConfigError(
+            "command_output_enabled must be a bool supplied by the startup caller"
+        )
+    if "enabled" in command_output_raw:
+        raise DeployConfigError(
+            "command_output.enabled must not appear in deploy.yaml; it is a "
+            "startup-only decision set explicitly by the CLI caller "
+            "(--enable-command-output)."
+        )
+
+    return CommandOutputConfig(
+        command_output_enabled=command_output_enabled,
+        pose_frame_id=_str(command_output_raw, "pose_frame_id", default="base"),
+        gripper_input_min=_float(command_output_raw, "gripper_input_min", default=0.0),
+        gripper_input_max=_float(command_output_raw, "gripper_input_max", default=1.0),
+        gripper_output_min=_float(command_output_raw, "gripper_output_min", default=0.0),
+        gripper_output_max=_float(command_output_raw, "gripper_output_max", default=100.0),
+        gripper_deadband=_non_negative_float(command_output_raw, "gripper_deadband", default=1.0),
+        gripper_min_publish_interval_s=_non_negative_float(
+            command_output_raw, "gripper_min_publish_interval_s", default=0.05
+        ),
+        qos_depth=_positive_int(command_output_raw, "qos_depth", default=10),
     )
 
 

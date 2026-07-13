@@ -2,101 +2,162 @@
 
 > [!info] 元信息
 > - 消费对象：service 实现/验收 Agent。
-> - 权威性：本文定义 ROS 之前的纯 RAM 业务映射。
-> - 上游来源：`ActionSpec`、`SafetyResult`、CommandOutputConfig 与功能边界。
-> - 不负责范围：不 import ROS、不持有状态、不 publish、不决定 fallback。
+> - 权威性：定义 B1 与 C9-C11 的纯 RAM Topic 载荷生成。
+> - 编号权威：`03a_功能微元总览与组织结构.md`。
+> - 不负责范围：不 import ROS、不持有状态、不判断 CLI/permit、不 publish。
 > - 读取时机：实现或审查 action output adapter 前。
-> - 冲突处理：出现 subscription/publisher/timer 或双尺度猜测时直接判越界。
 
 ## 1. 目标源码路径
 
 ```text
 src/model_deploy/act/service/action_output_adapter.py
-src/model_deploy/act/service/__init__.py       # 仅导出稳定函数
+src/model_deploy/act/service/__init__.py       # 仅导出稳定公共函数
 ```
 
 ## 2. 层职责与文件职责
 
-service 层接收当前进程 RAM 中的安全结果、授权、时间和只读配置，复核跨模块契约，拆分 16D，映射 gripper，构造 transport-neutral 四路目标和发布计划。
+service 层接收当前进程 RAM 中的 `SafetyResult` 和 C7 配置，复核跨模块契约，拆分 16D，映射 gripper，构造 transport-neutral C4 `TopicPayloadBundle`。
 
-文件不持有任何跨 tick 状态；不读取 ROS/文件/硬件；不创建 message。
+文件完全无跨调用状态；不读取 ROS/文件/硬件；不构造 ROS msg；不判断是否发布 command。
 
-## 3. 函数设计
+## 3. B1 `build_topic_payloads`（编排函数）
 
-| 函数 | 输入 | 输出 | 副作用 | 错误行为 |
-|---|---|---|---|---|
-| `require_safe_action(result)` | SafetyResult | ActionSpec | 无 | 未 accepted/action None/shape/finite/爪域错误 -> `ActionPublishContractError` |
-| `map_gripper_command(value, config)` | `[0,1]` float、output config | `0..100` float | 无 | 输入越域直接失败，不 clip/猜尺度 |
-| `build_arm_target(tcp7, frame_id)` | xyz+quat、frame | ArmPoseTarget | 无 | 长度/finite/frame 错失败 |
-| `build_command_targets(action, config)` | ActionSpec、output config | CommandTargets | 无 | 任一子目标失败时无部分结果 |
-| `build_publish_plan(request, deploy_config)` | request/config | ActionPublishPlan | 无 | mode mismatch/非法授权失败或生成 blocked plan |
-| `status_payload(result)` | ActionPublishResult | JSON-safe dict | 无 | unknown 保持 null，禁止填 true |
-
-## 4. 权威算法
-
-```text
-require_safe_action:
-  require SafetyResult.accepted is True and action is not None
-  vector = ensure_action_vector(action.as_vector())
-  require all finite
-  require 0 <= vector[14] <= 1 and 0 <= vector[15] <= 1
-
-build_command_targets:
-  left  = ArmPoseTarget(frame=left_arm_base,
-                        position=vector[0:3], quaternion=vector[3:7])
-  right = ArmPoseTarget(frame=right_arm_base,
-                        position=vector[7:10], quaternion=vector[10:14])
-  left_gripper  = map(vector[14])
-  right_gripper = map(vector[15])
-  return one complete CommandTargets
+```python
+def build_topic_payloads(
+    safety_result: SafetyResult,
+    config: CommandOutputConfig,
+) -> TopicPayloadBundle:
+    ...
 ```
 
-不在此处重新归一化 quaternion、clamp TCP delta 或选择 fallback。L2-04 已负责安全算法；本层只检查输出契约的 shape/finite/爪域与 frame。
+调用条件：B3 每次 `publish(request)` 的第一步。
 
-### mode 计划
+顺序：
 
-| mode | publish policy | publish command | reason |
-|---|---:|---:|---|
-| dry-run | false | false | `dry_run` |
-| shadow-run | true | false | `shadow_only` |
-| safe-run + allowed=false | true | false | authorization reason / `not_authorized` |
-| safe-run + allowed=true | true | true | null |
+1. 调 C9 `require_publishable_action`。
+2. 从 `ActionSpec` 得到 16D tuple。
+3. 调 C10 ×2 构造左右 C3，统一使用 `config.pose_frame_id`。
+4. 调 C11 ×2 把左右 gripper `[0,1]` 映射为 `0..100`。
+5. 一次性构造 C4。
 
-若 request 与 DeployConfig mode 不一致，command=false，reason=`mode_mismatch`。不能把任一方的 safe-run 当作足够授权。
+失败：任一子步骤异常，不返回部分 payload；B3 不进入 B2，policy/command 调用数为 0。
 
-## 5. class 设计
+## 4. C9 `require_publishable_action`（计算函数）
 
-本文件不定义业务 class。所有微元无状态，使用函数更符合 3.5 层计算函数定义。禁止仅为“适配器”名字创建无状态 `ActionOutputAdapter` class。
+```python
+def require_publishable_action(result: SafetyResult) -> ActionSpec:
+    ...
+```
 
-## 6. 输入输出
+输入：
 
-| 输入 | 输出 |
-|---|---|
-| `SafetyResult`、ActionSpec、ActionPublishRequest、DeployConfig | ArmPoseTarget、CommandTargets、ActionPublishPlan、status dict |
+- RAM `SafetyResult(status, action, findings)`。
 
-所有输出在 RAM 中；无外部副作用。
+输出：
 
-## 7. 依赖关系
+- `PASS/ADJUSTED` 且 action 合法：返回同一语义的 `ActionSpec`。
+- `REJECTED`、action=None、shape/finite/爪域错误：抛 `ActionPublishContractError`。
 
-允许：types、config、numpy（仅转换/finite 检查）、标准库。
+复核内容：
+
+```text
+status in {PASS, ADJUSTED}
+action is ActionSpec
+vector shape exactly (16,)
+all values finite
+gripper[14], gripper[15] in [0,1]
+```
+
+不直接读写进程外资源；不重新做 quaternion/TCP delta 投影；不读取 `accepted`。
+
+## 5. C10 `build_arm_pose_target`（计算函数）
+
+```python
+def build_arm_pose_target(
+    tcp7: Sequence[float],
+    pose_frame_id: str,
+) -> ArmPoseTarget:
+    ...
+```
+
+输入：RAM TCP7=`xyz(3)+xyzw(4)`、单一非空 frame。
+
+输出：新的 frozen C3：
+
+```text
+frame_id
+position_xyz tuple[3]
+quaternion_xyzw tuple[4]
+```
+
+异常：长度错误、NaN/Inf、空 frame。
+
+不直接读写进程外资源；不做 TF；不把相同数值分别贴成左右不同 frame。
+
+## 6. C11 `map_gripper_command`（计算函数）
+
+```python
+def map_gripper_command(
+    value: float,
+    config: CommandOutputConfig,
+) -> float:
+    ...
+```
+
+输入：RAM 标量 `[0,1]` + C7 input/output 范围。
+
+输出：新的 RAM `float`，默认 `0..100`：
+
+```text
+output_min + normalized_ratio * (output_max - output_min)
+```
+
+示例：`0 -> 0`、`0.5 -> 50`、`1 -> 100`。
+
+异常：越域、NaN/Inf、配置范围非法。禁止 clip、双尺度猜测或兼容 50/100 输入。
+
+不直接读写进程外资源。
+
+## 7. C4 `TopicPayloadBundle` 构造
+
+| 变量名 | 内部存储结构 | 内部存储的数据类型 |
+|---|---|---|
+| `policy_action` | fixed tuple，长度16 | `float` elements |
+| `left_arm` | frozen C3 reference | `ArmPoseTarget` |
+| `right_arm` | frozen C3 reference | `ArmPoseTarget` |
+| `left_gripper` | 标量，0..100 | `float` |
+| `right_gripper` | 标量，0..100 | `float` |
+
+B1 直接构造 C4，不需要额外无状态 class，也不新增第四个编排函数。
+
+## 8. 输入、输出与副作用
+
+| 输入 | 输出 | 副作用 |
+|---|---|---|
+| SafetyResult、CommandOutputConfig | TopicPayloadBundle | 无 |
+
+## 9. 依赖关系
+
+允许：types、config、numpy/标准库（仅 shape/finite 转换）。
 
 禁止：repo/runtime/ui、rclpy、geometry_msgs、std_msgs、文件/网络/硬件 API。service 不得 import 下游层。
 
-## 8. Pi0.5 参考
+## 10. Pi0.5 参考
 
-- `action_codec.py::split_action`：仅参考入口拆分，ACT 直接复用现有 16D `types/action_spec.py`。
-- `hand_command_to_trigger`：方向/量纲相反，明确不复用。
-- `_joint_msg`：使用 JointState 且无有效 frame，不复用。
-- bridge `_filter_joint_target`：混入安全与状态更新，不复用。
+- `split_bimanual_action`：只参考入口拆分思想；旧 14D 数值不复用。
+- `hand_command_to_trigger`：方向/量纲相反，不复用。
+- bridge `_filter_joint_target`：混入安全与状态，不复用。
+- 当前 B1 是新 ACT 纯 RAM 边界，不复用旧 node orchestration。
 
-## 9. 验收覆盖
+## 11. 验收覆盖
 
-- 16D 左右段和 xyzw 顺序 property tests。
-- gripper 0/0.5/1 -> 0/50/100；50/100 输入 -> 契约失败。
-- action NaN/Inf、空 frame、mode mismatch 失败/blocked。
-- 任一子目标构造失败不返回部分 bundle。
-- 模块在无 ROS 环境可 import；无可变 module/global state。
+- PASS/ADJUSTED/REJECTED 三状态。
+- 16D 左右段和 `xyzw` property tests。
+- 单一 frame；无 TF/per-arm 假 frame。
+- gripper 0/0.5/1 -> 0/50/100；50/100 输入失败。
+- 任一子目标失败不返回部分 C4。
+- 模块无 ROS import、无 module/global mutable state、无 CLI/permit/mode 逻辑。
 
-## 10. 边界继承声明
+## 12. 边界继承声明
 
-本文件服务当前 L2-05 的 RAM 映射职责，不从旧 layer-based service 卡片或 Pi0.5 bridge 推导边界。安全算法仍归 L2-04，运行编排仍归 L2-06。
+本文件服务当前 L2-05 的 RAM 载荷职责，不从旧 layer-based service 卡片或 Pi0.5 bridge 推导边界。安全算法归 L2-04，运行编排归 L2-06，ROS 写出归 ui。
