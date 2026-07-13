@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L2-05 单步 Action 到执行器 Topic 适配发送闭环 · 架构交互可视化</title>
+<style>
+:root{
+  --bg:#f6f7f9;--ink:#1f2937;--muted:#667085;--line:#d0d5dd;--panel:#ffffff;
+  --config:#2563eb;--types:#0f766e;--repo:#7c3aed;--warn:#b42318;--ok:#047857;
+  --ctrl:#344054;--pi:#c2410c;--grey:#98a2b3;--yellow:#b54708;
+  --types-bg:#ecfdf5;--config-bg:#eff6ff;--repo-bg:#f5f3ff;--warn-bg:#fef2f2;--ok-bg:#ecfdf5;--grey-bg:#f2f4f7;--pi-bg:#fff7ed;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.page{max-width:1240px;margin:0 auto;padding:22px}
+header{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start;margin-bottom:14px}
+@media(max-width:820px){header{grid-template-columns:1fr}}
+h1{margin:0 0 6px;font-size:26px;line-height:1.2}
+h2{margin:0 0 6px;font-size:19px}
+h3{margin:14px 0 6px;font-size:15px}
+h4{margin:10px 0 4px;font-size:14px;color:var(--ctrl)}
+p{margin:0 0 8px;line-height:1.65}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.subtitle{color:var(--muted);max-width:820px}
+.note{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:11px 12px;color:var(--muted);font-size:12.5px;line-height:1.55}
+.note b{color:var(--ink)}
+
+input[name=tab]{position:absolute;opacity:0;pointer-events:none}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.tabs label{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:9px 13px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.tabs label .n{display:inline-flex;width:18px;height:18px;border-radius:999px;background:var(--grey-bg);color:var(--muted);font-size:11px;align-items:center;justify-content:center;font-weight:700}
+#v1:checked~.tabs label[for=v1]{background:var(--types);color:#fff;border-color:transparent}
+#v2:checked~.tabs label[for=v2]{background:var(--pi);color:#fff;border-color:transparent}
+#v3:checked~.tabs label[for=v3]{background:var(--types);color:#fff;border-color:transparent}
+#v4:checked~.tabs label[for=v4]{background:var(--ctrl);color:#fff;border-color:transparent}
+#v1:checked~.tabs label[for=v1] .n,#v2:checked~.tabs label[for=v2] .n,#v3:checked~.tabs label[for=v3] .n,#v4:checked~.tabs label[for=v4] .n{background:rgba(255,255,255,.25);color:#fff}
+
+.views>section{display:none}
+#v1:checked~.views .boundary,#v2:checked~.views .pi05map,#v3:checked~.views .blueprint,#v4:checked~.views .acceptance{display:block}
+
+.view{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.lead{color:var(--muted);margin:0 0 12px}
+.figure{border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:10px;margin-bottom:12px;overflow:auto}
+svg{width:100%;min-width:700px;height:auto;display:block}
+.box{fill:#fff;stroke:var(--line);stroke-width:1.4}
+.band{stroke:none}
+.title{font-size:13.5px;font-weight:760;fill:var(--ink)}
+.sub{font-size:11.5px;fill:var(--muted)}
+.edge{fill:none;stroke:#475467;stroke-width:1.8;marker-end:url(#arrow)}
+.ctl{stroke:var(--ctrl);stroke-dasharray:4 4}
+.fedge{stroke:var(--warn)}
+.io{stroke:var(--ok)}
+.mnote-circle{fill:#fff;stroke:#475467;stroke-width:1.4}
+.mnote-num{font-size:10px;font-weight:700;fill:#475467}
+.mnote-legend{background:#fbfcfe;border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:6px}
+.mnote-legend b{font-size:12.5px;color:var(--repo);display:block;margin-bottom:2px}
+.mnote-table{width:auto;border-collapse:collapse;font-size:11.5px;margin:0}
+.mnote-table td{border:none;padding:2px 6px;vertical-align:top;line-height:1.5;color:var(--muted)}
+.mnote-table td:first-child{width:24px;text-align:center;padding:2px 2px;font-size:11px;font-weight:700;color:var(--ctrl)}
+.mnote-table td:nth-child(2){white-space:nowrap;font-family:ui-monospace,monospace;font-size:11px;color:var(--ink);font-weight:600}
+.mnote-table td:nth-child(3){color:var(--muted)}
+.mono{font-family:ui-monospace,monospace;font-size:11px;fill:var(--repo)}
+
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:8px;background:#fff;padding:12px;transition:box-shadow .15s,transform .15s}
+.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-1px)}
+.card h3{margin-top:0}
+.card.types{border-left-color:var(--types)}
+.card.config{border-left-color:var(--config)}
+.card.repo{border-left-color:var(--repo)}
+.card.ok{border-left-color:var(--ok)}
+.card.warn{border-left-color:var(--warn)}
+.card.pi{border-left-color:var(--pi)}
+.card.grey{border-left-color:var(--grey);background:var(--grey-bg)}
+.card.yellow{border-left-color:var(--yellow);background:#fffbeb}
+.card ul{margin:6px 0 0;padding-left:18px;color:var(--muted);line-height:1.6;font-size:13px}
+.card p{font-size:13px;color:var(--muted);line-height:1.65}
+
+.tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin:2px 3px 2px 0;font-size:11.5px;color:var(--muted);background:#fff}
+.badge{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:600}
+.badge.layer{background:var(--grey-bg);color:var(--ctrl)}
+.badge.struct{background:var(--config-bg);color:var(--config)}
+.badge.ref{background:#fff7ed;color:var(--yellow)}
+.badge.new{background:var(--ok-bg);color:var(--ok)}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;color:var(--muted);font-size:12px;margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+
+details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;margin-bottom:8px}
+details[open]{background:#fbfcfe}
+summary{cursor:pointer;font-weight:700;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details p,details ul{margin:8px 0 0;padding-left:0;color:var(--muted);line-height:1.7;font-size:13px}
+details ul{padding-left:18px}
+details .body{padding-top:8px}
+
+.callout{border:1px solid #fedf89;background:#fffbeb;color:#7a5c00;border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.6;font-size:13px}
+.callout.warn{border-color:#fecdca;background:var(--warn-bg);color:#912018}
+.callout.pi{border-color:#fed7aa;background:var(--pi-bg);color:#9a3412}
+.callout.ok{border-color:#a7f3d0;background:var(--ok-bg);color:#065f46}
+.src{color:var(--muted);font-size:12px;margin:10px 0 0}
+.src code{color:var(--repo)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:12px}
+tr:nth-child(even) td{background:#fafbfc}
+td .okc{color:var(--ok);font-weight:600}
+td .errc{color:var(--warn);font-weight:600}
+
+.reading-path{font-size:11.5px;color:var(--muted);margin:-6px 0 10px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.reading-path a{color:var(--config);text-decoration:none;font-weight:600}
+.reading-path a:hover{text-decoration:underline}
+
+.dict{width:100%}
+.dict td:first-child{width:24%;font-weight:600;color:var(--ctrl);font-family:ui-monospace,monospace;font-size:12.5px;vertical-align:top}
+.dict td{font-size:13px;line-height:1.65}
+
+/* 消费→模块→产出 流式布局 */
+.io-flow{display:flex;align-items:flex-start;gap:0;margin:0}
+.io-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.io-col.input{flex:1.2}
+.io-col.output{flex:1}
+.io-arrow{display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--grey);padding:0 10px;flex-shrink:0;align-self:center;margin-bottom:20px}
+.io-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-bottom:2px}
+.io-card{border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:8px;background:#fff;padding:0;transition:box-shadow .15s}
+.io-card.types{border-left-color:var(--types)}
+.io-card.config{border-left-color:var(--config)}
+.io-card.repo{border-left-color:var(--repo)}
+.io-card.ok{border-left-color:var(--ok)}
+.io-card>summary{cursor:pointer;font-weight:700;font-size:13.5px;padding:10px 12px;display:flex;align-items:center;gap:8px;list-style:none;color:var(--ink)}
+.io-card>summary::-webkit-details-marker{display:none}
+.io-card>summary::before{content:"▸";color:var(--muted);font-size:11px;transition:transform .15s;flex-shrink:0}
+.io-card[open]>summary::before{transform:rotate(90deg)}
+.io-card>summary code{font-family:ui-monospace,monospace;font-size:13px;color:var(--repo)}
+.io-src{font-size:10.5px;font-weight:400;color:var(--muted);background:var(--grey-bg);border-radius:999px;padding:1px 7px;margin-left:auto}
+.io-body{padding:0 12px 12px;border-top:1px dashed var(--line);font-size:12.5px}
+.io-body table{width:100%;border-collapse:collapse;font-size:11.5px;margin:8px 0}
+.io-body table th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:10.5px;padding:4px 7px;border:1px solid var(--line);text-align:left}
+.io-body table td{padding:4px 7px;border:1px solid var(--line);font-size:11.5px;vertical-align:top;color:var(--muted);line-height:1.55}
+.io-body table td:first-child{font-family:ui-monospace,monospace;white-space:nowrap;color:var(--ctrl);font-weight:600}
+.io-body table td:nth-child(2){font-family:ui-monospace,monospace;font-size:11px;color:var(--repo)}
+.io-module{border:2.5px solid var(--repo);border-radius:10px;background:#fcfdff;padding:14px;text-align:center}
+.io-module .pipe{text-align:left;margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.nested-detail{border:1px solid var(--line);border-radius:6px;margin:6px 0}
+.nested-detail>summary{cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;background:var(--grey-bg);border-radius:6px;list-style:none;color:var(--ctrl)}
+.nested-detail>summary::-webkit-details-marker{display:none}
+.nested-detail>summary::before{content:"▸ ";color:var(--muted)}
+.nested-detail[open]>summary::before{content:"▾ "}
+.nested-detail .body{padding:8px 10px;font-size:11.5px}
+
+/* 维度3 六层单选 */
+.lpick input{position:absolute;opacity:0;pointer-events:none}
+.lpick .ltabs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 12px}
+@media(max-width:780px){.lpick .ltabs{grid-template-columns:repeat(3,1fr)}}
+.lpick .ltabs label{border:1px solid var(--line);border-radius:8px;padding:12px 8px;text-align:center;font-size:13px;cursor:pointer;background:#fff;color:var(--muted);display:block;transition:all .12s}
+.lpick .ltabs label b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+.lpick .ltabs label.has{border-color:var(--types)}
+.lpick .ltabs label.none{border-color:var(--line);background:var(--grey-bg)}
+.lpick .lpane{display:none;border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:14px}
+.lpick .lpane h4{margin:0 0 6px;color:var(--types)}
+.lpick .lpane.none-pane h4{color:var(--ctrl)}
+/* radio → 面板（6 层全支持，radio 与 lpane 同级兄弟） */
+#l-types:checked~.lp-types,
+#l-config:checked~.lp-config,
+#l-repo:checked~.lp-repo,
+#l-service:checked~.lp-service,
+#l-runtime:checked~.lp-runtime,
+#l-ui:checked~.lp-ui{display:block}
+/* 有产物层选中色 = 该层强调色（§7）；无产物层一律灰 */
+#l-types:checked~.ltabs label[for=l-types]{background:var(--types);border-color:var(--types);color:#fff}
+#l-types:checked~.ltabs label[for=l-types] b{color:#fff}
+#l-config:checked~.ltabs label[for=l-config]{background:var(--config);border-color:var(--config);color:#fff}
+#l-config:checked~.ltabs label[for=l-config] b{color:#fff}
+#l-service:checked~.ltabs label[for=l-service]{background:var(--config);border-color:var(--config);color:#fff}
+#l-service:checked~.ltabs label[for=l-service] b{color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui]{background:var(--ok);border-color:var(--ok);color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui] b{color:#fff}
+#l-repo:checked~.ltabs label[for=l-repo],
+#l-runtime:checked~.ltabs label[for=l-runtime]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-repo:checked~.ltabs label[for=l-repo] b,
+#l-runtime:checked~.ltabs label[for=l-runtime] b{color:#fff}
+
+/* class 封装拆解卡 */
+.classbox{border:1px solid var(--line);border-left:4px solid var(--types);border-radius:8px;background:#fff;padding:12px;margin:8px 0}
+.classbox.svc{border-left-color:var(--config)}
+.classbox.rt{border-left-color:var(--ok)}
+.classbox h5{margin:0 0 4px;font-size:13.5px;color:var(--types);font-family:ui-monospace,monospace}
+.classbox.svc h5{color:var(--config)}
+.classbox.rt h5{color:var(--ok)}
+.classbox .role{font-size:12px;color:var(--muted);margin:0 0 8px}
+.mu-list{display:grid;gap:6px;margin-top:6px}
+.mu{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:6px}
+.mu .kind{font-weight:700;text-align:right}
+.mu .kind.data{color:var(--types)}
+.mu .kind.calc{color:var(--config)}
+.mu .kind.orch{color:var(--yellow)}
+.mu .kind.state{color:#92400e}
+.mu .kind.io{color:var(--repo)}
+.mu .desc{color:var(--muted);line-height:1.6}
+.mu .desc .fn{display:block;margin:0 0 5px}
+.mu .desc .fn:last-child{margin-bottom:0}
+
+/* 维度2 流程步骤 */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:6px 0}
+@media(max-width:980px){.flow{grid-template-columns:1fr}}
+.step{background:#fff;border:1px solid var(--line);border-top:4px solid var(--config);border-radius:8px;padding:16px 14px;position:relative;font-size:13px}
+.step.s1{border-top-color:var(--repo)}
+.step.s2{border-top-color:var(--pi)}
+.step.s3{border-top-color:var(--yellow)}
+.step.s4{border-top-color:var(--ok)}
+.step .no{position:absolute;top:-12px;left:12px;background:var(--ctrl);color:#fff;width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.step h4{margin:4px 0 6px;color:var(--ink)}
+.step .what{font-size:12.5px;color:var(--muted);line-height:1.7}
+.arrow-r{display:flex;align-items:center;justify-content:center;color:var(--grey);font-size:20px}
+@media(min-width:981px){.arrow-r{padding:0 2px}}
+
+/* trace 块 */
+.trace{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 20px;font-family:ui-monospace,monospace;font-size:13px;line-height:2.2;overflow:auto;letter-spacing:.3px}
+.trace .ln{color:#64748b;font-weight:700;margin-right:6px}
+.trace .key{color:#7dd3fc}
+.trace .val{color:#fde68a}
+.trace .cmt{color:#64748b}
+.trace .ok{color:#86efac}
+.trace .err{color:#fca5a5}
+
+.cmd{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:6px 8px;font-family:ui-monospace,monospace;font-size:12px;overflow:auto;display:block;margin-top:6px}
+.cmd .c{color:#94a3b8}
+
+/* 源码/bundle 目录树 */
+.tree{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:14px 18px;font-family:ui-monospace,monospace;font-size:12.5px;line-height:1.9;overflow:auto;margin:8px 0}
+.tree .t-root{color:#fde68a;font-weight:700}
+.tree .t-dir{color:#7dd3fc}
+.tree .t-file{color:#e2e8f0}
+.tree .t-cmt{color:#64748b}
+.tree .t-key{color:#fca5a5;font-weight:600}
+.tree .t-ok{color:#86efac}
+
+/* 维度4 验收卡 */
+.vfy{margin:10px 0}
+.vfy-item{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.vfy-item .num{width:28px;height:28px;border-radius:999px;background:var(--ctrl);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:2px}
+.vfy-item .body{min-width:0}
+.vfy-item .do{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 6px}
+.vfy-item .cmd-block{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:8px 12px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;display:block;margin:6px 0}
+.vfy-item .cmd-block .c{color:#94a3b8}
+.vfy-item .result{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+@media(max-width:700px){.vfy-item .result{grid-template-columns:1fr}}
+.vfy-item .pass{border:1px solid #a7f3d0;border-radius:6px;background:var(--ok-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+.vfy-item .pass::before{content:"✅ 通过 → ";font-weight:700;color:var(--ok)}
+.vfy-item .fail{border:1px solid #fecdca;border-radius:6px;background:var(--warn-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+.vfy-item .fail::before{content:"❌ 失败 → ";font-weight:700;color:var(--warn)}
+.vfy-item .why{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
+.vfy-item .why a{color:var(--config);font-weight:600;text-decoration:none}
+.vfy-item .why a:hover{text-decoration:underline}
+
+/* 终端范例 */
+.term{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 18px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;margin:8px 0}
+.term .t-hdr{color:#94a3b8;font-weight:700;margin-bottom:10px}
+.term .t-grp{color:#7dd3fc;font-weight:700;margin:12px 0 5px}
+.term .t-grp:first-of-type{margin-top:0}
+.term .t-row{display:grid;grid-template-columns:60px 250px 1fr;gap:6px;line-height:2.0;align-items:baseline}
+.term .t-row .ok{color:#86efac;font-weight:700}
+.term .t-row .fail{color:#fca5a5;font-weight:700}
+.term .t-row .blk{color:#fde68a;font-weight:700}
+.term .t-row .lbl{color:#e2e8f0;overflow:hidden;text-overflow:ellipsis}
+.term .t-row .note{color:#64748b}
+.term .t-sum{color:#e2e8f0;font-weight:700;margin-top:4px}
+/* FAIL 定位子块：独立缩进块，每条 display:block 独占一行 */
+.term .t-loc{background:rgba(252,165,165,.08);border-left:3px solid #fca5a5;border-radius:4px;padding:6px 10px;margin:2px 0 6px 40px;font-size:11.5px;line-height:1.8}
+.term .t-loc span{display:block;color:#cbd5e1}
+.term .t-loc .lk{color:#fca5a5;font-weight:700;margin-right:4px}
+
+/* 数据微元字段表（排版铁律#4）：3 列 变量名/内部存储结构/内部存储的数据类型 */
+.mu .desc .data-table{width:100%;border-collapse:collapse;font-size:11.5px;margin:2px 0}
+.mu .desc .data-table th,.mu .desc .data-table td{border:1px solid var(--line);padding:4px 7px;text-align:left;vertical-align:top;line-height:1.5}
+.mu .desc .data-table th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:10.5px}
+.mu .desc .data-table td:first-child{font-family:ui-monospace,monospace;color:var(--repo);white-space:nowrap}
+
+/* 编排函数检查链/调用链表格：步骤→调用什么→在干什么 */
+.mutab{width:100%;border-collapse:collapse;font-size:11.5px;margin:2px 0}
+.mutab th,.mutab td{border:1px solid var(--line);padding:3px 6px;text-align:left;vertical-align:top}
+.mutab th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:10.5px;white-space:nowrap}
+.mutab td{color:var(--muted);line-height:1.5;font-size:11px}
+.mutab td:first-child{font-family:ui-monospace,monospace;font-size:11px;white-space:nowrap}
+
+/* A/B/C 三层功能模块总览表（图②）：编号→名称→类型→基础介绍 */
+.ovtab{width:100%;border-collapse:collapse;font-size:12px;margin:2px 0 8px}
+.ovtab th,.ovtab td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;line-height:1.55}
+.ovtab th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:11px;white-space:nowrap}
+.ovtab td.id{font-family:ui-monospace,monospace;color:var(--repo);font-weight:700;white-space:nowrap}
+.ovtab td.name{font-family:ui-monospace,monospace;color:var(--ink);white-space:nowrap}
+.ovtab td.kind{font-size:11px;color:var(--config);white-space:nowrap}
+.ovtab tr.layer-head th{font-size:12.5px}
+.ovtab tr.layer-head.A th{background:var(--repo-bg);color:var(--repo)}
+.ovtab tr.layer-head.B th{background:#fffbeb;color:var(--yellow)}
+.ovtab tr.layer-head.C th{background:var(--config-bg);color:var(--config)}
+/* 图② 基础介绍列分行列表：每个被调用微元独占一行 */
+.ovtab td .step-list{margin:6px 0 0;padding:0;list-style:none}
+.ovtab td .step-list>li{display:block;padding:3px 0;line-height:1.5;border-bottom:1px dotted var(--line);font-size:11.5px;color:var(--muted)}
+.ovtab td .step-list>li:last-child{border-bottom:none}
+.ovtab td .step-list>li .step-no{display:inline-block;min-width:18px;color:var(--repo);font-weight:700}
+.ovtab td .step-list>li code{font-size:11px;color:var(--repo)}
+.ovtab td .step-list>li .arr{color:var(--config);font-weight:600}
+/* data-table 分组标题行 + 字段缩进行（排版铁律#4 逐字段） */
+.mu .desc .data-table tr.grp td{background:var(--repo-bg);color:var(--repo);font-weight:700;font-size:11px;padding:3px 7px;border:1px solid var(--line)}
+.mu .desc .data-table tr.fld td{font-size:11px;padding:3px 7px}
+.mu .desc .data-table tr.fld td:first-child{padding-left:18px;color:var(--ctrl)}
+
+/* 翻译表微元定位链：强制 display:block 覆盖全局 .mu grid，防撞 */
+.trtab td.mu{display:block}
+.trtab td.mu .fpath{font-family:ui-monospace,monospace;color:var(--repo);font-size:11.5px;display:block}
+.trtab td.mu .cls{color:var(--ctrl);font-size:12px;display:block}
+.trtab td.mu .cls b{font-family:ui-monospace,monospace;color:var(--ink)}
+.trtab td.mu .kindtag{display:inline-block;border-radius:4px;padding:0 5px;font-size:10.5px;font-weight:700;margin-left:4px}
+.trtab td.mu .kindtag.data{background:var(--types-bg);color:var(--types)}
+.trtab td.mu .kindtag.calc{background:var(--config-bg);color:var(--config)}
+.trtab td.mu .kindtag.io{background:var(--repo-bg);color:var(--repo)}
+.trtab td.mu .kindtag.orch{background:#fffbeb;color:var(--yellow)}
+.trtab td.mu .kindtag.state{background:#fef3c7;color:#92400e}
+.trtab td.pf .pp{color:var(--ok);font-size:12px;display:block}
+.trtab td.pf .fp{color:var(--warn);font-size:12px;display:block}
+.trtab td.pf .blk{color:var(--yellow);font-size:12px;display:block}
+.trtab{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.trtab th,.trtab td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.trtab th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:11.5px}
+.trtab td.lbl{font-family:ui-monospace,monospace;color:var(--repo);font-size:12px;white-space:nowrap}
+.trtab td.lyr{font-weight:600;white-space:nowrap}
+.trtab tr.types td.lyr{color:var(--types)}
+.trtab tr.config td.lyr{color:var(--config)}
+.trtab tr.service td.lyr{color:var(--config)}
+.trtab tr.ui td.lyr{color:var(--ok)}
+.trtab tr.boundary td.lyr{color:var(--yellow)}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>L2-05 · 单步 Action 到执行器 Topic 适配发送闭环</h1>
+      <p class="subtitle"><code>l2-05-action-publisher</code>：ACT 部署程序唯一 ROS command 出口。每个 control tick 接收 L2-04 已安全通过的 16D TCP action、L2-06 的最终发布授权与时间，把同一策略意图并行投影为观测通道和四路执行器 command。默认 shadow，不拥有调度、安全算法或硬件驱动。本页用 4 个维度交互呈现：功能边界、Pi0.5 对应部分如何运作、开发蓝图、人类验收标准。</p>
+    </div>
+    <div class="note">
+      <b>本页只是人类快速浏览入口，不作为 L3 生成依据。</b><br>
+      权威细节见 <code>agent_context/00_INDEX.md</code> 及其路由的 Markdown。HTML 与 MD 冲突时，以 MD 为准。
+    </div>
+  </header>
+
+  <input id="v1" name="tab" type="radio" checked>
+  <input id="v2" name="tab" type="radio">
+  <input id="v3" name="tab" type="radio">
+  <input id="v4" name="tab" type="radio">
+
+  <nav class="tabs" aria-label="维度视图">
+    <label for="v1"><span class="n">1</span>功能边界</label>
+    <label for="v2"><span class="n">2</span>Pi0.5 如何运作</label>
+    <label for="v3"><span class="n">3</span>开发蓝图</label>
+    <label for="v4"><span class="n">4</span>人类验收标准</label>
+  </nav>
+
+  <div class="views">
+
+    <!-- ============ 维度 1 · 功能边界 ============ -->
+    <section class="view boundary" data-agent-source="agent_context/01_L2功能边界.md#1-一句话运行时职责">
+      <h2>维度 1 · 功能边界</h2>
+      <div class="reading-path">📖 阅读路径：下图展示 L2-05 消费什么、产出什么 → 模式门控和四路原子性（产出卡内展开）→ Pi0.5 源码怎么做见<a href="#" onclick="document.getElementById('v2').click()">维度2</a>，ACT 怎么落代码见<a href="#" onclick="document.getElementById('v3').click()">维度3</a></div>
+      <p class="lead">L2-05 是被 L2-06 每 tick 同步调用的唯一 ROS action 输出端口：它把 L2-04 交付的 safe 16D TCP action 依次加工为 Topic 候选载荷和标准 ROS message，再依据 CLI 静态总开关与 L2-06 动态许可选择并发布 policy、四路 command 和逐 action status，最后把真实发布事实作为 <code>ActionPublishResult</code> 返回 L2-06。关键区分——它只做输出适配与门控，不做安全算法（归 L2-04）、调度/fallback（归 L2-06）、workspace/IK/硬件驱动（归外部 driver）。</p>
+
+      <h3>图① 消费 → 功能模块 → 产出</h3>
+      <div class="figure">
+        <div class="io-flow">
+
+          <!-- ======== 左列：消费 ======== -->
+          <div class="io-col input">
+            <div class="io-label">消费（上游提供）</div>
+
+            <!-- SafetyResult -->
+            <details class="io-card repo">
+              <summary><code>SafetyResult</code><span class="io-src">L2-04 经 L2-06</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-04 产出的冻结结果，经 L2-06 包装进 <code>ActionPublishRequest</code> 传入。L2-05 只复核来源标记，不重做 L2-04 的安全算法。</p>
+                <p style="font-size:12px;color:var(--ctrl);font-weight:700;margin:10px 0 4px">L2-05 实际消费的字段：</p>
+                <table>
+                  <tr><th>字段</th><th>类型</th><th>L2-05 用途</th></tr>
+                  <tr><td>status</td><td>SafetyStatus</td><td><code>PASS</code>/<code>ADJUSTED</code> 可发布；<code>REJECTED</code> 禁止 policy/command</td></tr>
+                  <tr><td>action</td><td>ActionSpec</td><td>16D safe action：2×TCP7 + 2×gripper[0,1]（REJECTED 时 None）</td></tr>
+                </table>
+                <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">L2-05 不重新校验 quaternion 模长 / TCP delta；只查 status + shape + finite + 夹爪域 <code>[0,1]</code>。<b>注意：不存在 <code>result.accepted</code> 字段。</b></p>
+                <details class="nested-detail">
+                  <summary>⚠ 夹爪尺度协调点（跨 L2 契约漂移）</summary>
+                  <div class="body">
+                    <p style="color:var(--warn);font-weight:600;margin:4px 0">本 L2 只接受夹爪输入 <code>[0,1]</code>；若上游传来 <code>50/100</code>（疑似已映射），即使 <code>status=PASS</code> 也<b>整批失败</b>。</p>
+                    <p style="color:var(--muted);margin:4px 0">这是暴露尺度漂移的硬门控，不做双尺度兼容。详见 <code>01_L2功能边界.md §5</code>。</p>
+                  </div>
+                </details>
+              </div>
+            </details>
+
+            <!-- DeployConfig -->
+            <details class="io-card config">
+              <summary><code>DeployConfig</code><span class="io-src">L2-01 注入</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-01 已落地的 <code>DeployConfig</code>，由 L2-06/UI 装配入口在组装阶段注入 ActionPublisher。启动期一次构建 frozen，稳态只读。</p>
+                <p style="font-size:12px;color:var(--ctrl);font-weight:700;margin:10px 0 4px">L2-05 实际消费的配置语义：</p>
+                <table>
+                  <tr><th>配置语义</th><th>来源</th><th>L2-05 用途</th></tr>
+                  <tr><td>command topics</td><td>TopicsConfig</td><td>六个 ROS publisher 的 topic 名</td></tr>
+                  <tr><td><code>command_output_enabled</code></td><td>CLI <code>--enable-command-output</code></td><td>人工总开关，默认 False；非 YAML 持久化，不由 mode 覆盖</td></tr>
+                  <tr><td><code>pose_frame_id</code> / scale / deadband</td><td>CommandOutputConfig（本 L2 窄新增）</td><td>单一权威 frame、[0,1]→[0,100] 映射、deadband、最小间隔、QoS</td></tr>
+                </table>
+                <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">L2-05 只读引用，不读 YAML 文件（文件读取属 L2-01）。<b>不存在 <code>RuntimeConfig.mode</code> 消费。</b></p>
+              </div>
+            </details>
+
+            <!-- CommandPermit + action_id/time -->
+            <details class="io-card repo">
+              <summary><code>CommandPermit + action_id + 时间</code><span class="io-src">L2-06</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-06 把汇总后的动态许可、当前 action_id、ROS 时间和单调时间随 <code>ActionPublishRequest</code> 同步传入。</p>
+                <p style="font-size:12px;color:var(--ctrl);font-weight:700;margin:10px 0 4px">L2-05 实际消费的字段：</p>
+                <table>
+                  <tr><th>字段</th><th>类型</th><th>L2-05 用途</th></tr>
+                  <tr><td>allowed</td><td>bool</td><td>动态许可；与 CLI 总开关共同决定四路 command（不存在 mode）</td></tr>
+                  <tr><td>reason_code</td><td>str|None</td><td>拒绝原因码，allowed=False 时为稳定 code（如 <code>ESTOP_ACTIVE</code>）</td></tr>
+                  <tr><td>action_id</td><td>str</td><td>status 关联；L2-05 不自增 ID</td></tr>
+                  <tr><td>ros_time_s / monotonic_s</td><td>float</td><td>header stamp / deadband 时间；L2-05 不拥有时钟</td></tr>
+                </table>
+                <details class="nested-detail">
+                  <summary>⚠ 原始 gate 信号不是 L2-05 输入</summary>
+                  <div class="body">
+                    <p style="color:var(--muted);margin:4px 0">原始 deadman / 急停 / enable / driver readiness topic <b>不进入 L2-05</b>。L2-06 把这些事实汇总成 <code>CommandPermit(allowed, reason_code)</code>。L2-05 不读取原始信号。</p>
+                  </div>
+                </details>
+              </div>
+            </details>
+          </div>
+
+          <!-- ======== 箭头 ======== -->
+          <div class="io-arrow">→</div>
+
+          <!-- ======== 中列：功能模块 ======== -->
+          <div class="io-col" style="flex:1.1">
+            <div class="io-label">功能模块</div>
+            <div class="io-module" style="padding:14px;text-align:center">
+              <p style="font-size:14px;font-weight:700;color:var(--repo);margin:0 0 4px;font-family:ui-monospace,monospace">ActionPublisher.publish(request: ActionPublishRequest)</p>
+              <p style="font-size:12px;color:var(--muted);margin:0 0 6px">→ ActionPublishResult</p>
+              <p style="font-size:11.5px;color:var(--muted);margin:0;line-height:1.5">唯一对外入口，由 <code>ActionPublisher</code>（class，ui 层）持有<br>被 L2-06 ControlLoop.tick 每 step 同步调用</p>
+              <div class="pipe">
+                <p style="font-size:11.5px;color:var(--muted);margin:0 0 4px"><b>三编排函数闭环（先全部构造，再 publish）：</b></p>
+                <p style="font-size:11px;color:var(--ink);margin:0;line-height:1.7;font-family:ui-monospace,monospace">B1 build_topic_payloads：SafetyResult → TopicPayloadBundle<br>B2 build_ros_messages：PayloadBundle → _RosMessageBundle（不含 status）<br>B3 ActionPublisher.publish：CLI/permit 决策 + ROS 写出 + result/status</p>
+                <p style="font-size:11px;color:var(--config);margin:8px 0 0">唯一 ROS 副作用边界 · 详细拆解见 <a href="#" onclick="document.getElementById('v3').click()" style="color:var(--config);font-weight:600">维度3 · 开发蓝图</a></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======== 箭头 ======== -->
+          <div class="io-arrow">→</div>
+
+          <!-- ======== 右列：产出 ======== -->
+          <div class="io-col output">
+            <div class="io-label">产出（交付下游）</div>
+
+            <details class="io-card ok">
+              <summary><code>ActionPublishResult</code><span class="io-src">→ L2-06</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">Frozen dataclass（C6），逐调用真实发布事实。L2-05 的 B3 创建并返回，L2-06 消费决定 fallback/retry/stop。<code>types/action_publish.py</code>。</p>
+                <table>
+                  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+                  <tr><td>action_id</td><td>str</td><td>与 L2-06 当前 tick 关联</td></tr>
+                  <tr><td>safety_status</td><td>SafetyStatus</td><td>输入安全状态（PASS/ADJUSTED/REJECTED）</td></tr>
+                  <tr><td>command_output_enabled</td><td>bool</td><td>CLI 总开关状态</td></tr>
+                  <tr><td>command_permitted</td><td>bool</td><td>L2-06 动态许可值</td></tr>
+                  <tr><td>outcome</td><td>PublishOutcome</td><td>REJECTED/OBSERVED/BLOCKED/PUBLISHED/PARTIAL/FAILED</td></tr>
+                  <tr><td>policy_action_published</td><td>bool</td><td>观测通道 publish 是否成功</td></tr>
+                  <tr><td>command_publish_count</td><td>int 0..4</td><td>本次成功的 command publisher 数</td></tr>
+                  <tr><td>gripper_skipped</td><td>tuple[str,...]</td><td>因 deadband 有意跳过的 side</td></tr>
+                  <tr><td>command_plan_completed</td><td>bool</td><td>计划内 ROS command 调用全部完成（≠硬件执行）</td></tr>
+                  <tr><td>status_published</td><td>bool</td><td>status topic 是否成功发布</td></tr>
+                  <tr><td>reason_code</td><td>str|None</td><td>失败/阻断原因码</td></tr>
+                  <tr><td>driver_accepted</td><td>None</td><td>L2-05 不知道；禁止伪造 True</td></tr>
+                  <tr><td>hardware_reached</td><td>None</td><td>L2-05 不知道；禁止伪造 True</td></tr>
+                </table>
+
+                <details class="nested-detail" open>
+                  <summary>图② 两条并行输出通道 + CLI/许可决策</summary>
+                  <div class="body">
+                    <p style="font-weight:700;color:var(--types);margin:4px 0 3px">观测通道（policy + status）</p>
+                    <p style="font-size:11.5px;color:var(--muted);margin:0 0 2px">· <code>/act/policy_action</code>（Float32MultiArray）：原样 16D，ACT 内部单位</p>
+                    <p style="font-size:11.5px;color:var(--muted);margin:0 0 6px">· <code>/act/command/status</code>（String JSON）：逐 action 发送回执</p>
+                    <p style="font-weight:700;color:var(--ok);margin:4px 0 3px">真实 command 通道（四路）</p>
+                    <p style="font-size:11.5px;color:var(--muted);margin:0 0 2px">· 2× <code>PoseStamped</code>（同一 <code>pose_frame_id</code>，m，xyzw）</p>
+                    <p style="font-size:11.5px;color:var(--muted);margin:0 0 6px">· 2× <code>Float64</code>（左右 gripper，0..100，0=闭 100=开）</p>
+                    <table style="font-size:10.5px;margin-top:4px">
+                      <tr><th>CLI 总开关</th><th>动态许可</th><th>policy</th><th>四路 command</th><th>outcome</th></tr>
+                      <tr><td>False</td><td>任意</td><td>发</td><td>禁止</td><td>OBSERVED</td></tr>
+                      <tr><td>True</td><td>False</td><td>发</td><td>禁止</td><td>BLOCKED</td></tr>
+                      <tr><td>True</td><td>True</td><td>发</td><td>允许（夹爪经 deadband）</td><td>PUBLISHED / PARTIAL / FAILED</td></tr>
+                    </table>
+                    <p style="font-size:11px;color:var(--muted);margin:4px 0"><code>SafetyStatus.REJECTED</code> 时 policy/command 均为 0，outcome=REJECTED。</p>
+                  </div>
+                </details>
+
+                <details class="nested-detail">
+                  <summary>图③ 四路原子性精确边界 + 负责/不负责</summary>
+                  <div class="body">
+                    <p style="font-weight:700;color:var(--warn);margin:4px 0 3px">四路原子性：只到 RAM 构造层</p>
+                    <p style="font-size:11.5px;color:var(--muted);margin:0 0 6px">允许声称：B1/B2 的五路候选消息必须全部在 RAM 构造成功，才开始 policy/command publish。禁止声称：ROS 多 topic 是事务，或四台设备同时接收/执行。运行期部分 publish 异常无法回滚，result 记录实际成功数与 <code>PARTIAL</code>，停止剩余 command。</p>
+                    <p style="font-weight:700;color:var(--types);margin:6px 0 3px">✓ 负责</p>
+                    <p style="font-size:11.5px;color:var(--muted);margin:0 0 4px">SafetyStatus 来源复核 · 三编排函数闭环 · 16D 拆分 · 单一 frame · [0,1]→[0,100] · CLI+permit 双门控 · 夹爪 deadband · policy/status publish · 逐调用 result</p>
+                    <p style="font-weight:700;color:var(--warn);margin:4px 0 3px">✗ 不负责（归其他 L2）</p>
+                    <p style="font-size:11.5px;color:var(--muted);margin:0">CLI 解析（→ 启动装配）· 原始 gate/deadman/estop（→ L2-06）· shape/NaN/quaternion/TCP delta 安全算法（→ L2-04）· arm/gripper 状态回读 · workspace · IK · TF · MoveIt · 碰撞（→ 外部 driver）· RM65 SDK · Modbus · USB-485（→ driver）· action smoothing / 跨 chunk 融合（后续优化）</p>
+                  </div>
+                </details>
+
+                <p style="font-size:11px;color:var(--muted);margin:8px 0 0"><b>command_plan_completed</b> 只表示计划内 command publish 全部完成，<b>不等于</b> driver accepted、硬件执行或到位。<code>driver_accepted</code> / <code>hardware_reached</code> 固定 None。</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </div>
+
+      <p class="src">权威来源：<code>agent_context/01_L2功能边界.md</code>（§1 职责 / §2 输入 / §3 输出 / §4 发布决策 / §5 负责 / §6 不负责 / §5.1 四路原子性）、<code>agent_context/03a_功能微元总览与组织结构.md</code>（§3 调用树）、<code>agent_context/03_ACT微元设计与协作.md</code>（§4 三编排函数）</p>
+    </section>
+
+    <!-- ============ 维度 2 · Pi0.5 如何运作 ============ -->
+    <section class="view pi05map" data-agent-source="agent_context/02_pi05源码3.5层微元拆解.md#1-白话运行机制">
+      <h2>维度 2 · Pi0.5 这部分是如何运作的</h2>
+      <div class="reading-path">📖 阅读路径：先懂 Pi0.5 旧输出职责分散在三个 node（骨架）→ 看旧命令四步怎么走 → 看一个旧命令的源码跟踪 → 看 Pi0.5 14D joint 与 ACT 16D TCP 的根本差异 → ACT 怎么改见<a href="#" onclick="document.getElementById('v3').click()">维度3</a></div>
+      <p class="lead">这一维度只回答：<b>Pi0.5 部署代码里，负责把 action 发到执行器的那部分是怎么跑的。</b>不涉及 ACT 怎么改。关键认知——Pi0.5 没有独立 publisher，旧职责散在三个 node；旧链是 14D joint、串行订阅、shadow 也发 command。</p>
+
+      <div class="callout pi">这一节用<b>白话</b>讲。Pi0.5 没有一个独立 <code>ActionPublisher</code>。旧输出职责像三道转运站：第一站（DeployNode）发四个包裹，第二站（Bridge）订阅拆包转发，第三站（Mux）看 deadman/模式再选路。新 L2-05 取消中间订阅站，L2-06 先给最终通行证，L2-05 从 RAM 一次构造输出。</div>
+
+      <details open>
+        <summary>📖 术语词典（点开随时查）</summary>
+        <div class="body">
+        <table class="dict">
+          <tr><td>Pi05VlaDeployNode<br>（部署节点）</td><td>旧"大而全"节点：观测、推理、ControlLoop 和 publisher 混在一个 node 里。逐路构造并发布 JointState/Float64。新边界明确不照搬。</td></tr>
+          <tr><td>Bridge<br>（桥接节点）</td><td>订阅旧 command，再做 joint clamp / 转发 / deadman。新 L2-05 不订阅、不串行，不需要 bridge。</td></tr>
+          <tr><td>Mux<br>（仲裁节点）</td><td>监听 teleop/VLA/deadman/enable 后按 mode/timeout 仲裁。这些事实由 L2-06 汇总为最终授权，L2-05 只消费一个布尔。</td></tr>
+          <tr><td>本地原子性</td><td>四路都构造成功才开始 publish；不是 ROS 事务，也不保证同时执行。夹爪 deadband 跳过属于计划的一部分。</td></tr>
+          <tr><td>14D joint vs 16D TCP</td><td>Pi0.5 动作是 2×6 关节角 + 手部标量（JointState）；ACT 动作是 2×7[xyz+quat] + 2×gripper（PoseStamped）。这是两者最根本的差异。</td></tr>
+        </table>
+        </div>
+      </details>
+
+      <h3>Pi0.5 旧命令四步流程</h3>
+      <div class="flow">
+        <div class="step s1">
+          <div class="no">1</div>
+          <h4>ControlLoop</h4>
+          <div class="what">返回旧 14D BimanualAction：左右 6 joint + 两手标量。<br><b>属 L2-06</b>，新边界改 16D TCP。</div>
+        </div>
+        <div class="arrow-r">→</div>
+        <div class="step s2">
+          <div class="no">2</div>
+          <h4>Deploy Node</h4>
+          <div class="what">逐路构造并发布 JointState/Float64。<b>边构造边发</b>，shadow 也发 command。<br><b>只参考 publisher 生命周期</b>。</div>
+        </div>
+        <div class="arrow-r">→</div>
+        <div class="step s3">
+          <div class="no">3</div>
+          <h4>Bridge</h4>
+          <div class="what">订阅四路 command，再做 joint clamp / 转发 / deadman。<br><b>不复用</b>（新 L2-05 不订阅、不串行）。</div>
+        </div>
+        <div class="arrow-r">→</div>
+        <div class="step s4">
+          <div class="no">4</div>
+          <h4>Mux + driver</h4>
+          <div class="what">按 mode/timeout/deadman/enable 仲裁并进硬件栈。<br><b>gate 状态移至 L2-06</b>，实现不复用。</div>
+        </div>
+      </div>
+
+      <h3>一条源码跟踪（Pi0.5 旧链 vs ACT 新链）</h3>
+      <div class="trace">
+<span class="ln">1</span><span class="cmt"># 旧 Pi0.5：三个 node 串行链</span>
+<span class="ln">2</span><span class="key">control_loop.py:111</span>  tick() -> ControlCommand(BimanualAction 14D)
+<span class="ln">3</span><span class="key">pi05_vla_deploy_node.py:196</span>  _control_tick()
+<span class="ln">4</span><span class="err">208..211  left_arm.publish -> right_arm.publish -> left_hand.publish -> right_hand.publish</span>
+<span class="ln">5</span><span class="key">pi05_bridge_node.py:30..44</span>  4 subscriptions + downstream publishers + deadman timer
+<span class="ln">6</span><span class="key">command_mux_node.py:62..175</span>  teleop/VLA/deadman/enable callbacks + timeout 仲裁
+<span class="ln">7</span>
+<span class="ln">8</span><span class="cmt"># ACT L2-05：从 RAM 一次构造，双门控</span>
+<span class="ln">9</span><span class="new">L2-06 tick -> L2-04 filter -> ActionPublishRequest(safe 16D + final auth)</span>
+<span class="ln">10</span><span class="new">L2-05 publish(request): build all -> policy/status || gated 4 commands</span>
+<span class="ln">11</span><span class="ok">shadow: policy/status=1, 四路 command=0</span>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted)">负向扫描：Pi0.5 没有 <code>PoseStamped</code>、<code>policy_action</code>、<code>command/status</code>、<code>action_id</code>、<code>sent_to_driver</code> 或 16D TCP publisher——这些都是 ACT 新增。</p>
+
+      <h3>Pi0.5 参考目录树（本次盘点范围）</h3>
+      <div class="tree">
+<span class="t-root">pi05/</span> <span class="t-cmt"># 本次 L2-05 盘点的源码范围</span>
+├─ <span class="t-dir">common/src/pi05/common/</span>
+│  ├─ <span class="t-dir">robot/</span>
+│  │  └─ <span class="t-file">action_spec.py</span>          <span class="t-cmt"># BimanualAction 14D 6+6+1+1 / split_bimanual_action / hand_command_to_trigger</span> <span class="t-ok">结构复用（frozen 思想）</span>
+│  ├─ <span class="t-dir">data/</span>
+│  │  └─ <span class="t-file">action_codec.py</span>          <span class="t-cmt"># ensure_action_vector / split_action（固定 14D）</span> <span class="t-key">只参考入口校验</span>
+│  └─ <span class="t-dir">ros/</span>
+│     └─ <span class="t-file">topics.py</span>                <span class="t-cmt"># Pi05CommandTopics frozen topic 集合</span> <span class="t-ok">配置注入结构复用</span>
+└─ <span class="t-dir">deploy/src/pi05/deploy/</span>
+   ├─ <span class="t-dir">runtime/</span>
+   │  └─ <span class="t-file">control_loop.py</span>          <span class="t-cmt"># tick / cursor / fallback（属 L2-06）</span>
+   ├─ <span class="t-dir">config/</span>
+   │  └─ <span class="t-file">schema.py</span>                <span class="t-cmt"># mode + publishes_command_topics（shadow/safe 合并，反例）</span> <span class="t-key">不复用该属性</span>
+   └─ <span class="t-dir">ros_nodes/</span>
+      ├─ <span class="t-file">pi05_vla_deploy_node.py</span> <span class="t-cmt"># _create_publishers / _control_tick（边构造边发）</span> <span class="t-ok">仅参考 publisher 生命周期</span>
+      ├─ <span class="t-file">pi05_bridge_node.py</span>      <span class="t-cmt"># 订阅 + joint clamp + deadman timer</span> <span class="t-key">不复用（边界反例）</span>
+      └─ <span class="t-file">command_mux_node.py</span>     <span class="t-cmt"># VLA/teleop/deadman/enable 仲裁</span> <span class="t-key">gate 状态移至 L2-06</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted)">绿色 = 结构复用；红色 = 不复用。Pi0.5 把 publisher 散在三个 node，ACT 收敛到一个 <code>ActionPublisher</code>（ui 层）。</p>
+
+      <h3>Pi0.5 → ACT 根本差异（不可照搬）</h3>
+      <table>
+        <tr><th>维度</th><th>Pi0.5（14D joint）</th><th>ACT（16D TCP）</th><th>处理</th></tr>
+        <tr><td>动作结构</td><td>2×6 关节角 + 2 手部标量</td><td>2×7[xyz+quat] + 2×gripper</td><td><span class="errc">不复用</span>（重写）</td></tr>
+        <tr><td>ROS 消息</td><td>JointState + Float64</td><td>PoseStamped + Float64</td><td><span class="errc">不复用</span></td></tr>
+        <tr><td>输出拓扑</td><td>DeployNode → Bridge → Mux 串行订阅</td><td>同一 RAM safe action 并行派生，无订阅</td><td><span class="errc">不复用</span></td></tr>
+        <tr><td>shadow command</td><td>shadow 也发四路 command</td><td>shadow 严禁四路 command</td><td><span class="errc">不复用</span></td></tr>
+        <tr><td>夹爪映射</td><td>hand_command_to_trigger：300..1000 → 0..1（反向）</td><td>map_gripper_command：[0,1] → 0..100</td><td><b>新增</b>（方向相反）</td></tr>
+        <tr><td>授权汇总</td><td>Mux 读原始 deadman/enable topic</td><td>L2-06 汇总成 command_allowed 一个布尔</td><td><span class="errc">不复用</span></td></tr>
+        <tr><td>物理落点</td><td>ros_nodes/ 三 node 散落</td><td>ui/action_publisher.py 一个 class</td><td>分层修正</td></tr>
+      </table>
+
+      <div class="callout pi">复用决策小结：frozen 数据对象 / topic-config 注入 / 长生命周期 publisher handle / 消息先在 RAM 构造 / 退出语义清晰 = <b>结构复用</b>；bridge/mux 订阅链 / joint clamp / shadow command / 旧 hand 反向映射 / 硬件 launch = <b>不复用</b>。直接复用 = <b>无</b>（Pi0.5 位于只读参考目录且核心契约均不相容）。</div>
+      <p class="src">权威来源：<code>agent_context/02_pi05源码3.5层微元拆解.md</code>（§1 白话运行机制 / §2 源码范围与差异 / §3 3.5层微元表 / §4 class封装盘点 / §5 复用结论 / §6 强制约束）</p>
+    </section>
+
+    <!-- ============ 维度 3 · 开发蓝图 ============ -->
+    <section class="view blueprint" data-agent-source="agent_context/03a_功能微元总览与组织结构.md#2-总量与分层">
+      <h2>维度 3 · 开发蓝图</h2>
+      <div class="reading-path">📖 阅读路径：先看运行时协作链（图①）→ 看 A/B/C 三层功能模块总览（图②，25 个模块）→ 点六层标签看每层落点与逐函数契约（图③，types/config/service/ui 有产物）→ 怎么验收见<a href="#" onclick="document.getElementById('v4').click()">维度4</a></div>
+      <p class="lead">这一维度回答：<b>L2-05 代码怎么分层，每层有哪些 micro-unit。</b>L2-05 跨层落点 <code>types/</code> + <code>config/</code> + <code>service/</code> + <code>ui/</code> + <code>tests/</code>（repo/runtime 无新产物）。三编排函数 B1-B3 + 21 个 C 层原子微元。</p>
+
+      <h3>图① 运行时协作调用链（三编排函数每 tick 调用方向）</h3>
+      <div class="figure">
+        <svg viewBox="0 0 960 310" role="img" aria-label="L2-05 运行时协作调用链">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker>
+            <marker id="farr" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#b42318"></path></marker>
+          </defs>
+          <!-- 编译时注入 banner -->
+          <rect x="160" y="18" width="640" height="26" rx="6" fill="none" stroke="var(--config)" stroke-width="1.6" stroke-dasharray="6 4"></rect>
+          <text x="480" y="35" text-anchor="middle" font-size="12" font-weight="700" fill="var(--config)">编译时注入：node factory + DeployConfig(CLI,C7) → __init__ 创建六 publisher</text>
+          <!-- 泳道标题 -->
+          <text class="sub" x="95" y="68" text-anchor="middle" fill="var(--repo)" font-weight="700">runtime</text>
+          <text class="sub" x="290" y="68" text-anchor="middle" fill="var(--config)" font-weight="700">service</text>
+          <text class="sub" x="550" y="68" text-anchor="middle" fill="var(--ok)" font-weight="700">ui（ActionPublisher）</text>
+          <text class="sub" x="870" y="68" text-anchor="middle" fill="var(--types)" font-weight="700">types</text>
+          <line x1="10" y1="76" x2="950" y2="76" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3"></line>
+          <!-- ① L2-06 tick -->
+          <rect class="box" x="30" y="92" width="130" height="52" rx="8" fill="var(--repo-bg)" stroke="var(--repo)"></rect>
+          <text class="title" x="95" y="113" text-anchor="middle">① ControlLoop.tick</text>
+          <text class="sub" x="95" y="131" text-anchor="middle">编排函数 · 驱动方</text>
+          <path class="edge" d="M160 118 L210 118" marker-end="url(#arr)"></path>
+          <circle class="mnote-circle" cx="185" cy="118" r="8"></circle>
+          <text class="mnote-num" x="185" y="121" text-anchor="middle">1</text>
+          <!-- ② B1 -->
+          <rect class="box" x="210" y="92" width="160" height="52" rx="8" fill="#fcfdff" stroke="var(--config)"></rect>
+          <text class="title" x="290" y="111" text-anchor="middle">② B1 build_topic_payloads</text>
+          <text class="sub" x="290" y="129" text-anchor="middle">编排函数 · 纯 RAM</text>
+          <path d="M290 144 L290 172" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#farr)"></path>
+          <rect x="210" y="176" width="160" height="30" rx="6" fill="var(--warn-bg)" stroke="var(--warn)" stroke-dasharray="4 3"></rect>
+          <text class="sub" x="290" y="190" text-anchor="middle" fill="var(--warn)">SafetyStatus 非 PASS/ADJUSTED</text>
+          <text class="sub" x="290" y="200" text-anchor="middle" fill="var(--warn)">→ 不进入 B2，command=0</text>
+          <path class="edge" d="M370 118 L420 118" marker-end="url(#arr)"></path>
+          <circle class="mnote-circle" cx="395" cy="118" r="8"></circle>
+          <text class="mnote-num" x="395" y="121" text-anchor="middle">2</text>
+          <!-- ③ B2 -->
+          <rect class="box" x="420" y="92" width="160" height="52" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect>
+          <text class="title" x="500" y="111" text-anchor="middle">③ B2 build_ros_messages</text>
+          <text class="sub" x="500" y="129" text-anchor="middle">编排函数 · 纯消息构造</text>
+          <path d="M500 144 L500 172" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#farr)"></path>
+          <rect x="420" y="176" width="160" height="30" rx="6" fill="var(--warn-bg)" stroke="var(--warn)" stroke-dasharray="4 3"></rect>
+          <text class="sub" x="500" y="190" text-anchor="middle" fill="var(--warn)">任一 builder 异常</text>
+          <text class="sub" x="500" y="200" text-anchor="middle" fill="var(--warn)">→ 不进入 B3，command=0</text>
+          <path class="edge" d="M580 118 L620 118" marker-end="url(#arr)"></path>
+          <circle class="mnote-circle" cx="600" cy="118" r="8"></circle>
+          <text class="mnote-num" x="600" y="121" text-anchor="middle">3</text>
+          <!-- ④ B3 -->
+          <rect class="box" x="620" y="92" width="180" height="52" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect>
+          <text class="title" x="710" y="111" text-anchor="middle">④ B3 publish</text>
+          <text class="sub" x="710" y="129" text-anchor="middle">编排函数 · 唯一公共入口</text>
+          <text class="sub" x="710" y="158" text-anchor="middle" fill="var(--ok)">[B3 内部] C15 决策 + C17 写出 + C16 deadband + C19 result + C20 status + C21 记录</text>
+          <!-- B3 → result -->
+          <path d="M710 144 L710 246 L790 246" fill="none" stroke="#475467" stroke-width="1.8" marker-end="url(#arr)"></path>
+          <circle class="mnote-circle" cx="710" cy="196" r="8"></circle>
+          <text class="mnote-num" x="710" y="199" text-anchor="middle">4</text>
+          <!-- ⑤ result -->
+          <rect class="box" x="720" y="246" width="190" height="44" rx="8" fill="var(--types-bg)" stroke="var(--types)"></rect>
+          <text class="title" x="815" y="266" text-anchor="middle">⑤ ActionPublishResult</text>
+          <text class="sub" x="815" y="282" text-anchor="middle">数据契约（frozen）</text>
+          <!-- B3 → status -->
+          <path d="M620 118 L620 196 L620 196" fill="none" stroke="#475467" stroke-width="1.8" stroke-dasharray="2 3"></path>
+          <circle class="mnote-circle" cx="620" cy="190" r="8"></circle>
+          <text class="mnote-num" x="620" y="193" text-anchor="middle">5</text>
+          <!-- 回流 L2-06 -->
+          <path d="M720 268 Q 380 286 95 286 Q 95 210 95 148" fill="none" stroke="#475467" stroke-width="1.8" marker-end="url(#arr)"></path>
+          <text class="elabel" x="280" y="280" text-anchor="middle">C6（交 L2-06 fallback/retry）</text>
+          <!-- 图例 -->
+          <text class="sub" x="10" y="306" fill="var(--config)">实线=运行时调用</text>
+          <text class="sub" x="250" y="306" fill="var(--warn)">红色虚线=失败（command 不发）</text>
+          <text class="sub" x="580" y="306" fill="var(--config)">蓝色虚线=编译时注入</text>
+          <text class="sub" x="10" y="320" fill="var(--muted)">每个方框 = 一个编排函数；数字 = 该步产出的数据（下表）</text>
+        </svg>
+      </div>
+      <div class="mnote-legend"><b>箭头数据旁批（1‑5）：</b>
+        <table class="mnote-table">
+          <tr><td>⓵</td><td>ActionPublishRequest</td><td>C2 RAM 请求（含 SafetyResult + CommandPermit + 时间）</td></tr>
+          <tr><td>⓶</td><td>TopicPayloadBundle（C4）</td><td>B1 产出：policy16 + 两臂 target + 两爪 0..100</td></tr>
+          <tr><td>⓷</td><td>_RosMessageBundle（C8）</td><td>B2 产出：5 条 ROS 候选 message（不含 status）</td></tr>
+          <tr><td>⓸</td><td>ActionPublishResult（C6）</td><td>B3 根据真实事实构造的冻结 result（outcome/计数/reason）</td></tr>
+          <tr><td>⓹</td><td>status JSON</td><td>B3 best-effort 发回执 /act/command/status</td></tr>
+        </table>
+      </div>
+      <div class="callout"><b>三编排函数闭环：</b>L2-06 tick 同步调 B3。B1（service 纯 RAM）产 C4 → B2（ui 消息构造）产 C8 → B3（ui 唯一入口）按 C15 CLI/permit 决策 + C17 写 ROS + C16 deadband + C19/C20 result/status + C21 记录。失败在 B1/B2 即停，policy/command 调用 0。A1 持最小状态（六 publisher + gripper cache + last result）。⑥ 是冻结契约，L2-06 只读消费。</div>
+
+      <h3>图② A/B/C 三层功能模块总览</h3>
+      <div class="figure">
+        <p style="margin:0 0 8px;font-size:13px;color:var(--muted)">L2-05 的 22 个功能模块按 A/B/C 三层编号（A = 打包成 class 的行为单元，B = 组织 C 的同步编排函数，C = 不再拆分的原子数据/计算微元）。下表是总览，每个模块的逐函数契约见<a href="#" onclick="document.getElementById('v3').click()">图③ 六层落点</a>。</p>
+
+        <table class="ovtab">
+          <tr class="layer-head A"><th colspan="4">A 层（3.25 · class）— 1 个功能模块：把 B/C 打包成长生命周期输出对象</th></tr>
+          <tr><th>编号</th><th>名称</th><th>类型</th><th>基础介绍</th></tr>
+          <tr><td class="id">A1</td><td class="name">ActionPublisher</td><td class="kind">class</td><td>整个 L2-05 的对外句柄，长生命周期输出对象。结构复用 Pi0.5 publisher 生命周期，去掉订阅/joint clamp/shadow command。
+            <ul class="step-list">
+              <li><span class="step-no">构造</span>注入 node-like publisher factory + <code>DeployConfig</code>（含 C7）<span class="arr">→</span> 创建六 publisher</li>
+              <li><span class="step-no">封装</span>编排方法 B1 <code>publish</code> + 私有 B2/B3/B4</li>
+              <li><span class="step-no">封装</span>message 构造函数 C13-C16</li>
+              <li><span class="step-no">持有</span>六 publisher handle（不可变引用）</li>
+              <li><span class="step-no">持有</span>左右夹爪最近成功目标/单调时间（deadband 基准）</li>
+              <li><span class="step-no">持有</span>最近一次 <code>ActionPublishResult</code>（即时 status）</li>
+              <li><span class="step-no">不创建</span>subscription / timer / thread / queue</li>
+            </ul></td></tr>
+        </table>
+
+        <table class="ovtab">
+          <tr class="layer-head B"><th colspan="4">B 层（3.375 · 编排函数）— 3 个功能模块：A1/B3<publish> 调用 B1/B2 形成闭环</th></tr>
+          <tr><th>编号</th><th>名称</th><th>类型</th><th>基础介绍</th></tr>
+          <tr><td class="id">B1</td><td class="name">build_topic_payloads</td><td class="kind">编排函数（service 模块级）</td><td>B3 第一步，纯 RAM 无状态。失败不返回部分 payload。
+            <ul class="step-list">
+              <li><span class="step-no">①</span>调 C9 <code>require_publishable_action</code>：SafetyResult <span class="arr">→</span> ActionSpec</li>
+              <li><span class="step-no">②</span>调 C10 <code>build_arm_pose_target</code> ×2：单一 <code>pose_frame_id</code> + TCP7 <span class="arr">→</span> C3 ×2</li>
+              <li><span class="step-no">③</span>调 C11 <code>map_gripper_command</code> ×2：[0,1] <span class="arr">→</span> 0..100</li>
+              <li><span class="step-no">④</span>构造 C4 <code>TopicPayloadBundle</code>（frozen）</li>
+            </ul></td></tr>
+          <tr><td class="id">B2</td><td class="name">build_ros_messages</td><td class="kind">编排函数（ui 模块级）</td><td>B3 第二步，纯消息构造。失败不返回部分 bundle。
+            <ul class="step-list">
+              <li><span class="step-no">①</span>调 C12 <code>_build_policy_msg</code>：tuple[16] <span class="arr">→</span> Float32MultiArray</li>
+              <li><span class="step-no">②</span>调 C13 <code>_build_arm_msg</code> ×2：C3 + stamp <span class="arr">→</span> PoseStamped ×2</li>
+              <li><span class="step-no">③</span>调 C14 <code>_build_gripper_msg</code> ×2：0..100 <span class="arr">→</span> Float64 ×2</li>
+              <li><span class="step-no">④</span>构造 C8 <code>_RosMessageBundle</code>（不含 status）</li>
+            </ul></td></tr>
+          <tr><td class="id">B3</td><td class="name">ActionPublisher.publish</td><td class="kind">编排函数（A1 公开方法）</td><td>A1 唯一公共入口。按 B1 → B2 → C15 决策 → C17 ROS 写出 → C19/C20 result/status → C21 记录顺序完成闭环。
+            <ul class="step-list">
+              <li><span class="step-no">①</span>调 B1 <code>build_topic_payloads</code>：SafetyResult+config <span class="arr">→</span> C4</li>
+              <li><span class="step-no">②</span>调 B2 <code>build_ros_messages</code>：C4+ros_time <span class="arr">→</span> C8</li>
+              <li><span class="step-no">③</span>调 C15 <code>_decide_command_publish</code>：CLI+permit <span class="arr">→</span> allow/reason</li>
+              <li><span class="step-no">④</span>调 C17 <code>_try_publish</code>（policy）；失败停止 command</li>
+              <li><span class="step-no">⑤</span>若 command 允许：调 C17（两臂）+ C16/B2 deadband ×2 + C17（爪×0..2）</li>
+              <li><span class="step-no">⑥</span>成功爪调 C18 <code>_record_gripper_success</code></li>
+              <li><span class="step-no">⑦</span>调 C19 <code>_build_publish_result</code> + C20 <code>_build_status_msg</code></li>
+              <li><span class="step-no">⑧</span>调 C17 <code>_try_publish</code>（status，best effort）+ C21 记录 + 返回</li>
+            </ul></td></tr>
+        </table>
+
+        <table class="ovtab">
+          <tr class="layer-head C"><th colspan="4">C 层（3.5 · 原子微元）— 21 个功能模块：不再拆分的数据/纯计算</th></tr>
+          <tr><th>编号</th><th>名称</th><th>类型</th><th>基础介绍</th></tr>
+          <tr><td class="id">C1</td><td class="name">CommandPermit</td><td class="kind">数据（types）</td><td>frozen dataclass：<code>allowed / reason_code</code>。L2-06 动态许可。</td></tr>
+          <tr><td class="id">C2</td><td class="name">ActionPublishRequest</td><td class="kind">数据（types）</td><td>frozen dataclass：<code>action_id / safety_result / command_permit / ros_time_s / monotonic_s</code>。</td></tr>
+          <tr><td class="id">C3</td><td class="name">ArmPoseTarget</td><td class="kind">数据（types）</td><td>frozen dataclass：<code>frame_id / position_xyz(3) / quaternion_xyzw(4)</code>。transport-neutral 单臂目标。</td></tr>
+          <tr><td class="id">C4</td><td class="name">TopicPayloadBundle</td><td class="kind">数据（types）</td><td>frozen dataclass：<code>policy_action / left_arm/right_arm / left_gripper/right_gripper</code>。B1 完整产出。</td></tr>
+          <tr><td class="id">C5</td><td class="name">PublishOutcome</td><td class="kind">数据（types）</td><td>Enum：<code>REJECTED / OBSERVED / BLOCKED / PUBLISHED / PARTIAL / FAILED</code>。</td></tr>
+          <tr><td class="id">C6</td><td class="name">ActionPublishResult</td><td class="kind">数据（types）</td><td>frozen dataclass：13 个字段（outcome/safety_status/count/reason 等，见维度1）。</td></tr>
+          <tr><td class="id">C7</td><td class="name">CommandOutputConfig</td><td class="kind">数据（config）</td><td>frozen dataclass：<code>command_output_enabled</code> + <code>pose_frame_id</code> + scale/deadband/interval/QoS。</td></tr>
+          <tr><td class="id">C8</td><td class="name">_RosMessageBundle</td><td class="kind">数据（ui 私有）</td><td>非导出 bundle：policy/2×PoseStamped/2×Float64 五消息引用。不含 status。</td></tr>
+          <tr><td class="id">C9</td><td class="name">require_publishable_action</td><td class="kind">计算函数</td><td>输入：SafetyResult → 输出：ActionSpec。只接受 PASS/ADJUSTED，不读 accepted。</td></tr>
+          <tr><td class="id">C10</td><td class="name">build_arm_pose_target</td><td class="kind">计算函数</td><td>输入：TCP7 + pose_frame_id → 输出：ArmPoseTarget。不做 TF。</td></tr>
+          <tr><td class="id">C11</td><td class="name">map_gripper_command</td><td class="kind">计算函数</td><td>输入：[0,1] + config → 输出：0..100 float。越域失败，不猜尺度。</td></tr>
+          <tr><td class="id">C12</td><td class="name">_build_policy_msg</td><td class="kind">计算函数</td><td>输入：tuple[16] → 输出：Float32MultiArray。</td></tr>
+          <tr><td class="id">C13</td><td class="name">_build_arm_msg</td><td class="kind">计算函数</td><td>输入：ArmPoseTarget + ros_time → 输出：PoseStamped（左右各一次）。</td></tr>
+          <tr><td class="id">C14</td><td class="name">_build_gripper_msg</td><td class="kind">计算函数</td><td>输入：0..100 → 输出：Float64（左右各一次）。</td></tr>
+          <tr><td class="id">C15</td><td class="name">_decide_command_publish</td><td class="kind">计算函数</td><td>输入：CLI enabled + CommandPermit → 输出：(allow, reason)。不读 mode。</td></tr>
+          <tr><td class="id">C16</td><td class="name">_should_publish_gripper</td><td class="kind">计算函数</td><td>读取 A1 cache → 输出：bool + reason（deadband 判断）。</td></tr>
+          <tr><td class="id">C17</td><td class="name">_try_publish</td><td class="kind">数据读写函数</td><td>调用一个 ROS publisher；返回成功或抛带 label 的错误。</td></tr>
+          <tr><td class="id">C18</td><td class="name">_record_gripper_success</td><td class="kind">状态更新函数</td><td>修改 A1 gripper cache：替换为成功 target/time。</td></tr>
+          <tr><td class="id">C19</td><td class="name">_build_publish_result</td><td class="kind">计算函数</td><td>输入：调用事实/许可/计数/错误 → 输出：frozen C6。</td></tr>
+          <tr><td class="id">C20</td><td class="name">_build_status_msg</td><td class="kind">计算函数</td><td>输入：C6 → 输出：String JSON（unknown=null）。</td></tr>
+          <tr><td class="id">C21</td><td class="name">_record_last_result</td><td class="kind">状态更新函数</td><td>修改 A1 _last_result：替换为本次最终 C6。</td></tr>
+        </table>
+      </div>
+
+      <h3>图③ 六层代码落点（点击一层，只看该层内部）</h3>
+      <div class="lpick">
+        <input id="l-types" name="layer" type="radio" checked>
+        <input id="l-config" name="layer" type="radio">
+        <input id="l-repo" name="layer" type="radio">
+        <input id="l-service" name="layer" type="radio">
+        <input id="l-runtime" name="layer" type="radio">
+        <input id="l-ui" name="layer" type="radio">
+        <div class="ltabs">
+          <label for="l-types" class="has"><b>types</b>有产物</label>
+          <label for="l-config" class="has"><b>config</b>有产物</label>
+          <label for="l-repo" class="none"><b>repo</b>无</label>
+          <label for="l-service" class="has"><b>service</b>有产物</label>
+          <label for="l-runtime" class="none"><b>runtime</b>无</label>
+          <label for="l-ui" class="has"><b>ui</b>有产物（核心）</label>
+        </div>
+
+        <!-- types 层 -->
+        <div class="lpane lp-types">
+          <h4>types/ · 数据规格层 — L2-05 公共 RAM 契约（C1-C6）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">这一层只定义"L2-04/L2-05/L2-06 之间传递的数据长什么样"。作为跨 L2 公共 RAM 契约，供 L2-06 只读消费，避免它依赖 service/ui 实现。<b>不读配置、不依赖 ROS、不做计算。</b></p>
+          <div class="classbox">
+            <h5>action_publish.py（types/action_publish.py）— C1-C6 六个数据微元</h5>
+            <p class="role">L2-05 的冻结 RAM 数据语言。所有对象创建后只读。结构复用 Pi0.5 <code>BimanualAction</code> frozen 思想，字段全部重写为 16D TCP + 授权 + 逐调用结果。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
+                <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
+                <tr class="grp"><td colspan="3">C1 <code>PublishAuthorization</code>（frozen dataclass · L2-06 汇总后的最终授权）</td></tr>
+                <tr class="fld"><td>mode</td><td>Enum[str]（Literal）</td><td>三个字面量：<code>dry-run</code> / <code>shadow-run</code> / <code>safe-run</code></td></tr>
+                <tr class="fld"><td>command_allowed</td><td>bool</td><td>L2-06 汇总后的最终授权判决（True 才发四路 command）</td></tr>
+                <tr class="fld"><td>reason</td><td>str | None</td><td>未授权原因；授权态为 None</td></tr>
+                <tr class="grp"><td colspan="3">C2 <code>ActionPublishRequest</code>（frozen dataclass · 单次同步调用完整 RAM 输入）</td></tr>
+                <tr class="fld"><td>action_id</td><td>str</td><td>与 L2-06 当前 tick/action 关联（L2-05 不自增）</td></tr>
+                <tr class="fld"><td>safety_result</td><td>SafetyResult（对象引用）</td><td>L2-04 产出，含 accepted + action（16D ActionSpec）</td></tr>
+                <tr class="fld"><td>authorization</td><td>PublishAuthorization（对象引用）</td><td>C1 授权对象</td></tr>
+                <tr class="fld"><td>ros_time_s</td><td>float</td><td>ROS 时间（header stamp 用；L2-05 不拥有时钟）</td></tr>
+                <tr class="fld"><td>monotonic_s</td><td>float</td><td>单调时间（deadband/min interval 用）</td></tr>
+                <tr class="grp"><td colspan="3">C3 <code>ArmPoseTarget</code>（frozen dataclass · transport-neutral 单臂目标，与 ROS message 无关）</td></tr>
+                <tr class="fld"><td>frame_id</td><td>str</td><td>对应 base frame（left_arm_base / right_arm_base）</td></tr>
+                <tr class="fld"><td>position_xyz</td><td>tuple[3]</td><td>float × 3；米制位置</td></tr>
+                <tr class="fld"><td>quaternion_xyzw</td><td>tuple[4]</td><td>float × 4；姿态四元数（xyzw 顺序，非 wxyz）</td></tr>
+                <tr class="grp"><td colspan="3">C4 <code>CommandTargets</code>（frozen dataclass · 四路全成功后的 transport-neutral bundle）</td></tr>
+                <tr class="fld"><td>left_arm / right_arm</td><td>ArmPoseTarget（对象引用）</td><td>两侧 TCP 目标（C3）</td></tr>
+                <tr class="fld"><td>left_gripper_command / right_gripper_command</td><td>float</td><td>两侧夹爪 0..100（C9 映射后）</td></tr>
+                <tr class="grp"><td colspan="3">C5 <code>ActionPublishPlan</code>（frozen dataclass · ROS 之前的完整本地计划）</td></tr>
+                <tr class="fld"><td>request</td><td>ActionPublishRequest（对象引用）</td><td>C2 原始请求</td></tr>
+                <tr class="fld"><td>safe_vector</td><td>tuple[16]</td><td>float × 16；复核后的 safe action 向量</td></tr>
+                <tr class="fld"><td>targets</td><td>CommandTargets | None</td><td>C4 四路目标；契约失败为 None</td></tr>
+                <tr class="fld"><td>publish_policy</td><td>bool</td><td>是否计划发观测通道</td></tr>
+                <tr class="fld"><td>publish_commands</td><td>bool</td><td>是否计划发四路 command</td></tr>
+                <tr class="fld"><td>reason</td><td>str | None</td><td>dry_run / shadow_only / not_authorized / mode_mismatch；正常为 None</td></tr>
+                <tr class="grp"><td colspan="3">C6 <code>ActionPublishResult</code>（frozen dataclass · 逐调用事实，交 L2-06）</td></tr>
+                <tr class="fld"><td>action_id</td><td>str</td><td>与 request 关联</td></tr>
+                <tr class="fld"><td>safety_ok</td><td>bool</td><td>输入是否带明确安全通过语义</td></tr>
+                <tr class="fld"><td>policy_action_published</td><td>bool</td><td>观测通道 publish 是否成功</td></tr>
+                <tr class="fld"><td>command_publish_count</td><td>int</td><td>0..4；本次成功的 command publisher 数</td></tr>
+                <tr class="fld"><td>gripper_skipped</td><td>tuple[str, ...]</td><td>因 deadband 有意跳过的 side 列表</td></tr>
+                <tr class="fld"><td>sent_to_driver</td><td>bool</td><td>计划 command publish 是否全部完成（≠硬件执行）</td></tr>
+                <tr class="fld"><td>failure_reason</td><td>str | None</td><td>契约/授权/构造/publish 失败原因</td></tr>
+                <tr class="fld"><td>driver_accepted</td><td>None（固定）</td><td>L2-05 不知道；禁止伪造 True</td></tr>
+                <tr class="fld"><td>hardware_reached</td><td>None（固定）</td><td>L2-05 不知道；禁止伪造 True</td></tr>
+              </table></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><b>C1-C6 各 __post_init__</b><br><b>输入：</b>构造时提供的字段值。<br><b>输出：</b>非法组合抛异常（mode 非三值、时间非 finite、tuple 长度非 3/4、count 不在 0..4、sent_to_driver=True 同时有 failure_reason）；合法则冻结对象。无副作用。</span></span></div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0"><b>依赖：</b>仅 <code>types/action_spec.py</code> + <code>types/safety_result.py</code>（L2-04）+ 标准库 dataclasses。禁止依赖 config/repo/service/runtime/ui/rclpy。<b>验收：</b>frozen（赋值抛 FrozenInstanceError）；无 ROS 可 import；unknown 字段不被改写为 success。</p>
+        </div>
+
+        <!-- config 层 -->
+        <div class="lpane lp-config">
+          <h4>config/ · 输出映射配置窄扩展（C7）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">新增 <code>CommandOutputConfig</code> 补齐 frame、gripper scale、deadband、最小间隔和 QoS。这是功能 L2 横跨 config 的窄补齐，不复活旧 bridge/mux/hardware 配置。文件读取仍属 L2-01。</p>
+          <div class="classbox">
+            <h5>schema.py（config/schema.py）+ deploy.yaml — C7 CommandOutputConfig</h5>
+            <p class="role">frozen dataclass，作为 <code>DeployConfig.command_output</code> 字段。topics 继续使用现有 TopicsConfig.command；mode 继续使用 RuntimeConfig.mode（旧 publishes_command_topics 弃用）。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
+                <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
+                <tr class="grp"><td colspan="3">C7 <code>CommandOutputConfig</code>（frozen dataclass · 启动期只读输出映射，作 <code>DeployConfig.command_output</code>）</td></tr>
+                <tr class="fld"><td>left_arm_frame_id</td><td>str（默认 "left_arm_base"）</td><td>左臂 PoseStamped frame</td></tr>
+                <tr class="fld"><td>right_arm_frame_id</td><td>str（默认 "right_arm_base"）</td><td>右臂 PoseStamped frame</td></tr>
+                <tr class="fld"><td>gripper_input_min / gripper_input_max</td><td>float（锁定 0.0 / 1.0）</td><td>夹爪输入域；禁止模糊尺度</td></tr>
+                <tr class="fld"><td>gripper_output_min / gripper_output_max</td><td>float（默认 0.0 / 100.0）</td><td>夹爪输出域（F100 0..100）</td></tr>
+                <tr class="fld"><td>gripper_deadband</td><td>float（默认 1.0）</td><td>夹爪目标变化死区（0..100 域内）</td></tr>
+                <tr class="fld"><td>gripper_min_publish_interval_s</td><td>float（默认 0.05）</td><td>夹爪最小发布间隔（秒）</td></tr>
+                <tr class="fld"><td>qos_depth</td><td>int（默认 10）</td><td>六 publisher 的 QoS depth（正整数）</td></tr>
+              </table></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><b>C7 __post_init__ 校验</b><br><b>输入：</b>构造时提供的配置值。<br><b>输出：</b>frame 非空、gripper input 精确 0&lt;1 且本版锁定 0/1、output min&lt;max、deadband≥0 且不超 output span、min_interval≥0、QoS 正整数；任一非法抛 <code>DeployConfigError</code>。无副作用。</span>
+              <span class="fn"><b>mode 属性拆分（替代旧 publishes_command_topics）</b><br><b>输入：</b>RuntimeConfig.mode。<br><b>输出：</b><code>publishes_policy_observation</code>（dry=false, shadow/safe=true）+ <code>may_attempt_driver_commands</code>（dry/shadow=false, safe=true）。属性不替代 L2-06 授权。</span></span></div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0"><b>依赖：</b>标准库、types、现有 config helper。禁止 repo/service/runtime/ui/rclpy。<br><b>验收：</b>默认值构造成功；空 frame/反向范围/负 deadband/QoS 非正全失败；mode 属性矩阵 dry(0/0)/shadow(1/0)/safe(1/1)；配置不含 bridge/mux/hardware 字段。</p>
+        </div>
+
+        <!-- repo 层（无新产物） -->
+        <div class="lpane lp-repo none-pane">
+          <h4>repo/ · 本 L2 不新增产物</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>repo 层负责外部资源读取（文件/topic/硬件）。L2-05 的全部输入（SafetyResult、DeployConfig、PublishAuthorization、action_id、时间）由 L2-01/L2-04/L2-06 以 RAM 对象注入；ROS 是 ui 的外部副作用，不是 repo 资源读取。frame、topic、映射值已在 <code>DeployConfig</code> 中，不允许 L2-05 再打开 YAML。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>使用的上游对象：</b>DeployConfig（L2-01，已进 RAM）。<br><b>验收确认：</b>L2-05 不产生 <code>repo/*.py</code> 产物；<code>action_output_adapter.py</code> 与 <code>action_publisher.py</code> 不使用 <code>open()</code>、Path 读取、网络客户端或硬件 SDK。bundle/checkpoint 仍只由 L2-01/L2-03 处理。</p>
+        </div>
+
+        <!-- service 层 -->
+        <div class="lpane lp-service">
+          <h4>service/ · 业务计算层 — 纯 RAM 拆分/映射/计划（C8-C12 + B5）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">新增文件 <code>src/model_deploy/act/service/action_output_adapter.py</code>。接收 RAM 中的安全结果、授权、时间和只读配置，复核跨模块契约，拆分 16D，映射 gripper，构造 transport-neutral 四路目标和发布计划。<b>无状态、无 ROS、无文件 IO。</b></p>
+
+          <div class="classbox svc">
+            <h5>action_output_adapter.py（service/action_output_adapter.py）</h5>
+            <p class="role">L2-05 纯 RAM 业务映射。模块级放无状态纯函数（C8-C12）+ 一个编排函数（B5）。不定义业务 class（禁止仅为"适配器"名字创建无状态 class）。不重新做 L2-04 的安全算法。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><table class="mutab">
+                <tr><th colspan="3">C 层模块级纯函数（无状态，独立可测）— 输入 → 输出</th></tr>
+                <tr><th>编号·函数</th><th>输入</th><th>输出</th></tr>
+                <tr><td>C8 <code>require_safe_action</code></td><td>SafetyResult</td><td>ActionSpec；accepted 非 True / action None / shape 非 (16,) / 含 NaN / 爪域非 [0,1] → 抛 ActionPublishContractError</td></tr>
+                <tr><td>C9 <code>map_gripper_command</code></td><td>[0,1] float + CommandOutputConfig</td><td>0..100 float；越域直接失败，不 clip/猜尺度</td></tr>
+                <tr><td>C10 <code>build_arm_target</code></td><td>TCP7(xyz+quat) + frame_id</td><td>ArmPoseTarget；长度/finite/frame 错失败</td></tr>
+                <tr><td>C11 <code>build_command_targets</code></td><td>ActionSpec + CommandOutputConfig</td><td>完整 CommandTargets（左 C10 + 右 C10 + 左 C9 + 右 C9）；任一子目标失败无部分结果</td></tr>
+                <tr><td>C12 <code>status_payload</code></td><td>ActionPublishResult</td><td>JSON-safe dict；driver_accepted/hardware_reached 保持 null</td></tr>
+              </table></span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><table class="mutab">
+                <tr><th colspan="3">B5 <code>build_publish_plan</code>（service 模块级，无状态）— 编排步骤</th></tr>
+                <tr><th>步骤</th><th>调用</th><th>输入 → 输出</th></tr>
+                <tr><td>①</td><td>C8 <code>require_safe_action</code></td><td>request.safety_result → ActionSpec（或抛契约错误）</td></tr>
+                <tr><td>②</td><td>C11 <code>build_command_targets</code></td><td>ActionSpec + config → CommandTargets（内部 C10×2 + C9×2）</td></tr>
+                <tr><td>③</td><td>决定 publish_policy / publish_commands</td><td>dry(0/0) / shadow(1/0) / safe+未授权(1/0,not_authorized) / safe+授权(1/1) / mode_mismatch(1/0)</td></tr>
+                <tr><td>④</td><td>构造 C5 ActionPublishPlan</td><td>request + safe_vector(16) + targets + flags + reason → frozen plan</td></tr>
+              </table>
+              <span class="fn" style="margin-top:6px"><b>调用条件：</b>由 B1 publish 第一步调用。<br><b>失败：</b>C8/C11 契约失败 → 抛异常，B1 转 failure result，四路 command 调用 0。mode mismatch 不抛，生成 blocked plan（publish_commands=false, reason=mode_mismatch）。</span></span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0"><b>依赖：</b>types、config、numpy（仅转换/finite 检查）、标准库。禁止 import repo/runtime/ui/rclpy/geometry_msgs/std_msgs。<br><b>状态所有权：</b>完全无状态。<br><b>验收：</b>16D 左右段和 xyzw 顺序 property tests；gripper 0/0.5/1→0/50/100，50/100 输入契约失败；mode mismatch/blocked；无 ROS 可 import；无可变 module/global state。</p>
+        </div>
+
+        <!-- runtime 层（无新产物） -->
+        <div class="lpane lp-runtime none-pane">
+          <h4>runtime/ · 本 L2 不新增产物（调度属 L2-06）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>runtime 层负责时间/线程/队列/调度/状态机。L2-05 是被 L2-06 同步调用的输出边界。action_id、ROS/单调时间、最终发布授权、调用时机、fallback、重试、全局 metrics、shutdown 顺序均由 L2-06 拥有。L2-05 只持有设备防刷所需的最小 publisher-local 状态（ui 层），不构成 runtime 调度器。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>使用的上游对象：</b>被 L2-06 ControlLoop.tick 每 step 同步调用；action_id + ros_time_s + monotonic_s 由 L2-06 传入。<br><b>验收确认：</b>L2-05 不产生 <code>runtime/*.py</code> 产物；<code>ActionPublisher</code> 不创建 timer/thread/queue，不自增 tick/action ID；publish 失败只返回结果，不自行 retry/hold/shutdown。</p>
+        </div>
+
+        <!-- ui 层（核心） -->
+        <div class="lpane lp-ui">
+          <h4>ui/ · ROS 边界层 — ActionPublisher 核心（A1 + B1-B4 + C13-C16）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">新增文件 <code>src/model_deploy/act/ui/action_publisher.py</code>。把 transport-neutral plan 转为 ROS messages，实际调用六个 publisher，执行 mode/最终授权二次门控、夹爪 deadband 和逐调用 status。它是 ACT 内部<b>唯一 command publish 边界</b>。使用 lazy ROS import。</p>
+
+          <div class="classbox rt">
+            <h5>action_publisher.py（ui/action_publisher.py）— A1 ActionPublisher</h5>
+            <p class="role">L2-05 唯一有状态 class。长生命周期持有六 publisher + 夹爪 deadband cache + last result。构造：<code>ActionPublisher(node, deploy_config)</code>，创建恰好六个 publisher，不创建 subscription/timer。结构复用 Pi0.5 publisher 生命周期，去掉订阅/joint clamp/shadow command。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
+                <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
+                <tr class="grp"><td colspan="3">A1 <code>ActionPublisher</code> 实例状态（构造时初始化，跨 tick 持有的最小状态）</td></tr>
+                <tr class="fld"><td>_config</td><td>实例属性（immutable 引用）</td><td>DeployConfig（含 C7 CommandOutputConfig，L2-06 注入）</td></tr>
+                <tr class="fld"><td>_publishers</td><td>实例属性（六 publisher handle）</td><td>policy + status + 2×arm PoseStamped + 2×gripper Float64（node.create_publisher 创建）</td></tr>
+                <tr class="fld"><td>_gripper_last</td><td>实例属性（每侧独立）</td><td>dict[side → (target: float, monotonic_s: float)]，初始 None；deadband/min interval 基准</td></tr>
+                <tr class="fld"><td>_last_result</td><td>实例属性</td><td>ActionPublishResult | None；即时 status/诊断</td></tr>
+              </table></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><b>C13 _build_policy_msg</b><br><b>输入：</b>16D safe vector。<br><b>输出：</b>Float32MultiArray（原样，不拆硬件单位）。不读写进程外部资源。</span>
+              <span class="fn"><b>C14 _build_arm_msg</b><br><b>输入：</b>ArmPoseTarget + ros_time_s。<br><b>输出：</b>PoseStamped（header.stamp + frame_id + position + quaternion xyzw）。左右各一次。</span>
+              <span class="fn"><b>C15 _build_gripper_msg</b><br><b>输入：</b>0..100 float。<br><b>输出：</b>Float64。左右各一次。</span>
+              <span class="fn"><b>C16 _build_status_msg</b><br><b>输入：</b>JSON dict（C12 产出）。<br><b>输出：</b>String。稳定 key 顺序，null 保留 unknown。</span></span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><table class="mutab">
+                <tr><th colspan="3"><code>class ActionPublisher</code>（A1）方法清单 — 编排步骤</th></tr>
+                <tr><th>编号·方法</th><th>可见性</th><th>编排步骤</th></tr>
+                <tr><td>B1 <code>publish</code></td><td>公开</td><td><b>调用条件：</b>由 L2-06 ControlLoop.tick 每 tick 同步调用。<br><b>步骤①</b>调 B5 <code>build_publish_plan</code>（service）：request+config → plan。<br><b>步骤②</b>构造六 message（C13 policy + C14×2 arm + C15×2 gripper + status 草稿）。<br><b>步骤③</b>任一 command 构造失败 → 四路 command 调用 0，构造 failure result。<br><b>步骤④</b>dry-run → 返回 RAM result。<br><b>步骤⑤</b>shadow/safe → publish policy。<br><b>步骤⑥</b>safe+command_allowed → 调 B2×2 决定 gripper 跳过，publish 两臂 + 计划两爪，成功后调 B3×2 更新 cache。<br><b>步骤⑦</b>ROS 异常 → partial_ros_publish:n/4，不回滚。<br><b>步骤⑧</b>调 B4 publish status。<br><b>步骤⑨</b>保存 last_result 并返回。<br><b>失败：</b>契约/构造失败 → failure result，四路 command 调用 0；部分 publish 异常 → partial count + sent=false。</td></tr>
+                <tr><td>B2 <code>_should_publish_gripper</code></td><td>私有</td><td><b>调用条件：</b>由 B1 对左右各调一次。<br><b>步骤：</b>无历史 OR (|target-last_target|≥deadband AND monotonic_s-last_time≥min_interval) → True；否则 False + reason。<br><b>失败：</b>不拒绝——跳过进入 gripper_skipped，不等于 failure。</td></tr>
+                <tr><td>B3 <code>_record_gripper_success</code></td><td>私有</td><td><b>调用条件：</b>仅在对侧 gripper publish 成功后调用。<br><b>修改对象：</b>_gripper_last[side]。<br><b>如何修改：</b>替换为 (target, monotonic_s)。publish 抛异常时不调用。</td></tr>
+                <tr><td>B4 <code>_publish_status</code></td><td>私有</td><td><b>调用条件：</b>B1 步骤⑧。<br><b>步骤①</b>调 C12 <code>status_payload</code>：result → JSON dict。<br><b>步骤②</b>调 C16 <code>_build_status_msg</code>：dict → String。<br><b>步骤③</b>publish <code>/act/command/status</code>。<br><b>失败：</b>status publish 自身失败时 B1 仍返回 result，追加 <code>status_publish_failed</code>。</td></tr>
+              </table></span></div>
+              <div class="mu"><span class="kind io">数据读写函数</span><span class="desc"><span class="fn"><b>外部边界：</b>六个 ROS topic（policy_action + command/status + 2×arm target + 2×gripper target）。<br><b>读入/写出：</b>无读入；写出 Float32MultiArray / PoseStamped×2 / Float64×2 / String。每 tick 最多六次 publish 调用。不读文件/topic/硬件。</span></span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0"><b>依赖：</b>types、config、service、ROS message packages（lazy import）、标准库。禁止 runtime（UI 不反向依赖调度）、repo、SafetyGuard 实现、RM65/F100 SDK、MoveIt/IK、Modbus/serial。<br><b>状态所有权：</b>A1 持最小状态（六 publisher + gripper cache + last result）；action_id/时间/mode/gate/fallback 属 L2-06。<br><b>验收：</b>constructor 恰好六 publisher 0 subscription 0 timer；dry/shadow/safe 矩阵 mock 调用数；四路构造在第一次 command publish 前；partial count/sent=false；deadband 每侧独立失败不更新 cache；frame/quat/gripper 0..100 正确；status 不伪造 driver/hardware success。</p>
+        </div>
+      </div>
+
+      <div class="callout warn"><b>集成护栏：</b>当前 L2-04 设计若把夹爪 safe action 当 0..100，本 L2 的 C8 必须拒绝 50/100 输入，不做双尺度兼容。当前旧 <code>RuntimeConfig.publishes_command_topics</code> 把 shadow/safe 合并为 true，L2-05 禁止使用——必须用 C7 mode 属性拆分 + PublishAuthorization 双重门控。</div>
+      <p class="src">权威来源：<code>agent_context/03a_功能微元总览与组织结构.md</code>（A/B/C 编号、调用树、总量权威）、<code>agent_context/03_ACT微元设计与协作.md</code>（§2 ACT微元设计 / §3 公共类型字段 / §4 纯 RAM 算法 / §5 publish 编排 / §6 内部协作）、<code>agent_context/06_types层设计.md</code>（C1-C6）、<code>agent_context/07_config层设计.md</code>（C7）、<code>agent_context/09_service层设计.md</code>（B5/C8-C12）、<code>agent_context/11_ui层设计.md</code>（A1/B1-B4/C13-C16）</p>
+    </section>
+
+    <!-- ============ 维度 4 · 人类验收标准 ============ -->
+    <section class="view acceptance" data-agent-source="agent_context/04_L2验收机制.md#3-gate-验收矩阵">
+      <h2>维度 4 · 人类验收标准</h2>
+      <div class="reading-path">📖 阅读路径：先跑统一验收脚本（卡①）→ 看终端输出范例和翻译表（卡②）→ 边界/落点/映射检查（卡③④⑤）→ ROS shadow 和真机阻断（卡⑥⑦）</div>
+      <p class="lead">这一维度回答：<b>怎么验证 L2-05，跑什么，看到什么算通过或失败。</b>核心是无 ROS/无硬件下 mock 验证三编排函数、CLI+permit 双门控、四路构造门、deadband 和六种 outcome；shadow 必须四路 command 为 0；真机默认阻断。</p>
+
+      <div class="vfy">
+        <div class="vfy-item">
+          <div class="num">1</div>
+          <div class="body">
+            <p class="do">跑统一验收脚本（分层分组终端输出）</p>
+            <span class="cmd-block"><span class="c"># cwd = 仓库根</span><br>bash src/model_deploy/act/scripts/l2_05_verify.sh</span>
+            <div class="result">
+              <div class="pass">末行 <code>N PASS / 0 FAIL / 可有 BLOCKED</code>，退出码 0。每个标签 PASS。</div>
+              <div class="fail">任一 <code>FAIL</code> 行 + 定位（文件/微元/pytest 节点/摘要），退出码 1。</div>
+            </div>
+            <p class="why">依据 <code>04_L2验收机制.md §4</code>。FAIL 时按行内 <code>├─ 文件</code> 和 <code>├─ pytest</code> 直接定位。脚本由后续 L3 构建，本卡只定义输出格式。</p>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">2</div>
+          <div class="body">
+            <p class="do">终端输出范例 + 标签翻译表</p>
+            <div class="term">
+              <div class="t-hdr">=== L2-05 单步 Action → 执行器 Topic 适配发送 验收 ===</div>
+              <div class="t-grp">[ types ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">types.action_publish</span><span class="note">C1-C6 请求/许可/载荷/outcome/结果契约</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">types.importable</span><span class="note">无 ROS 可 import</span></div>
+              <div class="t-grp">[ config ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">config.command_output</span><span class="note">CLI default-off + pose_frame_id + scale/deadband</span></div>
+              <div class="t-grp">[ service/B1 ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">b1.gripper_map</span><span class="note">0/0.5/1 → 0/50/100</span></div>
+              <div class="t-row"><span class="fail">FAIL</span><span class="lbl">b1.gripper_scale_reject</span><span class="note">50/100 输入 → 拒绝</span></div>
+              <div class="t-loc"><span><span class="lk">文件：</span>service/action_output_adapter.py</span><span><span class="lk">class：</span>无 class（模块级函数）</span><span><span class="lk">微元：</span>C11 map_gripper_command（计算函数）</span><span><span class="lk">pytest：</span>tests/service/test_action_output_adapter.py::test_gripper_scale_reject</span><span><span class="lk">错误：</span>期望 ActionPublishContractError，实际返回了 50.0（未校验输入域或做了双尺度兼容）</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">b1.safety_status</span><span class="note">PASS/ADJUSTED → 可发布，REJECTED → 停止（无 accepted）</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">b1.left_right_split</span><span class="note">[0:7]/[7:14] 左右 TCP 无交换，单一 frame</span></div>
+              <div class="t-grp">[ ui/B2 ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">b2.message_build</span><span class="note">五消息完整构造，不含 status</span></div>
+              <div class="t-grp">[ ui/B3 ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">b3.cli_disabled</span><span class="note">CLI=False → policy/status=1, command=0, OBSERVED</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">b3.permit_blocked</span><span class="note">CLI=True+permit=False → command=0, BLOCKED</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">b3.safe_authorized</span><span class="note">CLI=True+permit=True → 2 PoseStamped + 2 Float64</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">b3.construct_gate</span><span class="note">B1/B2 任一失败 → policy/command 均为 0</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">b3.deadband</span><span class="note">重复/高频 gripper 跳过，仅成功后更新 cache</span></div>
+              <div class="t-grp">[ 边界 ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.no_overreach</span><span class="note">无 subscription/timer/IK/SDK</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.layers</span><span class="note">仅 types/config/service/ui 落点</span></div>
+              <div class="t-row"><span class="blk">BLOCKED</span><span class="lbl">b3.ros_observation</span><span class="note">无 ROS（≠失败）</span></div>
+              <div class="t-row"><span class="blk">BLOCKED</span><span class="lbl">b3.real_hardware</span><span class="note">无硬件（≠失败）</span></div>
+              <div class="t-sum">15 PASS / 1 FAIL / 2 BLOCKED</div>
+            </div>
+            <table class="trtab">
+              <tr><th>标签</th><th>层</th><th>对应微元（完整定位链）</th><th>PASS 含义 / FAIL 查哪里</th></tr>
+              <tr class="types"><td class="lbl">types.action_publish</td><td class="lyr">types</td><td class="mu"><span class="fpath">types/action_publish.py</span>C1-C6 <span class="kindtag data">数据</span></td><td class="pf"><span class="pp">PASS：C1-C6 frozen、字段/invariants 正确</span><span class="fp">FAIL：看 frozen 是否抛、driver_accepted 是否被改 true</span></td></tr>
+              <tr class="config"><td class="lbl">config.command_output</td><td class="lyr">config</td><td class="mu"><span class="fpath">config/schema.py</span>C7 <span class="kindtag data">数据</span></td><td class="pf"><span class="pp">PASS：CLI default-off + frame/scale/deadband 校验</span><span class="fp">FAIL：看默认值、CLI 是否被 YAML 静默置真</span></td></tr>
+              <tr class="service"><td class="lbl">b1.gripper_map</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/action_output_adapter.py</span><span class="cls">无 class</span>C11 map_gripper_command <span class="kindtag calc">计算函数</span></td><td class="pf"><span class="pp">PASS：0/0.5/1 → 0/50/100</span><span class="fp">FAIL：看 output_min/max 配置、是否 clip 而非拒绝</span></td></tr>
+              <tr class="service"><td class="lbl">b1.gripper_scale_reject</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/action_output_adapter.py</span><span class="cls">无 class</span>C9 require_publishable_action <span class="kindtag calc">计算函数</span></td><td class="pf"><span class="pp">PASS：50/100 输入 → ActionPublishContractError</span><span class="fp">FAIL：看是否做了双尺度兼容（必须整批拒绝）</span></td></tr>
+              <tr class="service"><td class="lbl">b1.left_right_split</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/action_output_adapter.py</span><span class="cls">无 class</span>B1 build_topic_payloads <span class="kindtag orch">编排函数</span></td><td class="pf"><span class="pp">PASS：[0:7]左 [7:14]右，单一 frame，xyzw 无交换</span><span class="fp">FAIL：看 C10 build_arm_pose_target 的段切片和 frame</span></td></tr>
+              <tr class="ui"><td class="lbl">b3.cli_disabled</td><td class="lyr">ui</td><td class="mu"><span class="fpath">ui/action_publisher.py</span><span class="cls">class <b>ActionPublisher</b></span>C15 _decide_command_publish <span class="kindtag calc">计算函数</span></td><td class="pf"><span class="pp">PASS：CLI=False → OBSERVED，command=0</span><span class="fp">FAIL：看是否读取 mode 或默认开启 command</span></td></tr>
+              <tr class="ui"><td class="lbl">b3.permit_blocked</td><td class="lyr">ui</td><td class="mu"><span class="fpath">ui/action_publisher.py</span><span class="cls">class <b>ActionPublisher</b></span>B3 publish 步骤③⑤ <span class="kindtag orch">编排函数</span></td><td class="pf"><span class="pp">PASS：CLI=True+permit=False → BLOCKED，command=0</span><span class="fp">FAIL：看 permit 是否被忽略或 mode 覆盖</span></td></tr>
+              <tr class="boundary"><td class="lbl">boundary.no_overreach</td><td class="lyr">边界</td><td class="mu"><span class="fpath">ui/action_publisher.py + service/action_output_adapter.py</span>不含 subscription/timer/IK/SDK</td><td class="pf"><span class="pp">PASS：rg 无越界关键词匹配</span><span class="fp">FAIL：看匹配行上下文（注释除外）</span></td></tr>
+            </table>
+            </table>
+            <p class="why">每个标签可追溯到维度3图③ classbox 微元。FAIL 行附 <code>.t-loc</code> 定位块（文件/class/微元/pytest 节点/错误摘要）。BLOCKED ≠ 失败（退出码仍 0）。依据 <code>04_L2验收机制.md §3/§4</code>。</p>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">3</div>
+          <div class="body">
+            <p class="do">边界洁净检查（防越界）</p>
+            <span class="cmd-block"><span class="c"># 应无匹配（注释/字符串除外）</span><br>rg -n 'create_subscription|create_timer|workspace|\bIK\b|MoveIt|Modbus|USB-485|rm_[a-zA-Z_]*\(' src/model_deploy/act/ui/action_publisher.py src/model_deploy/act/service/action_output_adapter.py</span>
+            <div class="result">
+              <div class="pass">无匹配 → L2-05 不越界实现订阅/时钟/IK/硬件 SDK。</div>
+              <div class="fail">出现匹配行 → 越界。看上下文确认（注释引用除外）。</div>
+            </div>
+            <p class="why">依据 <code>01_L2功能边界.md §6</code>、<code>05_人类验收机制.md H03</code>。</p>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">4</div>
+          <div class="body">
+            <p class="do">落点检查（仅 types/config/service/ui/tests）</p>
+            <span class="cmd-block">find src/model_deploy/act -path "*action_publish*" -o -path "*action_output*" -o -path "*command_output*" | grep -v tests</span>
+            <div class="result">
+              <div class="pass">仅 types/action_publish.py、config/schema.py（扩展）、service/action_output_adapter.py、ui/action_publisher.py。无 repo/runtime 新增。</div>
+              <div class="fail">出现 repo/runtime 下 publisher 文件 → 越界落点。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">5</div>
+          <div class="body">
+            <p class="do">夹爪尺度配置确认（跨 L2 协调点）<span class="badge ref">协调点</span></p>
+            <span class="cmd-block">grep -A6 "^command_output:" src/model_deploy/act/config_files/deploy.yaml</span>
+            <div class="result">
+              <div class="pass"><code>gripper_input_min: 0.0 / gripper_input_max: 1.0</code>（ACT 内部域）+ <code>gripper_output_min: 0.0 / gripper_output_max: 100.0</code>（F100 输出域）。</div>
+              <div class="fail">input 写成 0/100（尺度漂移）→ C8 会拒绝所有输入；output 仍为旧 300/1000（RM65 残留）→ 映射错误。</div>
+            </div>
+            <p class="why">依据 <code>01_L2功能边界.md §5</code>、<code>07_config层设计.md §6</code>。L2-04 必须输出 [0,1]，本 L2 唯一映射点负责 → 0..100。</p>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">6</div>
+          <div class="body">
+            <p class="do">ROS shadow（有 ROS 环境时）<span class="badge layer">BLOCKED_ENV</span></p>
+            <span class="cmd-block"><span class="c"># 需 ROS graph，使用 fake safe action，不连真实 command consumer</span><br>python3 -m pytest -q src/model_deploy/act/tests/shadow/test_action_publisher_shadow.py</span>
+            <div class="result">
+              <div class="pass"><code>/act/policy_action</code>、<code>/act/command/status</code> 可见；四路 <code>/act/command/*</code> publish 计数均 0。</div>
+              <div class="fail">任一真实 command 出现，或 policy/status 缺失；立即停止节点。</div>
+            </div>
+            <p class="why">无 ROS 时记录 <b>BLOCKED_ENV</b>，不得勾通过。依据 <code>04_L2验收机制.md G13</code>、<code>05_人类验收机制.md H04</code>。</p>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">7</div>
+          <div class="body">
+            <p class="do">真机 safe-run（默认阻断）<span class="badge layer">BLOCKED_HARDWARE</span></p>
+            <div class="callout warn">本设计不提供可复制粘贴的真机启动命令。只有以下条件全部有证据时，现场负责人才能按独立运行手册执行：H01-H06 已通过、明确人工授权、急停可用、RM65 碰撞防护有效、工作区清空、driver 能区分 accepted/executed/reached、夹爪 0..100 已标定。</div>
+            <div class="result">
+              <div class="pass">仅现场证据能证明 driver accepted / hardware reached（外部反馈，非 L2-05 自报）。</div>
+              <div class="fail">把 ROS publish 或 sent_to_driver=true 当作硬件到位。</div>
+            </div>
+            <p class="why">默认 <b>BLOCKED_HARDWARE_EXPECTED</b>（当前无硬件）。依据 <code>05_人类验收机制.md H06 / §4 真机风险</code>。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warn">签字位置：<code>DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-05-action-publisher/验收结果.md</code>。<code>sent_to_driver=true</code> 只表示消息已提交 driver topic，不等于 driver accepted、硬件执行或到位。L2-05 的 deadband/mode 门控不替代外部 driver 的 workspace/IK/碰撞/急停——真机安全不能只靠 L2-05。</div>
+      <p class="src">权威来源：<code>agent_context/04_L2验收机制.md</code>（§3 Gate 验收矩阵 G01-G14 / §4 验证命令 / §5 阻断状态）、<code>agent_context/05_人类验收机制.md</code>（§2 验收清单 H01-H06 / §3 观察语义翻译 / §4 证据保存 / §5 签字位置）</p>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>
