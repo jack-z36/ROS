@@ -24,7 +24,7 @@ public:
 private:
     void refresh();
     void update_frame(const hwk_pressure_interfaces::msg::PressureFrame& frame);
-    void update_scale();
+    void update_heatmaps();
 
     std::array<QPointer<PressureHeatmapWidget>, 2> heatmaps_{};
     std::array<QPointer<QLabel>, 2> stats_{};

@@ -149,7 +149,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>max -  avg -  updated -</source>
+        <source>F=0.000N</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

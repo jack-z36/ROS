@@ -97,7 +97,7 @@ def _extract_ros_params(raw: Mapping[str, Any], node_name: str) -> Mapping[str, 
 
 
 def _parse_driver_config(params: Mapping[str, Any], config_dir: Path) -> DriverConfig:
-    default_baudrate = _as_int(params.get("default_baudrate", 460800), "default_baudrate")
+    default_baudrate = _as_int(params.get("default_baudrate", 921600), "default_baudrate")
     default_poll_rate_hz = _as_float(
         params.get("default_poll_rate_hz", 100.0), "default_poll_rate_hz"
     )

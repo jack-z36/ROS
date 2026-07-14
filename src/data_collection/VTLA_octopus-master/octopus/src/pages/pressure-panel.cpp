@@ -4,12 +4,15 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QPainter>
+#include <QPainterPath>
 #include <QSizePolicy>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <numeric>
 #include <vector>
 
@@ -22,59 +25,191 @@ public:
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     }
 
-    void set_frame(const hwk_pressure_interfaces::msg::PressureFrame& frame, const uint16_t scale_max)
+    void set_frame(const hwk_pressure_interfaces::msg::PressureFrame& frame)
     {
-        rows_ = frame.rows;
-        cols_ = frame.cols;
         data_ = frame.data;
-        scale_max_ = std::max<uint16_t>(scale_max, 1);
+        cached_ = QImage();
         update();
     }
 
 protected:
+    void resizeEvent(QResizeEvent *e) override
+    {
+        QWidget::resizeEvent(e);
+        mask_ = QImage();
+        cached_ = QImage();
+    }
+
     void paintEvent(QPaintEvent *) override
     {
-        QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing, false);
-        painter.fillRect(rect(), QColor(32, 32, 34));
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing, false);
 
-        if (rows_ == 0 || cols_ == 0 || data_.empty()) {
-            painter.setPen(QColor(160, 160, 160));
-            painter.drawText(rect(), Qt::AlignCenter, QObject::tr("No data"));
+        if (data_.empty()) {
+            p.fillRect(rect(), QColor(32, 32, 34));
+            p.setPen(QColor(160, 160, 160));
+            p.drawText(rect(), Qt::AlignCenter, QObject::tr("No data"));
             return;
         }
 
-        const auto cell_w = width() / static_cast<qreal>(cols_);
-        const auto cell_h = height() / static_cast<qreal>(rows_);
-        for (uint8_t row = 0; row < rows_; ++row) {
-            for (uint8_t col = 0; col < cols_; ++col) {
-                const auto idx = static_cast<size_t>(row) * cols_ + col;
-                if (idx >= data_.size()) continue;
-
-                const auto normalized =
-                    std::clamp(data_[idx] / static_cast<qreal>(scale_max_), 0.0, 1.0);
-                const auto color = QColor::fromHsvF((1.0 - normalized) * 0.66, 0.85, 0.95);
-                painter.fillRect(QRectF(col * cell_w, row * cell_h, cell_w + 0.5, cell_h + 0.5),
-                                 color);
-            }
-        }
-
-        painter.setPen(QColor(30, 30, 30, 90));
-        for (uint8_t row = 1; row < rows_; ++row) {
-            const auto y = row * cell_h;
-            painter.drawLine(QPointF(0, y), QPointF(width(), y));
-        }
-        for (uint8_t col = 1; col < cols_; ++col) {
-            const auto x = col * cell_w;
-            painter.drawLine(QPointF(x, 0), QPointF(x, height()));
-        }
+        if (cached_.isNull()) buildImage();
+        p.drawImage(rect(), cached_);
     }
 
 private:
-    uint8_t rows_{ 0 };
-    uint8_t cols_{ 0 };
-    uint16_t scale_max_{ 1 };
+    static constexpr int kRows = 8;
+    static constexpr int kCols = 10;
+    // Display-only absolute reference point.  It never rescales to the
+    // current frame, so equal physical loads retain equal colours over time.
+    static constexpr double kCellFullScaleGrams = 300.0;
+    static constexpr int kMap[kRows][kCols] = {
+        { -1, -1,  0,  1,  2,  3,  4,  5, -1, -1},
+        { -1, -1,  6,  7,  8,  9, 10, 11, -1, -1},
+        { 12, 13, 14, 15, 16, 17, 18, 19, 20, 21},
+        { 22, 23, 24, 25, 26, 27, 28, 29, 30, 31},
+        { 32, 33, 34, 35, 36, 37, 38, 39, 40, 41},
+        { 42, 43, 44, 45, 46, 47, 48, 49, 50, 51},
+        { 52, 53, 54, 55, 56, 57, 58, 59, 60, 61},
+        { -1, 62, 63, 64, 65, 66, 67, 68, 69, -1},
+    };
+
+    static QPainterPath fingerPath()
+    {
+        // Match the physical tactile cover: a rounded cap, nearly vertical
+        // sides, and a flat base.
+        QPainterPath p;
+
+        // Start at the top centre and trace the right half clockwise.
+        p.moveTo(5.0, 0.0);
+        p.cubicTo(7.35, 0.0, 9.25, 1.2, 9.3, 2.8);
+        p.cubicTo(9.45, 4.4, 9.45, 6.3, 9.35, 8.0);
+        p.lineTo(0.65, 8.0);
+        p.cubicTo(0.55, 6.3, 0.55, 4.4, 0.7, 2.8);
+        p.cubicTo(0.75, 1.2, 2.65, 0.0, 5.0, 0.0);
+        p.closeSubpath();
+        return p;
+    }
+
+    void ensureMask()
+    {
+        const int w = std::max(1, width());
+        const int h = std::max(1, height());
+        if (!mask_.isNull() && mask_.width() == w && mask_.height() == h) return;
+
+        const double sx = w / static_cast<double>(kCols);
+        const double sy = h / static_cast<double>(kRows);
+
+        mask_ = QImage(w, h, QImage::Format_Alpha8);
+        mask_.fill(0);
+        QPainter mp(&mask_);
+        mp.setRenderHint(QPainter::Antialiasing, true);
+        mp.scale(sx, sy);
+        mp.setPen(Qt::NoPen);
+        mp.setBrush(Qt::white);
+        mp.drawPath(fingerPath());
+        mp.end();
+    }
+
+    void buildImage()
+    {
+        const int w = std::max(1, width());
+        const int h = std::max(1, height());
+        ensureMask();
+        cached_ = QImage(w, h, QImage::Format_ARGB32);
+
+        for (int py = 0; py < h; ++py) {
+            const auto *mask_line = mask_.constScanLine(py);
+            const double gy = (py + 0.5) * kRows / static_cast<double>(h) - 0.5;
+            const int y0 = std::clamp(static_cast<int>(std::floor(gy)), 0, kRows - 1);
+            const int y1 = std::clamp(y0 + 1, 0, kRows - 1);
+            const double wy = gy - y0;
+
+            auto *line = reinterpret_cast<QRgb *>(cached_.scanLine(py));
+            for (int px = 0; px < w; ++px) {
+                const auto ma = mask_line[px];
+                if (ma == 0) {
+                    line[px] = qRgba(24, 24, 26, 255);
+                    continue;
+                }
+
+                const double gx = (px + 0.5) * kCols / static_cast<double>(w) - 0.5;
+                const int x0 = std::clamp(static_cast<int>(std::floor(gx)), 0, kCols - 1);
+                const int x1 = std::clamp(x0 + 1, 0, kCols - 1);
+                const double wx = gx - x0;
+
+                int   v00 = valid(x0, y0);  double w00 = (1 - wx) * (1 - wy);
+                int   v10 = valid(x1, y0);  double w10 =      wx  * (1 - wy);
+                int   v01 = valid(x0, y1);  double w01 = (1 - wx) *      wy;
+                int   v11 = valid(x1, y1);  double w11 =      wx  *      wy;
+
+                double val = 0, wsum = 0;
+                if (v00 >= 0) { val += v00 * w00; wsum += w00; }
+                if (v10 >= 0) { val += v10 * w10; wsum += w10; }
+                if (v01 >= 0) { val += v01 * w01; wsum += w01; }
+                if (v11 >= 0) { val += v11 * w11; wsum += w11; }
+
+                if (wsum > 0) {
+                    val /= wsum;
+                } else {
+                    // The smooth physical outline may cover a -1 map corner.
+                    // Extend its nearest real sensor value instead of cutting a
+                    // background-coloured notch into the mask.
+                    const int nearest = nearestValid(gx, gy);
+                    if (nearest < 0) {
+                        line[px] = qRgba(24, 24, 26, 255);
+                        continue;
+                    }
+                    val = nearest;
+                }
+
+                const double local_load =
+                    std::clamp(val / kCellFullScaleGrams, 0.0, 1.0);
+
+                // Keep the original high-contrast live-view palette: blue at
+                // low pressure and red at high pressure.  Unlike the original
+                // implementation, local_load uses a fixed absolute reference.
+                const auto c = QColor::fromHsvF(
+                    (1.0 - local_load) * 0.66, 0.85, 0.95);
+                const auto alpha = static_cast<int>(ma);
+                line[px] = qRgba(
+                    (c.red()   * alpha + 24 * (255 - alpha)) / 255,
+                    (c.green() * alpha + 24 * (255 - alpha)) / 255,
+                    (c.blue()  * alpha + 26 * (255 - alpha)) / 255,
+                    255);
+            }
+        }
+    }
+
+    int valid(int col, int row) const
+    {
+        const int idx = kMap[row][col];
+        return (idx >= 0 && static_cast<size_t>(idx) < data_.size()) ? data_[idx] : -1;
+    }
+
+    int nearestValid(double gx, double gy) const
+    {
+        int value = -1;
+        double best_distance_squared = std::numeric_limits<double>::max();
+        for (int row = 0; row < kRows; ++row) {
+            for (int col = 0; col < kCols; ++col) {
+                const int candidate = valid(col, row);
+                if (candidate < 0) continue;
+
+                const double dx = col - gx;
+                const double dy = row - gy;
+                const double distance_squared = dx * dx + dy * dy;
+                if (distance_squared < best_distance_squared) {
+                    best_distance_squared = distance_squared;
+                    value = candidate;
+                }
+            }
+        }
+        return value;
+    }
+
     std::vector<uint16_t> data_{};
+    QImage mask_{};
+    QImage cached_{};
 };
 
 namespace
@@ -85,17 +220,13 @@ int gripper_index(const hwk_pressure_interfaces::msg::PressureFrame& frame)
     return 0;
 }
 
-uint16_t frame_max(const hwk_pressure_interfaces::msg::PressureFrame& frame)
-{
-    if (frame.data.empty()) return 0;
-    return *std::max_element(frame.data.begin(), frame.data.end());
-}
-
-double frame_avg(const hwk_pressure_interfaces::msg::PressureFrame& frame)
+double frame_force(const hwk_pressure_interfaces::msg::PressureFrame& frame)
 {
     if (frame.data.empty()) return 0.0;
+    // sum = total grams, convert to N: g × 1e-3 × 9.81
+    constexpr double kGramsToNewton = 1e-3 * 9.81;
     const auto total = std::accumulate(frame.data.begin(), frame.data.end(), uint64_t{ 0 });
-    return static_cast<double>(total) / static_cast<double>(frame.data.size());
+    return static_cast<double>(total) * kGramsToNewton;
 }
 
 QWidget *make_gripper_widget(const QString& title, PressureHeatmapWidget **heatmap, QLabel **stats)
@@ -113,7 +244,7 @@ QWidget *make_gripper_widget(const QString& title, PressureHeatmapWidget **heatm
     *heatmap = new PressureHeatmapWidget();
     layout->addWidget(*heatmap, 1);
 
-    *stats = new QLabel(QObject::tr("max -  avg -  updated -"));
+    *stats = new QLabel(QObject::tr("F=0.000N"));
     (*stats)->setAlignment(Qt::AlignCenter);
     layout->addWidget(*stats);
 
@@ -171,7 +302,7 @@ void PressureDockWidget::refresh()
     }
 
     if (updated) {
-        update_scale();
+        update_heatmaps();
     }
 }
 
@@ -182,24 +313,13 @@ void PressureDockWidget::update_frame(const hwk_pressure_interfaces::msg::Pressu
     has_latest_[index] = true;
 }
 
-void PressureDockWidget::update_scale()
+void PressureDockWidget::update_heatmaps()
 {
-    uint16_t scale_max = 1;
-    for (size_t i = 0; i < latest_.size(); ++i) {
-        if (has_latest_[i]) {
-            scale_max = std::max(scale_max, frame_max(latest_[i]));
-        }
-    }
-
     for (size_t i = 0; i < latest_.size(); ++i) {
         if (!has_latest_[i]) continue;
 
-        heatmaps_[i]->set_frame(latest_[i], scale_max);
-        stats_[i]->setText(QString("max %1  avg %2  %3x%4  updated %5")
-                               .arg(frame_max(latest_[i]))
-                               .arg(frame_avg(latest_[i]), 0, 'f', 1)
-                               .arg(latest_[i].rows)
-                               .arg(latest_[i].cols)
-                               .arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz")));
+        heatmaps_[i]->set_frame(latest_[i]);
+        stats_[i]->setText(QString("F=%1N")
+                               .arg(frame_force(latest_[i]), 0, 'f', 3));
     }
 }
