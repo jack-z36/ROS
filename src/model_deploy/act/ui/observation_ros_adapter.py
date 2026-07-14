@@ -1,20 +1,31 @@
-"""ObservationRosAdapter — ROS observation message → RAM value bridge.
+"""ObservationRosAdapter — ROS observation message → RAM value bridge (deploy_057).
 
-Converts incoming ROS Image, Pose, and gripper-state messages into RAM
-values consumable by the service layer (ObservationCollector), triggers
-snapshot assembly, and writes ready snapshots into ObservationBuffer.
+Converts incoming ROS Image / CompressedImage / Pose / gripper-state messages
+into RAM values consumable by the service layer (``ObservationCollector``),
+triggers snapshot assembly, and writes ready snapshots into ``ObservationBuffer``.
 
-Lazy ROS import: the module is importable without rclpy installed.
-Real subscription creation is marked BLOCKED_ENV when ROS is absent.
+Typed contract (no raw Dict config):
+- Consumes a frozen ``DeployConfig`` and the canonical ``PolicyInputSpec``.
+- Produces owned ``float32`` CHW images in ``[0, 1]`` exactly matching the
+  spec's ``image_shapes``.
+- Camera keys are validated against the spec (fail-fast on mismatch).
+- Gripper message type and scalar decoder are kept consistent; the real
+  gripper ROS topology is unknown and recorded (not masked as a local success).
+
+Lazy ROS import: the module is importable without rclpy installed.  When rclpy
+is absent, ``create_subscriptions`` records ``env_blocked``.  All other errors
+(config / decoder) propagate — they are never downgraded to ``env_blocked``.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Mapping, Optional, Tuple
 
 import numpy as np
 
+from model_deploy.act.config.schema import DeployConfig
+from model_deploy.act.repo.act_runtime_resources import PolicyInputSpec
 from model_deploy.act.runtime.observation_buffer import ObservationBuffer
 from model_deploy.act.service.image_preprocess import (
     ImageConfig,
@@ -31,12 +42,44 @@ _logger = logging.getLogger(__name__)
 _ROS_AVAILABLE: bool = False
 try:
     import rclpy  # noqa: F401
-    from sensor_msgs.msg import CompressedImage, Image  # noqa: F401
     from geometry_msgs.msg import Pose  # noqa: F401
+    from sensor_msgs.msg import CompressedImage, Image  # noqa: F401
 
     _ROS_AVAILABLE = True
 except ImportError:  # pragma: no cover
-    pass
+    Pose = None  # type: ignore[assignment]
+    Image = None  # type: ignore[assignment]
+    CompressedImage = None  # type: ignore[assignment]
+
+
+# ---------------------------------------------------------------------------
+# Gripper scalar decoder (consistent with the subscribed message type)
+# ---------------------------------------------------------------------------
+
+
+def decode_gripper_width(msg: Any) -> float:
+    """Decode a scalar gripper width from a gripper-state message.
+
+    The subscribed message type for gripper topics is ``geometry_msgs/Pose``
+    (a placeholder; the real hardware topology is unknown — see
+    ``gripper_topology_unknown``).  This decoder reads the scalar width from a
+    consistent source:
+
+    - ``msg.width`` (a scalar width attribute, if present),
+    - otherwise ``msg.position.x`` (Pose layout),
+    - otherwise ``msg.data`` (numeric scalar).
+
+    Raises:
+        ValueError: If no scalar width can be extracted (the local FAIL is
+            recorded, never masked).
+    """
+    if hasattr(msg, "width") and msg.width is not None:
+        return float(msg.width)
+    if hasattr(msg, "position") and msg.position is not None:
+        return float(msg.position.x)
+    if hasattr(msg, "data") and msg.data is not None:
+        return float(msg.data)
+    raise ValueError(f"Cannot extract gripper width from {type(msg).__name__}")
 
 
 # ---------------------------------------------------------------------------
@@ -47,45 +90,111 @@ except ImportError:  # pragma: no cover
 class ObservationRosAdapter:
     """ROS callback → service/runtime bridge for observation topics.
 
-    Typical construction::
+    Typed construction (deploy_057)::
 
-        adapter = ObservationRosAdapter(collector, buffer, config)
-        # Later, when the ROS node is ready:
+        adapter = ObservationRosAdapter(
+            collector=collector,
+            buffer=buffer,
+            config=deploy_config,
+            input_spec=policy_input_spec,
+            max_age_s=deploy_config.runtime.max_observation_age_sec,
+            monotonic_clock=monotonic_clock,
+        )
         adapter.create_subscriptions(node)
 
     Parameters:
         collector:         ObservationCollector instance (service layer).
         buffer:            ObservationBuffer instance (runtime layer).
-        config:            Dict-like with ``topics.observation`` and
-                           ``image`` config sections.
+        config:            Frozen ``DeployConfig`` (topics + image settings).
+        input_spec:        Frozen canonical ``PolicyInputSpec`` (camera keys,
+                           image shapes / layout / dtype / range).
         max_age_s:         Default freshness timeout for snapshots (seconds).
+        monotonic_clock:   Shared monotonic clock (same domain as collector /
+                           buffer; deploy_057 / P0-07).
     """
 
     # pylint: disable=too-many-instance-attributes
 
     def __init__(
         self,
+        *,
         collector: ObservationCollector,
         buffer: ObservationBuffer,
-        config: Dict[str, Any] | None = None,
+        config: DeployConfig,
+        input_spec: PolicyInputSpec,
         max_age_s: float = 5.0,
+        monotonic_clock: Callable[[], float] | None = None,
     ) -> None:
+        if not isinstance(collector, ObservationCollector):
+            raise TypeError("collector must be an ObservationCollector")
+        if not isinstance(buffer, ObservationBuffer):
+            raise TypeError("buffer must be an ObservationBuffer")
+        if not isinstance(config, DeployConfig):
+            raise TypeError("config must be a DeployConfig")
+        if not isinstance(input_spec, PolicyInputSpec):
+            raise TypeError("input_spec must be a PolicyInputSpec")
+
         self._collector = collector
         self._buffer = buffer
-        self._config: Dict[str, Any] = config or {}
-        self._max_age_s = max_age_s
+        self._config = config
+        self._input_spec = input_spec
+        self._max_age_s = float(max_age_s)
+        if monotonic_clock is None:
+            import time
+
+            self._monotonic_clock: Callable[[], float] = time.monotonic
+        else:
+            self._monotonic_clock = monotonic_clock
+
         self._env_blocked: bool = False
         self._subscriptions: list = []
+
+        # Pre-resolved, spec-aligned lookups (fail-fast if inconsistent).
+        self._image_topics: Mapping[str, str] = dict(config.topics.observation.image_topics)
+        self._tcp_pose_topics: Mapping[str, str] = {
+            "left": config.topics.observation.left_tcp_pose,
+            "right": config.topics.observation.right_tcp_pose,
+        }
+        self._gripper_topics: Mapping[str, str] = {
+            "left": config.topics.observation.left_gripper_state,
+            "right": config.topics.observation.right_gripper_state,
+        }
+
+        # Per-camera expected CHW shape + HWC preprocess target (from spec).
+        self._image_expected_shapes: Mapping[str, Tuple[int, int, int]] = {}
+        self._image_target_shapes: Mapping[str, Tuple[int, int, int]] = {}
+        for cam, shape in zip(input_spec.camera_keys, input_spec.image_shapes):
+            self._image_expected_shapes[cam] = tuple(shape)  # (3, H, W) CHW
+            self._image_target_shapes[cam] = (shape[1], shape[2], shape[0])  # (H, W, 3)
+
+        # Gripper topology is not verified against real hardware.
+        self.gripper_topology_unknown: bool = True
+
+        # Validate camera-key alignment at construction (config error).
+        config_cameras = set(self._image_topics.keys())
+        spec_cameras = set(input_spec.camera_keys)
+        if config_cameras != spec_cameras:
+            raise ValueError(
+                f"Observation camera keys mismatch: config has {sorted(config_cameras)} "
+                f"but PolicyInputSpec requires {sorted(spec_cameras)}"
+            )
+        if len(input_spec.image_shapes) != len(input_spec.camera_keys):
+            raise ValueError(
+                "PolicyInputSpec.image_shapes length must match camera_keys"
+            )
 
     # ------------------------------------------------------------------
     # ROS subscription setup
     # ------------------------------------------------------------------
 
     def create_subscriptions(self, node: Any) -> None:
-        """Create ROS subscriptions from config.
+        """Create ROS subscriptions after all RAM validation has passed.
 
-        If ROS packages are unavailable, records ``env_blocked`` and logs
-        a warning instead of raising.
+        Callers (``build_observation_pipeline``) must have validated config /
+        spec consistency before invoking this.  If rclpy is unavailable the
+        method records ``env_blocked`` and returns.  Any other failure during
+        creation rolls back already-created handles and re-raises — it is
+        never downgraded to ``env_blocked``.
         """
         if not _ROS_AVAILABLE:
             self._env_blocked = True
@@ -94,48 +203,63 @@ class ObservationRosAdapter:
             )
             return
 
+        created: list = []
         try:
-            obs_topics = self._config.get("topics", {}).get("observation", {})
-
-            # Image topics
-            for cam_key, topic_name in obs_topics.get("images", {}).items():
-                msg_type_name = obs_topics.get("image_msg_type", "Image")
-                msg_type = CompressedImage if msg_type_name == "CompressedImage" else Image
+            # Image topics (raw or compressed, per config.image.transport).
+            msg_type = (
+                CompressedImage if getattr(self._config.image, "transport", "raw") == "compressed"
+                else Image
+            )
+            for cam_key, topic in self._image_topics.items():
                 sub = node.create_subscription(
                     msg_type,
-                    topic_name,
+                    topic,
                     lambda msg, key=cam_key: self.handle_image(key, msg),
                     10,
                 )
-                self._subscriptions.append(sub)
+                created.append(sub)
 
-            # TCP pose topics
-            for side in ("left", "right"):
-                topic_name = obs_topics.get(f"{side}_tcp_pose")
-                if topic_name:
-                    sub = node.create_subscription(
-                        Pose,
-                        topic_name,
-                        lambda msg, s=side: self.handle_tcp_pose(s, msg),
-                        10,
-                    )
-                    self._subscriptions.append(sub)
+            # TCP pose topics (Pose).
+            for side, topic in self._tcp_pose_topics.items():
+                if not topic:
+                    continue
+                sub = node.create_subscription(
+                    Pose,
+                    topic,
+                    lambda msg, s=side: self.handle_tcp_pose(s, msg),
+                    10,
+                )
+                created.append(sub)
 
-            # Gripper state topics
-            for side in ("left", "right"):
-                topic_name = obs_topics.get(f"{side}_gripper_state")
-                if topic_name:
-                    sub = node.create_subscription(
-                        Pose,  # Use Pose as common message type
-                        topic_name,
-                        lambda msg, s=side: self.handle_gripper_state(s, msg),
-                        10,
-                    )
-                    self._subscriptions.append(sub)
+            # Gripper state topics (Pose placeholder; topology unknown).
+            for side, topic in self._gripper_topics.items():
+                if not topic:
+                    continue
+                sub = node.create_subscription(
+                    Pose,
+                    topic,
+                    lambda msg, s=side: self.handle_gripper_state(s, msg),
+                    10,
+                )
+                created.append(sub)
 
-        except Exception:  # pragma: no cover
-            self._env_blocked = True
+            self._subscriptions = created
+        except Exception:
+            # Roll back any partial subscription handles, then propagate.
+            self._rollback_subscriptions(created)
+            self._subscriptions = []
             _logger.exception("ObservationRosAdapter: subscription creation failed.")
+            raise
+
+    def _rollback_subscriptions(self, created: list) -> None:
+        """Best-effort destroy of partially-created subscription handles."""
+        for sub in created:
+            destroy = getattr(sub, "destroy", None)
+            if callable(destroy):
+                try:
+                    destroy()
+                except Exception:  # pragma: no cover - defensive
+                    _logger.debug("Subscription destroy failed; ignoring.")
 
     # ------------------------------------------------------------------
     # Message decode
@@ -207,7 +331,13 @@ class ObservationRosAdapter:
     # ------------------------------------------------------------------
 
     def handle_image(self, name: str, msg: Any) -> None:
-        """Decode *msg*, pre-process, and feed to collector."""
+        """Decode *msg*, pre-process to CHW float32 [0,1], feed collector."""
+        expected = self._image_expected_shapes.get(name)
+        if expected is None:
+            _logger.warning("ObservationRosAdapter: unknown camera '%s'", name)
+            self._buffer.record_error(f"unknown camera {name}")
+            return
+
         try:
             image = self.decode_image_message(msg)
         except Exception as exc:
@@ -215,19 +345,34 @@ class ObservationRosAdapter:
             self._buffer.record_error(f"decode {name}: {exc}")
             return
 
-        image_config_dict = self._config.get("image", {})
-        image_config = ImageConfig(
-            target_shape=(
-                image_config_dict.get("target_height", image.shape[0]),
-                image_config_dict.get("target_width", image.shape[1]),
-                image_config_dict.get("target_channels", image.shape[2]),
-            ),
-            dtype=np.float32,
-            resize_width=image_config_dict.get("resize_width"),
-            resize_height=image_config_dict.get("resize_height"),
-        )
-        processed = preprocess_observation_image(image, image_config)
-        self._collector.update_image(name, processed)
+        target = self._image_target_shapes[name]
+        image_config = ImageConfig(target_shape=target, dtype=np.float32)
+        try:
+            processed = preprocess_observation_image(image, image_config)
+        except Exception as exc:
+            _logger.warning("ObservationRosAdapter: preprocess %s failed: %s", name, exc)
+            self._buffer.record_error(f"preprocess {name}: {exc}")
+            return
+
+        # Convert HWC -> CHW to match the policy input contract.
+        processed_chw = np.ascontiguousarray(processed.transpose(2, 0, 1))
+
+        # Boundary validation against the spec (fail-fast, not downstream).
+        if processed_chw.shape != expected:
+            _logger.warning(
+                "ObservationRosAdapter: %s shape %s != spec %s",
+                name, processed_chw.shape, expected,
+            )
+            self._buffer.record_error(
+                f"image {name} shape {processed_chw.shape} != spec {expected}"
+            )
+            return
+        if not np.isfinite(processed_chw).all() or processed_chw.min() < 0.0 or processed_chw.max() > 1.0:
+            _logger.warning("ObservationRosAdapter: %s out of [0,1] range", name)
+            self._buffer.record_error(f"image {name} out of [0,1] range")
+            return
+
+        self._collector.update_image(name, processed_chw)
         self._try_publish_observation()
 
     def handle_tcp_pose(self, side: str, msg: Any) -> None:
@@ -253,18 +398,15 @@ class ObservationRosAdapter:
         self._try_publish_observation()
 
     def handle_gripper_state(self, side: str, msg: Any) -> None:
-        """Parse a gripper-state message and update collector."""
+        """Parse a gripper-state message and update collector.
+
+        The gripper message type / decoder are kept consistent (Pose ->
+        ``decode_gripper_width``).  The real topology is unknown and recorded
+        via ``gripper_topology_unknown``; a decode failure is recorded as a
+        local error and never masked as success.
+        """
         try:
-            # Try common attributes for gripper width
-            width: float = 0.0
-            if hasattr(msg, "width"):
-                width = float(msg.width)
-            elif hasattr(msg, "position"):
-                width = float(msg.position)
-            elif hasattr(msg, "data"):
-                width = float(msg.data)
-            else:
-                raise ValueError(f"Cannot extract gripper width from {msg}")
+            width = decode_gripper_width(msg)
         except Exception as exc:
             _logger.warning(
                 "ObservationRosAdapter: gripper parse %s failed: %s", side, exc

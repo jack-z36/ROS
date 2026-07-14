@@ -17,6 +17,7 @@ runtime:
   state_dim: 16
   action_dim: 16
   max_action_age_sec: 0.45
+  max_observation_age_sec: 1.0
   max_inference_requests: 1
   max_pending_chunks: 1
   fallback_policy: hold_last_action
@@ -36,8 +37,11 @@ topics:
   namespace: /act
   observation:
     arm_state: /act/observation/arm_state
-    left_image: /act/observation/image/left_gripper_fisheye
-    right_image: /act/observation/image/right_gripper_fisheye
+    # Canonical, read-only logical policy camera key -> ROS topic mapping.
+    # Legacy left_image/right_image keys are no longer accepted here.
+    images:
+      left: /act/observation/image/left_gripper_fisheye
+      right: /act/observation/image/right_gripper_fisheye
     left_tcp_pose: /act/observation/arm/left_tcp_pose
     right_tcp_pose: /act/observation/arm/right_tcp_pose
     left_gripper_state: /act/observation/gripper/left_state

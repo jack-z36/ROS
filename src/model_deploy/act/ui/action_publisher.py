@@ -504,6 +504,18 @@ class ActionPublisher:
 
     # -- C19 result assembly ------------------------------------------------
 
+    def _topic_for_label(self, label: str) -> str:
+        """Resolve a publisher label to its configured public ROS topic."""
+        cmd = self._topics.command
+        return {
+            "policy_action": cmd.policy_action,
+            "left_arm": cmd.left_arm_target,
+            "right_arm": cmd.right_arm_target,
+            "left_gripper": cmd.left_gripper_target,
+            "right_gripper": cmd.right_gripper_target,
+            "status": cmd.status,
+        }[label]
+
     def _build_publish_result(
         self,
         request: ActionPublishRequest,
@@ -514,8 +526,15 @@ class ActionPublisher:
         gripper_skipped: tuple[str, ...],
         command_plan_completed: bool,
         status_published: bool,
+        *,
+        failure_stage: Optional[str] = None,
+        failed_topic: Optional[str] = None,
     ) -> ActionPublishResult:
-        """C19: assemble the frozen C6 from observed facts (pure computation)."""
+        """C19: assemble the frozen C6 from observed facts (pure computation).
+
+        ``failure_stage`` / ``failed_topic`` (deploy_060) carry the precise
+        publish-failure provenance; ``None`` on success paths.
+        """
         return ActionPublishResult(
             action_id=request.action_id,
             safety_status=request.safety_result.status,
@@ -528,6 +547,8 @@ class ActionPublisher:
             command_plan_completed=command_plan_completed,
             status_published=status_published,
             reason_code=reason_code,
+            failure_stage=failure_stage,
+            failed_topic=failed_topic,
         )
 
     # -- C20 status message -------------------------------------------------
@@ -545,6 +566,8 @@ class ActionPublisher:
             "gripper_skipped": list(result.gripper_skipped),
             "command_plan_completed": result.command_plan_completed,
             "reason_code": result.reason_code,
+            "failure_stage": result.failure_stage,
+            "failed_topic": result.failed_topic,
             "driver_accepted": None,
             "hardware_reached": None,
         }
@@ -571,6 +594,8 @@ class ActionPublisher:
         reason_code: Optional[str],
         gripper_skipped: tuple[str, ...],
         command_plan_completed: bool,
+        failure_stage: Optional[str] = None,
+        failed_topic: Optional[str] = None,
     ) -> ActionPublishResult:
         """Assemble C6, publish status best-effort, record and return C6 (C21)."""
         base = self._build_publish_result(
@@ -582,6 +607,8 @@ class ActionPublisher:
             gripper_skipped,
             command_plan_completed,
             status_published=False,
+            failure_stage=failure_stage,
+            failed_topic=failed_topic,
         )
         status_published = self._publish_status_best_effort(base)
         final = self._build_publish_result(
@@ -593,6 +620,8 @@ class ActionPublisher:
             gripper_skipped,
             command_plan_completed,
             status_published=status_published,
+            failure_stage=failure_stage,
+            failed_topic=failed_topic,
         )
         self._record_last_result(final)
         return final
@@ -619,9 +648,11 @@ class ActionPublisher:
                 policy_published=False,
                 command_count=0,
                 outcome=PublishOutcome.REJECTED,
-                reason_code=None,
+                reason_code="SAFETY_REJECTED",
                 gripper_skipped=(),
                 command_plan_completed=False,
+                failure_stage="safety",
+                failed_topic=None,
             )
         except Exception:
             return self._finalize(
@@ -629,9 +660,11 @@ class ActionPublisher:
                 policy_published=False,
                 command_count=0,
                 outcome=PublishOutcome.FAILED,
-                reason_code=None,
+                reason_code="PAYLOAD_BUILD_ERROR",
                 gripper_skipped=(),
                 command_plan_completed=False,
+                failure_stage="command_build",
+                failed_topic=None,
             )
 
         # 2. B2 — pack five ROS candidate messages.
@@ -643,9 +676,11 @@ class ActionPublisher:
                 policy_published=False,
                 command_count=0,
                 outcome=PublishOutcome.FAILED,
-                reason_code=None,
+                reason_code="MESSAGE_BUILD_ERROR",
                 gripper_skipped=(),
                 command_plan_completed=False,
+                failure_stage="command_build",
+                failed_topic=None,
             )
 
         # 3. C15 — gate decision.
@@ -665,9 +700,11 @@ class ActionPublisher:
                 policy_published=False,
                 command_count=0,
                 outcome=PublishOutcome.FAILED,
-                reason_code=None,
+                reason_code="POLICY_PUBLISH_IO_ERROR",
                 gripper_skipped=(),
                 command_plan_completed=False,
+                failure_stage="policy_publish",
+                failed_topic=self._topic_for_label("policy_action"),
             )
 
         # 5. optional command path.
@@ -712,14 +749,18 @@ class ActionPublisher:
 
         command_count = 0
         plan_broken = False
+        failed_label: Optional[str] = None
         for label, msg, side, target_val in targets:
             try:
                 self._try_publish(label, self._publishers[label], msg)
                 command_count += 1
                 if side is not None:
                     self._update_gripper_cache(side, target_val, request.monotonic_s)
-            except ActionPublishIoError:
+            except ActionPublishIoError as eio:
+                # Stop the remaining command path; record the exact failing
+                # topic so L2-06 can attribute the failure.
                 plan_broken = True
+                failed_label = eio.label
                 break
 
         plan_completed = (
@@ -734,14 +775,27 @@ class ActionPublisher:
         else:
             outcome = PublishOutcome.FAILED
 
+        failure_stage: Optional[str] = None
+        failed_topic: Optional[str] = None
+        if plan_broken:
+            failure_stage = "command_publish"
+            failed_topic = (
+                self._topic_for_label(failed_label) if failed_label is not None else None
+            )
+            reason_code = "COMMAND_PUBLISH_IO_ERROR"
+        else:
+            reason_code = None
+
         return self._finalize(
             request,
             policy_published=policy_published,
             command_count=command_count,
             outcome=outcome,
-            reason_code=None,
+            reason_code=reason_code,
             gripper_skipped=tuple(skipped),
             command_plan_completed=plan_completed,
+            failure_stage=failure_stage,
+            failed_topic=failed_topic,
         )
 
 

@@ -19,7 +19,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar, Literal, Optional
 
 from .safety_result import SafetyResult, SafetyStatus
 
@@ -144,7 +144,7 @@ class ActionPublishRequest:
             v = getattr(self, name)
             if isinstance(v, bool) or not isinstance(v, (int, float)):
                 raise TypeError(
-                    f"ActionPublishRequest.{name} must be a float, got {type(v).__r}"
+                    f"ActionPublishRequest.{name} must be a float, got {type(v)!r}"
                 )
             if not math.isfinite(v):
                 raise ValueError(
@@ -231,7 +231,7 @@ class TopicPayloadBundle:
             v = getattr(self, name)
             if isinstance(v, bool) or not isinstance(v, (int, float)):
                 raise TypeError(
-                    f"TopicPayloadBundle.{name} must be a float, got {type(v).__r}"
+                    f"TopicPayloadBundle.{name} must be a float, got {type(v)!r}"
                 )
             f = float(v)
             if not (0.0 <= f <= 100.0):
@@ -257,6 +257,24 @@ class PublishOutcome(str, Enum):
     FAILED = "FAILED"
 
 
+# Stable failure-stage vocabulary (deploy_060 publish-failure provenance).
+# Each value names the exact stage where a publish attempt failed, so L2-06
+# can attribute a failure without guessing from the outcome.
+PublishFailureStage = Literal[
+    "safety",          # L2-04 safety gate rejected the action
+    "policy_publish",  # ROS write of /act/policy_action failed
+    "command_build",   # B1 payload / B2 message construction failed
+    "command_publish", # ROS write of a /act/command/* topic failed
+]
+
+_PUBLISH_FAILURE_STAGES = frozenset(
+    {"safety", "policy_publish", "command_build", "command_publish"}
+)
+# Stages where the failure is a concrete ROS I/O write and must carry the
+# precise public topic that failed.
+_PUBLISH_FAILURE_TOPIC_REQUIRED = frozenset({"policy_publish", "command_publish"})
+
+
 # ---------------------------------------------------------------------------
 # C6 ActionPublishResult
 # ---------------------------------------------------------------------------
@@ -278,6 +296,11 @@ class ActionPublishResult:
     - ``driver_accepted`` / ``hardware_reached`` are always ``None`` in L2-05
       (never rewritten into a success claim).
     - No ``mode`` / ``accepted`` / raw gate fields exist.
+    - ``failure_stage`` / ``failed_topic`` (deploy_060 provenance): mechanically
+      checkable facts so L2-06 can attribute a failure without guessing from the
+      outcome. For REJECTED/FAILED/PARTIAL ``reason_code`` must be a non-empty
+      stable code; ``failure_stage`` names the exact failing stage and, for I/O
+      failures, ``failed_topic`` carries the precise public topic/label.
     """
 
     action_id: str
@@ -291,6 +314,8 @@ class ActionPublishResult:
     command_plan_completed: bool
     status_published: bool
     reason_code: Optional[str] = None
+    failure_stage: Optional[PublishFailureStage] = None
+    failed_topic: Optional[str] = None
     driver_accepted: None = None
     hardware_reached: None = None
 
@@ -332,13 +357,13 @@ class ActionPublishResult:
         sk = self.gripper_skipped
         if not isinstance(sk, (tuple, list)):
             raise TypeError(
-                f"ActionPublishResult.gripper_skipped must be a tuple/list, got {type(sk).__r}"
+                f"ActionPublishResult.gripper_skipped must be a tuple/list, got {type(sk)!r}"
             )
         for i, label in enumerate(sk):
             if not isinstance(label, str):
                 raise TypeError(
                     f"ActionPublishResult.gripper_skipped[{i}] must be a str, "
-                    f"got {type(label).__r}"
+                    f"got {type(label)!r}"
                 )
         object.__setattr__(self, "gripper_skipped", tuple(sk))
 
@@ -364,6 +389,82 @@ class ActionPublishResult:
                     "command_publish_count>0 and command_plan_completed=False"
                 )
 
+        # --- publish-failure provenance matrix (deploy_060) ---
+        # Each negative outcome must carry a precise, mechanically-checkable
+        # stage; for I/O failures it must also name the exact public topic.
+        stage = self.failure_stage
+        topic = self.failed_topic
+        if stage is not None and stage not in _PUBLISH_FAILURE_STAGES:
+            raise ValueError(
+                f"ActionPublishResult.failure_stage must be one of "
+                f"{sorted(_PUBLISH_FAILURE_STAGES)}, got {stage!r}"
+            )
+
+        if self.outcome in (
+            PublishOutcome.REJECTED,
+            PublishOutcome.FAILED,
+            PublishOutcome.PARTIAL,
+        ):
+            if not isinstance(self.reason_code, str) or self.reason_code == "":
+                raise ValueError(
+                    f"ActionPublishResult.outcome={self.outcome.value} requires a "
+                    f"non-empty reason_code"
+                )
+
+        if self.outcome is PublishOutcome.REJECTED:
+            if stage != "safety":
+                raise ValueError(
+                    "ActionPublishResult.outcome=REJECTED requires "
+                    "failure_stage='safety'"
+                )
+            if topic is not None:
+                raise ValueError(
+                    "ActionPublishResult.outcome=REJECTED requires failed_topic=None"
+                )
+        elif self.outcome in (
+            PublishOutcome.PUBLISHED,
+            PublishOutcome.OBSERVED,
+            PublishOutcome.BLOCKED,
+        ):
+            if stage is not None:
+                raise ValueError(
+                    f"ActionPublishResult.outcome={self.outcome.value} requires "
+                    f"failure_stage=None"
+                )
+            if topic is not None:
+                raise ValueError(
+                    f"ActionPublishResult.outcome={self.outcome.value} requires "
+                    f"failed_topic=None"
+                )
+        elif self.outcome is PublishOutcome.FAILED:
+            if stage is None:
+                raise ValueError(
+                    "ActionPublishResult.outcome=FAILED requires a failure_stage"
+                )
+            if stage in _PUBLISH_FAILURE_TOPIC_REQUIRED:
+                if not isinstance(topic, str) or topic == "":
+                    raise ValueError(
+                        "ActionPublishResult.outcome=FAILED with "
+                        f"failure_stage={stage!r} requires a non-empty failed_topic"
+                    )
+            else:
+                if topic is not None:
+                    raise ValueError(
+                        "ActionPublishResult.outcome=FAILED with "
+                        f"failure_stage={stage!r} requires failed_topic=None"
+                    )
+        elif self.outcome is PublishOutcome.PARTIAL:
+            if stage != "command_publish":
+                raise ValueError(
+                    "ActionPublishResult.outcome=PARTIAL requires "
+                    "failure_stage='command_publish'"
+                )
+            if not isinstance(topic, str) or topic == "":
+                raise ValueError(
+                    "ActionPublishResult.outcome=PARTIAL requires a non-empty "
+                    "failed_topic"
+                )
+
 
 __all__ = [
     "CommandPermit",
@@ -371,5 +472,6 @@ __all__ = [
     "ArmPoseTarget",
     "TopicPayloadBundle",
     "PublishOutcome",
+    "PublishFailureStage",
     "ActionPublishResult",
 ]

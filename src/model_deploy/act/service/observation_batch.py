@@ -11,33 +11,37 @@ lifecycle, mutable state, or resource ownership.
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Mapping, Tuple
 
 import numpy as np
 import torch
 
+from model_deploy.act.repo.act_runtime_resources import PolicyInputSpec
 from model_deploy.act.types.action_spec import ACTION_DIM
 
 # ---------------------------------------------------------------------------
 # input_spec convention
 # ---------------------------------------------------------------------------
 #
-# input_spec is a Dict derived from the loaded ACT policy's RAM metadata:
+# input_spec is the frozen canonical PolicyInputSpec (deploy_056) produced once
+# at startup by load_act_runtime_resources and injected into L2-03 by L2-06.
+# It is a typed object, not a Dict -- every field is a typed attribute:
 #
-#   {
-#       "state_dim": 16,
-#       "state_key": "observation.state",
-#       "camera_keys": ["top", "left_wrist"],
-#       "image_prefix": "observation.images.",
-#       "image_shapes": {
-#           "top": (3, 224, 224),
-#           "left_wrist": (3, 224, 224),
-#       },  # optional; shape validation is skipped when absent
-#   }
+#   state_key:     str                        e.g. "observation.state"
+#   state_dim:     int                        e.g. 16
+#   image_prefix:  str                        e.g. "observation.images."
+#   camera_keys:   Tuple[str, ...]            sorted, non-empty logical names
+#   image_shapes:  Tuple[Tuple[int,int,int]]  CHW, one per camera_keys (aligned)
+#   image_layout:  str                        "CHW"
+#   image_dtype:   str                        "float32"
+#   image_value_range: Tuple[float, float]   (0.0, 1.0)
+#   action_dim:    int                        e.g. 16
+#   chunk_size:    int                        positive
 #
 # camera_keys are the logical camera names used as keys in
-# ObservationSnapshot.images.  image_prefix is prepended to each camera
-# name to form the full policy feature key used inside the ACT batch dict.
+# ObservationSnapshot.images; image_shapes is positionally aligned with
+# camera_keys.  image_prefix is prepended to each camera name to form the full
+# policy feature key used inside the ACT batch dict.
 # ---------------------------------------------------------------------------
 
 _DEFAULT_IMAGE_PREFIX: str = "observation.images."
@@ -49,15 +53,18 @@ _DEFAULT_IMAGE_PREFIX: str = "observation.images."
 
 def check_model_input_compatibility(
     snapshot: Any,  # ObservationSnapshot (lazy import to avoid circular deps)
-    input_spec: Dict[str, Any],
+    input_spec: PolicyInputSpec,
 ) -> None:
     """Verify snapshot fields satisfy the ACT policy's input contract.
+
+    Reads the canonical ``PolicyInputSpec`` typed attributes only -- no Dict
+    access, no default plug-in.  ``image_shapes`` is positionally aligned with
+    ``camera_keys``; the mapping is built locally.
 
     Checks:
     * ``encoded_state`` is ``(state_dim,)`` and contains only finite values.
     * Every required camera (``camera_keys``) is present in ``snapshot.images``.
-    * Each image has the expected shape (when ``image_shapes`` is specified)
-      and contains only finite values.
+    * Each image has the expected CHW shape and contains only finite values.
 
     This is a **compatibility** check, not a freshness check.
     Freshness is the responsibility of L2-02 / L2-06.
@@ -66,7 +73,7 @@ def check_model_input_compatibility(
         ValueError: state dimension, shape, or value contract violated.
         KeyError:   a required camera is missing from ``snapshot.images``.
     """
-    state_dim = input_spec.get("state_dim", ACTION_DIM)
+    state_dim = input_spec.state_dim
     encoded = snapshot.encoded_state
 
     # -- state dimension --
@@ -81,8 +88,10 @@ def check_model_input_compatibility(
         raise ValueError("encoded_state contains NaN or Inf values")
 
     # -- camera presence & shape/value contract --
-    camera_keys = input_spec.get("camera_keys", [])
-    image_shapes = input_spec.get("image_shapes", {})
+    camera_keys = input_spec.camera_keys
+    image_shapes: Mapping[str, Tuple[int, int, int]] = dict(
+        zip(camera_keys, input_spec.image_shapes)
+    )
     snapshot_images = snapshot.images
     available = set(snapshot_images.keys())
 
@@ -171,11 +180,11 @@ def normalize_state(
 
 def bind_images(
     snapshot_images: Dict[str, object],
-    input_spec: Dict[str, Any],
+    input_spec: PolicyInputSpec,
 ) -> Dict[str, torch.Tensor]:
     """Bind snapshot images to policy feature keys.
 
-    For each camera name in ``camera_keys``, looks up the image in
+    For each camera name in ``input_spec.camera_keys``, looks up the image in
     ``snapshot_images``, converts it to a float32 tensor, and stores it
     under the full policy key ``<image_prefix><camera_name>``.
 
@@ -184,7 +193,7 @@ def bind_images(
 
     Args:
         snapshot_images: ``ObservationSnapshot.images`` mapping.
-        input_spec:        must contain ``camera_keys`` and ``image_prefix``.
+        input_spec:        canonical frozen ``PolicyInputSpec``.
 
     Returns:
         ``{full_policy_key: Tensor(C, H, W)}`` for each camera.
@@ -192,8 +201,8 @@ def bind_images(
     Raises:
         KeyError: camera name missing from ``snapshot_images``.
     """
-    camera_keys = input_spec.get("camera_keys", [])
-    prefix = input_spec.get("image_prefix", _DEFAULT_IMAGE_PREFIX)
+    camera_keys = input_spec.camera_keys
+    prefix = input_spec.image_prefix
 
     bound: Dict[str, torch.Tensor] = {}
     for camera_name in camera_keys:
@@ -229,7 +238,7 @@ def add_batch_dim(*tensors: torch.Tensor) -> tuple[torch.Tensor, ...]:
 def assemble_act_batch(
     state_tensor: torch.Tensor,
     image_tensors: Dict[str, torch.Tensor],
-    input_spec: Dict[str, Any],
+    input_spec: PolicyInputSpec,
 ) -> Dict[str, torch.Tensor]:
     """Assemble the ACT observation batch dict.
 
@@ -241,12 +250,13 @@ def assemble_act_batch(
         state_tensor:  shape ``(1, state_dim)`` batched state tensor.
         image_tensors: camera tensors keyed by full policy key
                        ``<image_prefix><camera>``.
-        input_spec:    contains ``state_key``.
+        input_spec:    canonical frozen ``PolicyInputSpec`` (provides
+                       ``state_key``).
 
     Returns:
         ACT batch dict ready for ``align_to_device``.
     """
-    state_key = input_spec.get("state_key", "observation.state")
+    state_key = input_spec.state_key
     batch: Dict[str, torch.Tensor] = {state_key: state_tensor}
     batch.update(image_tensors)
     return batch
@@ -283,7 +293,7 @@ def align_to_device(
 def prepare_observation_batch(
     snapshot: Any,  # ObservationSnapshot
     state_normalizer: Any,  # ActionStateNormalizer
-    input_spec: Dict[str, Any],
+    input_spec: PolicyInputSpec,
     device: torch.device,
 ) -> Dict[str, torch.Tensor]:
     """Orchestrate the 7 observation batch micro-elements.
@@ -300,7 +310,8 @@ def prepare_observation_batch(
     Args:
         snapshot:         validated ``ObservationSnapshot``.
         state_normalizer: instance from L2-01.
-        input_spec:       policy metadata dict (see module docstring).
+        input_spec:       canonical frozen ``PolicyInputSpec`` (see module
+                         docstring).
         device:           target inference device.
 
     Returns:

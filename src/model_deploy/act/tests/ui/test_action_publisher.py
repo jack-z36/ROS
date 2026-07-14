@@ -390,3 +390,86 @@ class TestStatusBestEffortG17:
         assert res.outcome == PublishOutcome.PUBLISHED
         assert res.command_publish_count == 4
         assert res.status_published is False
+
+
+# ---------------------------------------------------------------------------
+# deploy_060 — publish-failure provenance (failure_stage / failed_topic)
+# ---------------------------------------------------------------------------
+
+
+class TestPublishProvenanceG:
+    def test_rejected_carries_safety_stage(self) -> None:
+        pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
+        res = pub.publish(
+            _request(CommandPermit(allowed=True), safety_result=_rejected_safety_result())
+        )
+        assert res.outcome == PublishOutcome.REJECTED
+        assert res.failure_stage == "safety"
+        assert res.failed_topic is None
+        assert res.reason_code == "SAFETY_REJECTED"
+
+    def test_observed_and_blocked_have_no_provenance(self) -> None:
+        observed = ActionPublisher(FakeNode(), _config(False), TopicsConfig()).publish(
+            _request(CommandPermit(allowed=True))
+        )
+        assert observed.outcome == PublishOutcome.OBSERVED
+        assert observed.failure_stage is None
+        assert observed.failed_topic is None
+
+        blocked = ActionPublisher(FakeNode(), _config(True), TopicsConfig()).publish(
+            _request(CommandPermit(allowed=False, reason_code="ESTOP_NOT_READY"))
+        )
+        assert blocked.outcome == PublishOutcome.BLOCKED
+        assert blocked.failure_stage is None
+        assert blocked.failed_topic is None
+
+    def test_policy_publish_failure_provenance(self) -> None:
+        pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
+        pub._publishers["policy_action"] = FailingPublisher("/act/policy_action")
+        res = pub.publish(_request(CommandPermit(allowed=True)))
+        assert res.outcome == PublishOutcome.FAILED
+        assert res.failure_stage == "policy_publish"
+        assert res.failed_topic == "/act/policy_action"
+        assert res.reason_code == "POLICY_PUBLISH_IO_ERROR"
+        # No command topic leak after a policy I/O failure.
+        for k in _command_labels():
+            assert len(pub._publishers[k].messages) == 0
+
+    def test_command_partial_provenance(self) -> None:
+        pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
+        pub._publishers["right_arm"] = FailingPublisher("/act/command/arm/right_target")
+        res = pub.publish(_request(CommandPermit(allowed=True)))
+        assert res.outcome == PublishOutcome.PARTIAL
+        assert res.failure_stage == "command_publish"
+        assert res.failed_topic == "/act/command/arm/right_target"
+        assert res.reason_code == "COMMAND_PUBLISH_IO_ERROR"
+        assert res.command_publish_count == 1
+
+    def test_command_failed_provenance(self) -> None:
+        pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
+        pub._publishers["left_arm"] = FailingPublisher("/act/command/arm/left_target")
+        res = pub.publish(_request(CommandPermit(allowed=True)))
+        assert res.outcome == PublishOutcome.FAILED
+        assert res.failure_stage == "command_publish"
+        assert res.failed_topic == "/act/command/arm/left_target"
+        assert res.reason_code == "COMMAND_PUBLISH_IO_ERROR"
+        assert res.command_publish_count == 0
+
+    def test_status_failure_does_not_fake_result(self) -> None:
+        # Status writer is L2-05 single writer; its failure must leave
+        # status_published=False and must not alter the business outcome.
+        pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
+        pub._publishers["status"] = FailingPublisher("/act/command/status")
+        res = pub.publish(_request(CommandPermit(allowed=True)))
+        assert res.status_published is False
+        assert res.outcome == PublishOutcome.PUBLISHED
+        assert res.failure_stage is None
+
+    def test_status_io_error_label_is_status(self) -> None:
+        # The status C17 write raises ActionPublishIoError(label="status");
+        # it is the only writer of /act/command/status.
+        pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
+        fail = FailingPublisher("/act/command/status")
+        with pytest.raises(ActionPublishIoError) as exc:
+            pub._try_publish("status", fail, "msg")
+        assert exc.value.label == "status"

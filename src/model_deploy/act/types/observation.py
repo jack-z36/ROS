@@ -15,6 +15,20 @@ from typing import Mapping, Sequence
 
 import numpy as np
 
+
+def _owned_array(value: object) -> np.ndarray:
+    """Return an owned, contiguous ``np.ndarray`` copy of *value*.
+
+    Raises:
+        TypeError: If *value* is not array-like.
+    """
+    arr = np.asarray(value)
+    if arr.dtype == object:
+        raise TypeError(
+            f"observation array must be numeric, got object dtype from {type(value)}"
+        )
+    return np.array(arr, copy=True, order="C")
+
 # ---------------------------------------------------------------------------
 # Dimension constant
 # ---------------------------------------------------------------------------
@@ -74,18 +88,75 @@ class ObservationSnapshot:
         ValueError: If ``encoded_state.shape != (16,)``.
     """
 
-    images: Mapping[str, object]
+    images: Mapping[str, np.ndarray]
     state: ObservationState
     encoded_state: np.ndarray
     captured_at_s: float
 
     def __post_init__(self) -> None:
-        """Validate encoded_state dimension on construction."""
-        if self.encoded_state.shape != (EXPECTED_STATE_DIM,):
+        """Validate contract invariants and deep-copy all owned arrays.
+
+        Guarantees:
+        - ``encoded_state`` has shape ``(EXPECTED_STATE_DIM,)`` and is finite.
+        - ``images`` values are owned (Copied) ``np.ndarray`` and finite.
+        - ``state`` sub-field arrays are owned copies and finite.
+        - ``captured_at_s`` is a finite number.
+
+        The deep copy makes a published ``ObservationSnapshot`` immune to
+        later in-place mutation of the source buffers held by the collector
+        cache (deploy_057 / P0-08 deep-ownership contract).
+        """
+        # --- encoded_state shape + finiteness ---
+        encoded = _owned_array(self.encoded_state)
+        if encoded.shape != (EXPECTED_STATE_DIM,):
             raise ValueError(
                 f"encoded_state must have shape ({EXPECTED_STATE_DIM},), "
-                f"got {self.encoded_state.shape}"
+                f"got {encoded.shape}"
             )
+        if not np.isfinite(encoded).all():
+            raise ValueError("encoded_state contains non-finite values")
+
+        # --- images: owned copies, finite ---
+        if not isinstance(self.images, Mapping):
+            raise TypeError(
+                f"images must be a Mapping, got {type(self.images).__name__}"
+            )
+        owned_images: dict[str, np.ndarray] = {}
+        for key, value in self.images.items():
+            img = _owned_array(value)
+            if not np.isfinite(img).all():
+                raise ValueError(f"image '{key}' contains non-finite values")
+            owned_images[key] = img
+
+        # --- state sub-fields: owned copies, finite ---
+        state = self.state
+        state_arrays = {
+            "left_tcp_position": _owned_array(state.left_tcp_position),
+            "left_tcp_orientation": _owned_array(state.left_tcp_orientation),
+            "right_tcp_position": _owned_array(state.right_tcp_position),
+            "right_tcp_orientation": _owned_array(state.right_tcp_orientation),
+        }
+        for name, arr in state_arrays.items():
+            if not np.isfinite(arr).all():
+                raise ValueError(f"state.{name} contains non-finite values")
+        owned_state = ObservationState(
+            left_tcp_position=state_arrays["left_tcp_position"],
+            left_tcp_orientation=state_arrays["left_tcp_orientation"],
+            left_gripper_width=float(state.left_gripper_width),
+            right_tcp_position=state_arrays["right_tcp_position"],
+            right_tcp_orientation=state_arrays["right_tcp_orientation"],
+            right_gripper_width=float(state.right_gripper_width),
+        )
+
+        # --- captured_at_s finiteness ---
+        captured = float(self.captured_at_s)
+        if not np.isfinite(captured):
+            raise ValueError("captured_at_s must be a finite number")
+
+        object.__setattr__(self, "encoded_state", encoded)
+        object.__setattr__(self, "images", owned_images)
+        object.__setattr__(self, "state", owned_state)
+        object.__setattr__(self, "captured_at_s", captured)
 
 
 # ---------------------------------------------------------------------------

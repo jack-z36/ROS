@@ -19,6 +19,7 @@ from .action_publish import (
     ArmPoseTarget,
     TopicPayloadBundle,
     PublishOutcome,
+    PublishFailureStage,
     ActionPublishResult,
 )
 
@@ -46,5 +47,6 @@ __all__ = [
     "ArmPoseTarget",
     "TopicPayloadBundle",
     "PublishOutcome",
+    "PublishFailureStage",
     "ActionPublishResult",
 ]

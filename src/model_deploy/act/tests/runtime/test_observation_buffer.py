@@ -41,6 +41,19 @@ def _make_snapshot(captured_at_s: float | None = None) -> ObservationSnapshot:
     )
 
 
+class FakeClock:
+    """Controllable monotonic clock for deterministic freshness tests."""
+
+    def __init__(self, t: float = 1000.0) -> None:
+        self.t = t
+
+    def __call__(self) -> float:
+        return self.t
+
+    def advance(self, dt: float) -> None:
+        self.t += dt
+
+
 # ---------------------------------------------------------------------------
 # ObservationMetrics
 # ---------------------------------------------------------------------------
@@ -100,17 +113,19 @@ class TestSetAndGet:
         assert result is not snap_a
 
     def test_max_age_not_expired(self) -> None:
-        buf = ObservationBuffer()
-        snap = _make_snapshot(captured_at_s=time.time())
+        clock = FakeClock(1000.0)
+        buf = ObservationBuffer(monotonic_clock=clock)
+        snap = _make_snapshot(captured_at_s=clock())
         buf.set_observation(snap)
         result = buf.latest_observation(max_age_s=5.0)
         assert result is snap
 
     def test_max_age_expired(self) -> None:
-        buf = ObservationBuffer()
-        # Set an old snapshot
-        snap = _make_snapshot(captured_at_s=time.time() - 10.0)
+        clock = FakeClock(1000.0)
+        buf = ObservationBuffer(monotonic_clock=clock)
+        snap = _make_snapshot(captured_at_s=clock())
         buf.set_observation(snap)
+        clock.advance(10.0)
         result = buf.latest_observation(max_age_s=1.0)
         assert result is None
 
@@ -131,9 +146,11 @@ class TestMetricsCounters:
         assert metrics["replaced_observation_count"] == 2
 
     def test_stale_count(self) -> None:
-        buf = ObservationBuffer()
-        snap = _make_snapshot(captured_at_s=time.time() - 10.0)
+        clock = FakeClock(1000.0)
+        buf = ObservationBuffer(monotonic_clock=clock)
+        snap = _make_snapshot(captured_at_s=clock())
         buf.set_observation(snap)
+        clock.advance(10.0)
         assert buf.latest_observation(max_age_s=1.0) is None
         assert buf.latest_observation(max_age_s=1.0) is None
         metrics = buf.metrics_snapshot()

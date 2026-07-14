@@ -10,7 +10,6 @@ No ROS dependency — works with plain RAM values fed by the ui layer.
 
 from __future__ import annotations
 
-import time
 import threading
 from typing import Callable, List, Mapping, Optional, Sequence
 
@@ -26,6 +25,13 @@ from model_deploy.act.types.observation import (
 # Type alias for the state-codec callable that turns an ObservationState
 # into a 16D encoded_state vector.
 StateCodec = Callable[[ObservationState], np.ndarray]
+
+
+def _import_time_monotonic() -> Callable[[], float]:
+    """Return ``time.monotonic`` without a module-level import alias churn."""
+    import time
+
+    return time.monotonic
 
 
 def _default_state_codec(state: ObservationState) -> np.ndarray:
@@ -68,6 +74,10 @@ class ObservationCollector:
         state_codec:          Callable ``(ObservationState) -> np.ndarray``
                               producing a 16D float32 vector.  Defaults to
                               ``_default_state_codec``.
+        monotonic_clock:      Callable returning the current monotonic time in
+                              seconds.  Shared with the buffer and pipeline so
+                              that ``captured_at_s`` and freshness ages live in
+                              the same clock domain (deploy_057 / P0-07).
     """
 
     # ------------------------------------------------------------------
@@ -79,10 +89,12 @@ class ObservationCollector:
         required_image_keys: Sequence[str],
         required_state_fields: Sequence[str],
         state_codec: StateCodec | None = None,
+        monotonic_clock: Callable[[], float] | None = None,
     ) -> None:
         self._required_image_keys: List[str] = list(required_image_keys)
         self._required_state_fields: List[str] = list(required_state_fields)
         self._state_codec: StateCodec = state_codec or _default_state_codec
+        self._monotonic_clock: Callable[[], float] = monotonic_clock or _import_time_monotonic()
 
         self._images: dict[str, np.ndarray] = {}
         self._values: dict[str, object] = {}
@@ -97,7 +109,7 @@ class ObservationCollector:
         """Cache the latest decoded image for *name*."""
         with self._lock:
             self._images[name] = image
-            self._stamps[name] = time.monotonic()
+            self._stamps[name] = self._monotonic_clock()
 
     def update_tcp_pose(
         self,
@@ -108,7 +120,7 @@ class ObservationCollector:
         """Cache TCP pose for *side* ('left' | 'right')."""
         pos_key = f"{side}_tcp_position"
         ori_key = f"{side}_tcp_orientation"
-        now = time.monotonic()
+        now = self._monotonic_clock()
         with self._lock:
             self._values[pos_key] = np.asarray(position, dtype=np.float32)
             self._values[ori_key] = np.asarray(orientation, dtype=np.float32)
@@ -120,7 +132,7 @@ class ObservationCollector:
         key = f"{side}_gripper_width"
         with self._lock:
             self._values[key] = float(width)
-            self._stamps[key] = time.monotonic()
+            self._stamps[key] = self._monotonic_clock()
 
     # ------------------------------------------------------------------
     # Diagnostic queries
@@ -176,7 +188,7 @@ class ObservationCollector:
         update is older than *max_age_s*.  Otherwise constructs
         ``ObservationState``, encodes it to 16D, and returns the snapshot.
         """
-        now = time.monotonic()
+        now = self._monotonic_clock()
         with self._lock:
             missing = self.missing_fields()
             stale = self.stale_fields(now, max_age_s)
@@ -198,8 +210,8 @@ class ObservationCollector:
             # --- encode via state codec ---
             encoded = self._state_codec(state)
 
-            # --- build snapshot ---
-            captured_at_s = time.time()
+            # --- build snapshot (deep-owned, monotonic captured_at_s) ---
+            captured_at_s = self._monotonic_clock()
             return ObservationSnapshot(
                 images=dict(self._images),
                 state=state,
@@ -213,7 +225,7 @@ class ObservationCollector:
 
     def freshness_result(self, max_age_s: float) -> ObservationFreshnessResult:
         """Return a structured diagnostic without building a snapshot."""
-        now = time.monotonic()
+        now = self._monotonic_clock()
         with self._lock:
             missing = self.missing_fields()
             stale = self.stale_fields(now, max_age_s)
