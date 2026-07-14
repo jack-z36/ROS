@@ -43,18 +43,25 @@ class 设计：
 | `stale_fields(now, max_age_s)` | time、timeout | list[str] | 无 | 无 |
 | `snapshot(max_age_s)` | freshness 参数 | `ObservationSnapshot` 或 `None` | 无 | state codec 失败则抛明确异常或返回 diagnostic |
 
+> deploy_057 契约加固：`ObservationCollector` 接收注入的 `monotonic_clock`
+> （默认 `time.monotonic`），所有字段 stamp 与 `captured_at_s` 均来自同一
+> monotonic 时钟域；`snapshot()` 不再使用 `time.time()`。`ObservationSnapshot`
+> 构造时对所有 ndarray 做深复制（见 `types/observation.py`），因此已发布的
+> snapshot 不受 collector 缓存后续修改影响。
+
 ### `image_preprocess.py`
 
 文件职责：
 
 - 把 ui 层 decode 后的 RGB image RAM 对象转为 ACT 模型约定的 image tensor / array。
 - 校验 image shape、dtype 和 resize 参数。
+- 整数图像（如 uint8 0..255）归一化为 `[0,1]` float32；非有限值抛错。
 
 函数设计：
 
 | 函数 | 输入 | 输出 | 副作用 | 错误行为 |
 |---|---|---|---|---|
-| `preprocess_observation_image(image, image_config)` | RGB image、L2-01 image config | ACT image tensor / array | 无 | unsupported shape / dtype 抛错 |
+| `preprocess_observation_image(image, image_config)` | RGB image、L2-01 image config | ACT image tensor / array（float32 [0,1]） | 无 | unsupported shape / dtype / 非有限值 抛错 |
 
 ## 4. 输入输出
 

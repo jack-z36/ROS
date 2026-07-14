@@ -31,13 +31,13 @@ ActInferenceService
 
 | 数据字段 | 内部结构 | 数值/对象类型 | 用途 |
 |---|---|---|---|
-| config 引用 | immutable config object | `DeployConfig` | 读取 16D/chunk/device 语义 |
+| config 引用 | immutable config object | `DeployConfig` | 仅用于 device 回退语义 |
 | state normalizer 引用 | normalizer object | `ActionStateNormalizer` | 阶段一 normalize |
 | action normalizer 引用 | normalizer object | `ActionStateNormalizer` | 阶段三 unnormalize |
 | policy 引用 | loaded model object | ACT policy protocol | 阶段二 chunk forward |
-| 输入规格 | tuple/mapping 等只读内部结构 | feature key、shape、device、dim | snapshot 到 batch 的确定性适配 |
+| 输入规格 | 同一 canonical `PolicyInputSpec` | deploy_056 冻结对象（identity） | snapshot 到 batch 的确定性适配 |
 
-class 构造只允许从 RAM 引用提取输入规格和做适配前置检查。它不得读文件、加载权重、配置 policy、建立 queue/thread 或保存当前请求数据。
+class 构造**不**再从 policy RAM metadata 推导输入规格，也不做 Dict 默认补洞或第二份 spec。它直接接收 L2-01 / L2-06 注入的同一个 `PolicyInputSpec`（与 L2-02、L2-06 共享的同一对象），按 identity 存储并仅通过只读 property `input_spec` 暴露。缺失或冲突的 metadata 是 L2-01 启动失败，L2-03 不 fallback。它不得读文件、加载权重、配置 policy、建立 queue/thread 或保存当前请求数据。
 
 ### 3.2 总编排入口
 
@@ -75,6 +75,8 @@ run_act_inference(policy, batch) -> raw_action_tensor
 prepare_observation_batch(snapshot, state_normalizer, input_spec, device)
     -> dict[str, Tensor]
 ```
+
+`input_spec` 为 deploy_056 的 canonical `PolicyInputSpec`（typed attribute 访问，非 Dict / `.get` / 默认值补洞）。
 
 | 顺序 | 计算微元 | 输入 | 输出/异常 |
 |---|---|---|---|

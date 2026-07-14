@@ -98,8 +98,13 @@ C4 是 B1 的完整、不可部分返回的输出，不含 ROS message 和 statu
 | `command_plan_completed` | 标量 | `bool` |
 | `status_published` | 标量 | `bool` |
 | `reason_code` | 可空标量 | `str | None` |
+| `failure_stage` | 可空标量（provenance, deploy_060） | `Literal["safety","policy_publish","command_build","command_publish"] | None` |
+| `failed_topic` | 可空标量（provenance, deploy_060） | `str | None` |
 | `driver_accepted` | 固定未知 | `None` |
 | `hardware_reached` | 固定未知 | `None` |
+
+> [!note] 发布失败追因（deploy_060）
+> `failure_stage` / `failed_topic` 是被 L2-06 直接归约的事实字段：L2-06 只需保存并核验 L2-05 返回值即可 fail-closed，无需从 outcome 反推失败位置。详见 `11_ui层设计.md` 的发布失败追因矩阵。
 
 ## 4. 结构不变量
 
@@ -111,6 +116,12 @@ C4 是 B1 的完整、不可部分返回的输出，不含 ROS message 和 statu
 - `PARTIAL` 要求 count>0 且 `command_plan_completed=False`。
 - `driver_accepted`、`hardware_reached` 在 L2-05 永远为 None。
 - C1-C6 不出现 mode、accepted、raw gate fields。
+- 发布失败追因矩阵（deploy_060，构造层不可违反）：
+  - `PUBLISHED / OBSERVED / BLOCKED`：`failure_stage` 与 `failed_topic` 必须为 `None`；`BLOCKED` 保留 permit `reason_code`。
+  - `REJECTED`：`reason_code` 非空，`failure_stage="safety"`，`failed_topic=None`。
+  - `FAILED / PARTIAL`：`reason_code` 非空，`failure_stage` 精确；I/O 失败时 `failed_topic` 精确到 public topic/label（`policy_publish` / `command_publish` 必须带 `failed_topic`，`command_build` 必须 `None`）。
+  - `PARTIAL` 的 `failure_stage` 必须为 `"command_publish"`。
+  - 每个 stage 必须在失败发生点显式记录，禁止通过 outcome 反推。
 
 ## 5. 输入、输出与副作用
 

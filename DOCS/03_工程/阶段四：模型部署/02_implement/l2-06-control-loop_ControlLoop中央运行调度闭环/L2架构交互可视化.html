@@ -1,15 +1,1093 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>L2-06 ControlLoop</title><style>
-body{font:14px system-ui;margin:auto;max-width:1100px;padding:20px}.view{display:none;border:1px solid #ddd;padding:12px}.tabs,label{margin:5px}input{position:absolute;opacity:0}#v1:checked~.views .boundary,#v2:checked~.views .pi05map,#v3:checked~.views .blueprint,#v4:checked~.views .acceptance{display:block}.reading-path,.src{color:#667085}.lead{font-weight:600}.figure,details,.io-module,.classbox{border:1px solid #ddd;padding:8px;margin:8px 0}.io-flow{display:flex;gap:9px}.io-col{flex:1}.io-arrow{align-self:center}.io-card{margin:6px}.pipe,.trace,.tree,.term{padding:8px;background:#f4f3ff}.ovtab,.data-table,.trtab{width:100%;border-collapse:collapse;margin:8px 0}.ovtab th,.ovtab td,.data-table th,.data-table td,.trtab th,.trtab td{border:1px solid #ddd;padding:5px}.lpane{display:block;border:1px solid #ddd;padding:7px;margin:6px}.mu{display:grid;grid-template-columns:90px 1fr}.fn{display:block}.vfy-item{border:1px solid #ddd;padding:8px;margin:7px}.t-row{display:grid;grid-template-columns:70px 220px 1fr}.t-loc{margin-left:30px;color:#b42318}.trtab td.mu{display:block}</style></head><body>
-<h1>L2-06 ControlLoop 中央运行调度闭环</h1><p>HTML 仅供人类理解；agent_context 是 L3 权威。</p>
-<input id="v1" name="tab" type="radio" checked><input id="v2" name="tab" type="radio"><input id="v3" name="tab" type="radio"><input id="v4" name="tab" type="radio"><nav class="tabs"><label for="v1">功能边界</label><label for="v2">Pi0.5 如何运作</label><label for="v3">开发蓝图</label><label for="v4">人类验收标准</label></nav><div class="views">
-<section class="view boundary" data-agent-source="agent_context/01_L2功能边界.md#运行责任与边界"><div class="reading-path">消费→调度→产出，细节见维度3</div><p class="lead">tick 收结果、投请求、直取单步、调用安全与发布；不做推理、平滑或硬件适配。</p><div class="figure"><div class="io-flow"><div class="io-col input"><details class="io-card"><summary>latest_observation <span class="io-src">L2-02</span></summary><div class="io-body">ObservationSnapshot；不持有历史。<details class="nested-detail">L2-02 保持所有权。</details></div></details></div><div class="io-arrow">→</div><div class="io-col"><div class="io-module"><code>ControlLoop.tick(now) → RuntimeMetrics</code><div class="pipe">result→validate→request→cursor→safety→publish/fallback</div></div></div><div class="io-arrow">→</div><div class="io-col output"><details class="io-card ok"><summary>safe action / fallback <span class="io-src">L2-05</span></summary><div class="io-body">16D action 与 reason。<details class="nested-detail">topic 与 hardware gate 属于 L2-05。</details></div></details></div></div></div><p class="src">权威来源：agent_context/01_L2功能边界.md#运行责任与边界</p></section>
-<section class="view pi05map" data-agent-source="agent_context/02_pi05源码3.5层微元拆解.md#源码证据与复用结论"><div class="reading-path">Pi0.5 结构参考</div><p class="lead">复用 timer、latest queue 与 cursor 结构，不复用融合策略。</p><div class="figure"><svg viewBox="0 0 100 30"><path d="M5 15H95" stroke="black"/></svg></div><details class="dict"><summary>术语</summary>latest-only 与 cursor。</details><div class="flow">收 result → 投 request → 直取 action → safety</div><div class="trace">tick → queues → chunk → output</div><div class="tree">control_loop.py / shared_buffer.py / node.py</div><p class="src">权威来源：agent_context/02_pi05源码3.5层微元拆解.md#源码证据与复用结论</p></section>
-<section class="view blueprint" data-agent-source="agent_context/03a_功能微元总览与组织结构.md#运行时调用树"><div class="reading-path">图①调用、图②微元、图③落点</div><p class="lead">A1 持有跨 tick 状态；失败进入 fallback，不写硬件。</p><div class="figure"><svg viewBox="0 0 500 80"><path d="M10 10H480" stroke="purple" stroke-dasharray="5 4"/><path d="M30 40H300" stroke="blue"/><path d="M300 40V70H450" stroke="red" stroke-dasharray="5 4"/><text x="20" y="35">① timer 编排 → ② tick 编排 → ③ safety/publish</text></svg></div><h3>图② A/B/C：03a_功能微元总览与组织结构.md</h3><table class="ovtab"><tr class="layer-head A"><th>编号</th><th>名称</th><th>类型</th><th>基础介绍</th></tr><tr><td>A1</td><td>ControlLoop</td><td>class</td><td>状态打包</td></tr></table><table class="ovtab"><tr class="layer-head B"><th>编号</th><th>名称</th><th>类型</th><th>基础介绍</th></tr><tr><td>B1</td><td>tick</td><td>编排</td><td>调度</td></tr></table><table class="ovtab"><tr class="layer-head C"><th>编号</th><th>名称</th><th>类型</th><th>基础介绍</th></tr><tr><td>C1-C5</td><td>状态/验证</td><td>原子</td><td>数据与更新</td></tr></table><h3>图③ 六层落点</h3><div class="lpick">
-<input name="layer" type="radio"><input name="layer" type="radio"><input name="layer" type="radio"><input name="layer" type="radio"><input name="layer" type="radio"><input name="layer" type="radio">
-<div class="ltabs">types/config/repo/service/runtime/ui</div>
-<div class="lpane">types 无：复用公共对象。</div><div class="lpane">config 无：复用 DeployConfig。</div><div class="lpane">repo 无：不读外部资源。</div><div class="lpane">service 无：复用 L2-04/L2-05。</div><div class="lpane"><article class="classbox"><b>runtime ControlLoop</b><div class="mu"><span>数据</span><div><table class="data-table"><tr><th>变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr><tr><td>cursor</td><td>跨 tick 字段</td><td>int</td></tr></table></div></div><span class="fn">计算函数：验证 chunk，纯 RAM。</span><span class="fn">内部状态更新函数：替换 chunk、递增 cursor。</span><span class="fn">编排函数：tick 失败进入 fallback。</span></article></div><div class="lpane"><article class="classbox"><b>ui ActDeployNode</b><span class="fn">数据读写函数：timer 调 tick，发布 status。</span></article></div>
-<div class="mu-list"></div>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L2-06 ControlLoop 中央运行调度闭环 · 架构交互可视化</title>
+<style>
+:root{
+  --bg:#f6f7f9;--ink:#1f2937;--muted:#667085;--line:#d0d5dd;--panel:#ffffff;
+  --config:#2563eb;--types:#0f766e;--repo:#7c3aed;--warn:#b42318;--ok:#047857;
+  --ctrl:#344054;--pi:#c2410c;--grey:#98a2b3;--yellow:#b54708;
+  --types-bg:#ecfdf5;--config-bg:#eff6ff;--repo-bg:#f5f3ff;--warn-bg:#fef2f2;--ok-bg:#ecfdf5;--grey-bg:#f2f4f7;--pi-bg:#fff7ed;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.page{max-width:1240px;margin:0 auto;padding:22px}
+header{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start;margin-bottom:14px}
+@media(max-width:820px){header{grid-template-columns:1fr}}
+h1{margin:0 0 6px;font-size:26px;line-height:1.2}
+h2{margin:0 0 6px;font-size:19px}
+h3{margin:14px 0 6px;font-size:15px}
+h4{margin:10px 0 4px;font-size:14px;color:var(--ctrl)}
+p{margin:0 0 8px;line-height:1.65}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.subtitle{color:var(--muted);max-width:820px}
+.note{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:11px 12px;color:var(--muted);font-size:12.5px;line-height:1.55}
+.note b{color:var(--ink)}
+
+input[name=tab]{position:absolute;opacity:0;pointer-events:none}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.tabs label{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:9px 13px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.tabs label .n{display:inline-flex;width:18px;height:18px;border-radius:999px;background:var(--grey-bg);color:var(--muted);font-size:11px;align-items:center;justify-content:center;font-weight:700}
+#v1:checked~.tabs label[for=v1]{background:var(--repo);color:#fff;border-color:transparent}
+#v2:checked~.tabs label[for=v2]{background:var(--pi);color:#fff;border-color:transparent}
+#v3:checked~.tabs label[for=v3]{background:var(--repo);color:#fff;border-color:transparent}
+#v4:checked~.tabs label[for=v4]{background:var(--ctrl);color:#fff;border-color:transparent}
+#v1:checked~.tabs label[for=v1] .n,#v2:checked~.tabs label[for=v2] .n,#v3:checked~.tabs label[for=v3] .n,#v4:checked~.tabs label[for=v4] .n{background:rgba(255,255,255,.25);color:#fff}
+
+.views>section{display:none}
+#v1:checked~.views .boundary,#v2:checked~.views .pi05map,#v3:checked~.views .blueprint,#v4:checked~.views .acceptance{display:block}
+
+.view{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.lead{color:var(--muted);margin:0 0 12px}
+.figure{border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:10px;margin-bottom:12px;overflow:auto}
+svg{width:100%;min-width:700px;height:auto;display:block}
+.box{fill:#fff;stroke:var(--line);stroke-width:1.4}
+.band{stroke:none}
+.title{font-size:13.5px;font-weight:760;fill:var(--ink)}
+.sub{font-size:11.5px;fill:var(--muted)}
+.edge{fill:none;stroke:#475467;stroke-width:1.8;marker-end:url(#arrow6)}
+.ctl{stroke:var(--ctrl);stroke-dasharray:4 4}
+.fedge{stroke:var(--warn)}
+.io{stroke:var(--ok)}
+.elabel{font-size:11px;fill:#475467}
+
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:8px;background:#fff;padding:12px;transition:box-shadow .15s,transform .15s}
+.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-1px)}
+.card h3{margin-top:0}
+.card.types{border-left-color:var(--types)}
+.card.config{border-left-color:var(--config)}
+.card.repo{border-left-color:var(--repo)}
+.card.ok{border-left-color:var(--ok)}
+.card.warn{border-left-color:var(--warn)}
+.card.pi{border-left-color:var(--pi)}
+.card.grey{border-left-color:var(--grey);background:var(--grey-bg)}
+.card.yellow{border-left-color:var(--yellow);background:#fffbeb}
+.card ul{margin:6px 0 0;padding-left:18px;color:var(--muted);line-height:1.6;font-size:13px}
+.card p{font-size:13px;color:var(--muted);line-height:1.65}
+
+.badge{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:600}
+.badge.layer{background:var(--grey-bg);color:var(--ctrl)}
+.badge.struct{background:var(--config-bg);color:var(--config)}
+.badge.ref{background:#fff7ed;color:var(--yellow)}
+
+.callout{border:1px solid #fedf89;background:#fffbeb;color:#7a5c00;border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.6;font-size:13px}
+.callout.warn{border-color:#fecdca;background:var(--warn-bg);color:#912018}
+.callout.pi{border-color:#fed7aa;background:var(--pi-bg);color:#9a3412}
+.callout.ok{border-color:#a7f3d0;background:var(--ok-bg);color:#065f46}
+.src{color:var(--muted);font-size:12px;margin:10px 0 0}
+.src code{color:var(--repo)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:12px}
+tr:nth-child(even) td{background:#fafbfc}
+td .okc{color:var(--ok);font-weight:600}
+td .errc{color:var(--warn);font-weight:600}
+
+.reading-path{font-size:11.5px;color:var(--muted);margin:-6px 0 10px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.reading-path a{color:var(--config);text-decoration:none;font-weight:600}
+.reading-path a:hover{text-decoration:underline}
+
+.dict{width:100%}
+.dict td:first-child{width:24%;font-weight:600;color:var(--ctrl);font-family:ui-monospace,monospace;font-size:12.5px;vertical-align:top}
+.dict td{font-size:13px;line-height:1.65}
+
+/* 维度2 流程步骤 */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:6px 0}
+@media(max-width:980px){.flow{grid-template-columns:1fr}}
+.step{background:#fff;border:1px solid var(--line);border-top:4px solid var(--config);border-radius:8px;padding:16px 14px;position:relative;font-size:13px}
+.step.s1{border-top-color:var(--repo)}
+.step.s2{border-top-color:var(--config)}
+.step.s3{border-top-color:var(--yellow)}
+.step.s4{border-top-color:var(--ok)}
+.step .no{position:absolute;top:-12px;left:12px;background:var(--ctrl);color:#fff;width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.step h4{margin:4px 0 6px;color:var(--ink)}
+.step .what{font-size:12.5px;color:var(--muted);line-height:1.7}
+.arrow-r{display:flex;align-items:center;justify-content:center;color:var(--grey);font-size:20px}
+@media(min-width:981px){.arrow-r{padding:0 2px}}
+
+.trace{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 20px;font-family:ui-monospace,monospace;font-size:13px;line-height:2.2;overflow:auto;letter-spacing:.3px}
+.trace .ln{color:#64748b;font-weight:700;margin-right:6px}
+.trace .key{color:#7dd3fc}
+.trace .val{color:#fde68a}
+.trace .cmt{color:#64748b}
+.trace .ok{color:#86efac}
+.trace .err{color:#fca5a5}
+.trace .gap{display:block;height:8px}
+
+/* 源码树 */
+.tree{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:14px 18px;font-family:ui-monospace,monospace;font-size:12.5px;line-height:1.9;overflow:auto;margin:8px 0}
+.tree .t-root{color:#fde68a;font-weight:700}
+.tree .t-dir{color:#7dd3fc}
+.tree .t-file{color:#e2e8f0}
+.tree .t-cmt{color:#64748b}
+.tree .t-key{color:#fca5a5;font-weight:600}
+.tree .t-ok{color:#86efac}
+
+/* 维度3 六层单选 */
+.lpick input{position:absolute;opacity:0;pointer-events:none}
+.lpick .ltabs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 12px}
+@media(max-width:780px){.lpick .ltabs{grid-template-columns:repeat(3,1fr)}}
+.lpick .ltabs label{border:1px solid var(--line);border-radius:8px;padding:12px 8px;text-align:center;font-size:13px;cursor:pointer;background:#fff;color:var(--muted);display:block;transition:all .12s}
+.lpick .ltabs label b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+.lpick .ltabs label.has{border-color:var(--repo)}
+.lpick .ltabs label.none{border-color:var(--line);background:var(--grey-bg)}
+.lpick .lpane{display:none;border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:14px}
+.lpick .lpane h4{margin:0 0 6px;color:var(--repo)}
+.lpick .lpane.none-pane h4{color:var(--ctrl)}
+#l-types:checked~.lp-types,
+#l-config:checked~.lp-config,
+#l-repo:checked~.lp-repo,
+#l-service:checked~.lp-service,
+#l-runtime:checked~.lp-runtime,
+#l-ui:checked~.lp-ui{display:block}
+/* 有产物层选中色 = 该层强调色（§7：runtime/ui → repo 紫；无产物层一律灰）*/
+#l-runtime:checked~.ltabs label[for=l-runtime]{background:var(--repo);border-color:var(--repo);color:#fff}
+#l-runtime:checked~.ltabs label[for=l-runtime] b{color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui]{background:var(--repo);border-color:var(--repo);color:#fff}
+#l-ui:checked~.ltabs label[for=l-ui] b{color:#fff}
+#l-types:checked~.ltabs label[for=l-types],
+#l-config:checked~.ltabs label[for=l-config],
+#l-repo:checked~.ltabs label[for=l-repo],
+#l-service:checked~.ltabs label[for=l-service]{background:var(--grey);border-color:var(--grey);color:#fff}
+#l-types:checked~.ltabs label[for=l-types] b,
+#l-config:checked~.ltabs label[for=l-config] b,
+#l-repo:checked~.ltabs label[for=l-repo] b,
+#l-service:checked~.ltabs label[for=l-service] b{color:#fff}
+
+/* class 封装拆解卡 */
+.classbox{border:1px solid var(--line);border-left:4px solid var(--repo);border-radius:8px;background:#fff;padding:12px;margin:8px 0}
+.classbox.rt{border-left-color:var(--repo)}
+.classbox.ui{border-left-color:var(--repo)}
+.classbox h5{margin:0 0 4px;font-size:13.5px;color:var(--repo);font-family:ui-monospace,monospace}
+.classbox .role{font-size:12px;color:var(--muted);margin:0 0 8px}
+.mu-list{display:grid;gap:6px;margin-top:6px}
+.mu{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:6px}
+.mu .kind{font-weight:700;text-align:right}
+.mu .kind.data{color:var(--types)}
+.mu .kind.calc{color:var(--config)}
+.mu .kind.io{color:var(--repo)}
+.mu .kind.orch{color:var(--yellow)}
+.mu .kind.state{color:#92400e}
+.mu .desc{color:var(--muted);line-height:1.6}
+.mu .desc .fn{display:block;margin:0 0 5px}
+.mu .desc .fn:last-child{margin-bottom:0}
+
+/* 排版铁律#4 — 数据微元字段表：3 列 变量名/内部存储结构/内部存储的数据类型 */
+.mu .desc .data-table{width:100%;border-collapse:collapse;font-size:11.5px;margin:2px 0}
+.mu .desc .data-table th,.mu .desc .data-table td{border:1px solid var(--line);padding:4px 7px;text-align:left;vertical-align:top;line-height:1.5}
+.mu .desc .data-table th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:10.5px}
+.mu .desc .data-table td:first-child{font-family:ui-monospace,monospace;color:var(--repo);white-space:nowrap}
+.mu .desc .data-table td:nth-child(3){font-family:ui-monospace,monospace;font-size:11px;color:var(--repo)}
+
+/* 非数据微元通用表格 */
+.mutab{width:100%;border-collapse:collapse;font-size:11.5px;margin:2px 0}
+.mutab th,.mutab td{border:1px solid var(--line);padding:3px 6px;text-align:left;vertical-align:top}
+.mutab th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:10.5px;white-space:nowrap}
+.mutab td{color:var(--muted);line-height:1.5;font-size:11px}
+.mutab td:first-child{font-family:ui-monospace,monospace;font-size:11px;white-space:nowrap}
+
+/* A/B/C 三层功能模块总览表（图②） */
+.ovtab{width:100%;border-collapse:collapse;font-size:12px;margin:2px 0 8px}
+.ovtab th,.ovtab td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;line-height:1.55}
+.ovtab th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:11px;white-space:nowrap}
+.ovtab td.id{font-family:ui-monospace,monospace;color:var(--repo);font-weight:700;white-space:nowrap}
+.ovtab td.name{font-family:ui-monospace,monospace;color:var(--ink);white-space:nowrap}
+.ovtab td.kind{font-size:11px;color:var(--config);white-space:nowrap}
+.ovtab tr.layer-head th{font-size:12.5px}
+.ovtab tr.layer-head.A th{background:var(--repo-bg);color:var(--repo)}
+.ovtab tr.layer-head.B th{background:#fffbeb;color:var(--yellow)}
+.ovtab tr.layer-head.C th{background:var(--config-bg);color:var(--config)}
+
+/* 消费→模块→产出 流式布局 */
+.io-flow{display:flex;align-items:flex-start;gap:0;margin:0}
+.io-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.io-col.input{flex:1.2}
+.io-col.output{flex:1}
+.io-arrow{display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--grey);padding:0 10px;flex-shrink:0;align-self:center;margin-bottom:20px}
+.io-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-bottom:2px}
+.io-card{border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:8px;background:#fff;padding:0;transition:box-shadow .15s}
+.io-card.types{border-left-color:var(--types)}
+.io-card.config{border-left-color:var(--config)}
+.io-card.repo{border-left-color:var(--repo)}
+.io-card.ok{border-left-color:var(--ok)}
+.io-card>summary{cursor:pointer;font-weight:700;font-size:13.5px;padding:10px 12px;display:flex;align-items:center;gap:8px;list-style:none;color:var(--ink)}
+.io-card>summary::-webkit-details-marker{display:none}
+.io-card>summary::before{content:"▸";color:var(--muted);font-size:11px;transition:transform .15s;flex-shrink:0}
+.io-card[open]>summary::before{transform:rotate(90deg)}
+.io-card>summary code{font-family:ui-monospace,monospace;font-size:13px;color:var(--repo)}
+.io-src{font-size:10.5px;font-weight:400;color:var(--muted);background:var(--grey-bg);border-radius:999px;padding:1px 7px;margin-left:auto}
+.io-body{padding:0 12px 12px;border-top:1px dashed var(--line);font-size:12.5px}
+.io-body table{width:100%;border-collapse:collapse;font-size:11.5px;margin:8px 0}
+.io-body table th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:10.5px;padding:4px 7px;border:1px solid var(--line);text-align:left}
+.io-body table td{padding:4px 7px;border:1px solid var(--line);font-size:11.5px;vertical-align:top;color:var(--muted);line-height:1.55}
+.io-body table td:first-child{font-family:ui-monospace,monospace;white-space:nowrap;color:var(--ctrl);font-weight:600}
+.io-body table td:nth-child(2){font-family:ui-monospace,monospace;font-size:11px;color:var(--repo)}
+.io-module{border:2.5px solid var(--repo);border-radius:10px;background:#fcfdff;padding:14px;text-align:center}
+.io-module .pipe{text-align:left;margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.nested-detail{border:1px solid var(--line);border-radius:6px;margin:6px 0}
+.nested-detail>summary{cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;background:var(--grey-bg);border-radius:6px;list-style:none;color:var(--ctrl)}
+.nested-detail>summary::-webkit-details-marker{display:none}
+.nested-detail>summary::before{content:"▸ ";color:var(--muted)}
+.nested-detail[open]>summary::before{content:"▾ "}
+.nested-detail .body{padding:8px 10px;font-size:11.5px}
+
+/* 维度4 验收卡 */
+.vfy{margin:10px 0}
+.vfy-item{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.vfy-item .num{width:28px;height:28px;border-radius:999px;background:var(--ctrl);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:2px}
+.vfy-item .body{min-width:0}
+.vfy-item .do{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 6px}
+.vfy-item .cmd-block{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:8px 12px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;display:block;margin:6px 0}
+.vfy-item .cmd-block .c{color:#94a3b8}
+.vfy-item .result{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+@media(max-width:700px){.vfy-item .result{grid-template-columns:1fr}}
+.vfy-item .pass{border:1px solid #a7f3d0;border-radius:6px;background:var(--ok-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+.vfy-item .pass::before{content:"✅ 通过 → ";font-weight:700;color:var(--ok)}
+.vfy-item .fail{border:1px solid #fecdca;border-radius:6px;background:var(--warn-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+.vfy-item .fail::before{content:"❌ 失败 → ";font-weight:700;color:var(--warn)}
+.vfy-item .why{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
+.vfy-item .why a{color:var(--config);font-weight:600;text-decoration:none}
+.vfy-item .why a:hover{text-decoration:underline}
+
+/* 终端范例 */
+.term{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 18px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;margin:8px 0}
+.term .t-hdr{color:#94a3b8;font-weight:700;margin-bottom:10px}
+.term .t-grp{color:#7dd3fc;font-weight:700;margin:12px 0 5px}
+.term .t-grp:first-of-type{margin-top:0}
+.term .t-row{display:grid;grid-template-columns:72px 250px 1fr;gap:6px;line-height:2.0;align-items:baseline}
+.term .t-row .ok{color:#86efac;font-weight:700}
+.term .t-row .fail{color:#fca5a5;font-weight:700}
+.term .t-row .blk{color:#fde68a;font-weight:700}
+.term .t-row .lbl{color:#e2e8f0;overflow:hidden;text-overflow:ellipsis}
+.term .t-row .note{color:#64748b}
+.term .t-sum{color:#e2e8f0;font-weight:700;margin-top:4px}
+/* FAIL 定位子块：独立缩进块，每条 display:block 独占一行 */
+.term .t-loc{background:rgba(252,165,165,.08);border-left:3px solid #fca5a5;border-radius:4px;padding:6px 10px;margin:2px 0 6px 40px;font-size:11.5px;line-height:1.8}
+.term .t-loc span{display:block;color:#cbd5e1}
+.term .t-loc .lk{color:#fca5a5;font-weight:700;margin-right:4px}
+
+/* 翻译表微元定位链：强制 display:block 覆盖全局 .mu grid，防撞 */
+.trtab{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.trtab th,.trtab td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.trtab th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:11.5px}
+.trtab td.lbl{font-family:ui-monospace,monospace;color:var(--repo);font-size:12px;white-space:nowrap}
+.trtab td.lyr{font-weight:600;white-space:nowrap}
+.trtab tr.runtime td.lyr{color:var(--repo)}
+.trtab tr.ui td.lyr{color:var(--repo)}
+.trtab tr.boundary td.lyr{color:var(--yellow)}
+.trtab td.mu{display:block;font-size:11.5px;color:var(--muted);line-height:1.7}
+.trtab td.mu .fpath{font-family:ui-monospace,monospace;color:var(--repo);font-size:11.5px;display:block}
+.trtab td.mu .cls{color:var(--ctrl);font-size:12px;display:block}
+.trtab td.mu .cls b{font-family:ui-monospace,monospace;color:var(--ink)}
+.trtab td.mu .kindtag{display:inline-block;border-radius:4px;padding:0 5px;font-size:10.5px;font-weight:700;margin-left:4px}
+.trtab td.mu .kindtag.data{background:var(--types-bg);color:var(--types)}
+.trtab td.mu .kindtag.calc{background:var(--config-bg);color:var(--config)}
+.trtab td.mu .kindtag.io{background:var(--repo-bg);color:var(--repo)}
+.trtab td.mu .kindtag.orch{background:#fffbeb;color:var(--yellow)}
+.trtab td.mu .kindtag.state{background:#fef3c7;color:#92400e}
+.trtab td.pf .pp{color:var(--ok);font-size:12px;display:block}
+.trtab td.pf .fp{color:var(--warn);font-size:12px;display:block}
+.trtab td.pf .blk{color:var(--yellow);font-size:12px;display:block}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>L2-06 · ControlLoop 中央运行调度闭环</h1>
+      <p class="subtitle">由 ROS timer 以 <code>control_hz</code> 驱动的唯一中央调度点：<code>ControlLoop.tick()</code> 收异步 chunk → 投推理 request → 按 cursor 直取单步 raw action → 交接 L2-04 安全 → 交 L2-05 发布或 fallback，并记录 RuntimeMetrics。tick 不等待模型推理，request/result 都是 latest-only 异步交接。<b>不做推理、平滑、融合、RTC 对齐或硬件适配。</b><br><code>l2_id: l2-06-control-loop</code></p>
+    </div>
+    <div class="note">
+      <b>本页只是人类快速浏览入口，不作为 L3 生成依据。</b><br>
+      权威细节见 <code>agent_context/00_INDEX.md</code> 及其路由的 Markdown。HTML 与 MD 冲突时，以 MD 为准。
+    </div>
+  </header>
+
+  <input id="v1" name="tab" type="radio" checked>
+  <input id="v2" name="tab" type="radio">
+  <input id="v3" name="tab" type="radio">
+  <input id="v4" name="tab" type="radio">
+
+  <nav class="tabs" aria-label="维度视图">
+    <label for="v1"><span class="n">1</span>功能边界</label>
+    <label for="v2"><span class="n">2</span>Pi0.5 如何运作</label>
+    <label for="v3"><span class="n">3</span>开发蓝图</label>
+    <label for="v4"><span class="n">4</span>人类验收标准</label>
+  </nav>
+
+  <div class="views">
+
+    <!-- ============ 维度 1 · 功能边界 ============ -->
+        <section class="view boundary" data-agent-source="agent_context/01_L2功能边界.md#运行责任与真实接口">
+      <h2>维度 1 · 功能边界</h2>
+      <div class="reading-path">📖 阅读路径：下图展示 L2-06 拥有什么、消费什么、产出什么 → fallback 语义（产出卡内展开）→ 详细 A/B/C 微元拆解见<a href="#" onclick="document.getElementById('v3').click()">维度3 · 开发蓝图</a></div>
+      <p class="lead">L2-06 是 ACT 部署程序的<b>唯一中央调度点</b>。被 ROS timer 以 <code>control_hz</code> 同步调用 <code>ControlLoop.tick(*, monotonic_s, ros_time_s, command_permit)</code>，不等待模型推理（worker 异步生产、result latest-only 交接）。关键事实——<b>worker / queue / request / result / cursor / fallback / metrics / permit-gate 全部由 L2-06 自己新增并拥有</b>；它只通过 L2-02～05 的真实公共接口协作，<b>不做推理 / 安全算法 / topic 适配 / 硬件 SDK / action 平滑或融合</b>。</p>
+
+      <h3>图① 拥有 + 消费 → 功能模块 → 产出</h3>
+      <div class="figure">
+        <div class="io-flow">
+
+          <!-- ======== 左列：拥有 + 消费 ======== -->
+          <div class="io-col input">
+            <div class="io-label">拥有 + 消费（上游注入 / L2-06 自有）</div>
+
+            <details class="io-card config">
+              <summary><code>DeployConfig / RuntimeConfig</code><span class="io-src">L2-01 注入</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-01 创建并校验后，由 <code>ActDeployNode</code> 在装配阶段注入。L2-06 只读引用，不读 YAML、不定义默认值、不新增 schema。</p>
+                <p style="font-size:12px;color:var(--ctrl);font-weight:700;margin:10px 0 4px">L2-06 实际消费的字段：</p>
+                <table>
+                  <tr><th>字段</th><th>使用者</th><th>L2-06 用途</th></tr>
+                  <tr><td>runtime.control_hz</td><td>ActDeployNode timer</td><td>UI timer 节拍（1/control_hz）</td></tr>
+                  <tr><td>runtime.chunk_size / execute_horizon / prefetch_steps</td><td>ControlLoop / C13-C15</td><td>chunk 行数、正常消费上限、prefetch 触发</td></tr>
+                  <tr><td>runtime.max_observation_age_sec</td><td>ControlLoop</td><td>observation freshness 校验（不混 action age）</td></tr>
+                  <tr><td>runtime.max_inference_requests / max_pending_chunks</td><td>LatestQueue / A4</td><td>第一版容量严格为 1</td></tr>
+                  <tr><td>runtime.fallback_policy</td><td>B8 _apply_fallback</td><td>hold_last_action / continue_old_chunk / safe_stop</td></tr>
+                  <tr><td>command_output.command_output_enabled</td><td>A4 只读交叉校验</td><td>启动期真实 command 总开关，不能热切换</td></tr>
+                </table>
+                <details class="nested-detail">
+                  <summary>不由 L2-06 消费的字段（归其他 L2）</summary>
+                  <div class="body">
+                    <table>
+                      <tr><th>字段类别</th><th>所有者</th><th>原因</th></tr>
+                      <tr><td>bundle / checkpoint / normalizer</td><td>L2-01 repo</td><td>资源 I/O 由 L2-01 startup factory 负责</td></tr>
+                      <tr><td>inference_hz</td><td>L2-03 worker</td><td>推理限速属 InferenceWorker</td></tr>
+                      <tr><td>state_dim / action_dim / camera keys</td><td>L2-01/02/03</td><td>维度/图像合同由上游保证</td></tr>
+                      <tr><td>safety.*</td><td>L2-04</td><td>L2-06 只调 filter_action，不读限值</td></tr>
+                    </table>
+                  </div>
+                </details>
+              </div>
+            </details>
+
+            <details class="io-card types">
+              <summary><code>ObservationBuffer.latest_observation(max_age_s)</code><span class="io-src">L2-02</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-02 写入 <code>ObservationSnapshot</code>（frozen、owned CHW float32 [0,1]、monotonic capture time）。L2-06 每 tick 直取最新一帧——<b>不持有历史</b>。返回 <code>None</code> 表示无满足 freshness 的帧。</p>
+                <p style="font-size:12px;color:var(--ctrl);font-weight:700;margin:10px 0 4px">L2-06 用途：</p>
+                <table>
+                  <tr><th>用途</th><th>说明</th></tr>
+                  <tr><td>投推理 request</td><td>有 fresh observation 时由 B5 打包成 InferenceRequest 写 request queue</td></tr>
+                  <tr><td>交 L2-04 作 anchor</td><td>safety filter 的 previous action 缺失时，observation 是 fallback anchor</td></tr>
+                  <tr><td>二道 freshness 防御</td><td>tick 对返回值做 capture/time/age 校验，仅允许一个 control period 的并发未来 capture 延后</td></tr>
+                </table>
+                <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">L2-06 不重新编码、不订阅 topic、不持有 observation 历史。</p>
+              </div>
+            </details>
+
+            <details class="io-card repo">
+              <summary><code>ActInferenceService.predict_action_chunk(observation)</code><span class="io-src">L2-03</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-03 同步接口，可能抛异常。L2-06 的 <code>InferenceWorker</code>（A3）串行调用它，把成功/异常都转成 <code>InferenceResult</code>。L2-03 不提供 thread / queue / request id / timestamp / metrics / cursor。</p>
+                <table>
+                  <tr><th>对象</th><th>类型</th><th>说明</th></tr>
+                  <tr><td>observation</td><td>ObservationSnapshot</td><td>B2 同步调用入参</td></tr>
+                  <tr><td>ActionChunk</td><td>L2-03 契约，<code>(N,16)</code> float32</td><td>成功返回，仅含 <code>actions</code></td></tr>
+                </table>
+                <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">推理 worker 与 queue 由 L2-06 新增加 worker 线程 + LatestQueue 承载，不是 L2-03。</p>
+              </div>
+            </details>
+
+            <details class="io-card repo">
+              <summary><code>SafetyGuard.filter_action</code> + <code>ActionPublisher.publish</code><span class="io-src">L2-04/L2-05</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-06 <b>只调用、不实现</b>这两个能力。B7 顺序：candidate → filter_action → SafetyResult → build ActionPublishRequest → publish → outcome reducer。</p>
+                <table>
+                  <tr><th>对象</th><th>真实签名</th><th>L2-06 调用</th></tr>
+                  <tr><td>SafetyGuard</td><td>filter_action(candidate, previous_safe_action=, latest_observation=)</td><td>B7 → SafetyResult(PASS/ADJUSTED/REJECTED)</td></tr>
+                  <tr><td>ActionPublisher</td><td>publish(ActionPublishRequest) -> ActionPublishResult</td><td>B7 构造 request，消费 6 种 outcome</td></tr>
+                </table>
+                <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">不存在 <code>filter()</code> / <code>publish_safe()</code> / <code>emit_fallback()</code> / <code>SafetyResult.accepted</code>；调用正常返回也不等于成功，必须归约 outcome。</p>
+              </div>
+            </details>
+
+            <details class="io-card config">
+              <summary><code>CommandPermitSource</code> + 双时钟<span class="io-src">注入</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">每 tick 由 UI（B9）从注入的 <code>CommandPermitSource</code> 读取 <code>CommandPermit</code>，连同 monotonic / ROS 时钟一起传入 <code>tick</code>。无来源时默认 deny，真机 Gate 为 BLOCKED。</p>
+                <table>
+                  <tr><th>输入</th><th>用途</th></tr>
+                  <tr><td>CommandPermit(allowed, reason_code)</td><td>逐 tick 授权 gate；禁用+allow=OBSERVED，启用+deny=BLOCKED</td></tr>
+                  <tr><td>monotonic_s / ros_time_s</td><td>age/限频用 monotonic；ROS time 仅要求 finite/非负</td></tr>
+                </table>
+              </div>
+            </details>
+          </div>
+
+          <div class="io-arrow">→</div>
+
+          <div class="io-col" style="flex:1.1">
+            <div class="io-label">功能模块</div>
+            <div class="io-module" style="padding:14px;text-align:center">
+              <p style="font-size:13.5px;font-weight:700;color:var(--repo);margin:0 0 4px;font-family:ui-monospace,monospace">ControlLoop.tick(*, monotonic_s, ros_time_s, command_permit)</p>
+              <p style="font-size:12px;color:var(--muted);margin:0 0 6px">→ ActionPublishResult 或 None（runtime 层，唯一中央调度入口）</p>
+              <p style="font-size:11.5px;color:var(--muted);margin:0;line-height:1.5">持有 active/pending chunk、cursor、in-flight、fallback、publish reducer、fault latch、start/stop。<br>不等待推理、不 import UI、不直接 ROS publish。</p>
+              <div class="pipe">
+                <p style="font-size:11.5px;color:var(--muted);margin:0 0 4px"><b>tick 状态机（最小编排）：</b></p>
+                <p style="font-size:11px;color:var(--ink);margin:0;line-height:1.7;font-family:ui-monospace,monospace">B4 收最新 result → C13 校验<br>C15 激活 pending / 每拍查 active age<br>读 observation → C14/B5 投 request<br>B6 选 normal candidate → B8 fallback（无 candidate）<br>B7 safety → C18 request → C19 6 结局归约<br>C20 写 /act/metrics</p>
+                <p style="font-size:11px;color:var(--config);margin:8px 0 0">不等待推理 · 任一 runtime port 异常锁存 fault · 详细拆解见 <a href="#" onclick="document.getElementById('v3').click()" style="color:var(--config);font-weight:600">维度3</a></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="io-arrow">→</div>
+
+          <div class="io-col output">
+            <div class="io-label">产出（交付下游 / L2-06 自有）</div>
+
+            <details class="io-card ok">
+              <summary><code>ActionPublishRequest + ActionPublishResult</code><span class="io-src">→ L2-05</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">L2-06 构造 <code>ActionPublishRequest</code>（action_id、SafetyResult、CommandPermit、双时钟）交给 L2-05，并归约 <code>ActionPublishResult.outcome</code>——返回正常不代表 driver 已接收。</p>
+                <table>
+                  <tr><th>outcome</th><th>触发</th><th>后续状态</th></tr>
+                  <tr><td>PUBLISHED</td><td>启用+allow+命令全成功</td><td>更新 previous，提交 cursor</td></tr>
+                  <tr><td>OBSERVED</td><td>禁用+allow（command-disabled 进程）</td><td>虚拟 previous，提交 cursor</td></tr>
+                  <tr><td>BLOCKED</td><td>启用+deny</td><td>清 previous+active，保留 COMMAND_BLOCKED</td></tr>
+                  <tr><td>REJECTED</td><td>safety REJECTED</td><td>清 active，保存 SAFETY_REJECTED</td></tr>
+                  <tr><td>PARTIAL</td><td>部分命令已发后失败</td><td>清全部 chunk，锁存 output fault</td></tr>
+                  <tr><td>FAILED</td><td>首个命令即失败 / 前置失败</td><td>清全部 chunk，锁存 output fault</td></tr>
+                </table>
+                <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">无 publish_safe / emit_fallback：safe-stop 是逐 tick fail-closed（不调 L2-05、不造全零 action）。</p>
+
+                <details class="nested-detail" open>
+                  <summary>图② fallback 语义（三种政策，非单一行为）</summary>
+                  <div class="body">
+                    <p style="font-weight:700;color:var(--warn);margin:4px 0 3px">fallback 进入条件</p>
+                    <p style="font-size:11.5px;color:var(--warn);margin:0 0 2px">· 无 fresh observation → 只记录 status/metrics，不产生 candidate</p>
+                    <p style="font-size:11.5px;color:var(--warn);margin:0 0 2px">· 等待首 chunk / 推理异常 / result 过期 / 乱序</p>
+                    <p style="font-size:11.5px;color:var(--warn);margin:0 0 2px">· safety REJECTED / BLOCKED / PARTIAL / FAILED</p>
+                    <p style="font-size:11px;color:#7a5c00;margin:6px 0 0"><b>关键：</b>非 safety 失败<b>不伪造 SafetyResult</b>，只写 L2-06 metrics；B8 是唯一解释 fallback 政策的微元；B6 只选 normal，永不允许跨 horizon。策略由 <code>fallback_policy</code> 决定：hold_last_action / continue_old_chunk / safe_stop。</p>
+                  </div>
+                </details>
+
+                <details class="nested-detail">
+                  <summary>图③ 负责 / 不负责（边界墙）</summary>
+                  <div class="body">
+                    <p style="font-weight:700;color:var(--types);margin:4px 0 3px">✓ 负责（中央调度 + 自有运行时）</p>
+                    <p style="font-size:11.5px;color:var(--muted);margin:0 0 6px">LatestQueue / InferenceWorker / InferenceRequest / InferenceResult / RuntimeMetrics（L2-06 新增并拥有）；active/pending/cursor、request in-flight、age、fallback 政策解释、publish outcome reducer、fault latch、start/stop 编排。</p>
+                    <p style="font-weight:700;color:var(--warn);margin:6px 0 3px">✗ 不负责（归其他 L2）</p>
+                    <p style="font-size:11.5px;color:var(--muted);margin:0">config/bundle/policy 文件读取（→ L2-01 repo）· ROS observation 回调（→ L2-02）· ACT batch / 模型前向（→ L2-03）· 通用 safety 算法（→ L2-04）· topic / hardware 格式适配（→ L2-05）· <b>action smoothing / 跨 chunk 融合 / RTC 对齐（第一版不做）</b>。</p>
+                  </div>
+                </details>
+
+                <p style="font-size:11px;color:var(--muted);margin:8px 0 0">真机动作永远受 L2-05 gate 管理；本 L2 的验证不等于真机通过。</p>
+              </div>
+            </details>
+
+            <details class="io-card ok">
+              <summary><code>/act/metrics</code> RuntimeMetricsSnapshot<span class="io-src">→ ROS</span></summary>
+              <div class="io-body">
+                <p style="color:var(--muted);margin:8px 0 4px">C20 把 <code>RuntimeMetricsSnapshot</code>（L2-06 自有指标，frozen copy）以 JSON 写 <code>/act/metrics</code>。L2-06 <b>不写</b> <code>/act/command/status</code>（由 L2-05 按每 action 真实发布事实写出）。</p>
+                <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">指标含 tick/fallback/inference error 计数、publish outcome counters、两类 fault latch、deferred fallback reason、orchestration reason、last error 等。</p>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </div>
+
+      <p class="src">权威来源：<code>agent_context/01_L2功能边界.md</code>（运行责任与真实接口 / 调度不变量 / fallback 语义 / 启动硬前置条件）、<code>agent_context/03_ACT微元设计与协作.md</code>（tick 精确接口 / 状态机）</p>
+    </section>
+
+    <!-- ============ 维度 2 · Pi0.5 如何运作 ============ -->
+        <section class="view pi05map" data-agent-source="agent_context/02_pi05源码3.5层微元拆解.md#源码证据">
+      <h2>维度 2 · Pi0.5 这部分是如何运作的</h2>
+      <div class="reading-path">📖 阅读路径：先懂 Pi0.5 的 timer / queue / worker 三件套结构可复用 → 看 tick 四步 → 看一次 tick 走完全流程（v2 接口）→ 看 Pi0.5 与 ACT 第一版的根本差异（worker 归属 / permit / 真实接口）→ ACT 怎么改见<a href="#" onclick="document.getElementById('v3').click()">维度3</a></div>
+      <p class="lead">这一维度只回答：<b>Pi0.5 部署代码里，负责中央调度的 ControlLoop 是怎么一步步跑起来的，以及哪些能复用、哪些与 ACT 第一版（source-aligned）冲突。</b>关键认知——可复用的是<b>结构</b>（timer + latest queue + cursor 骨架 + worker 线程模型），不可照搬的是<b>融合策略</b>（smoothstep / blend / pending-next chunk）和<b>接口形态</b>（ControlCommand.accepted / publish_safe）。ACT 第一版里，<b>worker / queue / request / result 全部归 L2-06 自有</b>，tick 多收一个 <code>CommandPermit</code>，且只调 L2-04/05 的真实公共接口。</p>
+
+      <div class="callout pi">这一节用<b>白话</b>讲。Pi0.5 的中央调度是一个叫 <code>ControlLoop</code> 的对象，由 ROS <code>timer</code> 周期性调它的 <code>tick()</code>，tick 不等模型，只跟两条"最新优先队列"打配合。ACT 第一版沿用这个骨架，但把 queue/worker 搬进 L2-06，并改接真实接口。</div>
+
+      <details open>
+        <summary>📖 术语词典（点开随时查）</summary>
+        <div class="body">
+        <table class="dict">
+          <tr><td>ControlLoop<br>（控制循环）</td><td>整个程序的"总指挥"。每来一个时钟节拍（tick），它按固定顺序收菜、下单、取货、安检、发货。本 L2 唯一中央调度点。</td></tr>
+          <tr><td>tick()</td><td>ControlLoop 的主方法。Pi0.5：<code>tick(now)</code>；ACT v2：<code>tick(*, monotonic_s, ros_time_s, command_permit)</code>——每拍多收一个由 UI 传入的 <code>CommandPermit</code> 作为授权 gate。</td></tr>
+          <tr><td>timer<br>（定时器）</td><td>ROS 提供的周期闹钟，按 <code>1/control_hz</code> 唤醒 UI node 的 <code>_control_tick()</code>，后者只调 <code>ControlLoop.tick()</code>。ACT UI 层只吸收 timer/装配边界。</td></tr>
+          <tr><td>latest-only queue<br>（最新优先队列）</td><td>新值覆盖旧值。Pi0.5 有 request/result 两条；ACT 第一版里这两条 queue（<code>LatestQueue[T]</code>）和背后的 worker（<code>InferenceWorker</code>）<b>都是 L2-06 新增并拥有</b>，不属于 L2-03。</td></tr>
+          <tr><td>cursor<br>（游标）</td><td>指向当前 chunk 里"该取第几步"的计数器。Pi0.5 有复杂的 blend/pending/next 机制；ACT 第一版简化为<b>按 cursor 直接取单步</b>，取完递增。</td></tr>
+          <tr><td>chunk<br>（动作块）</td><td>模型一次推理产出的一串连续动作（N 步 × 16D）。Pi0.5 是 26D state/14D action；ACT 是 16D/16D（TCP+gripper），<b>规格不搬运</b>。</td></tr>
+          <tr><td>blend / smoothstep<br>（融合）</td><td>Pi0.5 用 smoothstep_alpha + pending/next chunk 做跨块平滑过渡。这与 ACT 第一版边界<b>冲突</b>，第一版<b>不复用</b>。</td></tr>
+          <tr><td>InferenceWorker<br>（推理工人）</td><td>后台 daemon 线程，消费最新 request → 调模型 → 写最新 result。把 GPU 等待从 tick 移走。<b>ACT 第一版里属 L2-06（A3）</b>，串行调同步的 <code>ActInferenceService.predict_action_chunk</code>。</td></tr>
+          <tr><td>CommandPermit<br>（命令许可）</td><td>ACT 第一版新增：每 tick 由 UI 从注入的 <code>CommandPermitSource</code> 读入；禁用+allow=OBSERVED，启用+deny=BLOCKED。Pi0.5 无此概念。</td></tr>
+        </table>
+        </div>
+      </details>
+
+      <h3>Pi0.5 ControlLoop.tick 四步流程</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:6px">Pi0.5 的 tick 在 ROS timer 单线程里执行，任一步失败记 metrics 不崩溃，进 fallback。ACT 第一版沿用同一四步骨架，但接口与归属已改。</p>
+      <div class="flow">
+        <div class="step s1">
+          <span class="no">1</span>
+          <h4>收 result</h4>
+          <div class="what">从 result latest queue 取最新 chunk（Pi0.5 <code>_collect_result</code>；ACT <code>_collect_latest_result</code> B4，非阻塞）。<b>latest-only</b>：旧 chunk 被覆盖。结构复用，ACTIVE/PENDING 管理归 L2-06。</div>
+        </div>
+        <div class="step s2">
+          <span class="no">2</span>
+          <h4>投 request</h4>
+          <div class="what">若到了 prefetch 点且无 pending/in-flight，取 latest observation 打包成 <code>InferenceRequest</code> 写 request queue（ACT <code>_maybe_submit_inference</code> B5/C14）。<b>ACT 结构复用</b>；queue/worker 由 L2-06 自有。</div>
+        </div>
+        <div class="step s3">
+          <span class="no">3</span>
+          <h4>取 action</h4>
+          <div class="what">从 active chunk 按 cursor 取单步 raw action（Pi0.5 含 smoothstep/blend 融合；ACT <code>_take_cursor_action</code> C17，<b>去掉 blend</b>）。<b>ACT 不复用融合</b>，改为 cursor 直取独立 copy。</div>
+        </div>
+        <div class="step s4">
+          <span class="no">4</span>
+          <h4>安全 + 发布 + 记账</h4>
+          <div class="what">过 SafetyGuard → 构造 ActionPublishRequest → publish → 归约 outcome（ACT B7/C18/C19）。<b>ACT 不复用</b> <code>publish_safe</code>/<code>emit_fallback</code>/<code>ControlCommand.accepted</code>，改调 L2-04/05 真实接口并消费 6 种 outcome。</div>
+        </div>
+      </div>
+
+      <h3>跟一次 tick 走完全流程（Pi0.5 → ACT v2 对照）</h3>
+      <div class="trace">
+<span class="ln">①</span> <span class="cmt"># ActDeployNode._control_tick (B9) 被 ROS timer 唤醒（UI 层）</span>
+   control_loop.<span class="key">tick</span>(monotonic_s, ros_time_s, command_permit)  <span class="cmt"># 调 ControlLoop.tick (B3)，多收 CommandPermit</span>
+<span class="gap"></span>
+<span class="ln">②</span> <span class="cmt"># 收最新 result（B4，非阻塞；匹配 in-flight id 才清）</span>
+   result = self.<span class="key">_collect_latest_result</span>()              <span class="cmt"># C13 校验 success/error XOR、时间、age、shape</span>
+   <span class="key">if</span> result: self.<span class="key">_activate_pending</span>(result, monotonic_s)  <span class="cmt"># C15 激活 pending / 查 active age</span>
+<span class="gap"></span>
+<span class="ln">③</span> <span class="cmt"># 读 fresh observation（L2-02，返回 ObservationSnapshot|None）</span>
+   obs = self._observation_provider(max_age_s)
+<span class="gap"></span>
+<span class="ln">④</span> <span class="cmt"># 投推理 request（编排，C14 判定；L2-06 自有 worker/queue）</span>
+   <span class="key">if</span> self.<span class="key">_should_submit_inference</span>(obs):
+      req = <span class="ok">InferenceRequest(observation, request_id, submitted_at_s, trigger_cursor)</span>
+      request_queue.<span class="key">put_latest</span>(req)           <span class="cmt"># LatestQueue[T]，worker(A3) 在 L2-06 消费</span>
+<span class="gap"></span>
+<span class="ln">⑤</span> <span class="cmt"># 直取单步（C17，去掉 blend；返回独立 (16,) copy）</span>
+   candidate = self.<span class="key">_choose_candidate</span>(obs, monotonic_s)  <span class="cmt"># B6 normal-only；无 candidate 交 B8</span>
+<span class="gap"></span>
+<span class="ln">⑥</span> <span class="cmt"># 安全交接（L2-04 真实接口，不新编号关键词）</span>
+   safety = safety_guard.<span class="key">filter_action</span>(candidate.action,
+                                  previous_safe_action=previous,
+                                  latest_observation=obs)
+<span class="gap"></span>
+<span class="ln">⑦</span> <span class="cmt"># 发布（L2-05 真实接口；构造 request 交 publish）</span>
+   request = <span class="ok">build_action_publish_request(action_id, safety, command_permit, ros_time_s, monotonic_s)</span>
+   result = action_publisher.<span class="key">publish</span>(request)     <span class="cmt"># 返回 ActionPublishResult</span>
+   self.<span class="key">_apply_publish_outcome</span>(request, result, safety, candidate, monotonic_s)  <span class="cmt"># C19 归约 6 结局</span>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted)">注意：Pi0.5 在第④步还会算 <code>smoothstep_alpha()</code>、维护 pending/next chunk 做融合——ACT 第一版<b>整段删除</b>，cursor 直取。Pi0.5 的 <code>publish_safe</code>/<code>emit_fallback</code>/<code>ControlCommand.accepted</code> 在 ACT 第一版<b>不复用</b>，改为 <code>SafetyGuard.filter_action</code> + <code>ActionPublisher.publish</code> 并消费 <code>ActionPublishResult.outcome</code>。</p>
+
+      <h3>Pi0.5 调度源码树（本次盘点范围）</h3>
+      <div class="tree">
+<span class="t-root">pi05/</span> <span class="t-cmt"># 本次 L2-06 盘点的源码范围</span>
+├─ <span class="t-dir">deploy/src/pi05/deploy/runtime/</span>
+│  ├─ <span class="t-file">control_loop.py</span>          <span class="t-cmt"># ControlLoop / tick / fallback / is_action_chunk_usable / _next_raw_action</span> <span class="t-ok">结构复用</span>
+│  │                         <span class="t-cmt">#   :59-138,151-222 tick｜:316-333 fallback</span>
+│  │                         <span class="t-key">不复用 :29-34,254-314（smoothstep/blend/pending-next，与第一版冲突）</span>
+│  ├─ <span class="t-file">shared_buffer.py</span>         <span class="t-cmt"># ObservationSnapshot / LatestQueue / RuntimeMetrics（ACT 拆到 L2-02/06）</span> <span class="t-ok">结构复用</span>
+│  └─ <span class="t-file">inference_worker.py</span>      <span class="t-cmt"># daemon worker 消费 request 写 result</span> <span class="t-ok">结构复用（ACT 归 L2-06 A3）</span>
+├─ <span class="t-dir">deploy/src/pi05/deploy/ros_nodes/</span>
+│  └─ <span class="t-file">pi05_vla_deploy_node.py</span>  <span class="t-cmt"># 装配 / create_timer / 调 tick / 发 metrics</span> <span class="t-ok">结构复用（:42-89,196-218）</span>
+└─ <span class="t-dir">...</span>                       <span class="t-cmt"># safety_guard.py 属 L2-04，models/policy_loader.py 属 L2-03</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted)">绿色 = 结构复用；红色 = 不复用。Pi0.5 把 worker 放 runtime/，ACT 第一版仍把 worker（<code>InferenceWorker</code> A3）放 runtime/，但<b>归属 L2-06</b>而非 L2-03；ControlLoop 只吸收调度结构。</p>
+
+      <h3>Pi0.5 → ACT 根本差异（不可照搬）</h3>
+      <table>
+        <tr><th>维度</th><th>Pi0.5（14D/26D 关节空间）</th><th>ACT v2（16D TCP 空间）</th><th>处理</th></tr>
+        <tr><td>动作规格</td><td>BimanualAction 14D/26D 关节角</td><td>16D（2×[xyz+quat]+2 gripper）</td><td><span class="errc">不复用</span>（规格不搬运）</td></tr>
+        <tr><td>chunk 取步</td><td>smoothstep_alpha + blend 融合</td><td>cursor 直取单步（C17 独立 copy）</td><td><span class="errc">不复用</span>（第一版不做融合）</td></tr>
+        <tr><td>chunk 合法性</td><td>含对齐/平滑门槛</td><td>shape/有限值/age/cursor（C13）</td><td><span class="okc">结构复用</span>，去融合门槛</td></tr>
+        <tr><td>worker / queue 归属</td><td>Pi0.5 runtime 内部</td><td><b>L2-06 新增并拥有</b>（A1/A3）</td><td><span class="okc">结构复用</span>，归属变更</td></tr>
+        <tr><td>tick 入参</td><td>tick(now)</td><td>tick(*, monotonic_s, ros_time_s, command_permit)</td><td><span class="okc">结构复用</span>，加 permit gate</td></tr>
+        <tr><td>发布接口</td><td>publish_safe / emit_fallback / ControlCommand.accepted</td><td>SafetyGuard.filter_action + ActionPublisher.publish（6 outcome）</td><td><span class="errc">不复用</span>（旧接口已废弃）</td></tr>
+        <tr><td>timer / queue 骨架</td><td>create_timer + latest queue</td><td>同结构</td><td><span class="okc">结构复用</span></td></tr>
+      </table>
+
+      <h3>回答四个核心问题</h3>
+      <div class="grid g2">
+        <div class="card repo"><h4>❶ 谁持有状态？</h4><ul>
+          <li><code>ControlLoop</code>（L2-06，A4）：active/pending chunk、cursor、in-flight、fallback、publish reducer、fault latch、start/stop。</li>
+          <li><code>LatestQueue</code>/<code>RuntimeMetrics</code>/<code>InferenceWorker</code> 由 L2-06 runtime 自有（A1/A2/A3）。</li></ul></div>
+        <div class="card repo"><h4>❷ 谁跨越外部边界？</h4><ul>
+          <li>UI（<code>ActDeployNode</code>）：ROS timer + CommandPermitSource + status/metrics publish。</li>
+          <li>L2-05：topic / 硬件命令发布。</li>
+          <li>runtime 层 ControlLoop：<b>不</b>直接读文件/订阅 topic/写硬件。</li></ul></div>
+        <div class="card config"><h4>❸ 谁只负责加工 RAM 对象？</h4><ul>
+          <li><code>validate_inference_result</code>（C13）、<code>should_submit_inference</code>（C14）、<code>build_action_publish_request</code>（C18）纯 RAM 计算。</li>
+          <li>cursor 选择与递增（C15/C17）。</li></ul></div>
+        <div class="card yellow"><h4>❹ 谁负责 runtime 时序？</h4><p><code>ControlLoop.tick()</code> 是 ACT 唯一中央调度点。失败传播：reason → fallback（B8）或 fault latch（C25）；任一 runtime port 异常锁存 fault，启动配置失败不进 timer。</p></div>
+      </div>
+
+      <div class="callout pi"><b>维度差异（决定不能照搬）：</b>Pi0.5 是 <b>14D/26D 关节空间</b>，带 <b>smoothstep/blend 跨 chunk 融合</b>。ACT 第一版是 <b>16D TCP 空间</b>，<b>第一版不做融合</b>。Pi0.5 的 smoothstep_alpha、pending/next chunk、blend 状态机、旧 BimanualAction 规格<b>全部不继承</b>；其 <code>publish_safe</code>/<code>emit_fallback</code>/<code>ControlCommand.accepted</code> 接口已被 L2-04/05 真实公共接口取代。</div>
+      <p class="src">权威来源：<code>agent_context/02_pi05源码3.5层微元拆解.md</code>（源码证据 / ACT 复用结论）、<code>agent_context/03_ACT微元设计与协作.md</code>（tick 精确接口 / 状态机）</p>
+    </section>
+
+    <!-- ============ 维度 3 · 开发蓝图 ============ -->
+        <section class="view blueprint" data-agent-source="agent_context/03_ACT微元设计与协作.md#class与编排微元">
+      <h2>维度 3 · 开发蓝图</h2>
+      <div class="reading-path">📖 阅读路径：先看运行时协作链（图①，timer→tick→安全/发布/fallback→metrics）→ 看 A/B/C 三层功能模块总览（图②，23 个模块 A=5/B=12/C=26）→ 点六层标签看每层落点与逐函数契约（图③，仅 runtime+ui 有产物）→ 怎么验收见<a href="#" onclick="document.getElementById('v4').click()">维度4</a></div>
+      <p class="lead">这一维度回答：<b>L2-06 代码怎么分层，每层有哪些 micro-unit。</b>L2-06 跨层落点仅 <code>runtime/</code>（A1-A4：channel/metrics/worker/control_loop，核心）+ <code>ui/</code>（A5：ActDeployNode timer/装配/permit/metrics/shutdown），types/config/repo/service 全部复用上游——不吞并 L2-04 safety、不吞并 L2-05 发布、不重定义公共类型。编号总表以 <code>03a_功能微元总览与组织结构.md</code> 为口径；本页按 v2 source-aligned（<b>A1–A5 / B1–B12 / C1–C26</b>）重投影。</p>
+
+      <h3>图① 运行时协作调用链（ROS timer → tick → 安全/发布/fallback → metrics）</h3>
+      <div class="figure">
+        <svg viewBox="0 0 940 500" role="img" aria-label="L2-06 运行时协作调用链">
+          <defs>
+            <marker id="arrow6" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker>
+            <marker id="farrow6" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#b42318"></path></marker>
+            <marker id="rarrow6" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#047857"></path></marker>
+          </defs>
+          <!-- 编译时注入 banner（虚线） -->
+          <rect x="40" y="14" width="860" height="28" rx="6" fill="none" stroke="var(--config)" stroke-width="1.6" stroke-dasharray="6 4"></rect>
+          <text x="470" y="32" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--config)">编译时注入：DeployConfig + ObservationPipeline + ActInferenceService + SafetyGuard + ActionPublisher + CommandPermitSource → ControlLoop/ActDeployNode（L2-01~05 装配）</text>
+          <!-- 泳道表头 -->
+          <text class="sub" x="145" y="66" text-anchor="middle" fill="var(--repo)" font-weight="700">ui 泳道（ActDeployNode）</text>
+          <text class="sub" x="480" y="66" text-anchor="middle" fill="var(--repo)" font-weight="700">runtime 泳道（ControlLoop / InferenceWorker）</text>
+          <text class="sub" x="800" y="66" text-anchor="middle" fill="var(--types)" font-weight="700">相邻 L2（复用，不新编号）</text>
+          <line x1="10" y1="74" x2="930" y2="74" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3"></line>
+          <!-- ① B9 _control_tick -->
+          <rect class="box" x="60" y="86" width="170" height="46" rx="8" fill="var(--repo-bg)" stroke="var(--repo)"></rect>
+          <text class="title" x="145" y="106" text-anchor="middle">① _control_tick (B9)</text>
+          <text class="sub" x="145" y="124" text-anchor="middle">编排函数 · 读 permit/双时钟</text>
+          <path class="edge" d="M230 109 L380 109"></path>
+          <text x="305" y="102" text-anchor="middle" font-size="9.5" fill="#475467">now/permit</text>
+          <!-- ② B3 tick -->
+          <rect class="box" x="380" y="86" width="200" height="46" rx="8" fill="#fcfdff" stroke="var(--repo)"></rect>
+          <text class="title" x="480" y="106" text-anchor="middle">② tick(...) (B3)</text>
+          <text class="sub" x="480" y="124" text-anchor="middle">编排函数 · 唯一中央调度入口</text>
+          <path class="edge" d="M480 132 L480 144"></path>
+          <!-- ③ B4 collect -->
+          <rect class="box" x="380" y="144" width="200" height="40" rx="8" fill="#fcfdff" stroke="var(--repo)"></rect>
+          <text class="title" x="480" y="162" text-anchor="middle">③ _collect_latest_result (B4)</text>
+          <text class="sub" x="480" y="178" text-anchor="middle">编排函数 · 非阻塞收 result</text>
+          <path class="edge" d="M480 184 L480 194"></path>
+          <!-- ④ C13 validate -->
+          <rect class="box" x="380" y="194" width="200" height="40" rx="8" fill="var(--config-bg)" stroke="var(--config)"></rect>
+          <text class="title" x="480" y="212" text-anchor="middle">④ validate_inference_result (C13)</text>
+          <text class="sub" x="480" y="228" text-anchor="middle">计算函数（纯 RAM）</text>
+          <path class="edge" d="M480 234 L480 244"></path>
+          <!-- ⑤ C15 activate pending -->
+          <rect class="box" x="380" y="244" width="200" height="40" rx="8" fill="#fffbeb" stroke="var(--yellow)"></rect>
+          <text class="title" x="480" y="262" text-anchor="middle">⑤ _activate_pending (C15)</text>
+          <text class="sub" x="480" y="278" text-anchor="middle">内部状态更新函数</text>
+          <path class="edge" d="M480 284 L480 294"></path>
+          <!-- ⑥ L2-02 observation -->
+          <rect class="box" x="660" y="214" width="240" height="40" rx="8" fill="var(--types-bg)" stroke="var(--types)"></rect>
+          <text class="title" x="780" y="232" text-anchor="middle">⑥ ObservationBuffer.latest_observation</text>
+          <text class="sub" x="780" y="248" text-anchor="middle">L2-02 复用（不新编号）</text>
+          <path class="edge" d="M660 234 L580 314" stroke-dasharray="4 3"></path>
+          <text x="600" y="270" text-anchor="middle" font-size="9.5" fill="#475467">fresh obs</text>
+          <!-- ⑦ B5 submit -->
+          <rect class="box" x="380" y="294" width="200" height="40" rx="8" fill="#fcfdff" stroke="var(--repo)"></rect>
+          <text class="title" x="480" y="312" text-anchor="middle">⑦ _maybe_submit_inference (B5/C14)</text>
+          <text class="sub" x="480" y="328" text-anchor="middle">编排/计算函数</text>
+          <path class="edge" d="M480 334 L480 344"></path>
+          <!-- ⑧ B6 choose -->
+          <rect class="box" x="380" y="344" width="200" height="40" rx="8" fill="#fcfdff" stroke="var(--repo)"></rect>
+          <text class="title" x="480" y="362" text-anchor="middle">⑧ _choose_candidate (B6)</text>
+          <text class="sub" x="480" y="378" text-anchor="middle">编排函数 · normal-only</text>
+          <!-- ⑨ L2-04 safety -->
+          <rect class="box" x="660" y="364" width="240" height="40" rx="8" fill="var(--types-bg)" stroke="var(--types)"></rect>
+          <text class="title" x="780" y="382" text-anchor="middle">⑨ SafetyGuard.filter_action</text>
+          <text class="sub" x="780" y="398" text-anchor="middle">L2-04 复用（不新编号）</text>
+          <!-- ⑩ L2-05 publish -->
+          <rect class="box" x="660" y="410" width="240" height="40" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect>
+          <text class="title" x="780" y="428" text-anchor="middle">⑩ ActionPublisher.publish</text>
+          <text class="sub" x="780" y="444" text-anchor="middle">L2-05 复用 · 6 outcome</text>
+          <!-- ⑪ C19 apply outcome -->
+          <rect class="box" x="380" y="444" width="200" height="40" rx="8" fill="#fffbeb" stroke="var(--yellow)"></rect>
+          <text class="title" x="480" y="462" text-anchor="middle">⑪ _apply_publish_outcome (C19)</text>
+          <text class="sub" x="480" y="478" text-anchor="middle">内部状态更新函数 · 6 结局归约</text>
+          <!-- 失败分支：B8 fallback（红色虚线） -->
+          <rect class="box" x="60" y="344" width="200" height="46" rx="8" fill="var(--warn-bg)" stroke="var(--warn)" stroke-dasharray="5 4"></rect>
+          <text class="title" x="160" y="364" text-anchor="middle" fill="var(--warn)">✗ _apply_fallback (B8)</text>
+          <text class="sub" x="160" y="382" text-anchor="middle" fill="var(--warn)">无 candidate 时 · 唯一解释 fallback 政策</text>
+          <path d="M380 364 Q300 364 260 364" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#farrow6)"></path>
+          <!-- ⑧→⑨→⑩→⑪ 主线 -->
+          <path class="edge" d="M580 364 L660 384"></path>
+          <path class="edge" d="M780 404 L780 410"></path>
+          <path class="edge" d="M660 430 L580 464"></path>
+          <!-- C20 metrics（ui，虚线） -->
+          <rect class="box" x="60" y="144" width="170" height="46" rx="8" fill="var(--repo-bg)" stroke="var(--repo)" stroke-dasharray="3 3"></rect>
+          <text class="title" x="145" y="164" text-anchor="middle" fill="var(--repo)">C20 _publish_runtime_metrics</text>
+          <text class="sub" x="145" y="182" text-anchor="middle">数据读写函数 · /act/metrics</text>
+          <path d="M230 167 L380 167" fill="none" stroke="var(--ok)" stroke-width="1.4" stroke-dasharray="4 3"></path>
+          <!-- 结果合同归还驱动（绿色实线，闭环） -->
+          <path d="M380 484 Q60 320 60 132" fill="none" stroke="var(--ok)" stroke-width="1.6" marker-end="url(#rarrow6)"></path>
+          <text x="150" y="330" text-anchor="middle" font-size="9.5" fill="var(--ok)">ActionPublishResult / metrics 已交付（闭环）</text>
+          <!-- 图例 -->
+          <line x1="48" y1="490" x2="98" y2="490" stroke="#475467" stroke-width="1.8"></line>
+          <text x="104" y="494" font-size="11" fill="var(--muted)">实线 = 运行时调用</text>
+          <line x1="248" y1="490" x2="298" y2="490" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="5 4"></line>
+          <text x="304" y="494" font-size="11" fill="var(--muted)">红色虚线 = 失败 fallback</text>
+          <line x1="468" y1="490" x2="518" y2="490" stroke="var(--config)" stroke-width="1.6" stroke-dasharray="6 4"></line>
+          <text x="524" y="494" font-size="11" fill="var(--muted)">虚线横幅 = 编译时注入</text>
+          <line x1="720" y1="490" x2="770" y2="490" stroke="var(--ok)" stroke-width="1.6"></line>
+          <text x="776" y="494" font-size="11" fill="var(--muted)">绿色实线 = 结果合同归还</text>
+        </svg>
+      </div>
+      <div class="callout"><b>协作关键事实（对照图②）：</b><br>
+      <b>「驱动」</b>ROS timer 唤醒 <code>_control_tick</code>（B9，编排函数），它读 permit/双时钟后只调 <code>ControlLoop.tick</code>（B3，runtime 编排函数）。<br>
+      <b>「状态所有者」</b>L2-06 唯一拥有 active/pending chunk、cursor、request in-flight、fallback、publish reducer、fault latch、start/stop；worker/queue/request/result（A1/A3）也由 L2-06 自有。<br>
+      <b>「纯 RAM 计算」</b><code>validate_inference_result</code>（C13）、<code>should_submit_inference</code>（C14）、<code>build_action_publish_request</code>（C18）是模块级纯函数。<br>
+      <b>「失败传播」</b>任一 runtime port 异常 / 无 candidate / rejected → 锁存 fault（C25）或交 B8 fallback；启动配置失败不进 timer。<br>
+      <b>「相邻 L2 复用（不新编号）」</b>L2-02 observation、L2-04 SafetyGuard.filter_action、L2-05 ActionPublisher.publish——L2-06 只调用不实现。</div>
+
+      <h3>图② A/B/C 三层功能模块总览</h3>
+      <div class="figure">
+        <p style="margin:0 0 8px;font-size:13px;color:var(--muted)">L2-06 的 23 个功能模块按 A/B/C 三层编号（A = 跨 tick 状态与生命周期打包，B = tick/fallback/worker/启动 编排，C = 数据/计算/状态更新/边界读写原子微元）。下表是总览，每个模块的逐函数契约见<a href="#" onclick="document.getElementById('v3').click()">图③ 六层落点</a>。</p>
+
+        <table class="ovtab">
+          <tr class="layer-head A"><th colspan="4">A 层（3.25 · class）— 5 个功能模块：跨 tick 状态与 ROS 生命周期打包</th></tr>
+          <tr><th>编号</th><th>名称</th><th>类型</th><th>基础介绍</th></tr>
+          <tr><td class="id">A1</td><td class="name">LatestQueue[T]</td><td class="kind">class 打包（runtime）</td><td>无参构造、CAPACITY=1 的 thread-safe latest-only channel；承载 request/result 异步交接。L2-06 新增并拥有，不归 L2-03。</td></tr>
+          <tr><td class="id">A2</td><td class="name">RuntimeMetrics</td><td class="kind">class 打包（runtime）</td><td>原子累计 tick/fallback/inference error 计数、publish outcome counters、两类 fault latch、deferred reason；产出 frozen RuntimeMetricsSnapshot。</td></tr>
+          <tr><td class="id">A3</td><td class="name">InferenceWorker</td><td class="kind">class 打包（runtime）</td><td>daemon 线程，串行调同步 L2-03 service，把成功/异常都转成 InferenceResult；限频、stop-event、join。不决定 safety/fallback/publish。</td></tr>
+          <tr><td class="id">A4</td><td class="name">ControlLoop</td><td class="kind">class 打包（runtime）</td><td>持有 active/pending/cursor/in-flight/fallback/publish reducer/fault latch；唯一中央调度 B3；不 import UI，不直接 ROS publish。</td></tr>
+          <tr><td class="id">A5</td><td class="name">ActDeployNode</td><td class="kind">class 打包（ui）</td><td>ROS composition root：装配、timer、permit、metrics、shutdown；调 L2-01 loader、装配 L2-02~05 与 L2-06 runtime；不实现图像/推理/安全算法。</td></tr>
+        </table>
+
+        <table class="ovtab">
+          <tr class="layer-head B"><th colspan="4">B 层（3.375 · 编排函数）— 12 个功能模块：tick/worker/fallback/启动 编排</th></tr>
+          <tr><th>编号</th><th>名称</th><th>类型</th><th>基础介绍</th></tr>
+          <tr><td class="id">B1</td><td class="name">worker run</td><td class="kind">编排函数（A3 方法）</td><td>InferenceWorker.run：阻塞取 request → 限频 → 调 B2 → 写 result；同一 service 最大并发=1。</td></tr>
+          <tr><td class="id">B2</td><td class="name">execute request</td><td class="kind">编排函数（A3 方法）</td><td>_execute_request：同步调 L2-03 predict_action_chunk，成功/异常转 C2；只同步调用，不写 queue。</td></tr>
+          <tr><td class="id">B3</td><td class="name">central tick</td><td class="kind">编排函数（A4 方法）</td><td>ControlLoop.tick：唯一中央调度入口，编排 B4→C13→C15→观察→C14/B5→B6→B8→B7/C19。</td></tr>
+          <tr><td class="id">B4</td><td class="name">collect result</td><td class="kind">编排函数（A4 方法）</td><td>_collect_latest_result：非阻塞收 InferenceResult，匹配 in-flight id 才清，记录 metrics。</td></tr>
+          <tr><td class="id">B5</td><td class="name">submit inference</td><td class="kind">编排函数（A4 方法）</td><td>_maybe_submit_inference：C14 判 prefetch + 无 in-flight/pending + fresh obs 时写 InferenceRequest。</td></tr>
+          <tr><td class="id">B6</td><td class="name">choose normal candidate</td><td class="kind">编排函数（A4 方法）</td><td>_choose_candidate：只在 normal horizon 内选 candidate（C26）；无候选把确定 reason 交 B8。</td></tr>
+          <tr><td class="id">B7</td><td class="name">safety and publish</td><td class="kind">编排函数（A4 方法）</td><td>_safety_and_publish：candidate → filter_action → C18 → publish → C19 归约 6 结局。</td></tr>
+          <tr><td class="id">B8</td><td class="name">apply fallback</td><td class="kind">编排函数（A4 方法）</td><td>_apply_fallback：唯一读取 fallback_policy 的微元；返回 C26 或 None，不直接调 L2-05。</td></tr>
+          <tr><td class="id">B9</td><td class="name">UI control tick</td><td class="kind">编排函数（A5 方法）</td><td>_control_tick：ROS timer 回调，读 permit/双时钟后调 B3；不实现 chunk/安全/推理。</td></tr>
+          <tr><td class="id">B10</td><td class="name">shutdown</td><td class="kind">编排函数（A5 方法）</td><td>_shutdown_runtime：串行 stopping → cancel timer → worker stop → close queue → bounded join → close result queue。</td></tr>
+          <tr><td class="id">B11</td><td class="name">process main</td><td class="kind">编排函数（A5 方法）</td><td>main：解析 CLI → 调 L2-01 loader → 装配 → spin → finally shutdown；exit 0/1/2。</td></tr>
+          <tr><td class="id">B12</td><td class="name">startup preflight</td><td class="kind">编排函数（A5 方法）</td><td>run_startup_preflight：对 config/resources/pipeline/permit 做无 I/O 交叉校验，失败阻止 ROS runtime 启动。</td></tr>
+        </table>
+
+        <table class="ovtab">
+          <tr class="layer-head C"><th colspan="4">C 层（3.5 · 原子微元）— 26 个功能模块：数据/计算/状态更新/边界读写</th></tr>
+          <tr><th>编号</th><th>名称</th><th>类型</th><th>基础介绍</th></tr>
+          <tr><td class="id">C1</td><td class="name">InferenceRequest</td><td class="kind">数据（runtime）</td><td>frozen request：request_id / observation / submitted_at_s / trigger_cursor。</td></tr>
+          <tr><td class="id">C2</td><td class="name">InferenceResult</td><td class="kind">数据（runtime）</td><td>frozen result：id / 四时间戳 / chunk XOR error；success/error 必须 XOR。</td></tr>
+          <tr><td class="id">C3</td><td class="name">FallbackReason</td><td class="kind">数据（runtime）</td><td>稳定 Enum：NO_FRESH_OBSERVATION / INFERENCE_ERROR / SAFETY_REJECTED / … 等。</td></tr>
+          <tr><td class="id">C4</td><td class="name">RuntimeMetricsSnapshot</td><td class="kind">数据（runtime）</td><td>A2 的 frozen copy，供 C20 写 /act/metrics。</td></tr>
+          <tr><td class="id">C5</td><td class="name">queue state</td><td class="kind">数据（A1）</td><td>deque / Condition / closed / dropped_count。</td></tr>
+          <tr><td class="id">C6</td><td class="name">metrics state</td><td class="kind">数据（A2）</td><td>counters / latency / deferred fallback / last outcome。</td></tr>
+          <tr><td class="id">C7</td><td class="name">ControlLoop state</td><td class="kind">数据（A4）</td><td>active/pending/cursor/in-flight/discard-in-flight/previous/source time/fault latch/stopping/tick id。</td></tr>
+          <tr><td class="id">C8</td><td class="name">put_latest</td><td class="kind">内部状态更新函数（A1）</td><td>淘汰旧项、追加最新项、唤醒 waiter，返回淘汰数。</td></tr>
+          <tr><td class="id">C9</td><td class="name">take_latest</td><td class="kind">内部状态更新函数（A1）</td><td>worker 阻塞取 / ControlLoop 非阻塞取（timeout=0）。</td></tr>
+          <tr><td class="id">C10</td><td class="name">close</td><td class="kind">内部状态更新函数（A1）</td><td>置 closed、清空待处理、计 dropped、唤醒 waiter。</td></tr>
+          <tr><td class="id">C11</td><td class="name">record_event</td><td class="kind">内部状态更新函数（A2）</td><td>原子累计/替换 metrics。</td></tr>
+          <tr><td class="id">C12</td><td class="name">snapshot</td><td class="kind">计算函数（A2）</td><td>复制 guarded metrics 成 frozen snapshot；无进程外读写。</td></tr>
+          <tr><td class="id">C13</td><td class="name">validate_inference_result</td><td class="kind">计算函数（A4）</td><td>校验 id / success-error XOR / 时间 / age / shape / dtype / finite。</td></tr>
+          <tr><td class="id">C14</td><td class="name">should_submit_inference</td><td class="kind">计算函数（A4）</td><td>判是否投 request：无 fault/无 in-flight/无 pending/fresh obs。</td></tr>
+          <tr><td class="id">C15</td><td class="name">_activate_pending</td><td class="kind">内部状态更新函数（A4）</td><td>active 缺失或到 horizon 时激活 pending，重算 age，否则 CHUNK_EXPIRED。</td></tr>
+          <tr><td class="id">C16</td><td class="name">_invalidate_chunks</td><td class="kind">内部状态更新函数（A4）</td><td>清 active/pending；有 outstanding 时只置 discard flag。</td></tr>
+          <tr><td class="id">C17</td><td class="name">_take_cursor_action</td><td class="kind">内部状态更新函数（A4）</td><td>返回独立 (16,) float32 copy，cursor+=1；不返回 view。</td></tr>
+          <tr><td class="id">C18</td><td class="name">build_action_publish_request</td><td class="kind">计算函数（A4）</td><td>纯构造 ActionPublishRequest（action_id/safety/permit/双时钟）。</td></tr>
+          <tr><td class="id">C19</td><td class="name">_apply_publish_outcome</td><td class="kind">内部状态更新函数（A4）</td><td>按 6 种 outcome 更新 previous/chunk/fault/deferred reason/metrics。</td></tr>
+          <tr><td class="id">C20</td><td class="name">_publish_runtime_metrics</td><td class="kind">数据读写函数（A5）</td><td>读 RuntimeMetricsSnapshot → JSON → /act/metrics。</td></tr>
+          <tr><td class="id">C21</td><td class="name">build_arg_parser</td><td class="kind">计算函数（A5）</td><td>CLI schema：--config / --enable-command-output。</td></tr>
+          <tr><td class="id">C22</td><td class="name">InferenceWorker.stop</td><td class="kind">内部状态更新函数（A3）</td><td>幂等设置 stop event。</td></tr>
+          <tr><td class="id">C23</td><td class="name">ControlLoop.begin_stopping</td><td class="kind">内部状态更新函数（A4）</td><td>幂等置 stopping + 更新 metrics。</td></tr>
+          <tr><td class="id">C24</td><td class="name">_next_action_id</td><td class="kind">内部状态更新函数（A4）</td><td>tick 序列 → act-{seq:012d}；status-only 不消耗。</td></tr>
+          <tr><td class="id">C25</td><td class="name">latch_runtime_fault</td><td class="kind">内部状态更新函数（A4）</td><td>锁存 runtime fault（清状态 + 置 latch + detail）。</td></tr>
+          <tr><td class="id">C26</td><td class="name">CandidateSelection</td><td class="kind">数据（A4）</td><td>frozen tick-local provenance：action / source_captured_at_s / source。</td></tr>
+        </table>
+      </div>
+
+      <h3>图③ 六层代码落点（点击一层，只看该层内部）</h3>
+      <div class="lpick">
+        <input id="l-types" name="layer" type="radio">
+        <input id="l-config" name="layer" type="radio">
+        <input id="l-repo" name="layer" type="radio">
+        <input id="l-service" name="layer" type="radio">
+        <input id="l-runtime" name="layer" type="radio" checked>
+        <input id="l-ui" name="layer" type="radio">
+        <div class="ltabs">
+          <label for="l-types" class="none"><b>types</b>复用</label>
+          <label for="l-config" class="none"><b>config</b>复用</label>
+          <label for="l-repo" class="none"><b>repo</b>无</label>
+          <label for="l-service" class="none"><b>service</b>复用</label>
+          <label for="l-runtime" class="has"><b>runtime</b>有产物（核心）</label>
+          <label for="l-ui" class="has"><b>ui</b>有产物</label>
+        </div>
+
+        <!-- types 层（无新产物） -->
+        <div class="lpane lp-types none-pane">
+          <h4>types/ · 本 L2 不新增源码产物（复用公共契约）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b><code>InferenceRequest</code>/<code>InferenceResult</code>/<code>RuntimeMetrics</code> 只描述 L2-06 内部线程/调度生命周期，落在 <code>runtime/</code>，不升级成跨 L2 通用类型。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>复用上游对象：</b>L2-01 <code>DeployConfig</code>/<code>PolicyInputSpec</code>/<code>ActRuntimeResources</code>；L2-02 <code>ObservationSnapshot</code>；L2-03 <code>ActionChunk</code>；L2-04 <code>SafetyResult</code>；L2-05 <code>CommandPermit</code>/<code>ActionPublishRequest</code>/<code>ActionPublishResult</code>。不新增 <code>ControlDecision</code>/<code>SafeAction</code>；不向 <code>ActionChunk</code> 加 runtime 字段。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- config 层（无新产物） -->
+        <div class="lpane lp-config none-pane">
+          <h4>config/ · 本 L2 不新增源码产物（复用 L2-01 DeployConfig）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b><code>control_hz</code>、chunk/age/fallback policy、command 开关全部由 L2-01 <code>DeployConfig</code> 统一定义。ControlLoop 接收已校验的配置，<b>不读 YAML、不定义默认值</b>。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>使用的上游对象：</b><code>DeployConfig</code> / <code>RuntimeConfig</code>（只读运行参数视图）。缺字段、默认配置不可加载、交叉维度不一致均属 L2-01 代码 FAIL，不是 BLOCKED。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- repo 层（无新产物） -->
+        <div class="lpane lp-repo none-pane">
+          <h4>repo/ · 本 L2 不新增源码产物</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>bundle/checkpoint/normalizer/policy 属启动期资源访问，由 L2-01 repo 唯一 factory 负责。L2-06 runtime 只接收已在 RAM 中且校验过的对象。<b>资源 I/O 不发生在 tick/worker。</b></p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>使用的上游对象：</b>fake worker/guard/publisher 在 mock 中注入；<code>runtime/</code> 不 import 文件/YAML/torch。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- service 层（无新产物） -->
+        <div class="lpane lp-service none-pane">
+          <h4>service/ · 本 L2 不新增源码产物（调用相邻 L2，不吞并）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>模型推理、安全计算、action payload 已分别由 L2-03/04/05 封装。L2-06 只决定何时/在哪个线程/以什么状态调用，不复制业务计算。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>调用的三个真实接口：</b><code>ActInferenceService.predict_action_chunk</code>（同步，可抛异常）、<code>SafetyGuard.filter_action(candidate, previous_safe_action=, latest_observation=)</code>、<code>ActionPublisher.publish(ActionPublishRequest)</code>。<b>不存在</b> <code>filter()</code>/<code>publish_safe()</code>/<code>emit_fallback()</code>/<code>SafetyResult.accepted</code>。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- runtime 层（核心，有产物） -->
+        <div class="lpane lp-runtime">
+          <h4>runtime/ · 中央调度层 — L2-06 主实现（A1-A4 + C1-C26）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">新增文件 <code>src/model_deploy/act/runtime/{inference_channel,runtime_metrics,inference_worker,control_loop}.py</code>。runtime 可依赖 types/config/service 与注入 callable，<b>不得 import UI、解析 ROS message、访问文件</b>。模块级放无状态纯函数（C12/C13/C14/C18），有状态依赖与对外契约集中在 class（A1/A2/A3/A4）。</p>
+
+          <p style="font-size:12px;color:var(--repo);margin:8px 0 0"><b>覆盖微元：</b>A1 / A2 / A3 / A4 · B1-B8 · C1-C26</p>
+          <div class="classbox">
+            <h5>inference_channel.py（runtime/inference_channel.py）— A1 / C1 / C2 / C5 / C8 / C9 / C10</h5>
+            <p class="role">L2-06 新增并拥有的 latest-only RAM channel 与信封。无参构造 <code>LatestQueue()</code>，<code>CAPACITY=1</code>；request/result 皆用同一关闭语义。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
+                <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
+                <tr><td>C1 <code>request_id</code></td><td>单调递增正整数</td><td>int</td></tr>
+                <tr><td>C1 <code>observation</code></td><td>frozen 对象引用</td><td>ObservationSnapshot</td></tr>
+                <tr><td>C1 <code>submitted_at_s</code></td><td>monotonic seconds（finite/非负）</td><td>float</td></tr>
+                <tr><td>C1 <code>trigger_cursor</code></td><td>提交时 active cursor</td><td>int</td></tr>
+                <tr><td>C2 <code>chunk / error_type / error_message</code></td><td>success XOR error</td><td>ActionChunk | None / str | None</td></tr>
+                <tr><td>C5 <code>_items / _condition / _closed / _dropped_count</code></td><td>deque(maxlen=1) / lock+waiter / flag / 计数</td><td>generic T / Condition / bool / int</td></tr>
+              </table></span></div>
+              <div class="mu"><span class="kind state">内部状态更新函数</span><span class="desc">
+                <span class="fn"><b>C8 <code>put_latest(item) -> int</code></b><br>Condition 下淘汰旧项、追加最新、唤醒 waiter，返回淘汰数；closed 抛 RuntimeError。</span>
+                <span class="fn"><b>C9 <code>take_latest(timeout_s=0) -> T | None</code></b><br>worker 阻塞取 / ControlLoop 非阻塞取；closed 返回 None。</span>
+                <span class="fn"><b>C10 <code>close() -> int</code></b><br>置 closed、清空待处理、计 dropped、notify_all；幂等。</span>
+              </span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>runtime_metrics.py（runtime/runtime_metrics.py）— A2 / C4 / C6 / C11 / C12</h5>
+            <p class="role">L2-06 自有指标。构造注入同一 monotonic callable；C11 原子累计，C12 复制成 frozen snapshot。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
+                <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
+                <tr><td>C4 <code>RuntimeMetricsSnapshot</code></td><td>A2 字段的 frozen copy</td><td>dict→immutable mapping</td></tr>
+                <tr><td>C6 <code>tick_count / *_count / publish_outcome_counts</code></td><td>累计计数</td><td>int / dict[str,int]</td></tr>
+                <tr><td>C6 <code>output_fault_latched / runtime_fault_latched</code></td><td>fail-closed latch</td><td>bool</td></tr>
+                <tr><td>C6 <code>deferred_fallback_reason</code></td><td>一次性 reason gauge</td><td>str | None</td></tr>
+              </table></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><b>C12 <code>snapshot() -> RuntimeMetricsSnapshot</code></b><br>lock 下复制 guarded state，无进程外读写。</span></span></div>
+              <div class="mu"><span class="kind state">内部状态更新函数</span><span class="desc"><span class="fn"><b>C11 <code>record_event(event, values)</code></b><br>原子累计/替换 metrics。</span></span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>inference_worker.py（runtime/inference_worker.py）— A3 / B1 / B2 / C22</h5>
+            <p class="role">L2-06 自有 daemon worker。串行调同步 L2-03 service，同一 service 最大并发=1。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc">
+                <span class="fn"><b>B1 <code>InferenceWorker.run</code></b><br>阻塞取 request → 限频 → B2 → 写 result；policy 不可强杀，完成后若 channel 已关则丢弃。</span>
+                <span class="fn"><b>B2 <code>_execute_request</code></b><br>同步调 L2-03 predict_action_chunk，成功/异常转 C2；不写 queue、不决定 cursor/safety/fallback。</span>
+              </span></div>
+              <div class="mu"><span class="kind state">内部状态更新函数</span><span class="desc"><span class="fn"><b>C22 <code>InferenceWorker.stop() -> None</code></b><br>幂等设置 stop event；A3 的 start/join 采用 threading.Thread 标准合同。</span></span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>control_loop.py（runtime/control_loop.py）— A4 / B3-B8 / C3 / C7 / C13-C19 / C23-C26</h5>
+            <p class="role">L2-06 主实现文件。ControlLoop 必须 class：其状态跨 tick、与 worker 并发交接、有完整生命周期。<b>不把 batch/前向/safety/topic 转换塞进 class</b>。结构复用 Pi0.5 ControlLoop，删除 blend state。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
+                <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
+                <tr><td>C3 <code>FallbackReason</code></td><td>稳定 Enum</td><td>enum.Enum（NO_FRESH_OBSERVATION…RUNTIME_FAULT_LATCHED）</td></tr>
+                <tr><td>C7 <code>_active_result / _pending_result</code></td><td>validated C2 slots</td><td>InferenceResult | None</td></tr>
+                <tr><td>C7 <code>_active_cursor / _in_flight_request_id / _next_request_id</code></td><td>调度状态字段</td><td>int / int | None / int</td></tr>
+                <tr><td>C7 <code>_previous_safe_action / _previous_source_captured_at_s</code></td><td>previous anchor</td><td>ActionSpec | None / float | None</td></tr>
+                <tr><td>C7 <code>_output_fault_latched / _runtime_fault_latched / _stopping</code></td><td>fail-closed / stopping flags</td><td>bool</td></tr>
+                <tr><td>C26 <code>CandidateSelection</code></td><td>frozen tick-local provenance</td><td>action(ndarray 16,) / source_captured_at_s / source</td></tr>
+              </table></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc">
+                <span class="fn"><b>C13 <code>validate_inference_result(result, expected_id, now, config) -> (ok, reason)</code></b><br>校验 id / success-error XOR / 时间顺序 / age / 精确 (chunk_size,16) / float32 / finite。</span>
+                <span class="fn"><b>C14 <code>should_submit_inference(...)</code></b><br>无 fault/无 in-flight/无 pending/fresh obs 且无 active 或到 prefetch 窗口 → True。</span>
+                <span class="fn"><b>C18 <code>build_action_publish_request(action_id, safety_result, command_permit, ros_time_s, monotonic_s)</code></b><br>纯构造，无进程外读写。</span>
+              </span></div>
+              <div class="mu"><span class="kind state">内部状态更新函数</span><span class="desc">
+                <span class="fn"><b>C15 <code>_activate_pending</code></b> active 缺失/到 horizon 时激活 pending，重算 age，否则 CHUNK_EXPIRED。</span>
+                <span class="fn"><b>C16 <code>_invalidate_chunks</code></b> 清 active/pending；有 outstanding 时只置 discard flag。</span>
+                <span class="fn"><b>C17 <code>_take_cursor_action</code></b> 返回独立 (16,) copy，cursor+=1，不返回 view。</span>
+                <span class="fn"><b>C19 <code>_apply_publish_outcome(...)</code></b> 按 6 种 outcome 更新 previous/chunk/fault/deferred reason/metrics。</span>
+                <span class="fn"><b>C23 <code>begin_stopping</code></b> / <b>C24 <code>_next_action_id</code></b> / <b>C25 <code>latch_runtime_fault</code></b></span>
+              </span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc">
+                <span class="fn"><b>B3 <code>tick(*, monotonic_s, ros_time_s, command_permit) -> ActionPublishResult | None</code></b>（A4 唯一公开方法，唯一中央调度入口）<br>编排：① 若 stopping/fault latch 只记 metrics 返回 None → ② B4 收 result → ③ C13 校验 → ④ 合法只放 pending → ⑤ C15 激活/查 age → ⑥ 读 observation → ⑦ C14/B5 投 request → ⑧ B6 选 candidate → ⑨ B8 fallback（无 candidate）→ ⑩ B7 safety→C18→C19。<br><b>失败：</b>时钟倒退/队列/worker/port invariant → C25 锁存 runtime fault；safety reject 可发一次 rejected status，下一 tick 再 fallback。</span>
+                <span class="fn"><b>B4 <code>_collect_latest_result</code></b> 非阻塞收 result，匹配 in-flight id 才清，记录 metrics。</span>
+                <span class="fn"><b>B5 <code>_maybe_submit_inference</code></b> C14 为 True 时创建 C1 写 request queue。</span>
+                <span class="fn"><b>B6 <code>_choose_candidate</code></b> 只在 normal horizon 内选 candidate；清过时 deferred reason。</span>
+                <span class="fn"><b>B7 <code>_safety_and_publish</code></b> C26.action → C24 id → filter_action → C18 → publish → C19。</span>
+                <span class="fn"><b>B8 <code>_apply_fallback(reason, *, observation, monotonic_s) -> CandidateSelection | None</code></b> 唯一读 fallback_policy；返回 C26 或 None，不直接调 L2-05。</span>
+              </span></div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0"><b>依赖：</b>types（L2-01~04 公共契约）+ config（DeployConfig）+ service（SafetyGuard/ActionPublisher）+ 注入 callable。<b>禁止</b> import UI / ROS / policy loader。<b>验收：</b>unit mock 时序、非法 chunk discard、无 observation、prefetch、safety reject、6 结局归约、fault latch、shutdown。</p>
+        </div>
+
+        <!-- ui 层（有产物） -->
+        <div class="lpane lp-ui">
+          <h4>ui/ · ROS 外部交互层 — ActDeployNode（A5 / B9-B12 / C20-C21）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">新增文件 <code>src/model_deploy/act/ui/act_deploy_node.py</code>。ROS 外部世界入口：启动期装配既有 L2 对象、创建 timer、读 permit、发布 metrics、管理 shutdown。<b>不实现图像/推理/安全算法/chunk 选择</b>。可执行入口 <code>python -m model_deploy.act.ui.act_deploy_node --config &lt;deploy.yaml&gt;</code>。</p>
+
+          <p style="font-size:12px;color:var(--repo);margin:8px 0 0"><b>覆盖微元：</b>A5 / B9 / B10 / B11 / B12 / C20 / C21</p>
+          <div class="classbox">
+            <h5>act_deploy_node.py（ui/act_deploy_node.py）— A5 / B9-B12 / C20-C21</h5>
+            <p class="role">ROS Node（rclpy.node.Node 子类）。结构复用 Pi0.5 node，仅吸收 UI 装配/timer/metrics/shutdown 部分；不实现图像/推理/安全算法。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc">
+                <span class="fn"><b>B9 <code>_control_tick</code></b>（A5 timer 回调）<br>在 lifecycle lock 内：若 shutdown/stopping 返回；worker_fatal → C25；否则读 permit/双时钟 → 调 B3 tick。</span>
+                <span class="fn"><b>B10 <code>_shutdown_runtime() -> bool</code></b><br>串行 stopping → cancel timer → worker stop → close request queue → bounded join → close result queue；timeout=SHUTDOWN_TIMEOUT/FAIL。</span>
+                <span class="fn"><b>B11 <code>main(argv) -> int</code></b><br>解析 CLI → load_deploy_config → load_act_runtime_resources → 构造 L2-03 → rclpy.init → 构造 A5 → spin → finally shutdown。</span>
+                <span class="fn"><b>B12 <code>run_startup_preflight()</code></b><br>对 config/resources/pipeline/permit 做无 I/O 交叉校验，失败抛 StartupContractError 阻止 ROS runtime 启动。</span>
+              </span></div>
+              <div class="mu"><span class="kind io">数据读写函数</span><span class="desc">
+                <span class="fn"><b>C20 <code>_publish_runtime_metrics</code></b><br><b>外部边界：</b>ROS <code>/act/metrics</code>。读 RuntimeMetricsSnapshot → JSON 写。L2-06 不写 <code>/act/command/status</code>。</span>
+              </span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><b>C21 <code>build_arg_parser()</code></b><br>CLI schema：<code>--config PATH</code>（required）、<code>--enable-command-output</code>（startup-only，默认 False）。</span></span></div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0"><b>依赖方向：</b>UI 可依赖 runtime/service/config/types；<b>runtime 不可 import UI</b>。<b>验收：</b>dry-run 不发硬件、timer 调 tick、status/metrics 可观测、原子启动顺序与 shutdown 可收敛。</p>
+        </div>
+      </div>
+
+      <div class="callout">边界不变量：L2-06 是<b>唯一中央调度点</b>，tick 不等待推理，request/result 都是 latest-only（容量 1）。A4 ControlLoop 唯一持有跨 tick 状态；C12/C13/C14/C18 保持模块级纯函数。L2-06 <b>不吞并</b> L2-04 safety、L2-05 发布、L2-03 推理；<b>第一版不做 action smoothing / 跨 chunk 融合 / RTC 对齐</b>（Pi0.5 的 smoothstep/blend/pending-next 全部不继承）。<b>不生成 ControlDecision 对象</b>——只调 L2-04/05 真实接口并归约 outcome。</div>
+      <p class="src">权威来源：<code>agent_context/03a_功能微元总览与组织结构.md</code>（编号口径）/ <code>agent_context/03_ACT微元设计与协作.md</code>（A/B/C 编号、tick 状态机、内部协作契约）/ <code>agent_context/06_types层设计.md</code>～<code>agent_context/11_ui层设计.md</code>（六层落点）</p>
+    </section>
+
+    <!-- ============ 维度 4 · 人类验收标准 ============ -->
+        <section class="view acceptance" data-agent-source="agent_context/04_L2验收机制.md#验证脚本合同">
+      <h2>维度 4 · 人类验收标准</h2>
+      <div class="reading-path">📖 阅读路径：先跑统一验收脚本（卡①）→ 看终端输出范例和翻译表（卡②）→ 边界/落点检查（卡③④）→ blocked 项和签字（卡⑤⑥）</div>
+      <p class="lead">这一维度回答：<b>怎么验证 L2-06，跑什么，看到什么算通过或失败。</b>核心是无 ROS/无硬件下 mock 验证调度时序、cursor、fallback、6 结局归约、metrics；真机 ROS topic/driver/E-stop 默认 BLOCKED，<b>绝不自动通过</b>。验收分两层：设计包 Gate（<code>validate_l2_design_package.py</code> + <code>HTML_SOURCE_ALIGNMENT</code>）与人工 10 项验收。</p>
+
+      <div class="vfy">
+        <div class="vfy-item">
+          <div class="num">1</div>
+          <div class="body">
+            <p class="do">跑统一验收脚本（分层分组终端输出）</p>
+            <span class="cmd-block"><span class="c"># cwd = 仓库根</span><br>bash src/model_deploy/act/scripts/l2_06_verify.sh --scope local --policy fake --config src/model_deploy/act/tests/fixtures/l2_06_fake.yaml</span>
+            <div class="result">
+              <div class="pass">末行 <code>N PASS / 0 FAIL / 可有 BLOCKED</code>，退出码 0。每个标签 PASS。</div>
+              <div class="fail">任一 <code>FAIL</code> 行 + 定位（file/class/微元/pytest 节点/摘要），退出码 1。</div>
+            </div>
+            <p class="why">依据 <code>04_L2验收机制.md §4</code>。FAIL 时按行内定位块直接定位到 <code>runtime/control_loop.py</code> 或 <code>ui/act_deploy_node.py</code>。脚本/ fixture/测试缺失本身是 FAIL，不是 BLOCKED。</p>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">2</div>
+          <div class="body">
+            <p class="do">终端输出范例 + 标签翻译表（types→config→repo→service→runtime→ui·boundary）</p>
+            <div class="term">
+              <div class="t-hdr">=== L2-06 ControlLoop 中央运行调度闭环 验收（--scope local --policy fake）===</div>
+              <div class="t-grp">[ types ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">ACTION_CHUNK_PURITY</span><span class="note">ActionChunk 仅含 actions，无 runtime metadata</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">NO_LEGACY_CONTROL_DECISION</span><span class="note">无 ControlDecision/ControlCommand/SafeAction</span></div>
+              <div class="t-grp">[ config ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">STARTUP_DEFAULT_CONFIG_LOAD</span><span class="note">默认 YAML bundle_dir:null 可解析为模板</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">CONFIG_QUEUE_CAPACITY_ONE</span><span class="note">两个 config 容量严格 == 1</span></div>
+              <div class="t-grp">[ repo ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">REPO_POLICY_RESOURCE</span><span class="note">loader 返回已加载 policy/normalizers</span></div>
+              <div class="t-grp">[ service ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">SERVICE_SAFETY_SIGNATURE</span><span class="note">filter_action(candidate, previous=, latest=)</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">NO_FAKE_PORT_NAMES</span><span class="note">无 filter/publish_safe/emit_fallback/accepted 正向使用</span></div>
+              <div class="t-grp">[ runtime ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">WORKER_TICK_NONBLOCKING</span><span class="note">policy 阻塞时 tick 立即返回</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">RUNTIME_PREFETCH_SWITCH</span><span class="note">pending 不截 active，horizon 切换</span></div>
+              <div class="t-row"><span class="fail">FAIL</span><span class="lbl">CONTROL_OUTCOME_REDUCER</span><span class="note">6 结局归约：前置 FAILED 不误判</span></div>
+              <div class="t-loc"><span><span class="lk">文件：</span>src/model_deploy/act/runtime/control_loop.py</span><span><span class="lk">class：</span>ControlLoop</span><span><span class="lk">微元：</span>C19 _apply_publish_outcome（内部状态更新函数）</span><span><span class="lk">pytest：</span>tests/runtime/test_control_loop_publish_chain.py::test_six_outcome_reducer</span><span><span class="lk">错误：</span>前置 FAILED 在 disabled/deny 下被误报为 invariant，未按 output fault 归约</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">FALLBACK_MATRIX</span><span class="note">B6 normal-only / B8 独占 / safe-stop no-output</span></div>
+              <div class="t-grp">[ ui·boundary ]</div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">UI_METRICS_SINGLE_WRITER</span><span class="note">C20 只写 /act/metrics，不写 command/status</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">BOUNDARY_NO_SMOOTHING</span><span class="note">无 blend/smoothstep/aligned/RTC</span></div>
+              <div class="t-row"><span class="ok">PASS</span><span class="lbl">HTML_SOURCE_ALIGNMENT</span><span class="note">A=5/B=12/C=26、source anchors 与本版一致</span></div>
+              <div class="t-row"><span class="blk">BLOCKED</span><span class="lbl">UI_REAL_TOPIC_DRIVER</span><span class="note">真实 ROS topic/driver 未接入</span></div>
+              <div class="t-row"><span class="blk">BLOCKED</span><span class="lbl">REAL_ROBOT_ESTOP</span><span class="note">无硬件/E-stop/授权（≠失败）</span></div>
+              <div class="t-sum">21 PASS / 1 FAIL / 2 BLOCKED</div>
+            </div>
+            <table class="trtab">
+              <tr><th>标签</th><th>层</th><th>对应微元（完整定位链）</th><th>PASS 含义 / FAIL 查哪里</th></tr>
+              <tr class="runtime"><td class="lbl">RUNTIME_PREFETCH_SWITCH</td><td class="lyr">runtime</td><td class="mu"><span class="fpath">runtime/control_loop.py</span><span class="cls">class <b>ControlLoop</b></span>B5/_maybe_submit_inference + C14 <span class="kindtag calc">计算函数</span></td><td class="pf"><span class="pp">PASS：pending 不截 active，horizon 切换，normal 不越界</span><span class="fp">FAIL：看 C14 条件 / request_pending 状态</span></td></tr>
+              <tr class="runtime"><td class="lbl">CONTROL_OUTCOME_REDUCER</td><td class="lyr">runtime</td><td class="mu"><span class="fpath">runtime/control_loop.py</span><span class="cls">class <b>ControlLoop</b></span>C19 _apply_publish_outcome <span class="kindtag state">内部状态更新函数</span></td><td class="pf"><span class="pp">PASS：6 结局按 L2-05 顺序迁移；前置 FAILED 不误判</span><span class="fp">FAIL：看 C19 对 result/error 的归约分支</span></td></tr>
+              <tr class="runtime"><td class="lbl">FALLBACK_MATRIX</td><td class="lyr">runtime</td><td class="mu"><span class="fpath">runtime/control_loop.py</span><span class="cls">class <b>ControlLoop</b></span>B6/B8/C3 <span class="kindtag orch">编排函数</span></td><td class="pf"><span class="pp">PASS：B6 normal-only；B8 独占政策；safe-stop 逐 tick no-output</span><span class="fp">FAIL：看 B8 对三种 policy 的解释</span></td></tr>
+              <tr class="ui"><td class="lbl">UI_METRICS_SINGLE_WRITER</td><td class="lyr">ui</td><td class="mu"><span class="fpath">ui/act_deploy_node.py</span><span class="cls">class <b>ActDeployNode</b></span>C20 _publish_runtime_metrics <span class="kindtag io">数据读写函数</span></td><td class="pf"><span class="pp">PASS：/act/metrics 可观测；不写 /act/command/status</span><span class="fp">FAIL：看 C20 是否误写 command status</span></td></tr>
+              <tr class="boundary"><td class="lbl">BOUNDARY_NO_SMOOTHING</td><td class="lyr">边界</td><td class="mu"><span class="fpath">runtime/control_loop.py</span><span class="cls">无 class（L2 责任墙）</span>不含 smoothstep_alpha/blend/pending-next chunk</td><td class="pf"><span class="pp">PASS：rg 无融合关键词匹配</span><span class="fp">FAIL：看匹配行（Pi0.5 残留，须删除）</span></td></tr>
+              <tr class="boundary"><td class="lbl">HTML_SOURCE_ALIGNMENT</td><td class="lyr">边界</td><td class="mu"><span class="fpath">L2架构交互可视化.html ↔ agent_context</span><span class="cls">无 class（设计产物）</span>A=5/B=12/C=26、source anchors 一致</td><td class="pf"><span class="pp">PASS：HTML 已按本版 Markdown 重投影，无旧 worker ownership/假接口</span><span class="fp">FAIL：仍把 publish_safe/emit_fallback/filter/accepted 当正向接口，或编号不一致</span></td></tr>
+              <tr class="boundary"><td class="lbl">UI_REAL_TOPIC_DRIVER</td><td class="lyr">边界</td><td class="mu"><span class="fpath">ui/act_deploy_node.py → 真实 ROS</span><span class="cls">class <b>ActDeployNode</b></span>真机 topic/driver 验证</td><td class="pf"><span class="blk">BLOCKED：真实 topic/driver 未接入（环境约束，≠失败）</span></td></tr>
+              <tr class="boundary"><td class="lbl">REAL_ROBOT_ESTOP</td><td class="lyr">边界</td><td class="mu"><span class="fpath">真机运行 → L2-05 gate</span><span class="cls">无 class（人工授权墙）</span>E-stop/操作者授权/shadow 证据</td><td class="pf"><span class="blk">BLOCKED：无硬件/E-stop/授权（默认 BLOCKED，绝不自动通过）</span></td></tr>
+            </table>
+            <p class="why">每个标签可追溯到维度3图③ classbox 微元。FAIL 行附 <code>.t-loc</code> 定位块（文件/class/微元/pytest 节点/错误摘要）。BLOCKED ≠ 失败（退出码仍 0）。依据 <code>04_L2验收机制.md §4</code>。</p>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">3</div>
+          <div class="body">
+            <p class="do">边界洁净检查（无融合 / 无旧接口 / 无决策对象）</p>
+            <span class="cmd-block"><span class="c"># 应无匹配（注释/字符串除外）</span><br>rg -n "smoothstep|blend_|pending_chunk|next_chunk|ControlDecision|ControlCommand|publish_safe|emit_fallback|filter_action\\.accepted|\\.accepted" src/model_deploy/act/runtime/control_loop.py src/model_deploy/act/ui/act_deploy_node.py</span>
+            <div class="result">
+              <div class="pass">无匹配 → L2-06 不越界做融合/不生成中间决策对象/不调用已废弃旧接口。</div>
+              <div class="fail">出现匹配行 → Pi0.5 残留或旧接口误用。看上下文确认（注释引用除外）。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">4</div>
+          <div class="body">
+            <p class="do">落点检查（仅 runtime/ui/tests）</p>
+            <span class="cmd-block">find src/model_deploy/act -path "*control_loop*" -o -path "*act_deploy_node*" -o -path "*inference_channel*" -o -path "*runtime_metrics*" -o -path "*inference_worker*" | grep -v tests</span>
+            <div class="result">
+              <div class="pass">仅 <code>runtime/{inference_channel,runtime_metrics,inference_worker,control_loop}.py</code>、<code>ui/act_deploy_node.py</code>。无 types/config/repo/service 新增。</div>
+              <div class="fail">出现 types/config/repo/service 下文件 → 越界落点。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">5</div>
+          <div class="body">
+            <p class="do">shadow-run（topic/bridge 可见，sent_to_driver=false）<span class="badge ref">BLOCKED 条件</span></p>
+            <span class="cmd-block"><span class="c"># 需 ROS topic/bridge 可启动；gate 关闭；command disabled</span><br>bash src/model_deploy/act/scripts/l2_06_verify.sh --scope ros-dry-run --policy fake --config src/model_deploy/act/tests/fixtures/l2_06_fake.yaml</span>
+            <div class="result">
+              <div class="pass"><code>command_status</code> 可见，policy/status/metrics 可观测且 <code>sent_to_driver=false</code>。</div>
+              <div class="fail">topic/driver 未配置 → <b>BLOCKED_ENV</b>（≠失败，退出码仍 0）。</div>
+            </div>
+            <p class="why">依据 <code>05_人类验收机制.md 验收项7</code>。shadow-run 是真机前的必要证据。</p>
+          </div>
+        </div>
+
+        <div class="vfy-item">
+          <div class="num">6</div>
+          <div class="body">
+            <p class="do">真机运动（仅获授权后执行）<span class="badge layer">BLOCKED</span></p>
+            <span class="cmd-block"><span class="c"># 需硬件：E-stop 就绪 + shadow 证据 + 现场操作者授权</span><br>bash src/model_deploy/act/scripts/l2_06_verify.sh --scope real-policy-dry-run --policy real --config "$ACT_DEPLOY_CONFIG"</span>
+            <div class="result">
+              <div class="pass">由人工签字，机器人行为与 command_status 一致。</div>
+              <div class="fail">停机 / E-stop / driver 日志异常 → 立即停机排查。</div>
+            </div>
+            <p class="why">默认 <b>BLOCKED_HARDWARE / BLOCKED_AUTHORIZATION</b>（当前无硬件）。真机前必须：操作者授权 + E-stop 可达 + gate/deadman 状态 + shadow-run 证据 + 明确安全区域。依据 <code>05_人类验收机制.md 验收项10</code>。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warn">签字位置：<code>DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-06-control-loop/验收结果.md</code>。L2-06 的验证<b>不等于真机通过</b>——真机动作永远受 L2-05 gate 管理。外部 topic、硬件 driver、E-stop 和真实 fallback 执行语义尚未在本工作树确认，均为 shadow/真机验收的 BLOCKED 条件，不阻塞 mock L3。验收项1 还须先跑 <code>validate_l2_design_package.py</code> 并确认 <code>HTML_SOURCE_ALIGNMENT</code> 负向扫描（A=5/B=12/C=26、无旧接口）。</div>
+      <p class="src">权威来源：<code>agent_context/04_L2验收机制.md</code>（§3 验证层级 / §4 验证脚本合同 / §5 标签→层→微元 / §6 真实对象 tracer / §8 放行规则）、<code>agent_context/05_人类验收机制.md</code>（人类验收清单 10 项 / 签字格式 / 真机风险）</p>
+    </section>
+
+  </div>
 </div>
-<p class="src">权威来源：agent_context/03a_功能微元总览与组织结构.md、agent_context/03_ACT微元设计与协作.md、agent_context/06_types层设计.md 至 11_ui层设计.md</p></section>
-<section class="view acceptance" data-agent-source="agent_context/04_L2验收机制.md#验证脚本合同"><div class="reading-path">mock→定位→shadow</div><p class="lead">BLOCKED 是环境或授权不足，不是 FAIL。</p><div class="vfy"><div class="vfy-item">1. <code>bash DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-06-control-loop/scripts/l2_06_verify.sh --mode mock</code></div><div class="vfy-item">2.<div class="term"><div class="t-row"><b>PASS</b><b>RUNTIME_CHUNK</b><span>合法 chunk</span></div><div class="t-row"><b>FAIL</b><b>RUNTIME_CURSOR</b><span>未 fallback</span></div><div class="t-loc">file: runtime/control_loop.py / class: ControlLoop / micro-unit: C4 / pytest: test_cursor / error: count=0</div></div><table class="trtab"><tr><th>标签</th><th>层</th><th>定位</th><th>含义</th></tr><tr><td>RUNTIME_CURSOR</td><td>runtime</td><td class="mu">runtime/control_loop.py → ControlLoop → C4（内部状态更新函数）</td><td>失败查 fallback</td></tr></table></div><div class="vfy-item">3. 边界：不实现模型、安全、topic。</div><div class="vfy-item">4. 真机：无 E-stop/授权即 BLOCKED。</div></div><p class="src">权威来源：agent_context/04_L2验收机制.md#验证脚本合同、agent_context/05_人类验收机制.md</p></section>
-</div></body></html>
+</body>
+</html>

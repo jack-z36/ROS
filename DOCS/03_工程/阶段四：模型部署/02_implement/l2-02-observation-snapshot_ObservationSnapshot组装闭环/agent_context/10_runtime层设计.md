@@ -35,7 +35,12 @@ src/model_deploy/act/runtime/observation_buffer.py
 | `set_observation(observation)` | `ObservationSnapshot` | 无 | 覆盖 latest observation，更新 counters | snapshot 非法时拒绝 |
 | `latest_observation(max_age_s=None)` | max age | `ObservationSnapshot` 或 `None` | stale 时可更新 stale counter | 无 snapshot 返回 `None` |
 | `record_missing_fields(fields)` | list[str] | 无 | 更新 diagnostics | 无 |
-| `metrics_snapshot()` | 无 | dict | 无 | 无 |
+| `metrics_snapshot()` | 无 | mapping | 无 | 无 |
+
+> deploy_057 契约加固：`ObservationBuffer` 接收注入的 `monotonic_clock`
+> （默认 `time.monotonic`）。`latest_observation(max_age_s)` 的 freshness 年龄
+> 用 `monotonic_clock() - captured_at_s` 计算，与 collector / pipeline 同一
+> monotonic 时钟域（不再用 `time.time()`），`updated_at_s` 也由同一时钟写入。
 
 ## 4. 输入输出
 
