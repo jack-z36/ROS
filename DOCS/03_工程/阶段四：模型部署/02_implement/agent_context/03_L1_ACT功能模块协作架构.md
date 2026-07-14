@@ -249,13 +249,16 @@ stateDiagram-v2
 启动阶段只做静态装配，不进入控制循环。
 
 ```text
-1. L2-01 读取 deploy.yaml。
+1. L2-01 读取 deploy.yaml（command_output_enabled 由 CLI keyword-only 决定，YAML 不开真实命令）。
 2. L2-01 校验 topic、runtime、safety、bundle contract。
-3. 程序用 DeployConfig 创建 L2-02 的 observation 订阅入口。
-4. 程序用 DeployConfig 创建 L2-03 的 ActPolicyRuntime 或 fake-policy runtime。
-5. 程序用 DeployConfig 创建 L2-04 的 SafetyGuard。
-6. 程序用 DeployConfig 创建 L2-05 的 publisher / command bridge。
-7. 程序创建 L2-06 ControlLoop，但此时还不一定有 observation 或 action chunk。
+3. L2-01 派生冻结启动资源合同：PolicyInputSpec（camera key / image shape / 16D 等）
+   与 ActRuntimeResources（policy + normalizer + cross_check）。该合同的唯一 owner 是 L2-01；
+   L2-03 只通过注入的 load_policy 提供已加载权重，L2-06 只消费该合同，不得各自重建 spec。
+4. 程序用 DeployConfig + ActRuntimeResources 创建 L2-02 的 observation 订阅入口。
+5. 程序用 ActRuntimeResources 创建 L2-03 的 ActPolicyRuntime 或 fake-policy runtime。
+6. 程序用 DeployConfig 创建 L2-04 的 SafetyGuard。
+7. 程序用 DeployConfig 创建 L2-05 的 publisher / command bridge。
+8. 程序创建 L2-06 ControlLoop，但此时还不一定有 observation 或 action chunk。
 ```
 
 启动阶段失败应直接停止程序，不进入半初始化状态。典型失败包括：

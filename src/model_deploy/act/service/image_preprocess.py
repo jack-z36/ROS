@@ -97,8 +97,14 @@ def preprocess_observation_image(
         # In production, cv2 is expected
         pass  # let the shape check below catch mismatches
 
-    # --- convert dtype ---
-    if image.dtype != image_config.dtype:
+    # --- normalize to unit float32 ---
+    # Integer image data (e.g. uint8 0..255) is scaled to [0, 1] float32 so
+    # the produced RAM image matches the policy input contract
+    # (deploy_057 / P0-06 image range).  Float inputs are assumed already in
+    # [0, 1] and only cast to the target dtype.
+    if np.issubdtype(image.dtype, np.integer):
+        image = image.astype(np.float32) / 255.0
+    elif image.dtype != image_config.dtype:
         image = image.astype(image_config.dtype)
 
     # --- validate output ---
@@ -107,5 +113,8 @@ def preprocess_observation_image(
             f"Pre-processed image shape {image.shape} does not match "
             f"target_shape {image_config.target_shape}"
         )
+
+    if not np.isfinite(image).all():
+        raise ValueError("Pre-processed image contains non-finite values")
 
     return image

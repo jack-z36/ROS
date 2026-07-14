@@ -430,7 +430,7 @@ td .errc{color:var(--warn);font-weight:600}
           <div class="io-col" style="flex:1.1">
             <div class="io-label">功能模块</div>
             <div class="io-module" style="padding:14px;text-align:center">
-              <p style="font-size:14px;font-weight:700;color:var(--repo);margin:0 0 4px;font-family:ui-monospace,monospace">filter_action(raw_action, *, observation=None, previous_action=None)</p>
+              <p style="font-size:14px;font-weight:700;color:var(--repo);margin:0 0 4px;font-family:ui-monospace,monospace">filter_action(candidate, *, previous_safe_action=None, latest_observation=None)</p>
               <p style="font-size:12px;color:var(--muted);margin:0 0 6px">→ SafetyResult</p>
               <p style="font-size:11.5px;color:var(--muted);margin:0;line-height:1.5">纯同步安全检查，由 <code>SafetyGuard</code>（class，service 层）持有<br>被 L2-06 ControlLoop.tick 每 step 同步调用，无可变运行时状态</p>
               <div class="pipe">
@@ -454,19 +454,19 @@ td .errc{color:var(--warn);font-weight:600}
                 <p style="color:var(--muted);margin:8px 0 4px">Frozen dataclass，构造后只读。L2-04 的 <code>filter_action</code> 创建并返回，L2-06 消费。跨 L2 公共 RAM 契约，供 L2-05/L2-06 只读消费。<code>types/safety_result.py</code>。</p>
                 <table>
                   <tr><th>字段</th><th>类型</th><th>说明</th></tr>
-                  <tr><td>action</td><td>ActionSpec | None</td><td>通过态=clamp 后 ActionSpec；拒绝态=None</td></tr>
-                  <tr><td>accepted</td><td>bool</td><td>True=可交 L2-05 发布；False=交 L2-06 fallback</td></tr>
-                  <tr><td>reason</td><td>str | None</td><td>拒绝原因；通过态=None</td></tr>
+                  <tr><td>status</td><td>SafetyStatus</td><td>三态枚举：PASS / ADJUSTED / REJECTED（替代旧 bool accepted）</td></tr>
+                  <tr><td>action</td><td>ActionSpec | None</td><td>PASS/ADJUSTED=投影后 ActionSpec；REJECTED=None（不伪造 action）</td></tr>
+                  <tr><td>findings</td><td>tuple[SafetyFinding, ...]</td><td>每条调整/拒绝的 code/side/before/after/detail；通过态为空 tuple</td></tr>
                 </table>
 
                 <details class="nested-detail" open>
                   <summary>图② reject vs clamp：两类处理语义墙</summary>
                   <div class="body">
-                    <p style="font-weight:700;color:var(--warn);margin:4px 0 3px">✗ reject（accepted=False, action=None）→ 交 L2-06 fallback</p>
+                    <p style="font-weight:700;color:var(--warn);margin:4px 0 3px">✗ reject（status=REJECTED, action=None）→ 交 L2-06 fallback</p>
                     <p style="font-size:11.5px;color:var(--warn);margin:0 0 2px">· shape 非 16D — 动作非法，不可修正</p>
                     <p style="font-size:11.5px;color:var(--warn);margin:0 0 2px">· 含 NaN / Inf — 动作非法</p>
                     <p style="font-size:11.5px;color:var(--warn);margin:0 0 8px">· quaternion 模长偏离 1（左/右分别可定位）— 姿态非法</p>
-                    <p style="font-weight:700;color:var(--ok);margin:4px 0 3px">✓ clamp 修正（accepted=True, action 已修正）→ 仍是合法 safe action</p>
+                    <p style="font-weight:700;color:var(--ok);margin:4px 0 3px">✓ clamp 修正（status=ADJUSTED, action 已修正）→ 仍是合法 safe action</p>
                     <p style="font-size:11.5px;color:var(--muted);margin:0 0 2px">· TCP xyz 步长超 max_tcp_delta_per_step — clamp 到限值（米制）</p>
                     <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px">· gripper 越出 [hand_min, hand_max] — clamp 到边界（依夹爪设备）</p>
                     <p style="font-size:11px;color:#7a5c00;margin:6px 0 0"><b>关键：</b>reject 和 clamp 是两种不同处理。动作本身非法（shape/NaN/quat）必须拒绝；数值越界（步长/夹爪）可修正，clamp 后仍是合法 action。fallback 策略选择（hold/continue/safe_stop）<b>归 L2-06</b>，L2-04 只产 SafetyResult。</p>
@@ -483,7 +483,7 @@ td .errc{color:var(--warn);font-weight:600}
                   </div>
                 </details>
 
-                <p style="font-size:11px;color:var(--muted);margin:8px 0 0">accepted → L2-05 发布 safe action；rejected → L2-06 fallback 决策。<b>L2-04 是动作离开程序前的最后一道 policy-action 过滤。</b></p>
+                <p style="font-size:11px;color:var(--muted);margin:8px 0 0">PASS / ADJUSTED → L2-05 发布携带的 safe action；REJECTED → L2-06 fallback 决策。<b>L2-04 是动作离开程序前的最后一道 policy-action 过滤。</b></p>
               </div>
             </details>
           </div>
@@ -538,7 +538,7 @@ td .errc{color:var(--warn);font-weight:600}
         <div class="step s4">
           <div class="no">4</div>
           <h4>手部值域 + 返回</h4>
-          <div class="what">手部标量 clamp 到 [hand_min, hand_max]（Pi0.5 是 300-1000）。返回 SafetyResult(action=修正后动作, accepted=True)。<br><b>ACT 值域按 F100 改 0-100</b>。</div>
+          <div class="what">手部标量 clamp 到 [hand_min, hand_max]（Pi0.5 是 300-1000）。返回 SafetyResult(status=ADJUSTED, action=修正后动作, findings=...)。<br><b>ACT 值域按 F100 改 0-100</b>。</div>
         </div>
       </div>
 
@@ -548,12 +548,12 @@ td .errc{color:var(--warn);font-weight:600}
 <span class="ln">2</span>raw_action = self._next_raw_action(now)         <span class="cmt"># 从 chunk 取单步</span>
 <span class="ln">3</span>result = self.safety_guard.filter_action(
 <span class="ln">4</span>    raw_action,
-<span class="ln">5</span>    observation=latest_observation,
-<span class="ln">6</span>    previous_action=self.last_command)             <span class="cmt"># anchor 主来源</span>
-<span class="ln">7</span><span class="key">if</span> not result.accepted:
-<span class="ln">8</span>    <span class="err">return self._fallback(result.reason)</span>     <span class="cmt"># 拒绝 → L2-06 fallback</span>
+<span class="ln">5</span>    latest_observation=latest_observation,
+<span class="ln">6</span>    previous_safe_action=self.last_command)             <span class="cmt"># anchor 主来源</span>
+<span class="ln">7</span><span class="key">if</span> result.status is SafetyStatus.REJECTED:
+<span class="ln">8</span>    <span class="err">return self._fallback(result.findings)</span>     <span class="cmt"># 拒绝 → L2-06 fallback</span>
 <span class="ln">9</span>self.last_command = result.action                <span class="cmt"># 记下，下步当 anchor</span>
-<span class="ln">10</span><span class="ok">return ControlCommand(action=result.action)</span>  <span class="cmt"># 通过 → 发布</span>
+<span class="ln">10</span><span class="ok">return ControlCommand(action=result.action)</span>  <span class="cmt"># 通过/修正 → 发布</span>
       </div>
       <p style="font-size:12.5px;color:var(--muted)">注意：<code>last_command</code> 由 ControlLoop（L2-06）持有，不是 SafetyGuard 持有。SafetyGuard 无可变状态。</p>
 
@@ -655,7 +655,7 @@ td .errc{color:var(--warn);font-weight:600}
           <text class="sub" x="863" y="124" text-anchor="middle">数据契约</text>
           <!-- 返回 L2-06（types→runtime，实线回流） -->
           <path d="M863 138 Q 863 250 110 250 Q 110 180 110 140" fill="none" stroke="#475467" stroke-width="1.8" marker-end="url(#arrow4)"></path>
-          <text class="elabel" x="480" y="246" text-anchor="middle">accepted → safe action / rejected → reason（交 L2-06 fallback）</text>
+          <text class="elabel" x="480" y="246" text-anchor="middle">PASS/ADJUSTED → safe action / REJECTED → findings（交 L2-06 fallback）</text>
           <!-- 图例 -->
           <text class="sub" x="10" y="288" fill="var(--config)">实线 = 运行时同步调用方向</text>
           <text class="sub" x="300" y="288" fill="var(--warn)">红色虚线 = 失败分支（reject，不写下游）</text>
@@ -729,7 +729,7 @@ td .errc{color:var(--warn);font-weight:600}
           <p style="font-size:13px;color:var(--muted);margin:0 0 6px">这一层只定义"安全检查结果长什么样"。作为跨 L2 公共 RAM 契约，供 L2-05/L2-06 只读消费，避免它们依赖 service 实现。<b>不读配置、不依赖 ROS、不做计算。</b></p>
           <div class="classbox">
             <h5>safety_result.py（types/safety_result.py）— C1/C2/C3/C5 四个数据微元</h5>
-            <p class="role">安全检查的冻结输出契约，跨模块 RAM 对象。结构复用 Pi0.5 <code>safety_guard.py::SafetyResult</code>，把 action/accepted/reason 三字段重写为 status + findings，使 ADJUSTED 的调整原因不丢失。</p>
+            <p class="role">安全检查的冻结输出契约，跨模块 RAM 对象。结构复用 Pi0.5 <code>safety_guard.py::SafetyResult</code>，把其旧三字段（action/accepted/reason）重写为 status + findings，使 ADJUSTED 的调整原因不丢失。</p>
             <div class="mu-list">
               <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table">
                 <tr><th>编号·变量名</th><th>内部存储结构</th><th>内部存储的数据类型</th></tr>
@@ -859,7 +859,7 @@ td .errc{color:var(--warn);font-weight:600}
               <div class="t-row"><span class="ok">PASS</span><span class="lbl">guard.nan_reject</span><span class="note">NaN/Inf → reject</span></div>
               <div class="t-row"><span class="ok">PASS</span><span class="lbl">guard.quat_ok</span><span class="note">合法 quat 通过</span></div>
               <div class="t-row"><span class="fail">FAIL</span><span class="lbl">guard.quat_reject</span><span class="note">非归一化 quat → reject</span></div>
-              <div class="t-loc"><span><span class="lk">文件：</span>src/model_deploy/act/service/safety_guard.py</span><span><span class="lk">class：</span>SafetyGuard</span><span><span class="lk">微元：</span>_check_quaternion（计算函数）</span><span><span class="lk">pytest：</span>tests/service/test_safety_guard.py::test_quaternion_reject</span><span><span class="lk">错误：</span>期望 accepted=False，实际 accepted=True（容差逻辑或 wxyz 顺序错）</span></div>
+              <div class="t-loc"><span><span class="lk">文件：</span>src/model_deploy/act/service/safety_guard.py</span><span><span class="lk">class：</span>SafetyGuard</span><span><span class="lk">微元：</span>_check_quaternion（计算函数）</span><span><span class="lk">pytest：</span>tests/service/test_safety_guard.py::test_quaternion_reject</span><span><span class="lk">错误：</span>期望 status=REJECTED，实际 status=PASS（容差逻辑或 wxyz 顺序错）</span></div>
               <div class="t-row"><span class="ok">PASS</span><span class="lbl">guard.gripper_clamp</span><span class="note">越界 → clamp</span></div>
               <div class="t-row"><span class="ok">PASS</span><span class="lbl">guard.tcp_delta_clamp</span><span class="note">超步长 → clamp</span></div>
               <div class="t-row"><span class="ok">PASS</span><span class="lbl">guard.anchor_prev</span><span class="note">anchor 取 previous</span></div>
@@ -872,11 +872,11 @@ td .errc{color:var(--warn);font-weight:600}
             </div>
             <table class="trtab">
               <tr><th>标签</th><th>层</th><th>对应微元（完整定位链）</th><th>PASS 含义 / FAIL 查哪里</th></tr>
-              <tr class="types"><td class="lbl">types.safety_result</td><td class="lyr">types</td><td class="mu"><span class="fpath">types/safety_result.py</span><span class="cls">class <b>SafetyResult</b></span>action/accepted/reason <span class="kindtag data">数据</span></td><td class="pf"><span class="pp">PASS：frozen、通过/拒绝态字段正确</span><span class="fp">FAIL：看 frozen 是否抛异常、字段类型</span></td></tr>
-              <tr class="service"><td class="lbl">guard.shape_reject</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/safety_guard.py</span><span class="cls">class <b>SafetyGuard</b></span>filter_action 步骤1 <span class="kindtag orch">编排函数</span></td><td class="pf"><span class="pp">PASS：非 16D → accepted=False</span><span class="fp">FAIL：看 ensure_action_vector 调用与 reason</span></td></tr>
-              <tr class="service"><td class="lbl">guard.quat_reject</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/safety_guard.py</span><span class="cls">class <b>SafetyGuard</b></span>_check_quaternion <span class="kindtag calc">计算函数</span></td><td class="pf"><span class="pp">PASS：模长偏离 → accepted=False</span><span class="fp">FAIL：看 tol 逻辑 / wxyz 顺序 / side 定位</span></td></tr>
-              <tr class="service"><td class="lbl">guard.gripper_clamp</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/safety_guard.py</span><span class="cls">class <b>SafetyGuard</b></span>filter_action 步骤6 gripper <span class="kindtag orch">编排函数</span></td><td class="pf"><span class="pp">PASS：越界 → clamp 到边界，accepted=True</span><span class="fp">FAIL：看 _hand_min/_hand_max 是否为 F100 0-100</span></td></tr>
-              <tr class="service"><td class="lbl">guard.tcp_delta_clamp</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/safety_guard.py</span><span class="cls">class <b>SafetyGuard</b></span>_clamp_tcp_delta <span class="kindtag calc">计算函数</span></td><td class="pf"><span class="pp">PASS：超步长 → clamp，accepted=True</span><span class="fp">FAIL：看 anchor 是否 None / limit 值</span></td></tr>
+              <tr class="types"><td class="lbl">types.safety_result</td><td class="lyr">types</td><td class="mu"><span class="fpath">types/safety_result.py</span><span class="cls">class <b>SafetyResult</b></span>status/action/findings <span class="kindtag data">数据</span></td><td class="pf"><span class="pp">PASS：frozen、三态 status 字段正确</span><span class="fp">FAIL：看 frozen 是否抛异常、字段类型</span></td></tr>
+              <tr class="service"><td class="lbl">guard.shape_reject</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/safety_guard.py</span><span class="cls">class <b>SafetyGuard</b></span>filter_action 步骤1 <span class="kindtag orch">编排函数</span></td><td class="pf"><span class="pp">PASS：非 16D → status=REJECTED</span><span class="fp">FAIL：看 ensure_action_vector 调用与 findings</span></td></tr>
+              <tr class="service"><td class="lbl">guard.quat_reject</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/safety_guard.py</span><span class="cls">class <b>SafetyGuard</b></span>_check_quaternion <span class="kindtag calc">计算函数</span></td><td class="pf"><span class="pp">PASS：模长偏离 → status=REJECTED</span><span class="fp">FAIL：看 tol 逻辑 / wxyz 顺序 / side 定位</span></td></tr>
+              <tr class="service"><td class="lbl">guard.gripper_clamp</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/safety_guard.py</span><span class="cls">class <b>SafetyGuard</b></span>filter_action 步骤6 gripper <span class="kindtag orch">编排函数</span></td><td class="pf"><span class="pp">PASS：越界 → clamp 到边界，status=ADJUSTED</span><span class="fp">FAIL：看 _hand_min/_hand_max 是否为 F100 0-100</span></td></tr>
+              <tr class="service"><td class="lbl">guard.tcp_delta_clamp</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/safety_guard.py</span><span class="cls">class <b>SafetyGuard</b></span>_clamp_tcp_delta <span class="kindtag calc">计算函数</span></td><td class="pf"><span class="pp">PASS：超步长 → clamp，status=ADJUSTED</span><span class="fp">FAIL：看 anchor 是否 None / limit 值</span></td></tr>
               <tr class="service"><td class="lbl">guard.anchor_prev</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/safety_guard.py</span><span class="cls">class <b>SafetyGuard</b></span>_select_tcp_anchor <span class="kindtag calc">计算函数</span></td><td class="pf"><span class="pp">PASS：previous 存在 → anchor 取 previous</span><span class="fp">FAIL：看优先级 previous > observation > skip</span></td></tr>
               <tr class="boundary"><td class="lbl">boundary.no_overreach</td><td class="lyr">边界</td><td class="mu"><span class="fpath">service/safety_guard.py + types/safety_result.py</span><span class="cls">无 class（L2 责任墙）</span>不含推理/发布/硬件/fallback</td><td class="pf"><span class="pp">PASS：rg 无越界关键词匹配</span><span class="fp">FAIL：看匹配行上下文（注释除外）</span></td></tr>
               <tr class="boundary"><td class="lbl">guard.real_gripper_f100</td><td class="lyr">边界</td><td class="mu"><span class="fpath">service/safety_guard.py → 硬件 F100</span><span class="cls">class <b>SafetyGuard</b></span>gripper clamp 真机验证</td><td class="pf"><span class="blk">BLOCKED：无硬件（环境约束，≠失败）</span></td></tr>

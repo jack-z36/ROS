@@ -16,6 +16,7 @@ import numpy as np
 import pytest
 import torch
 
+from model_deploy.act.repo.act_runtime_resources import PolicyInputSpec
 from model_deploy.act.repo.normalization import ActionStateNormalizer
 from model_deploy.act.service.observation_batch import (
     add_batch_dim,
@@ -33,19 +34,34 @@ from model_deploy.act.service.observation_batch import (
 # ---------------------------------------------------------------------------
 
 
+def _make_input_spec(
+    state_key: str = "observation.state",
+    camera_keys: tuple[str, ...] = ("top", "left_wrist"),
+    image_shapes: tuple[tuple[int, int, int], ...] = ((3, 224, 224), (3, 480, 640)),
+    chunk_size: int = 10,
+) -> PolicyInputSpec:
+    """Build a canonical frozen ``PolicyInputSpec`` (camera_keys sorted)."""
+    cams = tuple(sorted(camera_keys))
+    shapes_by_cam = dict(zip(camera_keys, image_shapes))
+    ordered_shapes = tuple(shapes_by_cam[c] for c in cams)
+    return PolicyInputSpec(
+        state_key=state_key,
+        state_dim=16,
+        image_prefix="observation.images.",
+        camera_keys=cams,
+        image_shapes=ordered_shapes,
+        image_layout="CHW",
+        image_dtype="float32",
+        image_value_range=(0.0, 1.0),
+        action_dim=16,
+        chunk_size=chunk_size,
+    )
+
+
 @pytest.fixture
-def valid_input_spec() -> Dict[str, Any]:
-    """Minimal input_spec matching a 2-camera 16D ACT policy."""
-    return {
-        "state_dim": 16,
-        "state_key": "observation.state",
-        "camera_keys": ["top", "left_wrist"],
-        "image_prefix": "observation.images.",
-        "image_shapes": {
-            "top": (3, 224, 224),
-            "left_wrist": (3, 480, 640),
-        },
-    }
+def valid_input_spec() -> PolicyInputSpec:
+    """Minimal canonical spec matching a 2-camera 16D ACT policy."""
+    return _make_input_spec()
 
 
 @pytest.fixture
@@ -351,7 +367,7 @@ class TestAssembleActBatch:
 
     def test_custom_state_key(self) -> None:
         state_t = torch.zeros(1, 16, dtype=torch.float32)
-        spec = {"state_key": "custom.state"}
+        spec = _make_input_spec(state_key="custom.state")
         batch = assemble_act_batch(state_t, {}, spec)
         assert "custom.state" in batch
 

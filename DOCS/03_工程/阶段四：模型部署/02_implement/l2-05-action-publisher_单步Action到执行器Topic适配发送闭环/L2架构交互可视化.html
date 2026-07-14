@@ -856,6 +856,8 @@ td .errc{color:var(--warn);font-weight:600}
                 <tr class="fld"><td>gripper_skipped</td><td>tuple[str, ...]</td><td>因 deadband 有意跳过的 side 列表</td></tr>
                 <tr class="fld"><td>sent_to_driver</td><td>bool</td><td>计划 command publish 是否全部完成（≠硬件执行）</td></tr>
                 <tr class="fld"><td>failure_reason</td><td>str | None</td><td>契约/授权/构造/publish 失败原因</td></tr>
+                <tr class="fld"><td>failure_stage</td><td>Literal["safety","policy_publish","command_build","command_publish"] | None</td><td>deploy_060 发布失败追因：精确失败阶段（REJECTED→safety；FAILED/PARTIAL→policy_publish/command_build/command_publish）；成功/PARTIAL 前态为 None</td></tr>
+                <tr class="fld"><td>failed_topic</td><td>str | None</td><td>deploy_060 I/O 失败时精确到失败的 public topic（如 /act/policy_action、/act/command/arm/right_target）；build 类失败或成功为 None</td></tr>
                 <tr class="fld"><td>driver_accepted</td><td>None（固定）</td><td>L2-05 不知道；禁止伪造 True</td></tr>
                 <tr class="fld"><td>hardware_reached</td><td>None（固定）</td><td>L2-05 不知道；禁止伪造 True</td></tr>
               </table></span></div>

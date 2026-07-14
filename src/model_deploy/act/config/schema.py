@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, Tuple
 
 import yaml
 
@@ -50,12 +50,20 @@ class DeployConfigError(ValueError):
 
 @dataclass(frozen=True)
 class BundleConfig:
-    """Runtime model bundle location."""
+    """Runtime model bundle location.
 
-    bundle_dir: Path
+    ``bundle_dir`` may be ``None`` to support the default config and a
+    controlled fake harness.  A ``None`` bundle means "no production resource
+    loader" — ``load_act_runtime_resources`` must then fail fast rather than
+    guess a path (deploy_056 / P0-01).
+    """
+
+    bundle_dir: Path | None
 
     @property
-    def resolved_bundle_dir(self) -> Path:
+    def resolved_bundle_dir(self) -> Path | None:
+        if self.bundle_dir is None:
+            return None
         return self.bundle_dir.expanduser().resolve()
 
 
@@ -77,6 +85,7 @@ class RuntimeConfig:
     action_dim: int = 16
     state_dim: int = 16
     max_action_age_sec: float = 0.45
+    max_observation_age_sec: float = 1.0
     max_inference_requests: int = 1
     max_pending_chunks: int = 1
     fallback_policy: str = "hold_last_action"
@@ -110,10 +119,17 @@ class RuntimeConfig:
             )
         if self.max_action_age_sec <= 0.0:
             raise DeployConfigError("runtime.max_action_age_sec must be positive.")
-        if self.max_inference_requests < 1:
-            raise DeployConfigError("runtime.max_inference_requests must be >= 1.")
-        if self.max_pending_chunks < 1:
-            raise DeployConfigError("runtime.max_pending_chunks must be >= 1.")
+        if self.max_observation_age_sec <= 0.0:
+            raise DeployConfigError("runtime.max_observation_age_sec must be positive.")
+        if self.max_inference_requests != 1:
+            raise DeployConfigError(
+                "runtime.max_inference_requests must be exactly 1 "
+                "(single in-flight inference request)."
+            )
+        if self.max_pending_chunks != 1:
+            raise DeployConfigError(
+                "runtime.max_pending_chunks must be exactly 1 (single pending chunk)."
+            )
         if self.fallback_policy not in {"hold_last_action", "continue_old_chunk", "safe_stop"}:
             raise DeployConfigError(
                 "runtime.fallback_policy must be one of: "
@@ -121,9 +137,27 @@ class RuntimeConfig:
             )
 
 
+# Canonical logical policy camera keys that every observation config must ship.
+_CANONICAL_CAMERA_KEYS: tuple[str, ...] = ("left", "right")
+
+# Default canonical camera key -> ROS topic mapping (kept in sync with the
+# legacy left_image / right_image default values for backward compatibility).
+_DEFAULT_IMAGE_MAPPING: tuple[tuple[str, str], ...] = (
+    ("left", "/act/observation/image/left_gripper_fisheye"),
+    ("right", "/act/observation/image/right_gripper_fisheye"),
+)
+
+
 @dataclass(frozen=True)
 class ObservationTopicsConfig:
-    """ROS input topics consumed by the observation collector (ACT namespace)."""
+    """ROS input topics consumed by the observation collector (ACT namespace).
+
+    ``images`` is the canonical, read-only logical policy camera key -> ROS
+    topic mapping (deploy_056 / P0-09-config).  The legacy ``left_image`` /
+    ``right_image`` fields are retained so existing code keeps importing them,
+    but a real config must use ``images``; the loader rejects mixing the two
+    or omitting the canonical ``images`` mapping.
+    """
 
     arm_state: str = "/act/observation/arm_state"
     left_image: str = "/act/observation/image/left_gripper_fisheye"
@@ -132,6 +166,15 @@ class ObservationTopicsConfig:
     right_tcp_pose: str = "/act/observation/arm/right_tcp_pose"
     left_gripper_state: str = "/act/observation/gripper/left_state"
     right_gripper_state: str = "/act/observation/gripper/right_state"
+    images: tuple[tuple[str, str], ...] = field(default=_DEFAULT_IMAGE_MAPPING)
+
+    @property
+    def image_topics(self) -> dict[str, str]:
+        return {key: topic for key, topic in self.images}
+
+    @property
+    def camera_keys(self) -> tuple[str, ...]:
+        return tuple(key for key, _ in self.images)
 
 
 @dataclass(frozen=True)
@@ -359,9 +402,11 @@ def _deploy_from_mapping(
     obs_raw = _mapping(topics_raw.get("observation", {}), "topics.observation")
     cmd_raw = _mapping(topics_raw.get("command", {}), "topics.command")
 
+    obs_images, obs_left, obs_right = _observation_images_from_raw(obs_raw)
+
     return DeployConfig(
         bundle=BundleConfig(
-            bundle_dir=_path(bundle_raw, "bundle_dir", base_dir=base_dir),
+            bundle_dir=_path_or_none(bundle_raw, "bundle_dir", base_dir=base_dir),
         ),
         runtime=RuntimeConfig(
             mode=_choice(runtime_raw, "mode", {"dry-run", "shadow-run", "safe-run"}, default="dry-run"),
@@ -374,8 +419,9 @@ def _deploy_from_mapping(
             action_dim=_positive_int(runtime_raw, "action_dim", default=16),
             state_dim=_positive_int(runtime_raw, "state_dim", default=16),
             max_action_age_sec=_positive_float(runtime_raw, "max_action_age_sec", default=0.45),
-            max_inference_requests=_positive_int(runtime_raw, "max_inference_requests", default=1),
-            max_pending_chunks=_positive_int(runtime_raw, "max_pending_chunks", default=1),
+            max_observation_age_sec=_positive_float(runtime_raw, "max_observation_age_sec", default=1.0),
+            max_inference_requests=_exactly_one_int(runtime_raw, "max_inference_requests"),
+            max_pending_chunks=_exactly_one_int(runtime_raw, "max_pending_chunks"),
             fallback_policy=_choice(
                 runtime_raw,
                 "fallback_policy",
@@ -398,12 +444,13 @@ def _deploy_from_mapping(
             namespace=namespace,
             observation=ObservationTopicsConfig(
                 arm_state=_str(obs_raw, "arm_state", default="/act/observation/arm_state"),
-                left_image=_str(obs_raw, "left_image", default="/act/observation/image/left_gripper_fisheye"),
-                right_image=_str(obs_raw, "right_image", default="/act/observation/image/right_gripper_fisheye"),
+                left_image=obs_left,
+                right_image=obs_right,
                 left_tcp_pose=_str(obs_raw, "left_tcp_pose", default="/act/observation/arm/left_tcp_pose"),
                 right_tcp_pose=_str(obs_raw, "right_tcp_pose", default="/act/observation/arm/right_tcp_pose"),
                 left_gripper_state=_str(obs_raw, "left_gripper_state", default="/act/observation/gripper/left_state"),
                 right_gripper_state=_str(obs_raw, "right_gripper_state", default="/act/observation/gripper/right_state"),
+                images=obs_images,
             ),
             command=CommandTopicsConfig(
                 policy_action=_str(cmd_raw, "policy_action", default="/act/policy_action"),
@@ -523,6 +570,91 @@ def _path(raw: Mapping[str, Any], key: str, *, base_dir: Path) -> Path:
     value = _str(raw, key)
     path = Path(value).expanduser()
     return path if path.is_absolute() else (base_dir / path)
+
+
+def _path_or_none(raw: Mapping[str, Any], key: str, *, base_dir: Path) -> Path | None:
+    """Resolve a bundle path, tolerating an unset / null / empty value.
+
+    Returns ``None`` when the key is absent or null/empty so the default
+    deploy.yaml and controlled fake harness can omit ``bundle_dir``.  A
+    ``None`` bundle is a deliberate "no production resource loader" signal —
+    ``load_act_runtime_resources`` fails fast on it instead of guessing a path.
+    """
+    if key not in raw:
+        return None
+    value = raw[key]
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        return None
+    if not isinstance(value, str):
+        raise DeployConfigError(
+            f"bundle.{key} must be a string path or null, got {type(value).__name__}"
+        )
+    path = Path(value).expanduser()
+    return path if path.is_absolute() else (base_dir / path)
+
+
+def _exactly_one_int(raw: Mapping[str, Any], key: str, default: int = 1) -> int:
+    """Read an int field that must be exactly 1 (single in-flight request / chunk)."""
+    value = int(raw.get(key, default))
+    if value != 1:
+        raise DeployConfigError(f"{key} must be exactly 1, got {value}")
+    return value
+
+
+def _image_mapping_from_raw(raw: Any) -> tuple[tuple[str, str], ...]:
+    """Validate the canonical ``images`` mapping and return sorted key/topic pairs."""
+    if not isinstance(raw, Mapping):
+        raise DeployConfigError(
+            "topics.observation.images must be a mapping of camera key -> ROS topic."
+        )
+    if not raw:
+        raise DeployConfigError("topics.observation.images must be non-empty.")
+    pairs: list[tuple[str, str]] = []
+    for key, topic in raw.items():
+        if not isinstance(key, str) or not key.strip():
+            raise DeployConfigError("topics.observation.images keys must be non-empty strings.")
+        if not isinstance(topic, str) or not topic.strip():
+            raise DeployConfigError(
+                f"topics.observation.images[{key!r}] must be a non-empty ROS topic string."
+            )
+        pairs.append((key, topic))
+    pairs.sort(key=lambda p: p[0])
+    keys = [k for k, _ in pairs]
+    if len(keys) != len(set(keys)):
+        raise DeployConfigError("topics.observation.images has duplicate camera keys.")
+    missing = [c for c in _CANONICAL_CAMERA_KEYS if c not in keys]
+    if missing:
+        raise DeployConfigError(
+            f"topics.observation.images missing canonical camera key(s): {missing}"
+        )
+    return tuple(pairs)
+
+
+def _observation_images_from_raw(
+    obs_raw: Mapping[str, Any],
+) -> tuple[tuple[tuple[str, str], ...], str, str]:
+    """Resolve the observation image mapping, enforcing the legacy/ canonical rule.
+
+    Returns ``(images_mapping, left_image, right_image)``.  Raises when the
+    config mixes legacy ``left_image``/``right_image`` with the canonical
+    ``images`` mapping, or uses legacy keys without the canonical mapping.
+    """
+    has_legacy = ("left_image" in obs_raw) or ("right_image" in obs_raw)
+    has_images = "images" in obs_raw
+    if has_legacy and has_images:
+        raise DeployConfigError(
+            "topics.observation cannot mix legacy left_image/right_image with the "
+            "canonical `images` mapping; migrate to `images`."
+        )
+    if has_legacy and not has_images:
+        raise DeployConfigError(
+            "topics.observation uses legacy left_image/right_image without the "
+            "canonical `images` mapping; `images` is required (canonical camera missing)."
+        )
+    images = _image_mapping_from_raw(obs_raw["images"]) if has_images else _DEFAULT_IMAGE_MAPPING
+    left = _str(obs_raw, "left_image", default="/act/observation/image/left_gripper_fisheye")
+    right = _str(obs_raw, "right_image", default="/act/observation/image/right_gripper_fisheye")
+    return images, left, right
 
 
 def _str(raw: Mapping[str, Any], key: str, default: str | None = None) -> str:
@@ -720,7 +852,9 @@ def check_normalizer_contract(
     )
 
 
-def load_deploy_config(path: str | Path) -> DeployConfig:
+def load_deploy_config(
+    path: str | Path, *, command_output_enabled: bool = False
+) -> DeployConfig:
     """Load a deployment configuration from a YAML file with full contract validation.
 
     Orchestration order:
@@ -731,6 +865,9 @@ def load_deploy_config(path: str | Path) -> DeployConfig:
 
     Args:
         path: Path to ``deploy.yaml``.
+        command_output_enabled: The human master switch for real command output.
+            It is a startup-only decision supplied by the CLI caller (default
+            ``False``); it is never read from YAML (deploy_056 / P0-06-config).
 
     Returns:
         A fully validated ``DeployConfig``.
@@ -748,11 +885,13 @@ def load_deploy_config(path: str | Path) -> DeployConfig:
             f"Deploy config root must be a mapping, got {type(raw).__name__}"
         )
 
-    config = DeployConfig.from_mapping(raw, base_dir=config_path.parent)
+    config = DeployConfig.from_mapping(
+        raw, base_dir=config_path.parent, command_output_enabled=command_output_enabled
+    )
 
-    # Contract cross-validation (only when bundle_dir is set)
+    # Contract cross-validation (only when a concrete bundle_dir exists)
     bundle_dir = config.bundle.resolved_bundle_dir
-    if str(bundle_dir) != "." and bundle_dir.exists():
+    if bundle_dir is not None and bundle_dir.exists():
         manifest = load_bundle_manifest(bundle_dir)
 
         # Bundle file contract

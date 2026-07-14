@@ -595,3 +595,57 @@ class TestPurityImport:
         assert not hasattr(guard, "metrics")
         assert not hasattr(guard, "_metrics")
 
+
+# ===================================================================
+# PUBLIC-PORT FREEZE (deploy_059): exact seam consumed by L2-06
+# ===================================================================
+
+
+class TestPublicPortFreeze:
+    """Gate-level freeze of the exact public seam and result contract.
+
+    Mirrors the service-level contract freeze so the integration gate also
+    rejects any silent drift back to ``accepted`` / ``observation=`` double-track.
+    """
+
+    def test_filter_action_exact_signature(self) -> None:
+        import inspect
+
+        sig = inspect.signature(SafetyGuard.filter_action, eval_str=True)
+        params = list(sig.parameters)
+        assert params == [
+            "self",
+            "candidate",
+            "previous_safe_action",
+            "latest_observation",
+        ]
+        assert sig.parameters["candidate"].default is inspect.Parameter.empty
+        assert sig.parameters["previous_safe_action"].default is None
+        assert sig.parameters["latest_observation"].default is None
+        assert sig.return_annotation is SafetyResult
+
+    def test_safety_result_has_no_accepted_or_reason(self) -> None:
+        fields = set(SafetyResult.__dataclass_fields__)
+        assert fields == {"status", "action", "findings"}
+        assert "accepted" not in fields
+        assert "reason" not in fields
+
+    def test_guard_has_only_frozen_config_state(self) -> None:
+        guard = SafetyGuard(_default_config())
+        assert set(guard.__dict__.keys()) == {"_config"}
+        guard.filter_action(
+            _vector(_action()), previous_safe_action=_action()
+        )
+        for attr in (
+            "previous_safe_action",
+            "_previous_safe_action",
+            "fallback",
+            "_fallback",
+            "publish",
+            "_publish",
+            "permission",
+            "metrics",
+            "_metrics",
+        ):
+            assert not hasattr(guard, attr), f"unexpected state field {attr!r}"
+

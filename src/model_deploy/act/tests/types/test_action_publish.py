@@ -329,9 +329,13 @@ class TestActionPublishResult:
                 command_plan_completed=False,
                 status_published=False,
                 reason_code="SAFETY_REJECTED",
+                failure_stage="safety",
+                failed_topic=None,
             )
         )
         assert r.reason_code == "SAFETY_REJECTED"
+        assert r.failure_stage == "safety"
+        assert r.failed_topic is None
 
     def test_legal_partial(self) -> None:
         r = ActionPublishResult(
@@ -339,9 +343,14 @@ class TestActionPublishResult:
                 outcome=PublishOutcome.PARTIAL,
                 command_publish_count=2,
                 command_plan_completed=False,
+                reason_code="COMMAND_PUBLISH_IO_ERROR",
+                failure_stage="command_publish",
+                failed_topic="/act/command/arm/right_target",
             )
         )
         assert r.outcome is PublishOutcome.PARTIAL
+        assert r.failure_stage == "command_publish"
+        assert r.failed_topic == "/act/command/arm/right_target"
 
     def test_count_out_of_range_rejected(self) -> None:
         with pytest.raises(ValueError):
@@ -402,3 +411,141 @@ class TestActionPublishResult:
         r = ActionPublishResult(**self._base())
         with pytest.raises(FrozenInstanceError):
             r.action_id = "x"  # type: ignore[misc]
+
+
+# ---------------------------------------------------------------------------
+# deploy_060 — publish-failure provenance matrix (failure_stage / failed_topic)
+# ---------------------------------------------------------------------------
+
+
+class TestPublishProvenance:
+    def _neg(self, outcome: PublishOutcome, **over) -> dict:
+        d = dict(
+            action_id="a1",
+            safety_status=SafetyStatus.PASS,
+            command_output_enabled=False,
+            command_permitted=True,
+            outcome=outcome,
+            policy_action_published=False,
+            command_publish_count=0,
+            gripper_skipped=(),
+            command_plan_completed=False,
+            status_published=False,
+            reason_code="ERR",
+        )
+        d.update(over)
+        return d
+
+    def test_rejected_requires_safety_stage(self) -> None:
+        with pytest.raises(ValueError):
+            ActionPublishResult(**self._neg(PublishOutcome.REJECTED, reason_code="SAFETY_REJECTED"))
+        r = ActionPublishResult(
+            **self._neg(PublishOutcome.REJECTED, reason_code="SAFETY_REJECTED", failure_stage="safety")
+        )
+        assert r.failure_stage == "safety"
+        assert r.failed_topic is None
+
+    def test_rejected_must_not_carry_topic(self) -> None:
+        with pytest.raises(ValueError):
+            ActionPublishResult(
+                **self._neg(
+                    PublishOutcome.REJECTED,
+                    reason_code="SAFETY_REJECTED",
+                    failure_stage="safety",
+                    failed_topic="/act/command/status",
+                )
+            )
+
+    def test_failed_requires_reason_and_stage(self) -> None:
+        with pytest.raises(ValueError):
+            ActionPublishResult(**self._neg(PublishOutcome.FAILED))
+        with pytest.raises(ValueError):
+            ActionPublishResult(**self._neg(PublishOutcome.FAILED, reason_code="X"))
+        # Any valid stage is accepted as long as the outcome invariants hold.
+        ok = ActionPublishResult(
+            **self._neg(PublishOutcome.FAILED, reason_code="X", failure_stage="safety")
+        )
+        assert ok.failure_stage == "safety"
+
+    def test_failed_policy_publish_requires_topic(self) -> None:
+        with pytest.raises(ValueError):
+            ActionPublishResult(
+                **self._neg(PublishOutcome.FAILED, reason_code="X", failure_stage="policy_publish")
+            )
+        r = ActionPublishResult(
+            **self._neg(
+                PublishOutcome.FAILED,
+                reason_code="POLICY_PUBLISH_IO_ERROR",
+                failure_stage="policy_publish",
+                failed_topic="/act/policy_action",
+            )
+        )
+        assert r.failure_stage == "policy_publish"
+        assert r.failed_topic == "/act/policy_action"
+
+    def test_failed_command_build_forbids_topic(self) -> None:
+        with pytest.raises(ValueError):
+            ActionPublishResult(
+                **self._neg(
+                    PublishOutcome.FAILED,
+                    reason_code="MESSAGE_BUILD_ERROR",
+                    failure_stage="command_build",
+                    failed_topic="/act/policy_action",
+                )
+            )
+        r = ActionPublishResult(
+            **self._neg(
+                PublishOutcome.FAILED,
+                reason_code="MESSAGE_BUILD_ERROR",
+                failure_stage="command_build",
+            )
+        )
+        assert r.failed_topic is None
+
+    def test_partial_requires_command_publish_stage_and_topic(self) -> None:
+        with pytest.raises(ValueError):
+            ActionPublishResult(
+                **self._neg(PublishOutcome.PARTIAL, reason_code="X", command_publish_count=2)
+            )
+        with pytest.raises(ValueError):
+            ActionPublishResult(
+                **self._neg(
+                    PublishOutcome.PARTIAL,
+                    reason_code="X",
+                    command_publish_count=2,
+                    failure_stage="policy_publish",
+                    failed_topic="/act/policy_action",
+                )
+            )
+        r = ActionPublishResult(
+            **self._neg(
+                PublishOutcome.PARTIAL,
+                reason_code="COMMAND_PUBLISH_IO_ERROR",
+                command_publish_count=1,
+                failure_stage="command_publish",
+                failed_topic="/act/command/arm/right_target",
+            )
+        )
+        assert r.failure_stage == "command_publish"
+        assert r.failed_topic == "/act/command/arm/right_target"
+
+    def test_success_outcomes_forbid_provenance(self) -> None:
+        for outcome in (PublishOutcome.PUBLISHED, PublishOutcome.OBSERVED, PublishOutcome.BLOCKED):
+            with pytest.raises(ValueError):
+                ActionPublishResult(
+                    **self._neg(outcome, reason_code=None, failure_stage="policy_publish")
+                )
+            with pytest.raises(ValueError):
+                ActionPublishResult(
+                    **self._neg(outcome, reason_code=None, failed_topic="/act/x")
+                )
+
+    def test_invalid_stage_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ActionPublishResult(
+                **self._neg(
+                    PublishOutcome.FAILED,
+                    reason_code="X",
+                    failure_stage="not_a_stage",
+                )
+            )

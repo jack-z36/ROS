@@ -19,6 +19,7 @@ L2-01 只负责静态契约进入 RAM。它为后续 L2 提供清晰、不可变
 | manifest parser | 数据读写函数 | repo | `src/model_deploy/act/repo/manifest_parser.py` | function | manifest path | dict | 文件读取 | `common/runtime/bundle.py` |
 | normalizer loader | 数据读写函数 | repo | `src/model_deploy/act/repo/normalizer_loader.py` | function | normalizers path | normalizer objects | 文件读取 | `common/data/normalization.py` |
 | experiment config loader | 数据读写函数 | repo | `src/model_deploy/act/repo/experiment_config_loader.py` | function | experiment yaml | config object/dict | 文件读取 | `common/config/schema.py` |
+| 启动资源合同（spec owner） | 数据 + 聚合函数 | repo | `src/model_deploy/act/repo/act_runtime_resources.py` | `PolicyInputSpec` / `ActRuntimeResources` / `load_act_runtime_resources` | `DeployConfig` + 注入 `load_policy` | 冻结启动资源合同 | 不加载权重 | L2-06 消费，L2-03 注入 policy loader |
 
 ## 3. 内部协作关系
 
@@ -31,6 +32,9 @@ Creation order:
 
 State owner:
 DeployConfig、StateSpec、ActionSpec 是启动期创建、全生命周期只读的 RAM 对象。
+
+启动资源合同 owner（deploy_056）:
+`PolicyInputSpec` / `ActRuntimeResources` / `load_act_runtime_resources` 的**唯一 owner 是 L2-01**（`act_runtime_resources.py`）。spec 维度只从生产 bundle metadata 派生，下游 L2-02/03/06 只消费该冻结合同，不得各自重建 camera spec 或读取 YAML 派生第二份 spec。policy 权重归属 L2-03 通过注入的 `load_policy` 加载，L2-01 只聚合已加载 policy。
 
 Pure RAM calculations:
 类型化校验器、维度一致性校验、topic namespace 校验、fallback 策略枚举校验。

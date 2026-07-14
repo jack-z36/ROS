@@ -60,11 +60,14 @@ class TestPreprocessValid:
         result = preprocess_observation_image(image, cfg)
         assert result.dtype == np.float32
 
-    def test_preprocess_with_dtype_uint8(self) -> None:
+    def test_preprocess_uint8_normalized_to_unit_float32(self) -> None:
+        """uint8 input is scaled to [0, 1] float32 (deploy_057 image range)."""
         image = _make_image(480, 640, 3).astype(np.uint8)
-        cfg = ImageConfig(target_shape=(480, 640, 3), dtype=np.uint8)
+        cfg = ImageConfig(target_shape=(480, 640, 3), dtype=np.float32)
         result = preprocess_observation_image(image, cfg)
-        assert result.dtype == np.uint8
+        assert result.dtype == np.float32
+        assert result.min() >= 0.0
+        assert result.max() <= 1.0
 
     def test_preprocess_grayscale(self) -> None:
         """Single-channel images should be accepted."""

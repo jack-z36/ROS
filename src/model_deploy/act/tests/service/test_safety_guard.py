@@ -18,7 +18,11 @@ from model_deploy.act.service import SafetyGuard
 from model_deploy.act.service.safety_guard import SafetyGuard as SafetyGuardDirect
 from model_deploy.act.types.action_spec import ActionSpec, split_action
 from model_deploy.act.types.observation import ObservationSnapshot, ObservationState
-from model_deploy.act.types.safety_result import SafetyCode, SafetyStatus
+from model_deploy.act.types.safety_result import (
+    SafetyCode,
+    SafetyResult,
+    SafetyStatus,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -398,4 +402,100 @@ class TestPurity:
         assert not hasattr(guard, "previous_safe_action")
         assert not hasattr(guard, "_previous_safe_action")
         assert not hasattr(guard, "metrics")
+
+
+# ---------------------------------------------------------------------------
+# Public port freeze (deploy_059): exact signature + contract + statelessness
+# ---------------------------------------------------------------------------
+
+
+class TestPublicPortContract:
+    """Mechanical freeze of the L2-06-consumed public seam.
+
+    These tests pin the exact ``filter_action`` signature, the
+    ``SafetyResult`` field contract (no ``accepted`` legacy alias), and the
+    statelessness of ``SafetyGuard`` so the design projection cannot silently
+    drift back to the old ``accepted`` boolean / ``observation=`` keyword.
+    """
+
+    def test_filter_action_exact_signature(self):
+        """Exact public signature consumed by L2-06 ControlLoop."""
+        import inspect
+
+        sig = inspect.signature(SafetyGuard.filter_action, eval_str=True)
+        params = list(sig.parameters)
+        assert params == [
+            "self",
+            "candidate",
+            "previous_safe_action",
+            "latest_observation",
+        ]
+        # candidate is required (no default).
+        assert sig.parameters["candidate"].default is inspect.Parameter.empty
+        # reference inputs are explicit keyword-optional.
+        assert sig.parameters["previous_safe_action"].default is None
+        assert sig.parameters["latest_observation"].default is None
+        # Frozen return contract.
+        assert sig.return_annotation is SafetyResult
+
+    def test_filter_action_called_with_frozen_keywords(self):
+        """L2-06 calls exactly once with the frozen keyword names."""
+        guard = SafetyGuard(_default_config())
+        previous = _action()
+        result = guard.filter_action(
+            _vector_from_action(_action(left_xyz=(0.01, 0.0, 0.0))),
+            previous_safe_action=previous,
+            latest_observation=None,
+        )
+        assert result.status is SafetyStatus.PASS
+
+    def test_safety_result_has_only_status_action_findings(self):
+        """SafetyResult contract: status/action/findings, no accepted alias."""
+        from model_deploy.act.types.safety_result import SafetyResult as SR
+
+        fields = set(SR.__dataclass_fields__)
+        assert fields == {"status", "action", "findings"}
+        # No legacy accepted/reason compatibility property.
+        assert "accepted" not in fields
+        assert "reason" not in fields
+        # Instance also exposes none of the legacy attributes.
+        result = SR(status=SafetyStatus.REJECTED, action=None, findings=())
+        assert not hasattr(result, "accepted")
+        assert not hasattr(result, "reason")
+
+    def test_safety_result_is_frozen(self):
+        from model_deploy.act.types.safety_result import SafetyResult as SR
+
+        result = SR(status=SafetyStatus.PASS, action=_action(), findings=())
+        with pytest.raises(Exception):
+            result.status = SafetyStatus.REJECTED  # type: ignore[misc]
+
+    def test_guard_has_no_cross_tick_or_permission_state(self):
+        """SafetyGuard holds only frozen config — no fallback/publish/permission."""
+        guard = SafetyGuard(_default_config())
+        # Construction stores exactly the injected policy.
+        assert set(guard.__dict__.keys()) == {"_config"}
+        # None of the forbidden state fields may exist, before or after a call.
+        forbidden = [
+            "previous_safe_action",
+            "_previous_safe_action",
+            "last_command",
+            "_last_command",
+            "fallback",
+            "_fallback",
+            "publish",
+            "_publish",
+            "permission",
+            "_permission",
+            "metrics",
+            "_metrics",
+            "policy",
+            "_policy",
+        ]
+        guard.filter_action(
+            _vector_from_action(_action()),
+            previous_safe_action=_action(),
+        )
+        for attr in forbidden:
+            assert not hasattr(guard, attr), f"unexpected state field {attr!r}"
 

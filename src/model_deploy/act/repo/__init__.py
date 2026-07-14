@@ -10,6 +10,13 @@ from .bundle_reader import (
     resolve_bundle_adapter_dir,
     resolve_checkpoint_path,
 )
+from .act_runtime_resources import (
+    ActRuntimeResources,
+    PolicyInputSpec,
+    RuntimeResourceCrossCheck,
+    load_act_runtime_resources,
+    register_policy_loader,
+)
 
 __all__ = [
     "ActionStateNormalizer",
@@ -26,4 +33,9 @@ __all__ = [
     "check_bundle_files",
     "resolve_bundle_adapter_dir",
     "resolve_checkpoint_path",
+    "ActRuntimeResources",
+    "PolicyInputSpec",
+    "RuntimeResourceCrossCheck",
+    "load_act_runtime_resources",
+    "register_policy_loader",
 ]

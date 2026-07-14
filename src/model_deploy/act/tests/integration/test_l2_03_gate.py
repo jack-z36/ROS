@@ -24,6 +24,7 @@ import pytest
 import torch
 
 from model_deploy.act.config.schema import DeployConfig
+from model_deploy.act.repo.act_runtime_resources import PolicyInputSpec
 from model_deploy.act.repo.normalization import ActionStateNormalizer
 from model_deploy.act.service.act_inference import ActInferenceService
 from model_deploy.act.types.action_chunk import ActionChunk
@@ -180,6 +181,28 @@ class WrongDimPolicy(StubPolicy):
         return torch.zeros(1, self._chunk_size, 14)
 
 
+def _make_input_spec(
+    chunk_size: int = _CHUNK_SIZE,
+    camera_keys: tuple[str, ...] = ("top",),
+    image_size: int = 224,
+) -> PolicyInputSpec:
+    """Build a canonical frozen ``PolicyInputSpec`` (camera_keys sorted)."""
+    cams = tuple(sorted(camera_keys))
+    image_shapes = tuple((3, image_size, image_size) for _ in cams)
+    return PolicyInputSpec(
+        state_key="observation.state",
+        state_dim=_STATE_DIM,
+        image_prefix="observation.images.",
+        camera_keys=cams,
+        image_shapes=image_shapes,
+        image_layout="CHW",
+        image_dtype="float32",
+        image_value_range=(0.0, 1.0),
+        action_dim=_ACTION_DIM,
+        chunk_size=chunk_size,
+    )
+
+
 # ===================================================================
 # Helpers: recording normalizer
 # ===================================================================
@@ -296,7 +319,7 @@ class TestFullChain:
             rec_sn,
             rec_an,
             policy,
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
 
         snapshot = _make_snapshot(camera_keys=["top"])
         result = svc.predict_action_chunk(snapshot)
@@ -315,7 +338,7 @@ class TestFullChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(sentinel_value=self.SENTINEL),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         snapshot = _make_snapshot(camera_keys=["top"])
         result = svc.predict_action_chunk(snapshot)
 
@@ -335,7 +358,7 @@ class TestFullChain:
             rec_sn,
             rec_an,
             StubPolicy(sentinel_value=self.SENTINEL),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
         assert rec_sn.normalize_calls == 1, (
@@ -361,7 +384,7 @@ class TestFullChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicyWithRaisingSelectAction(sentinel_value=self.SENTINEL),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         result = svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
         assert isinstance(result, ActionChunk)
 
@@ -372,7 +395,7 @@ class TestFullChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(sentinel_value=self.SENTINEL),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         result = svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
         forbidden = [
@@ -402,7 +425,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(sentinel_value=0.0),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         snapshot = _make_snapshot(camera_keys=["top"])
         bad_snapshot = _replace_encoded_state(snapshot, np.zeros(14, dtype=np.float32))
 
@@ -416,7 +439,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(raise_on_predict=True),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         snapshot = _make_snapshot(camera_keys=["top"])
 
         with pytest.raises(RuntimeError, match="forced"):
@@ -429,7 +452,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             WrongShapePolicy(),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         snapshot = _make_snapshot(camera_keys=["top"])
 
         with pytest.raises(ValueError, match="chunk dim"):
@@ -442,7 +465,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             WrongDimPolicy(),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         snapshot = _make_snapshot(camera_keys=["top"])
 
         with pytest.raises(ValueError, match="action dim"):
@@ -459,7 +482,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             LongerPolicy(chunk_size=_CHUNK_SIZE),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         with pytest.raises(ValueError, match="chunk dim"):
             svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
@@ -474,7 +497,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             ShorterPolicy(chunk_size=_CHUNK_SIZE),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         with pytest.raises(ValueError, match="chunk dim"):
             svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
@@ -489,7 +512,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             FlatPolicy(chunk_size=_CHUNK_SIZE),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         with pytest.raises(ValueError, match="rank 3"):
             svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
@@ -506,7 +529,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             NaNPolicy(chunk_size=_CHUNK_SIZE),
-        )
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
         with pytest.raises(ValueError, match="NaN or Inf"):
             svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 

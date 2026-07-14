@@ -1,0 +1,325 @@
+# L2-06 ControlLoop 中央运行调度闭环 调度索引
+
+> [!info] 归属
+> - 功能组：l2-06-control-loop
+> - L2 设计目录：DOCS/03_工程/阶段四：模型部署/02_implement/l2-06-control-loop_ControlLoop中央运行调度闭环/
+> - 生成权威：该目录 agent_context/*.md；HTML 不是 L3 来源。
+> - 当前状态：deploy_051/052 已冻结并由用户执行；deploy_056～060 承接 L2-01～05 接缝修复，deploy_053～055 等待全部前置完成。
+> - 本文件是调度索引，不随单个 L3 归档移动。
+
+~~~yaml
+dispatch_index:
+  group: l2-06-control-loop
+  branch: feat/model_deploy/l2-06-control-loop
+  integration_branch: model_deploy
+  source_l2: DOCS/03_工程/阶段四：模型部署/02_implement/l2-06-control-loop_ControlLoop中央运行调度闭环/agent_context/01_L2功能边界.md
+  max_parallel_agents: 1
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-06-control-loop
+  cards_dir: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop
+  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/l2-06-control-loop_整体验收卡片.md
+  l2_acceptance_report: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-06-control-loop/L2验收报告.md
+  acceptance_round_limit: 3
+
+  owner_remediation_tasks:
+    - task: deploy_056
+      owner: l2-01-external-contract
+      closes: [P0-01, P0-02, P0-03, P0-04, P0-06-config, P0-09-config]
+    - task: deploy_057
+      owner: l2-02-observation-snapshot
+      closes: [P0-05, P0-06-pipeline, P0-07, P0-08, P0-09-runtime]
+    - task: deploy_058
+      owner: l2-03-act-inference
+      closes: [P0-04-service]
+    - task: deploy_059
+      owner: l2-04-safety-guard
+      closes: [SAFETY_PUBLIC_PORT, L2-04-DOC-SOURCE-ALIGNMENT]
+    - task: deploy_060
+      owner: l2-05-action-publisher
+      closes: [P0-10]
+    - task: deploy_055
+      owner: l2-06-control-loop
+      closes: [HTML_SOURCE_ALIGNMENT, L2_GATE]
+
+  waves:
+    - wave: 1
+      parallel_group: l2-06-control-loop-p1
+      tasks: [deploy_051]
+    - wave: 2
+      parallel_group: l2-06-control-loop-p2
+      depends_on: [deploy_051]
+      tasks: [deploy_052]
+    - wave: 3
+      parallel_group: l2-06-control-loop-p3-owner-remediation
+      depends_on: [deploy_051, deploy_052]
+      tasks: [deploy_056, deploy_059, deploy_060]
+    - wave: 4
+      parallel_group: l2-06-control-loop-p4-owner-remediation
+      depends_on: [deploy_051, deploy_052, deploy_056]
+      tasks: [deploy_057, deploy_058]
+    - wave: 5
+      parallel_group: l2-06-control-loop-p5-control-loop
+      depends_on: [deploy_051, deploy_052, deploy_056, deploy_057, deploy_058, deploy_059, deploy_060]
+      tasks: [deploy_053]
+    - wave: 6
+      parallel_group: l2-06-control-loop-p6-node
+      depends_on: [deploy_051, deploy_052, deploy_053, deploy_056, deploy_057, deploy_058, deploy_059, deploy_060]
+      tasks: [deploy_054]
+    - wave: 7
+      parallel_group: l2-06-control-loop-p7-gate
+      depends_on: [deploy_051, deploy_052, deploy_053, deploy_054, deploy_056, deploy_057, deploy_058, deploy_059, deploy_060]
+      tasks: [deploy_055]
+
+  tasks:
+    deploy_051:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_051_推理通道与运行指标基础.md
+      title: 推理通道与运行指标基础
+      depends_on: []
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_051_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [G04]
+      robot_risk: none
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/runtime/inference_channel.py
+          - src/model_deploy/act/runtime/runtime_metrics.py
+          - src/model_deploy/act/runtime/__init__.py
+        modules:
+          - model_deploy.act.runtime.inference_channel
+          - model_deploy.act.runtime.runtime_metrics
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_052:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_052_InferenceWorker串行异步执行.md
+      title: InferenceWorker 串行异步执行
+      depends_on: [deploy_051]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_052_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [G05]
+      robot_risk: none
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/runtime/inference_worker.py
+          - src/model_deploy/act/runtime/__init__.py
+        modules:
+          - model_deploy.act.runtime.inference_worker
+        config_keys: [runtime.inference_hz]
+        runtime_modes: [fake-policy]
+        hardware_paths: []
+
+    deploy_056:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_056_L2-01启动资源与配置接缝修复.md
+      title: L2-01 启动资源与配置接缝修复
+      depends_on: [deploy_051, deploy_052]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_056_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [G02, G03]
+      robot_risk: none
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/config/schema.py
+          - src/model_deploy/act/config/__init__.py
+          - src/model_deploy/act/config_files/deploy.yaml
+          - src/model_deploy/act/repo/act_runtime_resources.py
+          - src/model_deploy/act/repo/__init__.py
+          - DOCS/03_工程/阶段四：模型部署/02_implement/l2-01-external-contract_外部参数加载与契约校验闭环
+          - DOCS/03_工程/阶段四：模型部署/02_implement/agent_context
+          - DOCS/03_工程/阶段四：模型部署/02_implement/ACT架构交互可视化.html
+        modules:
+          - model_deploy.act.config
+          - model_deploy.act.repo.act_runtime_resources
+        config_keys:
+          - bundle.bundle_dir
+          - runtime.max_observation_age_sec
+          - runtime.max_inference_requests
+          - runtime.max_pending_chunks
+          - topics.observation.images
+        runtime_modes: [startup, fake-policy-test, real-policy]
+        hardware_paths: []
+
+    deploy_057:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_057_L2-02观测流水线契约修复.md
+      title: L2-02 观测流水线契约修复
+      depends_on: [deploy_051, deploy_052, deploy_056]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_057_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [G03]
+      robot_risk: none
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/types/observation.py
+          - src/model_deploy/act/service/image_preprocess.py
+          - src/model_deploy/act/service/observation_collector.py
+          - src/model_deploy/act/runtime/observation_buffer.py
+          - src/model_deploy/act/ui/observation_ros_adapter.py
+          - src/model_deploy/act/ui/observation_pipeline.py
+          - src/model_deploy/act/ui/__init__.py
+          - DOCS/03_工程/阶段四：模型部署/02_implement/l2-02-observation-snapshot_ObservationSnapshot组装闭环
+        modules:
+          - model_deploy.act.ui.observation_pipeline
+          - model_deploy.act.ui.observation_ros_adapter
+        config_keys:
+          - topics.observation.images
+          - image
+          - runtime.max_observation_age_sec
+        runtime_modes: [local, ros-observation]
+        hardware_paths:
+          - /act/observation/*
+
+    deploy_058:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_058_L2-03CanonicalSpec消费接缝.md
+      title: L2-03 Canonical Spec 消费接缝
+      depends_on: [deploy_051, deploy_052, deploy_056]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_058_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [G03]
+      robot_risk: none
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/service/act_inference.py
+          - src/model_deploy/act/service/observation_batch.py
+          - src/model_deploy/act/service/action_chunk_postprocess.py
+          - src/model_deploy/act/service/__init__.py
+          - DOCS/03_工程/阶段四：模型部署/02_implement/l2-03-act-inference_ObservationSnapshot到ACTActionChunk推理闭环
+        modules:
+          - model_deploy.act.service.act_inference
+          - model_deploy.act.service.observation_batch
+        config_keys: [runtime.device]
+        runtime_modes: [fake-policy, real-policy]
+        hardware_paths: []
+
+    deploy_059:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_059_L2-04安全端口与设计投影对齐.md
+      title: L2-04 安全端口与设计投影对齐
+      depends_on: [deploy_051, deploy_052]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_059_验收卡片.md
+      acceptance_mode: static-review
+      acceptance_scenarios: [G03, G07]
+      robot_risk: none
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/tests/service/test_safety_guard.py
+          - src/model_deploy/act/tests/integration/test_l2_04_gate.py
+          - DOCS/03_工程/阶段四：模型部署/02_implement/l2-04-safety-guard_单步Action安全检查闭环
+        modules:
+          - model_deploy.act.service.safety_guard
+          - model_deploy.act.types.safety_result
+        config_keys: [safety]
+        runtime_modes: [local]
+        hardware_paths: []
+
+    deploy_060:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_060_L2-05发布失败追因契约.md
+      title: L2-05 发布失败追因契约
+      depends_on: [deploy_051, deploy_052]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_060_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [G03, G07]
+      robot_risk: dry-run-only
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/types/action_publish.py
+          - src/model_deploy/act/types/__init__.py
+          - src/model_deploy/act/ui/action_publisher.py
+          - src/model_deploy/act/ui/__init__.py
+          - DOCS/03_工程/阶段四：模型部署/02_implement/l2-05-action-publisher_单步Action到执行器Topic适配发送闭环
+        modules:
+          - model_deploy.act.types.action_publish
+          - model_deploy.act.ui.action_publisher
+        config_keys:
+          - command_output
+          - topics.command
+        runtime_modes: [local-fake-node, ros-dry-run]
+        hardware_paths:
+          - /act/policy_action
+          - /act/command/status
+          - /act/command/*
+
+    deploy_053:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_053_ControlLoop中央调度状态机.md
+      title: ControlLoop 中央调度状态机
+      depends_on: [deploy_051, deploy_052, deploy_056, deploy_057, deploy_058, deploy_059, deploy_060]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_053_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [G06, G07]
+      robot_risk: dry-run-only
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/runtime/control_loop.py
+          - src/model_deploy/act/runtime/__init__.py
+        modules:
+          - model_deploy.act.runtime.control_loop
+        config_keys: [runtime, command_output]
+        runtime_modes: [fake-policy, dry-run]
+        hardware_paths:
+          - /act/policy_action
+          - /act/command/*
+
+    deploy_054:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_054_ActDeployNode原子装配与生命周期.md
+      title: ActDeployNode 原子装配与生命周期
+      depends_on: [deploy_051, deploy_052, deploy_053, deploy_056, deploy_057, deploy_058, deploy_059, deploy_060]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_054_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [G08]
+      robot_risk: dry-run-only
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/ui/act_deploy_node.py
+          - src/model_deploy/act/ui/__init__.py
+          - src/model_deploy/act/runtime/__init__.py
+        modules:
+          - model_deploy.act.ui.act_deploy_node
+        config_keys: [bundle, runtime, command_output, topics]
+        runtime_modes: [dry-run, real-policy]
+        hardware_paths:
+          - /act/metrics
+          - /act/command/*
+
+    deploy_055:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-06-control-loop/deploy_055_L2Gate跨模块集成与验收脚本.md
+      title: L2 Gate 跨模块集成与验收脚本
+      depends_on: [deploy_051, deploy_052, deploy_053, deploy_054, deploy_056, deploy_057, deploy_058, deploy_059, deploy_060]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-06-control-loop/deploy_055_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [G01, G02, G03, G04, G05, G06, G07, G08, G09, G10, G11, G12]
+      robot_risk: dry-run-only
+      dispatch_status: blocked
+      conflict_scope:
+        files:
+          - src/model_deploy/act/tests/integration/test_l2_06_gate.py
+          - src/model_deploy/act/tests/fixtures/l2_06_fake.yaml
+          - src/model_deploy/act/scripts/l2_06_verify.sh
+          - DOCS/03_工程/阶段四：模型部署/02_implement/l2-06-control-loop_ControlLoop中央运行调度闭环/agent_context
+          - DOCS/03_工程/阶段四：模型部署/02_implement/l2-06-control-loop_ControlLoop中央运行调度闭环/L2架构交互可视化.html
+          - DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-06-control-loop
+        modules:
+          - model_deploy.act.tests.integration
+        config_keys: []
+        runtime_modes: [local, ros-dry-run, real-policy-dry-run]
+        hardware_paths:
+          - /act/policy_action
+          - /act/command/status
+          - /act/metrics
+          - /act/command/*
+~~~

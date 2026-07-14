@@ -24,11 +24,21 @@ src/model_deploy/act/config_files/deploy.yaml
 
 ### 函数设计
 
-- `load_deploy_config(path) -> DeployConfig`
-- `DeployConfig.from_mapping(raw, base_dir) -> DeployConfig`
+- `load_deploy_config(path, *, command_output_enabled=False) -> DeployConfig`（deploy_056 / P0-06-config：`command_output_enabled` 为 keyword-only，YAML 永远不能自行开启 command output）
+- `DeployConfig.from_mapping(raw, base_dir, *, command_output_enabled=False) -> DeployConfig`
 - `_str`、`_choice`、`_positive_int`、`_positive_float`、`_bool` 等类型化校验器。
+- `_path_or_none`：`bundle_dir` 允许 `null`/空以支持默认配置与受控 fake harness（deploy_056 / P0-01）。
+- `_exactly_one_int`：`max_inference_requests` / `max_pending_chunks` 严格等于 1（deploy_056）。
+- `_image_mapping_from_raw` / `_observation_images_from_raw`：规范 `topics.observation.images` 只读 camera key→ROS topic 映射（deploy_056 / P0-09-config）。
 - `check_bundle_contract(...) -> BundleContractResult`
 - `check_normalizer_contract(...) -> NormalizerContractResult`
+
+### 关键契约（deploy_056 接缝修复）
+
+- `bundle.bundle_dir` 可为 `null`/空；`load_act_runtime_resources` 遇空 bundle 稳定失败，不猜路径。
+- `runtime.max_observation_age_sec` 为独立、正数的 observation freshness 上限，与 `max_action_age_sec` 分离。
+- `runtime.max_inference_requests` 与 `runtime.max_pending_chunks` 都只能等于 1。
+- `topics.observation.images` 是唯一、只读的 logical policy camera key→ROS topic 映射；旧 `left_image`/`right_image` 与新映射同时出现、或缺少 canonical camera（left/right）必须失败。
 
 ## 4. 明确不定义的平滑配置
 

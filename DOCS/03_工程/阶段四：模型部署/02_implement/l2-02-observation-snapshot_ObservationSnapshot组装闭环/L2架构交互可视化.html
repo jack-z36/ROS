@@ -826,6 +826,21 @@ bash src/model_deploy/act/scripts/l2_02_verify.sh</div>
       <p class="src">权威来源：<code>agent_context/04_L2验收机制.md</code>（§3 Gate / §4 命令 / §5 Blocked / §6 失败现象）、<code>agent_context/05_人类验收机制.md</code>（§2 人类验收清单 / §3 签字格式 / §4 真机风险）</p>
     </section>
 
+  <!-- deploy_057 (owner-remediation / P0-05,06,07,08,09): typed observation pipeline contract -->
+  <section data-agent-source="agent_context/11_ui层设计.md">
+    <h2>ObservationSnapshot 契约与 Typed Pipeline（deploy_057）</h2>
+    <ul>
+      <li><strong>camera / image</strong>：adapter 只消费 <code>DeployConfig</code> 与 <code>PolicyInputSpec</code>，无 Dict fallback；camera keys 必须与 spec 精确一致，否则 fail-fast。</li>
+      <li><strong>image shape / dtype / range</strong>：进入 snapshot 的 image 为 owned <code>float32</code> <code>CHW</code>，范围 <code>[0,1]</code>，shape 精确等于 <code>spec.image_shapes</code>。</li>
+      <li><strong>snapshot 所有权</strong>：<code>ObservationSnapshot</code> 构造时对 images / state / encoded_state 深复制，已发布 snapshot 不受源缓存后续修改影响。</li>
+      <li><strong>monotonic freshness</strong>：collector / buffer / pipeline 共用注入的 monotonic clock，<code>captured_at_s</code> 与 buffer 新鲜度同域。</li>
+      <li><strong>gripper</strong>：订阅消息类型与 <code>decode_gripper_width</code> 解码器一致；真实 topology 未知，置 <code>gripper_topology_unknown</code> 单独记录，不掩盖 local FAIL。</li>
+      <li><strong>fail-fast / rollback</strong>：仅 ROS packages 缺失记 <code>env_blocked</code>；配置 / decoder 错误传播；订阅中途失败 rollback 已创建 handles。</li>
+      <li><strong>factory</strong>：<code>build_observation_pipeline(node, config, input_spec, monotonic_clock)</code> 在创建订阅前完成纯 RAM 校验，返回冻结 <code>ObservationPipeline</code>（spec / clock 保持 identity）。</li>
+    </ul>
+    <p class="src">权威来源：<code>agent_context/11_ui层设计.md</code>（ObservationRosAdapter / observation_pipeline.py）、<code>agent_context/09_service层设计.md</code>、<code>agent_context/10_runtime层设计.md</code></p>
+  </section>
+
   </div>
 </div>
 </body>

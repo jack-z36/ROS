@@ -21,6 +21,7 @@ import pytest
 import torch
 
 from model_deploy.act.config.schema import DeployConfig
+from model_deploy.act.repo.act_runtime_resources import PolicyInputSpec
 from model_deploy.act.repo.normalization import ActionStateNormalizer
 from model_deploy.act.service.act_inference import (
     ActInferenceService,
@@ -90,6 +91,32 @@ def _make_action_normalizer(dim: int = _ACTION_DIM) -> ActionStateNormalizer:
     return ActionStateNormalizer(
         min_vals=np.full(dim, -1.0, dtype=np.float32),
         max_vals=np.full(dim, 1.0, dtype=np.float32),
+    )
+
+
+def _make_input_spec(
+    chunk_size: int = _CHUNK_SIZE,
+    camera_keys: tuple[str, ...] = ("top",),
+    image_size: int = 224,
+) -> PolicyInputSpec:
+    """Build a canonical frozen ``PolicyInputSpec`` for tests.
+
+    ``camera_keys`` are sorted (PolicyInputSpec invariant) and ``image_shapes``
+    are aligned positionally.  All other fields use the fixed 16D ACT contract.
+    """
+    cams = tuple(sorted(camera_keys))
+    image_shapes = tuple((3, image_size, image_size) for _ in cams)
+    return PolicyInputSpec(
+        state_key="observation.state",
+        state_dim=_STATE_DIM,
+        image_prefix="observation.images.",
+        camera_keys=cams,
+        image_shapes=image_shapes,
+        image_layout="CHW",
+        image_dtype="float32",
+        image_value_range=(0.0, 1.0),
+        action_dim=_ACTION_DIM,
+        chunk_size=chunk_size,
     )
 
 
@@ -237,30 +264,42 @@ class TestConstruction:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(),
+            input_spec=_make_input_spec(),
         )
         assert svc is not None
 
-    def test_input_spec_derived_from_policy_metadata(self) -> None:
+    def test_input_spec_is_injected_by_identity(self) -> None:
+        """L2-03 consumes the canonical spec by identity, no re-derivation."""
         cfg = _make_deploy_config(chunk_size=10)
+        injected = _make_input_spec(chunk_size=10, camera_keys=("top",))
+
         svc = ActInferenceService(
             cfg,
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(chunk_size=10, action_dim=16),
+            input_spec=injected,
         )
-        spec = svc._input_spec
 
-        assert spec["state_dim"] == 16
-        assert spec["action_dim"] == 16
-        assert spec["chunk_size"] == 10
-        assert spec["state_key"] == "observation.state"
-        assert "top" in spec["camera_keys"]
-        assert spec["image_prefix"] == "observation.images."
-        assert "top" in spec["image_shapes"]
-        assert spec["image_shapes"]["top"] == (3, 224, 224)
+        # Public read-only property returns the identical object.
+        assert svc.input_spec is injected
+        # No Dict / copy / re-derived mapping.
+        assert isinstance(svc.input_spec, PolicyInputSpec)
+        assert svc.input_spec.state_dim == 16
+        assert svc.input_spec.action_dim == 16
+        assert svc.input_spec.chunk_size == 10
+        assert svc.input_spec.state_key == "observation.state"
+        assert svc.input_spec.camera_keys == ("top",)
+        assert svc.input_spec.image_prefix == "observation.images."
+        assert svc.input_spec.image_shapes == ((3, 224, 224),)
 
-    def test_falls_back_when_policy_lacks_metadata(self) -> None:
-        """Config defaults are used when policy has no config attribute."""
+    def test_uses_injected_spec_even_without_policy_metadata(self) -> None:
+        """No policy-metadata fallback: an explicit spec is required and used.
+
+        A bare policy with no ``config`` attribute works as long as the
+        canonical ``input_spec`` is injected.  This proves L2-03 no longer
+        reads policy RAM metadata to derive the spec.
+        """
         cfg = _make_deploy_config(chunk_size=30)
 
         class BarePolicy:
@@ -270,13 +309,29 @@ class TestConstruction:
             def parameters(self) -> Any:
                 return iter([torch.nn.Parameter(torch.zeros(1))])
 
+        injected = _make_input_spec(chunk_size=30, camera_keys=("top",))
         svc = ActInferenceService(
-            cfg, _make_state_normalizer(), _make_action_normalizer(), BarePolicy()
+            cfg,
+            _make_state_normalizer(),
+            _make_action_normalizer(),
+            BarePolicy(),
+            input_spec=injected,
         )
-        spec = svc._input_spec
-        assert spec["chunk_size"] == 30
-        assert spec["state_dim"] == 16
-        assert spec["action_dim"] == 16
+        assert svc.input_spec is injected
+        assert svc.input_spec.chunk_size == 30
+        assert svc.input_spec.state_dim == 16
+        assert svc.input_spec.action_dim == 16
+
+    def test_requires_input_spec_argument(self) -> None:
+        """input_spec is a required constructor argument (no silent default)."""
+        cfg = _make_deploy_config()
+        with pytest.raises(TypeError):
+            ActInferenceService(
+                cfg,
+                _make_state_normalizer(),
+                _make_action_normalizer(),
+                StubPolicy(),
+            )
 
 
 # ===================================================================
@@ -298,6 +353,7 @@ class TestContractValidation:
                 _make_state_normalizer(),
                 _make_action_normalizer(),
                 BadPolicy(),
+                input_spec=_make_input_spec(),
             )
 
     def test_raises_on_state_normalizer_dimension_mismatch(self) -> None:
@@ -307,6 +363,7 @@ class TestContractValidation:
                 _make_state_normalizer(dim=8),  # policy expects 16
                 _make_action_normalizer(),
                 StubPolicy(),
+                input_spec=_make_input_spec(),
             )
 
     def test_raises_on_action_normalizer_dimension_mismatch(self) -> None:
@@ -316,6 +373,7 @@ class TestContractValidation:
                 _make_state_normalizer(),
                 _make_action_normalizer(dim=8),  # policy expects 16
                 StubPolicy(),
+                input_spec=_make_input_spec(),
             )
 
 
@@ -333,6 +391,7 @@ class TestInstanceFields:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(),
+            input_spec=_make_input_spec(),
         )
 
         allowed = {
@@ -355,6 +414,7 @@ class TestInstanceFields:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(),
+            input_spec=_make_input_spec(),
         )
 
         forbidden = {
@@ -382,6 +442,7 @@ class TestEndToEnd:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(chunk_size=10),
+            input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
         result = svc.predict_action_chunk(snapshot)
@@ -399,6 +460,7 @@ class TestEndToEnd:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicyWithRaisingSelectAction(chunk_size=10),
+            input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
         # Must succeed — select_action is never called
@@ -415,17 +477,19 @@ class TestFailurePropagation:
     """Each stage failure must propagate immediately."""
 
     def test_stage1_failure_propagates(self) -> None:
+        # Spec requires two cameras, but the snapshot only carries "top".
         svc = ActInferenceService(
             _make_deploy_config(chunk_size=10),
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(chunk_size=10),
+            input_spec=_make_input_spec(
+                chunk_size=10, camera_keys=("left_wrist", "top")
+            ),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
-        # Modify input_spec to require a missing camera
-        svc._input_spec["camera_keys"] = ["top", "nonexistent"]
 
-        with pytest.raises(KeyError, match="nonexistent"):
+        with pytest.raises(KeyError, match="missing required camera"):
             svc.predict_action_chunk(snapshot)
 
     def test_stage2_failure_propagates(self) -> None:
@@ -434,6 +498,7 @@ class TestFailurePropagation:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(chunk_size=10, raise_on_predict=True),
+            input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
 
@@ -452,6 +517,7 @@ class TestFailurePropagation:
             _make_state_normalizer(),
             _make_action_normalizer(),
             WrongShapePolicy(chunk_size=10),
+            input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
 
@@ -506,6 +572,7 @@ class TestNormalizerDirectionAndCount:
             sn_mock,
             _make_action_normalizer(),
             StubPolicy(chunk_size=10),
+            input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
         )
         svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
@@ -522,6 +589,7 @@ class TestNormalizerDirectionAndCount:
             _make_state_normalizer(),
             an_mock,
             StubPolicy(chunk_size=10),
+            input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
         )
         svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
