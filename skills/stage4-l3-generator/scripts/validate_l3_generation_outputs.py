@@ -109,17 +109,30 @@ def main() -> int:
 
     errors: list[str] = []
 
-    # ── 0. Locate task files (active/ preferred, fall back to completed/) ──
-    task_files = sorted(active_dir.glob("deploy_*.md"))
-    task_source = "active"
-    if not task_files and completed_dir.is_dir():
-        task_files = sorted(completed_dir.glob("deploy_*.md"))
-        task_source = "completed"
+    # ── 0. Locate task files across the normal mixed lifecycle ──
+    # PASS_LOCAL archives one task at a time, so an L2 can legitimately have
+    # completed and still-active tasks at the same moment.  Validate the union
+    # instead of treating the two directories as mutually exclusive.
+    active_task_files = sorted(active_dir.glob("deploy_*.md"))
+    completed_task_files = (
+        sorted(completed_dir.glob("deploy_*.md")) if completed_dir.is_dir() else []
+    )
+    task_files = sorted(active_task_files + completed_task_files)
     if not task_files:
         errors.append(f"no deploy_*.md task files in active/ or completed/ for {l2_id}")
         for e in errors:
             print(f"ERROR: {e}")
         return 1
+
+    task_locations: dict[str, list[Path]] = defaultdict(list)
+    for task_file in task_files:
+        task_locations[task_id_from_filename(task_file)].append(task_file)
+    for task_id, locations in task_locations.items():
+        if task_id and len(locations) > 1:
+            errors.append(
+                f"{task_id} exists in both lifecycle directories: "
+                f"{[rel(path, root) for path in locations]}"
+            )
 
     # ── 1. First pass: collect all valid IDs and validate per-task identity/metadata ──
     valid_local_ids: set[str] = set()
@@ -265,15 +278,15 @@ def main() -> int:
             errors.append(f"{rel(dispatch_file, root)}: task/card/mode count mismatch: "
                           f"{task_count}/{card_count}/{mode_count}")
 
-        # dispatch declares same tasks as active directory
+        # dispatch declares the same tasks as the active+completed union
         dispatch_task_ids: set[str] = set(re.findall(r"^    (deploy_\d{3}):", dt, flags=re.MULTILINE))
         extra_in_dispatch = dispatch_task_ids - valid_local_ids
         missing_from_dispatch = valid_local_ids - dispatch_task_ids
         if extra_in_dispatch:
-            errors.append(f"{rel(dispatch_file, root)}: dispatch declares tasks not in active/: "
+            errors.append(f"{rel(dispatch_file, root)}: dispatch declares tasks not in active/completed: "
                           f"{sorted(extra_in_dispatch)}")
         if missing_from_dispatch:
-            errors.append(f"{rel(dispatch_file, root)}: active/ has tasks not in dispatch: "
+            errors.append(f"{rel(dispatch_file, root)}: active/completed has tasks not in dispatch: "
                           f"{sorted(missing_from_dispatch)}")
 
         # wave consistency: every task_id in waves must exist

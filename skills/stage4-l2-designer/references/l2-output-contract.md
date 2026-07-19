@@ -50,6 +50,14 @@ HTML and Markdown are a paired product:
 - Every semantic change in HTML must be applied to Markdown in the same change.
 - Every semantic change in Markdown must update the corresponding HTML view, or both `00_INDEX.md` and HTML must mark HTML as stale.
 
+Verify alignment after every HTML or Markdown change:
+
+```bash
+bash skills/stage4-l2-designer/scripts/sync_check.sh DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>
+```
+
+The sync check must pass before the package is ready for L3 generation.
+
 `agent_context/00_INDEX.md` must contain a section titled exactly:
 
 ```text

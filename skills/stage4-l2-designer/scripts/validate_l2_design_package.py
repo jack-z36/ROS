@@ -357,6 +357,34 @@ def check_contamination(package: Path, errors: list[str]) -> None:
                     )
 
 
+def check_sync(package: Path, errors: list[str]) -> None:
+    """Run sync_check.sh and report its semantic failures through this validator."""
+    import subprocess
+
+    sync_script = Path(__file__).resolve().parent / "sync_check.sh"
+    if not sync_script.is_file():
+        errors.append("sync: sync_check.sh not found — cannot verify HTML↔MD semantic alignment")
+        return
+    try:
+        result = subprocess.run(
+            ["bash", str(sync_script), str(package)],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        errors.append("sync: sync_check.sh timed out")
+        return
+    except OSError as exc:
+        errors.append(f"sync: failed to run sync_check.sh: {exc}")
+        return
+    if result.returncode != 0:
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if "FAIL" in line or "MISSING" in line:
+                errors.append(f"sync: {line}")
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         print("Usage: validate_l2_design_package.py <l2_design_package_dir>", file=sys.stderr)
@@ -378,6 +406,7 @@ def main() -> int:
     check_sample_pattern(package, errors)
     check_dim3_classbox_nesting(package, errors)
     check_contamination(package, errors)
+    check_sync(package, errors)
 
     if errors:
         for error in errors:

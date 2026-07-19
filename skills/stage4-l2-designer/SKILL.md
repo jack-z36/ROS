@@ -1,6 +1,6 @@
 ---
 name: stage4-l2-designer
-description: Produce and maintain the Stage 4 ACT L2 design package in this ROS repository. Use when designing, optimizing, reviewing, or migrating one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create Agent-consumable atomic Markdown under agent_context/, create a human-consumable four-dimension interactive HTML visualization aligned with the approved L2 HTML sample pattern, and draft L2 Gate plus human acceptance mechanisms.
+description: Produce and maintain the Stage 4 ACT L2 design package in this ROS repository. Use when designing, optimizing, reviewing, migrating, or synchronizing one Stage 4 model_deploy L2 before L3 generation, especially to inspect Pi0.5 reference source internally, map source micro-units to the user's 3.5-layer cognitive framework, recommend ACT module functions/classes across types/config/repo/service/runtime/ui, create Agent-consumable atomic Markdown under agent_context/, create a human-consumable four-dimension interactive HTML visualization aligned with the approved L2 HTML sample pattern, draft L2 Gate plus human acceptance mechanisms, and maintain bidirectional semantic alignment between HTML and Markdown.
 ---
 
 # Stage4 L2 Designer
@@ -24,7 +24,7 @@ Read these before producing or changing artifacts:
 2. `DOCS/02_约束/上下文加载/03_非具体编程规划加载规则.md`
 3. `DOCS/02_约束/工作流/阶段四开发工作流/阶段四模型部署程序改造工作流.md`
 4. `DOCS/02_约束/工作流/阶段四开发工作流/attachments/ACT代码树分层与产物落点约束.md`
-5. `DOCS/02_约束/认知偏好/用户认知框架与讲解偏好.md`
+5. `DOCS/02_约束/用户概念体系/用户认知框架与讲解偏好.md`
 6. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/00_INDEX.md`
 7. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/01_L1_ACT部署程序任务文档.md`
 8. `DOCS/03_工程/阶段四：模型部署/02_implement/agent_context/02_L1_ACT功能模块边界.md`
@@ -90,7 +90,19 @@ The package root is for humans. Keep all Agent Markdown inside `agent_context/`.
 
 ## Semantic Alignment Rule
 
-HTML and Markdown must be semantically one-to-one:
+HTML and Markdown must be semantically one-to-one. **This is a hard requirement, not a guideline.**
+
+### Mandatory: edit HTML and Markdown together
+
+Every design-semantic change must update both the authoritative `agent_context/*.md` and the human `L2架构交互可视化.html` in the same change. This includes output types, boundaries, layer landing, fields, function signatures, and acceptance criteria. Do not defer one side to a later turn.
+
+| Change origin | Update order |
+|---|---|
+| User changes a design decision | Markdown first, then HTML |
+| User reports a display issue | HTML first, then verify Markdown consistency |
+| Agent adds design detail | Markdown first, then HTML |
+
+### Alignment rules
 
 - Every HTML view must have an authoritative Markdown source in `agent_context/`.
 - Every HTML view must be a compressed visual version of the corresponding Markdown section, never a separate design.
@@ -301,13 +313,15 @@ Human acceptance must never mark real-robot behavior as passed without real hard
 
 ## Validation
 
-After creating or migrating a package, run:
+After creating, migrating, or changing a package, run both:
 
 ```bash
 python3 skills/stage4-l2-designer/scripts/validate_l2_design_package.py DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>
+
+bash skills/stage4-l2-designer/scripts/sync_check.sh DOCS/03_工程/阶段四：模型部署/02_implement/<l2_id>_<l2_name>
 ```
 
-Also inspect any reported contamination manually before treating the package as ready for L3 generation.
+Fix all structural or semantic failures before treating the package as ready for L3 generation. Update the `00_INDEX.md` alignment table whenever a view-to-section mapping changes.
 
 Additional manual checks for dimension 4（`.term` + `.trtab` are now validator-enforced；the items below are the deeper checks the validator cannot do）:
 - `.term` terminal example block contains at least one FAIL row with a `.t-loc` sub-block（file / class / micro-unit / pytest node / error summary）.
