@@ -1,0 +1,4 @@
+interface:
+  display_name: "读取 HWK 触觉 UID"
+  short_description: "读取 HWK 触觉芯片 UID 并安全更新 l1/l2/r1/r2 身份映射"
+  default_prompt: "Use $read-hwk-tactile-uid to read the connected HWK tactile sensor UID and update its l1/l2/r1/r2 mapping."

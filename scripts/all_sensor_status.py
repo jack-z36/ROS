@@ -118,7 +118,35 @@ def identity_map_from_config(config, config_base):
     return str(resolve_path(map_file, config_base))
 
 
-def validate_hardware_identity(identity_map, write_resolved=None):
+def pressure_default_baudrate(config, config_base):
+    pressure_cfg = config.get("pressure") or {}
+    pressure_config_file = pressure_cfg.get("config_file")
+    if not pressure_config_file:
+        return None
+
+    pressure_config_path = resolve_path(pressure_config_file, config_base)
+    try:
+        with pressure_config_path.open("r", encoding="utf-8") as stream:
+            pressure_config = yaml.safe_load(stream) or {}
+    except OSError:
+        return None
+
+    value = (
+        pressure_config.get("pressure_driver_node", {})
+        .get("ros__parameters", {})
+        .get("default_baudrate")
+    )
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def validate_hardware_identity(
+    identity_map, write_resolved=None, hwk_baudrate=None
+):
     if not identity_map:
         return 0
     cmd = [
@@ -128,6 +156,8 @@ def validate_hardware_identity(identity_map, write_resolved=None):
         "--map",
         str(identity_map),
     ]
+    if hwk_baudrate is not None:
+        cmd.extend(["--hwk-baudrate", str(hwk_baudrate)])
     if write_resolved:
         cmd.extend(["--write-resolved", str(write_resolved)])
 
@@ -329,7 +359,12 @@ def is_video_capture_device(device):
 def preflight(config, config_path, identity_map=None, write_identity_resolved=None, identity_resolved=None):
     identity_map = identity_map or identity_map_from_config(config, config_path.parent)
     if identity_map:
-        status = validate_hardware_identity(identity_map, write_identity_resolved)
+        hwk_baudrate = pressure_default_baudrate(config, config_path.parent)
+        status = validate_hardware_identity(
+            identity_map,
+            write_identity_resolved,
+            hwk_baudrate=hwk_baudrate,
+        )
         if status != 0:
             return status
         if write_identity_resolved:

@@ -15,8 +15,8 @@ pressure:
     match: 
       ID_VENDOR_ID: "1a86"
       ID_MODEL_ID: "7523"
-      HWK_CHIP_UID: "004A0041-3035510B-3735333"
-      HWK_DEVICE_ADDR: "6"
+      HWK_CHIP_UID: "59573235-FF125043-FFFF54A0"
+      HWK_DEVICE_ADDR: "1"
       HWK_PACKAGE_ID: "29"
     target:
       port_config_name: left_gripper_1_port
@@ -31,8 +31,8 @@ pressure:
     match: 
       ID_VENDOR_ID: "1a86"
       ID_MODEL_ID: "7523"
-      HWK_CHIP_UID: "005C0039-3035510B-3735333"
-      HWK_DEVICE_ADDR: "5"
+      HWK_CHIP_UID: "59573235-FF125043-FFFF5392"
+      HWK_DEVICE_ADDR: "1"
       HWK_PACKAGE_ID: "29"
     target:
       port_config_name: left_gripper_2_port
@@ -47,8 +47,8 @@ pressure:
     match:
       ID_VENDOR_ID: "1a86"
       ID_MODEL_ID: "7523"
-      HWK_CHIP_UID: "00600012-3035510B-3735333"
-      HWK_DEVICE_ADDR: "6"
+      HWK_CHIP_UID: "59573235-FF125043-FFFF5503"
+      HWK_DEVICE_ADDR: "0"
       HWK_PACKAGE_ID: "29"
     target:
       port_config_name: right_gripper_1_port
@@ -63,8 +63,8 @@ pressure:
     match: 
       ID_VENDOR_ID: "1a86"
       ID_MODEL_ID: "7523"
-      HWK_CHIP_UID: "00820035-3035510B-3735333"
-      HWK_DEVICE_ADDR: "6"
+      HWK_CHIP_UID: "59573235-FF125043-FFFF559B"
+      HWK_DEVICE_ADDR: "0"
       HWK_PACKAGE_ID: "29"
     target:
       port_config_name: right_gripper_2_port

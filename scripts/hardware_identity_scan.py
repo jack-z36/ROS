@@ -17,6 +17,7 @@ HWK_QUERY_SCRIPT = WORKSPACE_DIR / "scripts" / "hwk_query_device_info.py"
 
 SERIAL_GLOBS = ("/dev/ttyUSB*", "/dev/ttyACM*")
 VIDEO_GLOBS = ("/dev/video*",)
+HWK_DEFAULT_BAUDRATE = 460800
 HWK_DEFAULT_ADDR = 6
 HWK_DEFAULT_PACKAGE_ID = 29
 HWK_PROTOCOL_KEYS = {
@@ -94,13 +95,21 @@ def parse_key_value_output(text):
     return values
 
 
-def query_hwk_info(device, cmd, addr=HWK_DEFAULT_ADDR, package_id=HWK_DEFAULT_PACKAGE_ID):
+def query_hwk_info(
+    device,
+    cmd,
+    addr=HWK_DEFAULT_ADDR,
+    package_id=HWK_DEFAULT_PACKAGE_ID,
+    baudrate=HWK_DEFAULT_BAUDRATE,
+):
     proc = run(
         [
             sys.executable,
             str(HWK_QUERY_SCRIPT),
             "--port",
             device,
+            "--baudrate",
+            str(baudrate),
             "--addr",
             str(addr),
             "--package-id",
@@ -117,22 +126,40 @@ def query_hwk_info(device, cmd, addr=HWK_DEFAULT_ADDR, package_id=HWK_DEFAULT_PA
     return parse_key_value_output(proc.stdout).get("value")
 
 
-def enrich_hwk_protocol_identity(device, match):
+def enrich_hwk_protocol_identity(device, match, baudrate=HWK_DEFAULT_BAUDRATE):
     props = device["properties"]
     if "HWK_CHIP_UID" in props:
         return
 
     addr = int(match.get("HWK_DEVICE_ADDR", HWK_DEFAULT_ADDR))
     package_id = int(match.get("HWK_PACKAGE_ID", HWK_DEFAULT_PACKAGE_ID))
-    uid = query_hwk_info(device["path"], "uid", addr=addr, package_id=package_id)
+    uid = query_hwk_info(
+        device["path"],
+        "uid",
+        addr=addr,
+        package_id=package_id,
+        baudrate=baudrate,
+    )
     if uid:
         props["HWK_CHIP_UID"] = uid
     if "HWK_DEVICE_ADDR" in match:
-        queried_addr = query_hwk_info(device["path"], "addr", addr=addr, package_id=package_id)
+        queried_addr = query_hwk_info(
+            device["path"],
+            "addr",
+            addr=addr,
+            package_id=package_id,
+            baudrate=baudrate,
+        )
         if queried_addr:
             props["HWK_DEVICE_ADDR"] = queried_addr
     if "HWK_APP_VERSION" in match:
-        version = query_hwk_info(device["path"], "version", addr=addr, package_id=package_id)
+        version = query_hwk_info(
+            device["path"],
+            "version",
+            addr=addr,
+            package_id=package_id,
+            baudrate=baudrate,
+        )
         if version:
             props["HWK_APP_VERSION"] = version
 
@@ -305,10 +332,10 @@ def match_value(actual, expected):
     return str(actual) == str(expected)
 
 
-def device_matches(device, match):
+def device_matches(device, match, hwk_baudrate=HWK_DEFAULT_BAUDRATE):
     props = device["properties"]
     if device["kind"] == "serial" and any(key in match for key in HWK_PROTOCOL_KEYS):
-        enrich_hwk_protocol_identity(device, match)
+        enrich_hwk_protocol_identity(device, match, baudrate=hwk_baudrate)
 
     for key, expected in match.items():
         if expected in (None, ""):
@@ -362,7 +389,7 @@ def preferred_path(device, match=None):
     return device["path"]
 
 
-def validate_mapping(mapping, devices):
+def validate_mapping(mapping, devices, hwk_baudrate=HWK_DEFAULT_BAUDRATE):
     failures = 0
     warnings = 0
     resolved = {"pressure": {}, "gopro": {}}
@@ -393,7 +420,7 @@ def validate_mapping(mapping, devices):
         for device in devices.get(entry["device_type"], []):
             if entry["require_video_capture"] and device.get("video_capture") is False:
                 continue
-            if device_matches(device, match):
+            if device_matches(device, match, hwk_baudrate=hwk_baudrate):
                 candidates.append(device)
 
         if not candidates:
@@ -510,6 +537,12 @@ def main():
     )
     validate_parser.add_argument("--map", default=str(DEFAULT_MAP_FILE))
     validate_parser.add_argument("--write-resolved")
+    validate_parser.add_argument(
+        "--hwk-baudrate",
+        type=int,
+        default=HWK_DEFAULT_BAUDRATE,
+        help="baudrate used when querying HWK protocol identity",
+    )
 
     args = parser.parse_args()
     devices = collect_devices()
@@ -522,7 +555,9 @@ def main():
         return 0
 
     mapping = load_map(args.map)
-    status, resolved = validate_mapping(mapping, devices)
+    status, resolved = validate_mapping(
+        mapping, devices, hwk_baudrate=args.hwk_baudrate
+    )
     if status == 0 and args.write_resolved:
         write_resolved(args.write_resolved, resolved)
     return status
