@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>rm65_dual_arm</name>
+  <version>0.1.0</version>
+  <description>RM65 dual-arm ROS 2 node (C++ SDK, single node, two handles).
+    Publishes left/right RM65 TCP pose and hardware health to ACT, and executes
+    ACT left/right end-effector target poses when the human permit is valid.
+    A delta guard clamps every command to a tiny step relative to the current
+    TCP to prevent large-range motion during testing.</description>
+  <maintainer email="maintainer@example.com">model_deploy Maintainer</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>act_interfaces</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

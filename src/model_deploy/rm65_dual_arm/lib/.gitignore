@@ -1,0 +1,3 @@
+# 睿尔曼 SDK 库文件不提交（厂商二进制 + 架构相关），由开发者按 SDK_VENDOR_README.txt 拷入
+*.so
+*.so.*
