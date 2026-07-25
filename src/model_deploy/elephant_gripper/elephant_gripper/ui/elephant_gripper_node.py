@@ -21,7 +21,7 @@ from std_msgs.msg import Float64
 from std_srvs.srv import SetBool
 
 from act_interfaces.msg import CommandPermit as CommandPermitMsg
-from act_interfaces.msg import HardwareHealth as HardwareHealthMsg
+from act_interfaces.msg import GripperHealth as GripperHealthMsg
 
 from ..config.schema import ConfigError
 from ..repo.config_loader import DEFAULT_NODE_NAME, load_config
@@ -74,7 +74,7 @@ class ElephantGripperNode(Node):
         self._left_state_pub = self.create_publisher(Float64, "/gripper/left_state", 10)
         self._right_state_pub = self.create_publisher(Float64, "/gripper/right_state", 10)
         self._health_pub = self.create_publisher(
-            HardwareHealthMsg, "/hardware/gripper/health", 10
+            GripperHealthMsg, "/hardware/gripper/health", 10
         )
 
         # Subscribers.
@@ -181,7 +181,7 @@ class ElephantGripperNode(Node):
 
     def _publish_health(self) -> None:
         health = self._supervisor.aggregate_health()
-        msg = HardwareHealthMsg()
+        msg = GripperHealthMsg()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.hardware_id = health.hardware_id
         msg.status = int(health.status)
