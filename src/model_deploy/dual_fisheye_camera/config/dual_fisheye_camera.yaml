@@ -1,0 +1,39 @@
+# dual_fisheye_camera 默认参数
+#
+# 约束（见 DOCS/03_工程/阶段四：模型部署/01_contracts/fisheye_camera_node 契约.md）：
+#   - 设备路径必须用 /dev/v4l/by-path/... 或 /dev/v4l/by-id/... 稳定路径，
+#     禁止依赖 /dev/videoX 这类裸枚举号。
+#   - 输出编码固定 rgb8；像素格式默认 YUYV（采集卡只稳定支持 MJPG 时才改 MJPG，
+#     并必须在此处显式记录）。
+#   - 时间戳优先 V4L2 buffer timestamp；QoS 用 sensor_data (BEST_EFFORT)。
+#
+# 默认值对齐阶段一 gopro_camera.yaml（640x480 @30Hz, YUYV, rgb8）。
+# 生产环境的真实 by-path 路径以部署机器实际 USB 拓扑为准；下述路径来自
+# config/all_sensor_nodes.yaml 中 gopro.left/right 结构，仅作占位示例，
+# 上线前必须按真机重新核对。
+
+dual_fisheye_camera:
+  ros__parameters:
+    # ---- 左右设备（强制稳定路径） ----
+    left_video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.4.4:1.0-video-index0"
+    right_video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.4.3:1.0-video-index0"
+
+    # ---- frame_id / 图像参数（对齐阶段一） ----
+    left_frame_id: "left_fisheye"
+    right_frame_id: "right_fisheye"
+    image_size: [640, 480]
+    frame_rate: 30
+    pixel_format: "YUYV"          # 仅当采集卡只稳定支持 MJPG 时才改 "MJPG"，并在此显式记录
+    output_encoding: "rgb8"       # 固定，对齐 Pi05 观测输入
+    use_v4l2_buffer_timestamps: true
+    use_sensor_data_qos: true
+    publish_camera_info: false    # 阶段四鱼眼相机不需要 camera_info
+
+    # ---- health 监控（camera_health_node） ----
+    health_hz: 5.0                # /hardware/camera/health 发布频率
+    frame_timeout_sec: 1.0        # 超过该时长未收到帧则判该侧 connected=false
+
+    # ---- 发布 topic（可被 launch 参数覆盖） ----
+    left_image_topic: "/image/left_fisheye"
+    right_image_topic: "/image/right_fisheye"
+    health_topic: "/hardware/camera/health"
