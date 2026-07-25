@@ -311,9 +311,14 @@ Allowed only after:
 - all required L3 tasks are complete or explicitly blocked in an accepted way;
 - L2 Gate passed;
 - `DOCS/03_工程/阶段四：模型部署/05_acceptance/<l2_id>/验收结果.md` contains a passed human signature;
+- **文档预维护已执行**：合入前在当前三级功能分支上已用 subagent 运行 `update-knowledge-from-commits` 与 `update-routes-from-commits`（两者均可在任意分支跑，合入前预维护时跳过其跨分支 sync/push，docs commit 随 merge 带入 model_deploy）；
 - Stage 4 Git rules allow automatic merge.
 
 Use the exact merge flow from `DOCS/02_约束/Git协作/阶段四：模型部署 Git操作规则.md`.
+
+**唯一合入方式为 `merge --no-ff`**：禁止 `merge --squash` / `rebase` / `amend` 压扁合入。
+
+**合入后先归档再清理**：不直接 `branch -d` + `push --delete`，而是先把 worktree 移到 `worktrees/archive/<用途>-<YYYYMMDD>`，再打 `archive/<YYYYMMDD>/<slug>` tag（本地+远端），最后才删分支引用。完整步骤见阶段四规则的「合入后归档流程」节。归档 tag 推送失败时，停止删分支并向用户报告。
 
 ## Scripts
 

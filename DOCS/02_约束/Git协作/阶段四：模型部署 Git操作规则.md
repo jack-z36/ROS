@@ -135,16 +135,68 @@ git push -u origin feat/model_deploy/<topic>
 
 人类验收关卡规则见 `DOCS/02_约束/工作流/阶段四开发工作流/attachments/人类验收关卡规则.md`。合入前必须检查 `05_acceptance/<l2>/验收结果.md` 的「人类验收」段：未填写或勾选「不通过」时，停止合入并向用户报告。
 
+**唯一允许的合入方式为 `git merge --no-ff`**。禁止使用 `git merge --squash`、`git rebase`、`git commit --amend` 将三级分支压成单 commit 合入；禁止 `git push --force`。本节流程按 5 步顺序执行：
+
+### 第 1 步：文档预维护（合入前强制）
+
+在当前三级功能分支上，依次用 subagent 运行两个 docs 维护 skill，确保文档体系与本次代码变更同步、不积压：
+
+1. `update-knowledge-from-commits`（更新 `DOCS/01_知识/`）
+2. `update-routes-from-commits`（更新 `AGENTS.md`、`DOCS/02_约束/上下文加载/`、各 `INDEX.md`）
+
+两个 skill 现均可在任意分支运行（见各自 SKILL.md）。在三级功能分支上为合入前预维护而跑时，**不要求它们执行跨分支 sync / 推送**——只取对 DOCS 的编辑结果，作为 `docs(knowledge)` / `docs(routes)` commit 落在当前功能分支本地。
+
+- 若 skill 判定「无需更新」，跳过该 skill，不阻塞合入。
+- skill 跑完后，工作树必须只剩 docs 相关变更；若出现非 DOCS 的预期外变更，停止合入并报告（见「阻断条件」）。
+
+### 第 2 步：推送功能分支
+
 ```bash
-git status --short --branch
 git push -u origin feat/model_deploy/<topic>
+```
+
+### 第 3 步：合入 model_deploy（`merge --no-ff`，message 带北京日期）
+
+```bash
 git switch model_deploy
 git pull --ff-only
 git merge --no-ff feat/model_deploy/<topic> -m "merge(model_deploy): integrate <topic> 北京时间 YYYY-MM-DD HH:MM"
 git push origin model_deploy
+```
+
+### 第 4 步：归档（合入后强制，见「合入后归档流程」节）
+
+不直接删除三级分支与 worktree，先归档再清理。
+
+### 第 5 步：推送归档 tag
+
+见「合入后归档流程」节。
+
+## 合入后归档流程
+
+三级分支合入 `model_deploy` 并推送成功后，**必须先归档再清理，禁止直接删除**。这是阶段四对全局 `Git操作规则.md`「分支删除与归档」的收紧：全局只要求「未合入分支」归档，阶段四要求所有三级分支合入后都先归档。
+
+```bash
+# (1) 归档 worktree：移动到 worktrees/archive/，不删除
+mkdir -p worktrees/archive/
+mv worktrees/<用途> worktrees/archive/<用途>-<YYYYMMDD>
+#   或用 git 原生命令：git worktree move worktrees/<用途> worktrees/archive/<用途>-<YYYYMMDD>
+
+# (2) 归档分支：打 archive tag（本地 + 远端），保证可恢复
+git tag -a archive/<YYYYMMDD>/<branch-slug> feat/model_deploy/<topic> \
+  -m "Archive feat/model_deploy/<topic> after merge into model_deploy YYYY-MM-DD"
+git push origin archive/<YYYYMMDD>/<branch-slug>
+
+# (3) 删除分支引用（archive tag 已保证可恢复）
 git branch -d feat/model_deploy/<topic>
 git push origin --delete feat/model_deploy/<topic>
 ```
+
+说明：
+
+- `worktrees/archive/` 由 `.gitignore` 覆盖（`worktrees/` 整体已忽略），归档 worktree 不进版本控制。
+- 归档 tag 永久保留，不清理；需要恢复时 `git worktree add <新路径> archive/<日期>/<slug>`。
+- 归档 worktree 的物理目录可随时手动删除，archive tag 是唯一恢复依据。
 
 ## 阻断条件
 
@@ -153,11 +205,13 @@ git push origin --delete feat/model_deploy/<topic>
 - 功能 Gate 未通过，或对应验收结果未记录通过结论。
 - 人类验收未签字、勾选「不通过」或缺少用户名/日期（见人类验收关卡规则）。
 - 当前分支不是对应三级功能分支，或该分支不是从 `model_deploy` 开出。
+- 文档预维护（第 1 步）subagent 跑完后，工作树包含非 DOCS 的预期外变更。
 - `model_deploy` 远端领先、本地分叉或 `pull --ff-only` 失败。
 - `git merge --no-ff` 产生冲突。
 - 工作区包含本功能之外的非预期变更。
 - 待提交内容包含超大文件、缓存、私有配置、环境目录或未归档解释的运行产物。
 - 真机相关任务缺少风险确认、急停准备或人工验收记录。
+- 归档 tag 创建或推送失败时，停止删分支。
 
 ## 阶段四提交范围
 
