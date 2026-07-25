@@ -1,0 +1,45 @@
+elephant_gripper_node:
+  ros__parameters:
+    # Stable udev symlinks (see config/99-elephant-gripper.rules). Do NOT use
+    # raw /dev/ttyACM* / /dev/ttyUSB* here: the two USB-485 adapters are very
+    # likely both CH340 (1a86:7523) and cannot be told apart by VID/PID.
+    left_port: /dev/elephant_gripper_left
+    right_port: /dev/elephant_gripper_right
+
+    baudrate: 115200
+    gripper_id: 14            # 0x0E protocol id (same on both grippers)
+
+    # Small serial read timeout so a missing response never stalls the loop.
+    serial_timeout_s: 0.08
+    enable_wait_s: 0.1
+    set_angle_wait_s: 0.1
+
+    # Serial transaction poll rate per gripper (decoupled from publish_hz).
+    poll_hz: 30.0
+
+    # ROS publish rates (read snapshots, non-blocking).
+    publish_hz: 50.0
+    health_publish_hz: 5.0
+
+    # Safety gating.
+    permit_timeout_s: 0.5     # permit older than this is treated as expired
+    command_timeout_s: 0.5
+    estop_on_startup: false
+
+    # Reconnect backoff bounds (seconds).
+    reconnect_backoff_min_s: 0.5
+    reconnect_backoff_max_s: 5.0
+
+    # ACT command value range (normalized width). Defaults to full [0, 1].
+    command_min: 0.0
+    command_max: 1.0
+
+    # width <-> angle linear calibration (angle in [0, 100]).
+    calibration:
+      angle_closed: 0
+      angle_open: 100
+
+    hardware_id: elephant_gripper
+
+    # Set true to run with an in-memory fake serial (no hardware).
+    use_fake_serial: false
