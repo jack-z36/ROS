@@ -1,0 +1,1856 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 3,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 3,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "act/ui/act_deploy_node.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 796,
+      "nonEmptyLines": 678,
+      "functions": [
+        {
+          "name": "_deny_command_permit",
+          "startLine": 107,
+          "endLine": 109,
+          "params": []
+        },
+        {
+          "name": "run_startup_preflight",
+          "startLine": 117,
+          "endLine": 235,
+          "params": [
+            "config",
+            "resources",
+            "inference_service",
+            "pipeline",
+            "request_queue",
+            "result_queue",
+            "command_output_enabled",
+            "permit_source",
+            "monotonic_clock"
+          ]
+        },
+        {
+          "name": "_is_valid_clock",
+          "startLine": 595,
+          "endLine": 599,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "build_arg_parser",
+          "startLine": 691,
+          "endLine": 715,
+          "params": []
+        },
+        {
+          "name": "main",
+          "startLine": 723,
+          "endLine": 792,
+          "params": [
+            "argv"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "StartupContractError",
+          "startLine": 95,
+          "endLine": 104,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_ActDeployComposition",
+          "startLine": 243,
+          "endLine": 592,
+          "methods": [
+            "_ros_create_timer",
+            "_ros_cancel_timer",
+            "_ros_create_metrics_publisher",
+            "_ros_time_seconds",
+            "_ros_destroy_node",
+            "_act_init",
+            "_resolve_permit",
+            "_control_tick",
+            "_publish_runtime_metrics",
+            "_shutdown_runtime",
+            "shutdown"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_ActDeployRclpyPrimitives",
+          "startLine": 607,
+          "endLine": 637,
+          "methods": [
+            "_ros_create_timer",
+            "_ros_cancel_timer",
+            "_ros_create_metrics_publisher",
+            "_ros_time_seconds",
+            "_ros_destroy_node"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "StartupContractError",
+          "line": 95,
+          "isDefault": false
+        },
+        {
+          "name": "_deny_command_permit",
+          "line": 107,
+          "isDefault": false
+        },
+        {
+          "name": "run_startup_preflight",
+          "line": 117,
+          "isDefault": false
+        },
+        {
+          "name": "_ActDeployComposition",
+          "line": 243,
+          "isDefault": false
+        },
+        {
+          "name": "_is_valid_clock",
+          "line": 595,
+          "isDefault": false
+        },
+        {
+          "name": "_ActDeployRclpyPrimitives",
+          "line": 607,
+          "isDefault": false
+        },
+        {
+          "name": "build_arg_parser",
+          "line": 691,
+          "isDefault": false
+        },
+        {
+          "name": "main",
+          "line": 723,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "super().__init__",
+          "lineNumber": 103
+        },
+        {
+          "caller": "__init__",
+          "callee": "super",
+          "lineNumber": 103
+        },
+        {
+          "caller": "_deny_command_permit",
+          "callee": "CommandPermit",
+          "lineNumber": 109
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "getattr",
+          "lineNumber": 148
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 149
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "getattr",
+          "lineNumber": 154
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 155
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "getattr",
+          "lineNumber": 162
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 163
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 170
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 176
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 182
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "set",
+          "lineNumber": 189
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "set",
+          "lineNumber": 189
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 190
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "sorted",
+          "lineNumber": 192
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "sorted",
+          "lineNumber": 193
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 202
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "tuple",
+          "lineNumber": 206
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 211
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 223
+        },
+        {
+          "caller": "run_startup_preflight",
+          "callee": "StartupContractError",
+          "lineNumber": 231
+        },
+        {
+          "caller": "_act_init",
+          "callee": "threading.RLock",
+          "lineNumber": 305
+        },
+        {
+          "caller": "_act_init",
+          "callee": "build_observation_pipeline",
+          "lineNumber": 325
+        },
+        {
+          "caller": "_act_init",
+          "callee": "SafetyGuard",
+          "lineNumber": 333
+        },
+        {
+          "caller": "_act_init",
+          "callee": "LatestQueue",
+          "lineNumber": 334
+        },
+        {
+          "caller": "_act_init",
+          "callee": "LatestQueue",
+          "lineNumber": 335
+        },
+        {
+          "caller": "_act_init",
+          "callee": "RuntimeMetrics",
+          "lineNumber": 336
+        },
+        {
+          "caller": "_act_init",
+          "callee": "InferenceWorker",
+          "lineNumber": 337
+        },
+        {
+          "caller": "_act_init",
+          "callee": "run_startup_preflight",
+          "lineNumber": 347
+        },
+        {
+          "caller": "_act_init",
+          "callee": "ActionPublisher",
+          "lineNumber": 360
+        },
+        {
+          "caller": "_act_init",
+          "callee": "self._ros_create_metrics_publisher",
+          "lineNumber": 364
+        },
+        {
+          "caller": "_act_init",
+          "callee": "self._observation_pipeline.buffer.latest_observation",
+          "lineNumber": 369
+        },
+        {
+          "caller": "_act_init",
+          "callee": "ControlLoop",
+          "lineNumber": 372
+        },
+        {
+          "caller": "_act_init",
+          "callee": "ControlLoopConfig",
+          "lineNumber": 373
+        },
+        {
+          "caller": "_act_init",
+          "callee": "self._worker.start",
+          "lineNumber": 392
+        },
+        {
+          "caller": "_act_init",
+          "callee": "self._ros_create_timer",
+          "lineNumber": 396
+        },
+        {
+          "caller": "_act_init",
+          "callee": "max",
+          "lineNumber": 397
+        },
+        {
+          "caller": "_act_init",
+          "callee": "self._ros_create_timer",
+          "lineNumber": 399
+        },
+        {
+          "caller": "_act_init",
+          "callee": "max",
+          "lineNumber": 400
+        },
+        {
+          "caller": "_act_init",
+          "callee": "self._shutdown_runtime",
+          "lineNumber": 408
+        },
+        {
+          "caller": "_act_init",
+          "callee": "self._ros_destroy_node",
+          "lineNumber": 412
+        },
+        {
+          "caller": "_resolve_permit",
+          "callee": "CommandPermit",
+          "lineNumber": 422
+        },
+        {
+          "caller": "_resolve_permit",
+          "callee": "self._permit_source",
+          "lineNumber": 424
+        },
+        {
+          "caller": "_resolve_permit",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 426
+        },
+        {
+          "caller": "_resolve_permit",
+          "callee": "CommandPermit",
+          "lineNumber": 429
+        },
+        {
+          "caller": "_resolve_permit",
+          "callee": "isinstance",
+          "lineNumber": 430
+        },
+        {
+          "caller": "_resolve_permit",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 431
+        },
+        {
+          "caller": "_resolve_permit",
+          "callee": "CommandPermit",
+          "lineNumber": 434
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._runtime_metrics.snapshot",
+          "lineNumber": 443
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 447
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._worker.is_alive",
+          "lineNumber": 451
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 452
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 455
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._monotonic_clock",
+          "lineNumber": 459
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "_is_valid_clock",
+          "lineNumber": 460
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 461
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 462
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._ros_time_seconds",
+          "lineNumber": 464
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "_is_valid_clock",
+          "lineNumber": 465
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 466
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 467
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._resolve_permit",
+          "lineNumber": 470
+        },
+        {
+          "caller": "_control_tick",
+          "callee": "self._control_loop.tick",
+          "lineNumber": 471
+        },
+        {
+          "caller": "_publish_runtime_metrics",
+          "callee": "self._runtime_metrics.snapshot",
+          "lineNumber": 480
+        },
+        {
+          "caller": "_publish_runtime_metrics",
+          "callee": "list",
+          "lineNumber": 510
+        },
+        {
+          "caller": "_publish_runtime_metrics",
+          "callee": "json.dumps",
+          "lineNumber": 522
+        },
+        {
+          "caller": "_publish_runtime_metrics",
+          "callee": "self._metrics_publisher.publish",
+          "lineNumber": 526
+        },
+        {
+          "caller": "_publish_runtime_metrics",
+          "callee": "self._metrics_msg_cls",
+          "lineNumber": 526
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "bool",
+          "lineNumber": 543
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "self._control_loop.request_shutdown",
+          "lineNumber": 548
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "self._ros_cancel_timer",
+          "lineNumber": 554
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "self._worker.stop",
+          "lineNumber": 562
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "self._request_queue.close",
+          "lineNumber": 566
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "self._worker.join",
+          "lineNumber": 570
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "self._result_queue.close",
+          "lineNumber": 574
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "self._worker.is_alive",
+          "lineNumber": 580
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 583
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "self._runtime_metrics.record_event",
+          "lineNumber": 586
+        },
+        {
+          "caller": "_shutdown_runtime",
+          "callee": "bool",
+          "lineNumber": 588
+        },
+        {
+          "caller": "shutdown",
+          "callee": "self._shutdown_runtime",
+          "lineNumber": 592
+        },
+        {
+          "caller": "_is_valid_clock",
+          "callee": "isinstance",
+          "lineNumber": 597
+        },
+        {
+          "caller": "_is_valid_clock",
+          "callee": "isinstance",
+          "lineNumber": 597
+        },
+        {
+          "caller": "_is_valid_clock",
+          "callee": "math.isfinite",
+          "lineNumber": 599
+        },
+        {
+          "caller": "_ros_create_timer",
+          "callee": "self.create_timer",
+          "lineNumber": 619
+        },
+        {
+          "caller": "_ros_create_timer",
+          "callee": "Duration",
+          "lineNumber": 619
+        },
+        {
+          "caller": "_ros_cancel_timer",
+          "callee": "timer.cancel",
+          "lineNumber": 622
+        },
+        {
+          "caller": "_ros_create_metrics_publisher",
+          "callee": "getattr",
+          "lineNumber": 630
+        },
+        {
+          "caller": "_ros_create_metrics_publisher",
+          "callee": "factory",
+          "lineNumber": 631
+        },
+        {
+          "caller": "_ros_time_seconds",
+          "callee": "float",
+          "lineNumber": 634
+        },
+        {
+          "caller": "_ros_time_seconds",
+          "callee": "self.get_clock().now",
+          "lineNumber": 634
+        },
+        {
+          "caller": "_ros_time_seconds",
+          "callee": "self.get_clock",
+          "lineNumber": 634
+        },
+        {
+          "caller": "_ros_destroy_node",
+          "callee": "self.destroy_node",
+          "lineNumber": 637
+        },
+        {
+          "caller": "__init__",
+          "callee": "rclpy.node.Node.__init__",
+          "lineNumber": 659
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._act_init",
+          "lineNumber": 660
+        },
+        {
+          "caller": "__init__",
+          "callee": "RuntimeError",
+          "lineNumber": 679
+        },
+        {
+          "caller": "build_arg_parser",
+          "callee": "argparse.ArgumentParser",
+          "lineNumber": 699
+        },
+        {
+          "caller": "build_arg_parser",
+          "callee": "parser.add_argument",
+          "lineNumber": 703
+        },
+        {
+          "caller": "build_arg_parser",
+          "callee": "parser.add_argument",
+          "lineNumber": 708
+        },
+        {
+          "caller": "main",
+          "callee": "build_arg_parser().parse_args",
+          "lineNumber": 737
+        },
+        {
+          "caller": "main",
+          "callee": "build_arg_parser",
+          "lineNumber": 737
+        },
+        {
+          "caller": "main",
+          "callee": "load_deploy_config",
+          "lineNumber": 749
+        },
+        {
+          "caller": "main",
+          "callee": "load_act_runtime_resources",
+          "lineNumber": 752
+        },
+        {
+          "caller": "main",
+          "callee": "ActInferenceService",
+          "lineNumber": 753
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.init",
+          "lineNumber": 766
+        },
+        {
+          "caller": "main",
+          "callee": "ActDeployNode",
+          "lineNumber": 767
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.spin",
+          "lineNumber": 774
+        },
+        {
+          "caller": "main",
+          "callee": "node.shutdown",
+          "lineNumber": 783
+        },
+        {
+          "caller": "main",
+          "callee": "node.destroy_node",
+          "lineNumber": 787
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.ok",
+          "lineNumber": 790
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.shutdown",
+          "lineNumber": 791
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 8,
+        "functionCount": 5,
+        "classCount": 3
+      }
+    },
+    {
+      "path": "act/ui/action_publisher.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 814,
+      "nonEmptyLines": 687,
+      "functions": [
+        {
+          "name": "_resolve_status_msg_class",
+          "startLine": 128,
+          "endLine": 132,
+          "params": []
+        },
+        {
+          "name": "_default_message_factory",
+          "startLine": 149,
+          "endLine": 153,
+          "params": []
+        },
+        {
+          "name": "_as_finite_tuple",
+          "startLine": 183,
+          "endLine": 199,
+          "params": [
+            "name",
+            "value",
+            "length"
+          ]
+        },
+        {
+          "name": "_build_policy_msg",
+          "startLine": 207,
+          "endLine": 236,
+          "params": [
+            "policy_action",
+            "factory"
+          ]
+        },
+        {
+          "name": "_build_arm_msg",
+          "startLine": 244,
+          "endLine": 285,
+          "params": [
+            "arm",
+            "ros_time_s",
+            "factory"
+          ]
+        },
+        {
+          "name": "_build_gripper_msg",
+          "startLine": 293,
+          "endLine": 308,
+          "params": [
+            "gripper",
+            "factory"
+          ]
+        },
+        {
+          "name": "build_ros_messages",
+          "startLine": 316,
+          "endLine": 346,
+          "params": [
+            "payloads",
+            "ros_time_s",
+            "msg_factory"
+          ]
+        },
+        {
+          "name": "_decide_command_publish",
+          "startLine": 366,
+          "endLine": 384,
+          "params": [
+            "command_output_enabled",
+            "permit"
+          ]
+        },
+        {
+          "name": "_decide_gripper_publish",
+          "startLine": 387,
+          "endLine": 408,
+          "params": [
+            "side",
+            "target",
+            "last_target",
+            "last_time",
+            "monotonic_s",
+            "deadband",
+            "min_interval_s"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "_MockTime",
+          "startLine": 68,
+          "endLine": 71,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_MockHeader",
+          "startLine": 74,
+          "endLine": 77,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_MockPoint",
+          "startLine": 80,
+          "endLine": 84,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_MockQuaternion",
+          "startLine": 87,
+          "endLine": 92,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_MockPose",
+          "startLine": 95,
+          "endLine": 98,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_MockFloat32MultiArray",
+          "startLine": 101,
+          "endLine": 107,
+          "methods": [
+            "__init__",
+            "__name__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_MockPoseStamped",
+          "startLine": 110,
+          "endLine": 113,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_MockFloat64",
+          "startLine": 116,
+          "endLine": 118,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_MockString",
+          "startLine": 121,
+          "endLine": 125,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_MessageFactory",
+          "startLine": 136,
+          "endLine": 146,
+          "methods": [],
+          "properties": [
+            "float32_multi_array",
+            "pose_stamped",
+            "float64"
+          ]
+        },
+        {
+          "name": "_RosMessageBundle",
+          "startLine": 162,
+          "endLine": 175,
+          "methods": [],
+          "properties": [
+            "policy_action_msg",
+            "left_arm_msg",
+            "right_arm_msg",
+            "left_gripper_msg",
+            "right_gripper_msg"
+          ]
+        },
+        {
+          "name": "ActionPublishIoError",
+          "startLine": 354,
+          "endLine": 363,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "ActionPublisher",
+          "startLine": 411,
+          "endLine": 799,
+          "methods": [
+            "__init__",
+            "_try_publish",
+            "_update_gripper_cache",
+            "_record_last_result",
+            "_topic_for_label",
+            "_build_publish_result",
+            "_build_status_msg",
+            "_publish_status_best_effort",
+            "_finalize",
+            "publish"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_MockTime",
+          "line": 68,
+          "isDefault": false
+        },
+        {
+          "name": "_MockHeader",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "_MockPoint",
+          "line": 80,
+          "isDefault": false
+        },
+        {
+          "name": "_MockQuaternion",
+          "line": 87,
+          "isDefault": false
+        },
+        {
+          "name": "_MockPose",
+          "line": 95,
+          "isDefault": false
+        },
+        {
+          "name": "_MockFloat32MultiArray",
+          "line": 101,
+          "isDefault": false
+        },
+        {
+          "name": "_MockPoseStamped",
+          "line": 110,
+          "isDefault": false
+        },
+        {
+          "name": "_MockFloat64",
+          "line": 116,
+          "isDefault": false
+        },
+        {
+          "name": "_MockString",
+          "line": 121,
+          "isDefault": false
+        },
+        {
+          "name": "_resolve_status_msg_class",
+          "line": 128,
+          "isDefault": false
+        },
+        {
+          "name": "_MessageFactory",
+          "line": 135,
+          "isDefault": false
+        },
+        {
+          "name": "_default_message_factory",
+          "line": 149,
+          "isDefault": false
+        },
+        {
+          "name": "_RosMessageBundle",
+          "line": 161,
+          "isDefault": false
+        },
+        {
+          "name": "_as_finite_tuple",
+          "line": 183,
+          "isDefault": false
+        },
+        {
+          "name": "_build_policy_msg",
+          "line": 207,
+          "isDefault": false
+        },
+        {
+          "name": "_build_arm_msg",
+          "line": 244,
+          "isDefault": false
+        },
+        {
+          "name": "_build_gripper_msg",
+          "line": 293,
+          "isDefault": false
+        },
+        {
+          "name": "build_ros_messages",
+          "line": 316,
+          "isDefault": false
+        },
+        {
+          "name": "ActionPublishIoError",
+          "line": 354,
+          "isDefault": false
+        },
+        {
+          "name": "_decide_command_publish",
+          "line": 366,
+          "isDefault": false
+        },
+        {
+          "name": "_decide_gripper_publish",
+          "line": 387,
+          "isDefault": false
+        },
+        {
+          "name": "ActionPublisher",
+          "line": 411,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "_MockTime",
+          "lineNumber": 77
+        },
+        {
+          "caller": "__init__",
+          "callee": "_MockPoint",
+          "lineNumber": 97
+        },
+        {
+          "caller": "__init__",
+          "callee": "_MockQuaternion",
+          "lineNumber": 98
+        },
+        {
+          "caller": "__init__",
+          "callee": "_MockHeader",
+          "lineNumber": 112
+        },
+        {
+          "caller": "__init__",
+          "callee": "_MockPose",
+          "lineNumber": 113
+        },
+        {
+          "caller": "_default_message_factory",
+          "callee": "_MessageFactory",
+          "lineNumber": 152
+        },
+        {
+          "caller": "_default_message_factory",
+          "callee": "_MessageFactory",
+          "lineNumber": 153
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "isinstance",
+          "lineNumber": 185
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "isinstance",
+          "lineNumber": 185
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "TypeError",
+          "lineNumber": 186
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "type",
+          "lineNumber": 187
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "len",
+          "lineNumber": 189
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "ValueError",
+          "lineNumber": 190
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "len",
+          "lineNumber": 190
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "enumerate",
+          "lineNumber": 192
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "isinstance",
+          "lineNumber": 193
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "isinstance",
+          "lineNumber": 193
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "TypeError",
+          "lineNumber": 194
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "type",
+          "lineNumber": 194
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "float",
+          "lineNumber": 195
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "math.isfinite",
+          "lineNumber": 196
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "ValueError",
+          "lineNumber": 197
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "out.append",
+          "lineNumber": 198
+        },
+        {
+          "caller": "_as_finite_tuple",
+          "callee": "tuple",
+          "lineNumber": 199
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "isinstance",
+          "lineNumber": 213
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "isinstance",
+          "lineNumber": 213
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "TypeError",
+          "lineNumber": 216
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "type",
+          "lineNumber": 218
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "len",
+          "lineNumber": 220
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "ValueError",
+          "lineNumber": 221
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "len",
+          "lineNumber": 222
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "enumerate",
+          "lineNumber": 225
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "isinstance",
+          "lineNumber": 226
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "isinstance",
+          "lineNumber": 226
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "TypeError",
+          "lineNumber": 227
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "type",
+          "lineNumber": 228
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "float",
+          "lineNumber": 230
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "math.isfinite",
+          "lineNumber": 231
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "ValueError",
+          "lineNumber": 232
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "data.append",
+          "lineNumber": 233
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "factory.float32_multi_array",
+          "lineNumber": 234
+        },
+        {
+          "caller": "_build_policy_msg",
+          "callee": "list",
+          "lineNumber": 235
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "isinstance",
+          "lineNumber": 251
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "isinstance",
+          "lineNumber": 251
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "TypeError",
+          "lineNumber": 252
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "type",
+          "lineNumber": 252
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "math.isfinite",
+          "lineNumber": 253
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "ValueError",
+          "lineNumber": 254
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "getattr",
+          "lineNumber": 256
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "isinstance",
+          "lineNumber": 257
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "frame_id.strip",
+          "lineNumber": 257
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "ValueError",
+          "lineNumber": 258
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "getattr",
+          "lineNumber": 260
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "getattr",
+          "lineNumber": 261
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "_as_finite_tuple",
+          "lineNumber": 262
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "_as_finite_tuple",
+          "lineNumber": 263
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "int",
+          "lineNumber": 265
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "int",
+          "lineNumber": 266
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "round",
+          "lineNumber": 266
+        },
+        {
+          "caller": "_build_arm_msg",
+          "callee": "factory.pose_stamped",
+          "lineNumber": 274
+        },
+        {
+          "caller": "_build_gripper_msg",
+          "callee": "isinstance",
+          "lineNumber": 299
+        },
+        {
+          "caller": "_build_gripper_msg",
+          "callee": "isinstance",
+          "lineNumber": 299
+        },
+        {
+          "caller": "_build_gripper_msg",
+          "callee": "TypeError",
+          "lineNumber": 300
+        },
+        {
+          "caller": "_build_gripper_msg",
+          "callee": "type",
+          "lineNumber": 300
+        },
+        {
+          "caller": "_build_gripper_msg",
+          "callee": "float",
+          "lineNumber": 301
+        },
+        {
+          "caller": "_build_gripper_msg",
+          "callee": "math.isfinite",
+          "lineNumber": 302
+        },
+        {
+          "caller": "_build_gripper_msg",
+          "callee": "ValueError",
+          "lineNumber": 303
+        },
+        {
+          "caller": "_build_gripper_msg",
+          "callee": "ValueError",
+          "lineNumber": 305
+        },
+        {
+          "caller": "_build_gripper_msg",
+          "callee": "factory.float64",
+          "lineNumber": 306
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "isinstance",
+          "lineNumber": 328
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "TypeError",
+          "lineNumber": 329
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "type",
+          "lineNumber": 330
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "_default_message_factory",
+          "lineNumber": 332
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "_build_policy_msg",
+          "lineNumber": 334
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "_build_arm_msg",
+          "lineNumber": 335
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "_build_arm_msg",
+          "lineNumber": 336
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "_build_gripper_msg",
+          "lineNumber": 337
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "_build_gripper_msg",
+          "lineNumber": 338
+        },
+        {
+          "caller": "build_ros_messages",
+          "callee": "_RosMessageBundle",
+          "lineNumber": 340
+        },
+        {
+          "caller": "__init__",
+          "callee": "super().__init__",
+          "lineNumber": 362
+        },
+        {
+          "caller": "__init__",
+          "callee": "super",
+          "lineNumber": 362
+        },
+        {
+          "caller": "_decide_gripper_publish",
+          "callee": "abs",
+          "lineNumber": 404
+        },
+        {
+          "caller": "__init__",
+          "callee": "isinstance",
+          "lineNumber": 435
+        },
+        {
+          "caller": "__init__",
+          "callee": "TypeError",
+          "lineNumber": 436
+        },
+        {
+          "caller": "__init__",
+          "callee": "type",
+          "lineNumber": 438
+        },
+        {
+          "caller": "__init__",
+          "callee": "isinstance",
+          "lineNumber": 440
+        },
+        {
+          "caller": "__init__",
+          "callee": "TypeError",
+          "lineNumber": 441
+        },
+        {
+          "caller": "__init__",
+          "callee": "type",
+          "lineNumber": 443
+        },
+        {
+          "caller": "__init__",
+          "callee": "_default_message_factory",
+          "lineNumber": 449
+        },
+        {
+          "caller": "__init__",
+          "callee": "_resolve_status_msg_class",
+          "lineNumber": 451
+        },
+        {
+          "caller": "__init__",
+          "callee": "node.create_publisher",
+          "lineNumber": 480
+        },
+        {
+          "caller": "_try_publish",
+          "callee": "publisher.publish",
+          "lineNumber": 490
+        },
+        {
+          "caller": "_try_publish",
+          "callee": "ActionPublishIoError",
+          "lineNumber": 492
+        },
+        {
+          "caller": "_update_gripper_cache",
+          "callee": "float",
+          "lineNumber": 498
+        },
+        {
+          "caller": "_update_gripper_cache",
+          "callee": "float",
+          "lineNumber": 499
+        },
+        {
+          "caller": "_build_publish_result",
+          "callee": "ActionPublishResult",
+          "lineNumber": 538
+        },
+        {
+          "caller": "_build_publish_result",
+          "callee": "tuple",
+          "lineNumber": 546
+        },
+        {
+          "caller": "_build_status_msg",
+          "callee": "list",
+          "lineNumber": 566
+        },
+        {
+          "caller": "_build_status_msg",
+          "callee": "self._status_msg_class",
+          "lineNumber": 574
+        },
+        {
+          "caller": "_build_status_msg",
+          "callee": "json.dumps",
+          "lineNumber": 574
+        },
+        {
+          "caller": "_publish_status_best_effort",
+          "callee": "self._build_status_msg",
+          "lineNumber": 579
+        },
+        {
+          "caller": "_publish_status_best_effort",
+          "callee": "self._try_publish",
+          "lineNumber": 580
+        },
+        {
+          "caller": "_finalize",
+          "callee": "self._build_publish_result",
+          "lineNumber": 601
+        },
+        {
+          "caller": "_finalize",
+          "callee": "self._publish_status_best_effort",
+          "lineNumber": 613
+        },
+        {
+          "caller": "_finalize",
+          "callee": "self._build_publish_result",
+          "lineNumber": 614
+        },
+        {
+          "caller": "_finalize",
+          "callee": "self._record_last_result",
+          "lineNumber": 626
+        },
+        {
+          "caller": "publish",
+          "callee": "RuntimeError",
+          "lineNumber": 639
+        },
+        {
+          "caller": "publish",
+          "callee": "build_topic_payloads",
+          "lineNumber": 643
+        },
+        {
+          "caller": "publish",
+          "callee": "self._finalize",
+          "lineNumber": 646
+        },
+        {
+          "caller": "publish",
+          "callee": "self._finalize",
+          "lineNumber": 658
+        },
+        {
+          "caller": "publish",
+          "callee": "build_ros_messages",
+          "lineNumber": 672
+        },
+        {
+          "caller": "publish",
+          "callee": "self._finalize",
+          "lineNumber": 674
+        },
+        {
+          "caller": "publish",
+          "callee": "_decide_command_publish",
+          "lineNumber": 687
+        },
+        {
+          "caller": "publish",
+          "callee": "self._try_publish",
+          "lineNumber": 693
+        },
+        {
+          "caller": "publish",
+          "callee": "self._finalize",
+          "lineNumber": 698
+        },
+        {
+          "caller": "publish",
+          "callee": "self._topic_for_label",
+          "lineNumber": 707
+        },
+        {
+          "caller": "publish",
+          "callee": "self._finalize",
+          "lineNumber": 717
+        },
+        {
+          "caller": "publish",
+          "callee": "getattr",
+          "lineNumber": 734
+        },
+        {
+          "caller": "publish",
+          "callee": "_decide_gripper_publish",
+          "lineNumber": 735
+        },
+        {
+          "caller": "publish",
+          "callee": "getattr",
+          "lineNumber": 745
+        },
+        {
+          "caller": "publish",
+          "callee": "targets.append",
+          "lineNumber": 746
+        },
+        {
+          "caller": "publish",
+          "callee": "skipped.append",
+          "lineNumber": 748
+        },
+        {
+          "caller": "publish",
+          "callee": "self._try_publish",
+          "lineNumber": 755
+        },
+        {
+          "caller": "publish",
+          "callee": "self._update_gripper_cache",
+          "lineNumber": 758
+        },
+        {
+          "caller": "publish",
+          "callee": "len",
+          "lineNumber": 768
+        },
+        {
+          "caller": "publish",
+          "callee": "len",
+          "lineNumber": 769
+        },
+        {
+          "caller": "publish",
+          "callee": "self._topic_for_label",
+          "lineNumber": 783
+        },
+        {
+          "caller": "publish",
+          "callee": "self._finalize",
+          "lineNumber": 789
+        },
+        {
+          "caller": "publish",
+          "callee": "tuple",
+          "lineNumber": 795
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 22,
+        "functionCount": 9,
+        "classCount": 13
+      }
+    },
+    {
+      "path": "act/ui/observation_pipeline.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 146,
+      "nonEmptyLines": 124,
+      "functions": [
+        {
+          "name": "build_observation_pipeline",
+          "startLine": 62,
+          "endLine": 146,
+          "params": [
+            "node",
+            "config",
+            "input_spec",
+            "monotonic_clock"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ObservationPipeline",
+          "startLine": 42,
+          "endLine": 59,
+          "methods": [],
+          "properties": [
+            "collector",
+            "buffer",
+            "adapter",
+            "input_spec",
+            "monotonic_clock"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ObservationPipeline",
+          "line": 41,
+          "isDefault": false
+        },
+        {
+          "name": "build_observation_pipeline",
+          "line": 62,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "isinstance",
+          "lineNumber": 101
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "TypeError",
+          "lineNumber": 102
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "isinstance",
+          "lineNumber": 103
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "TypeError",
+          "lineNumber": 104
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "callable",
+          "lineNumber": 105
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "TypeError",
+          "lineNumber": 106
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "set",
+          "lineNumber": 112
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "set",
+          "lineNumber": 113
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "ValueError",
+          "lineNumber": 115
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "sorted",
+          "lineNumber": 117
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "sorted",
+          "lineNumber": 118
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "ObservationCollector",
+          "lineNumber": 122
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "list",
+          "lineNumber": 123
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "list",
+          "lineNumber": 124
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "ObservationBuffer",
+          "lineNumber": 127
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "ObservationRosAdapter",
+          "lineNumber": 128
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "adapter.create_subscriptions",
+          "lineNumber": 138
+        },
+        {
+          "caller": "build_observation_pipeline",
+          "callee": "ObservationPipeline",
+          "lineNumber": 140
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    }
+  ]
+}

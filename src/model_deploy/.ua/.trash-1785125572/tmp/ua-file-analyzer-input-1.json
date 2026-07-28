@@ -1,0 +1,58 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "elephant_gripper/elephant_gripper/config/schema.py", "language": "python", "sizeLines": 119, "fileCategory": "code"},
+    {"path": "elephant_gripper/elephant_gripper/repo/config_loader.py", "language": "python", "sizeLines": 149, "fileCategory": "code"},
+    {"path": "elephant_gripper/elephant_gripper/runtime/serial_link.py", "language": "python", "sizeLines": 324, "fileCategory": "code"},
+    {"path": "elephant_gripper/elephant_gripper/service/health_aggregator.py", "language": "python", "sizeLines": 98, "fileCategory": "code"},
+    {"path": "elephant_gripper/elephant_gripper/service/mapping.py", "language": "python", "sizeLines": 39, "fileCategory": "code"},
+    {"path": "elephant_gripper/elephant_gripper/types/gripper_types.py", "language": "python", "sizeLines": 132, "fileCategory": "code"},
+    {"path": "elephant_gripper/tests/repo/test_config_loader.py", "language": "python", "sizeLines": 95, "fileCategory": "code"},
+    {"path": "elephant_gripper/tests/runtime/test_serial_link.py", "language": "python", "sizeLines": 112, "fileCategory": "code"},
+    {"path": "elephant_gripper/tests/service/test_health_aggregator.py", "language": "python", "sizeLines": 79, "fileCategory": "code"},
+    {"path": "elephant_gripper/tests/service/test_mapping.py", "language": "python", "sizeLines": 45, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    "elephant_gripper/elephant_gripper/config/schema.py": [
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/repo/config_loader.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/runtime/serial_link.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/service/__init__.py",
+      "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "elephant_gripper/elephant_gripper/service/mapping.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/service/health_aggregator.py": [
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/service/mapping.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/types/gripper_types.py": [],
+    "elephant_gripper/tests/repo/test_config_loader.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/tests/runtime/test_serial_link.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/tests/service/test_health_aggregator.py": [
+      "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/tests/service/test_mapping.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/service/mapping.py"
+    ]
+  }
+}

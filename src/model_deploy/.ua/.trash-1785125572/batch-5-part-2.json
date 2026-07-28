@@ -1,0 +1,643 @@
+{
+  "nodes": [
+    {
+      "id": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "file",
+      "name": "test_act_deploy_node.py",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "summary": "针对 ActDeployNode 的组合装配与生命周期进行单元测试：FakeActDeployNode 通过 _ros_* 私有 hook 注入替身（create_timer/cancel_timer/create_metrics_publisher/time_seconds/destroy_node），覆盖原子启动、定时器驱动 tick、控制环错误锁存、permit 解析拒绝路径、C20 遥测主题稳定 JSON 与幂等/超时关闭。",
+      "tags": [
+        "test",
+        "lifecycle",
+        "ros-stub",
+        "telemetry",
+        "composition"
+      ],
+      "complexity": "complex",
+      "languageNotes": "FakeActDeployNode 直接继承 _ActDeployComposition 并覆盖以 _ros_ 为前缀的 protected hook，验证 hook 点契约；shutdown 测试用 monkeypatch sleep 模拟超时分支而不真睡。"
+    },
+    {
+      "id": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "file",
+      "name": "test_startup_preflight.py",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "summary": "针对 run_startup_preflight 启动契约进行 B12 单元测试：用 _spec/_loose_spec 工厂对照 inference_service、pipeline、resources 各组件逐一注入偏差（state/action/chunk/camera/image layout/dtype/value_range/shapes、clock domain、queue capacity、permit_source），断言 preflight 在 canonical 集合上通过、在任一偏差上失败。",
+      "tags": [
+        "test",
+        "validation",
+        "contract",
+        "preflight",
+        "spec-identity"
+      ],
+      "complexity": "complex",
+      "languageNotes": "_loose_spec 通过 duck-type 对象绕开 PolicyInputSpec 自带的维度校验，便于在不触发构造期失败的前提下单独触发 preflight 的 spec identity 检查。"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_node.py:node",
+      "type": "function",
+      "name": "node",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        82,
+        94
+      ],
+      "summary": "pytest fixture：装配 FakeActDeployNode（注入 FakeNode/FakeClock/StubService 等替身）作为后续生命周期与控制环测试的共享 SUT。",
+      "tags": [
+        "test-fixture",
+        "fixture",
+        "composition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_node.py:test_atomic_startup_assembles_all_deps",
+      "type": "function",
+      "name": "test_atomic_startup_assembles_all_deps",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        134,
+        149
+      ],
+      "summary": "断言节点启动后所有依赖（inference_service、pipeline、worker、control_loop、metrics publisher）都已原子装配且类型/属性符合预期。",
+      "tags": [
+        "test",
+        "startup",
+        "atomicity"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_node.py:test_c20_telemetry_payload_is_stable_json",
+      "type": "function",
+      "name": "test_c20_telemetry_payload_is_stable_json",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        186,
+        203
+      ],
+      "summary": "断言 C20 遥测主题发布的 payload 是结构稳定的 JSON（字段集合与序列化确定性），保证订阅者契约。",
+      "tags": [
+        "test",
+        "telemetry",
+        "json-contract"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_node.py:test_shutdown_timeout_returns_false",
+      "type": "function",
+      "name": "test_shutdown_timeout_returns_false",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        212,
+        235
+      ],
+      "summary": "用 monkeypatch sleep 模拟 worker 关闭超时分支，断言 shutdown 在超时情况下返回 False 且不抛异常。",
+      "tags": [
+        "test",
+        "shutdown",
+        "timeout"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_node.py:test_atomic_recovery_on_pipeline_build_failure",
+      "type": "function",
+      "name": "test_atomic_recovery_on_pipeline_build_failure",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        236,
+        259
+      ],
+      "summary": "用 monkeypatch 使 build_observation_pipeline 抛错，断言节点在 pipeline 构建失败时进行原子回滚，不留下半装配状态。",
+      "tags": [
+        "test",
+        "atomicity",
+        "rollback"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_node.py:test_resolve_permit_denies_on_provider_error",
+      "type": "function",
+      "name": "test_resolve_permit_denies_on_provider_error",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        172,
+        180
+      ],
+      "summary": "断言 permit 解析在 permit provider 抛错时返回 deny（fail-closed），而非向上抛出异常。",
+      "tags": [
+        "test",
+        "permit",
+        "fail-closed"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/ui/test_act_deploy_node.py:FakeActDeployNode",
+      "type": "class",
+      "name": "FakeActDeployNode",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        87,
+        132
+      ],
+      "summary": "继承 _ActDeployComposition 并覆盖 _ros_create_timer/_ros_cancel_timer/_ros_create_metrics_publisher/_ros_time_seconds/_ros_destroy_node 等 protected hook，注入 FakeTimer/FakeNode/FakeClock，使节点逻辑在不依赖 rclpy 的条件下可被定时器与 metrics 测试驱动。",
+      "tags": [
+        "test-double",
+        "deploy-node",
+        "hook"
+      ],
+      "complexity": "complex",
+      "languageNotes": "通过覆盖以 _ros_ 为前缀的 protected hook 验证 hook 点契约；提供 advance_ros_time/fire_control_timer/fire_metrics_timer 三个测试驱动入口。"
+    },
+    {
+      "id": "class:act/tests/ui/test_act_deploy_node.py:FakeTimer",
+      "type": "class",
+      "name": "FakeTimer",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        45,
+        56
+      ],
+      "summary": "ROS Timer 替身，提供 cancel 与 fire 方法，让测试可手动触发控制环与 metrics 定时回调。",
+      "tags": [
+        "test-double",
+        "timer",
+        "stub"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/ui/test_act_deploy_node.py:FakeClock",
+      "type": "class",
+      "name": "FakeClock",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        71,
+        79
+      ],
+      "summary": "可调时钟替身，提供 __call__ 与 advance，用于驱动节点 ROS 时间相关分支。",
+      "tags": [
+        "test-double",
+        "clock",
+        "stub"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/ui/test_act_deploy_node.py:FakeNode",
+      "type": "class",
+      "name": "FakeNode",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "lineRange": [
+        59,
+        68
+      ],
+      "summary": "ROS Node 替身，create_publisher 返回 RecordingStringPublisher，用于 C20 遥测主题与发布者装配测试。",
+      "tags": [
+        "test-double",
+        "ros-node",
+        "stub"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/ui/test_startup_preflight.py:_spec",
+      "type": "function",
+      "name": "_spec",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "lineRange": [
+        29,
+        52
+      ],
+      "summary": "构造 canonical PolicyInputSpec 工厂，参数化 camera_keys/state_dim/action_dim/chunk_size/image 契约，是 preflight 测试的基线 spec。",
+      "tags": [
+        "test-fixture",
+        "spec",
+        "factory"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_startup_preflight.py:_loose_spec",
+      "type": "function",
+      "name": "_loose_spec",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "lineRange": [
+        63,
+        87
+      ],
+      "summary": "用 duck-type 对象绕开 PolicyInputSpec 自带的维度校验，构造属性可任意篡改的 spec-like 对象，便于单独触发 preflight 的 spec identity 检查。",
+      "tags": [
+        "test-fixture",
+        "duck-type",
+        "spec"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "通过 SimpleNamespace 伪装 spec 接口，专门用于在不触发构造期失败的前提下注入偏差属性。"
+    },
+    {
+      "id": "function:act/tests/ui/test_startup_preflight.py:_preflight_ok",
+      "type": "function",
+      "name": "_preflight_ok",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "lineRange": [
+        97,
+        109
+      ],
+      "summary": "组装 canonical inference_service/pipeline/resources 与 config，调用 run_startup_preflight 并断言返回 ok，是各偏差测试的反向基线。",
+      "tags": [
+        "test-fixture",
+        "preflight",
+        "assertion"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_startup_preflight.py:test_startup_contract_codes_are_stable",
+      "type": "function",
+      "name": "test_startup_contract_codes_are_stable",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "lineRange": [
+        113,
+        124
+      ],
+      "summary": "断言启动契约的错误码集合稳定不变，作为契约冻结回归门。",
+      "tags": [
+        "test",
+        "contract",
+        "stability"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_startup_preflight.py:test_spec_identity_mismatch_inference_service",
+      "type": "function",
+      "name": "test_spec_identity_mismatch_inference_service",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "lineRange": [
+        131,
+        148
+      ],
+      "summary": "让 inference_service 持有与 canonical 不一致的 spec，断言 run_startup_preflight 报告 spec identity 不匹配并失败。",
+      "tags": [
+        "test",
+        "spec-identity",
+        "mismatch"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_startup_preflight.py:test_spec_identity_mismatch_pipeline",
+      "type": "function",
+      "name": "test_spec_identity_mismatch_pipeline",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "lineRange": [
+        149,
+        166
+      ],
+      "summary": "让 observation pipeline 持有偏差 spec，断言 preflight 检测到 pipeline 侧的 spec identity 不匹配。",
+      "tags": [
+        "test",
+        "spec-identity",
+        "pipeline"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_startup_preflight.py:test_clock_domain_mismatch",
+      "type": "function",
+      "name": "test_clock_domain_mismatch",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "lineRange": [
+        223,
+        240
+      ],
+      "summary": "注入不一致的 clock domain，断言 preflight 检测到时钟域不匹配并拒绝启动。",
+      "tags": [
+        "test",
+        "clock-domain",
+        "mismatch"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_startup_preflight.py:test_permit_source_missing_when_command_enabled",
+      "type": "function",
+      "name": "test_permit_source_missing_when_command_enabled",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "lineRange": [
+        254,
+        263
+      ],
+      "summary": "当 command_output 启用但 permit_source 缺失时，断言 preflight fail-closed 拒绝启动。",
+      "tags": [
+        "test",
+        "permit",
+        "fail-closed"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/ui/test_startup_preflight.py:test_permit_source_present_when_command_enabled_passes",
+      "type": "function",
+      "name": "test_permit_source_present_when_command_enabled_passes",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "lineRange": [
+        264,
+        272
+      ],
+      "summary": "当 command_output 启用且 permit_source 提供时，断言 preflight 通过，验证 permit 路径正向条件。",
+      "tags": [
+        "test",
+        "permit",
+        "positive"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "function:act/tests/ui/test_act_deploy_node.py:node",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "function:act/tests/ui/test_act_deploy_node.py:test_atomic_startup_assembles_all_deps",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "function:act/tests/ui/test_act_deploy_node.py:test_c20_telemetry_payload_is_stable_json",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "function:act/tests/ui/test_act_deploy_node.py:test_shutdown_timeout_returns_false",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "function:act/tests/ui/test_act_deploy_node.py:test_atomic_recovery_on_pipeline_build_failure",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "function:act/tests/ui/test_act_deploy_node.py:test_resolve_permit_denies_on_provider_error",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "class:act/tests/ui/test_act_deploy_node.py:FakeActDeployNode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "class:act/tests/ui/test_act_deploy_node.py:FakeTimer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "class:act/tests/ui/test_act_deploy_node.py:FakeClock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "class:act/tests/ui/test_act_deploy_node.py:FakeNode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "class:act/tests/ui/test_act_deploy_node.py:FakeActDeployNode",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "function:act/tests/ui/test_startup_preflight.py:_spec",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "function:act/tests/ui/test_startup_preflight.py:_loose_spec",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "function:act/tests/ui/test_startup_preflight.py:_preflight_ok",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "function:act/tests/ui/test_startup_preflight.py:test_startup_contract_codes_are_stable",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "function:act/tests/ui/test_startup_preflight.py:test_spec_identity_mismatch_inference_service",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "function:act/tests/ui/test_startup_preflight.py:test_spec_identity_mismatch_pipeline",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "function:act/tests/ui/test_startup_preflight.py:test_clock_domain_mismatch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "function:act/tests/ui/test_startup_preflight.py:test_permit_source_missing_when_command_enabled",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "function:act/tests/ui/test_startup_preflight.py:test_permit_source_present_when_command_enabled_passes",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/ui/act_deploy_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/config/schema.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/runtime/inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/types/action_publish.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/ui/act_deploy_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/config/schema.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/runtime/inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

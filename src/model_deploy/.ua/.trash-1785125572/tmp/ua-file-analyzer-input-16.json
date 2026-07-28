@@ -1,0 +1,182 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {
+      "path": "act_interfaces/CMakeLists.txt",
+      "language": "txt",
+      "sizeLines": 20,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "act_interfaces/msg/CommandPermit.msg",
+      "language": "msg",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act_interfaces/msg/GripperHealth.msg",
+      "language": "msg",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act_interfaces/msg/HardwareHealth.msg",
+      "language": "msg",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act_interfaces/package.xml",
+      "language": "xml",
+      "sizeLines": 22,
+      "fileCategory": "config"
+    },
+    {
+      "path": "act_system/launch/act_system.launch.py",
+      "language": "python",
+      "sizeLines": 211,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act_system/scripts/start_act_system.sh",
+      "language": "shell",
+      "sizeLines": 209,
+      "fileCategory": "script"
+    },
+    {
+      "path": "dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "language": "yaml",
+      "sizeLines": 39,
+      "fileCategory": "config"
+    },
+    {
+      "path": "dual_fisheye_camera/dual_fisheye_camera/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "language": "python",
+      "sizeLines": 169,
+      "fileCategory": "code"
+    },
+    {
+      "path": "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "language": "python",
+      "sizeLines": 160,
+      "fileCategory": "code"
+    },
+    {
+      "path": "dual_fisheye_camera/resource/dual_fisheye_camera",
+      "language": "unknown",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "dual_fisheye_camera/setup.py",
+      "language": "python",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/config/99-elephant-gripper.rules",
+      "language": "rules",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/config/elephant_gripper.yaml",
+      "language": "yaml",
+      "sizeLines": 45,
+      "fileCategory": "config"
+    },
+    {
+      "path": "elephant_gripper/conftest.py",
+      "language": "python",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/config/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/repo/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/runtime/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "language": "python",
+      "sizeLines": 168,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/types/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/ui/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/launch/elephant_gripper.launch.py",
+      "language": "python",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    }
+  ],
+  "batchImportData": {
+    "act_interfaces/CMakeLists.txt": [],
+    "act_interfaces/msg/CommandPermit.msg": [],
+    "act_interfaces/msg/GripperHealth.msg": [],
+    "act_interfaces/msg/HardwareHealth.msg": [],
+    "act_interfaces/package.xml": [],
+    "act_system/launch/act_system.launch.py": [],
+    "act_system/scripts/start_act_system.sh": [],
+    "dual_fisheye_camera/config/dual_fisheye_camera.yaml": [],
+    "dual_fisheye_camera/dual_fisheye_camera/__init__.py": [],
+    "dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py": [],
+    "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py": [],
+    "dual_fisheye_camera/resource/dual_fisheye_camera": [],
+    "dual_fisheye_camera/setup.py": [],
+    "elephant_gripper/config/99-elephant-gripper.rules": [],
+    "elephant_gripper/config/elephant_gripper.yaml": [],
+    "elephant_gripper/conftest.py": [],
+    "elephant_gripper/elephant_gripper/__init__.py": [],
+    "elephant_gripper/elephant_gripper/config/__init__.py": [],
+    "elephant_gripper/elephant_gripper/repo/__init__.py": [],
+    "elephant_gripper/elephant_gripper/runtime/__init__.py": [],
+    "elephant_gripper/elephant_gripper/service/__init__.py": [],
+    "elephant_gripper/elephant_gripper/service/frame_codec.py": [],
+    "elephant_gripper/elephant_gripper/types/__init__.py": [],
+    "elephant_gripper/elephant_gripper/ui/__init__.py": [],
+    "elephant_gripper/launch/elephant_gripper.launch.py": []
+  }
+}

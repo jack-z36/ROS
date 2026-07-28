@@ -1,0 +1,72 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 1,
+  "filesSkipped": [
+    "elephant_gripper/package.xml",
+    "elephant_gripper/setup.cfg"
+  ],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 1,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 1
+    }
+  },
+  "results": [
+    {
+      "path": "elephant_gripper/elephant_gripper_architecture.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 70,
+      "nonEmptyLines": 54,
+      "sections": [
+        {
+          "heading": "elephant_gripper 架构说明",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "ROS 接口",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "分层（六架构，依赖自上而下）",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "并发模型",
+          "level": 2,
+          "line": 39
+        },
+        {
+          "heading": "自定义协议帧",
+          "level": 2,
+          "line": 47
+        },
+        {
+          "heading": "Fail-safe",
+          "level": 2,
+          "line": 58
+        },
+        {
+          "heading": "未验证 / 待真机确认",
+          "level": 2,
+          "line": 64
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 7
+      }
+    }
+  ]
+}

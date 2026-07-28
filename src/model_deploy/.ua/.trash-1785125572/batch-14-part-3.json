@@ -1,0 +1,1421 @@
+{
+  "nodes": [
+    {
+      "id": "file:act/tests/repo/test_normalization.py",
+      "type": "file",
+      "name": "test_normalization.py",
+      "filePath": "act/tests/repo/test_normalization.py",
+      "summary": "ActionStateNormalizer 归一化器测试：构造/字段、normalize/unnormalize 基本与 batch 调用、roundtrip、零 range 维度、identity 索引及维度不匹配拒绝。",
+      "tags": [
+        "test",
+        "normalization",
+        "repo",
+        "roundtrip",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/repo/test_normalizer_loader.py",
+      "type": "file",
+      "name": "test_normalizer_loader.py",
+      "filePath": "act/tests/repo/test_normalizer_loader.py",
+      "summary": "normalizer_loader JSON 加载测试：正常 roundtrip、文件缺失/BAD JSON/state/action key 缺失拒绝及 numpy 值正确还原。",
+      "tags": [
+        "test",
+        "normalizer-loader",
+        "repo",
+        "json",
+        "numpy"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/runtime/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/runtime/__init__.py",
+      "summary": "runtime 测试子包的 Python package marker。",
+      "tags": [
+        "entry-point",
+        "package-init",
+        "test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/tests/runtime/test_control_loop.py",
+      "type": "file",
+      "name": "test_control_loop.py",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "summary": "ControlLoop 控制循环核心测试：chunk 可用性判定、fallback 选择策略（safe_stop/hold）、outstanding request 唯一性、result 关联与 runtime fault 锁存、cursor/horizon/age 管理、safety-publish 契约及六态 outcome reducer。",
+      "tags": [
+        "test",
+        "control-loop",
+        "runtime",
+        "fallback",
+        "outcome-reducer"
+      ],
+      "complexity": "complex",
+      "languageNotes": "使用 SpySafety / FakePublisher 替身隔离 ROS 与硬件，测试覆盖 6 种 outcome 状态机的锁存/恢复语义。"
+    },
+    {
+      "id": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "file",
+      "name": "test_inference_channel.py",
+      "filePath": "act/tests/runtime/test_inference_channel.py",
+      "summary": "InferenceRequest/InferenceResult 数据类与 LatestQueue（容量 1、evict、close、timeout wakeup）的并发原语测试。",
+      "tags": [
+        "test",
+        "inference-channel",
+        "runtime",
+        "latest-queue",
+        "concurrency"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "file",
+      "name": "test_inference_worker.py",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "summary": "InferenceWorker 工作线程测试：成功发布/最大并发为 1、异常转 terminal error 后继续、KeyboardInterrupt 不被吞、时钟非有限/倒退 fatal、rate limit、stop 幂等/清理及 closed result queue 丢弃语义。",
+      "tags": [
+        "test",
+        "inference-worker",
+        "runtime",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:act/tests/runtime/test_observation_buffer.py",
+      "type": "file",
+      "name": "test_observation_buffer.py",
+      "filePath": "act/tests/runtime/test_observation_buffer.py",
+      "summary": "ObservationBuffer 线程安全缓冲测试：set/get/latest_only 语义、max_age 过期、metrics 计数器（ready/stale/missing/error）及并发读写一致性。",
+      "tags": [
+        "test",
+        "observation-buffer",
+        "runtime",
+        "thread-safe",
+        "metrics"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/repo/test_normalization.py:TestActionStateNormalizer",
+      "type": "class",
+      "name": "TestActionStateNormalizer",
+      "filePath": "act/tests/repo/test_normalization.py",
+      "lineRange": [
+        9,
+        65
+      ],
+      "summary": "ActionStateNormalizer 测试：构造/字段、normalize 基本与 batch、unnormalize、roundtrip、零 range 维度、identity 索引、__call__、维度不匹配拒绝。",
+      "tags": [
+        "test-class",
+        "normalization",
+        "roundtrip"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/repo/test_normalizer_loader.py:TestLoadBundleNormalizers",
+      "type": "class",
+      "name": "TestLoadBundleNormalizers",
+      "filePath": "act/tests/repo/test_normalizer_loader.py",
+      "lineRange": [
+        18,
+        63
+      ],
+      "summary": "normalizer_loader 测试：正常 roundtrip、文件缺失/BAD JSON/state/action key 缺失抛错、numpy 值正确还原。",
+      "tags": [
+        "test-class",
+        "normalizer-loader",
+        "numpy"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:SpySafety",
+      "type": "class",
+      "name": "SpySafety",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        60,
+        69
+      ],
+      "summary": "Spy 型 SafetyGuard 替身，记录 filter_action 调用用于断言安全检查契约。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:FakePublisher",
+      "type": "class",
+      "name": "FakePublisher",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        72,
+        102
+      ],
+      "summary": "Fake publisher 替身，捕获 publish 调用并模拟可调用对象行为。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestChunkUsable",
+      "type": "class",
+      "name": "TestChunkUsable",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        276,
+        301
+      ],
+      "summary": "验证 chunk 可用性判定：shape/age 合法、维度错误、非 finite 均被拒绝。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestFallbackSelection",
+      "type": "class",
+      "name": "TestFallbackSelection",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        309,
+        347
+      ],
+      "summary": "验证 fallback 选择策略：rejected reason 走 safe_stop、policy+action 存在时 hold、safe_stop policy 忽略 hold。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestOutstandingRequest",
+      "type": "class",
+      "name": "TestOutstandingRequest",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        355,
+        369
+      ],
+      "summary": "验证跨 tick 仅存在一个 outstanding request，无 chunk 时 tick 返回 None。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestCorrelation",
+      "type": "class",
+      "name": "TestCorrelation",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        377,
+        418
+      ],
+      "summary": "验证 result 关联：matched success 终止 request 并激活、matched error 触发 fallback 不锁存、unknown/stale result id 触发 runtime fault 锁存。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestCursorHorizonAge",
+      "type": "class",
+      "name": "TestCursorHorizonAge",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        426,
+        467
+      ],
+      "summary": "验证 cursor 在 horizon 内推进、continue 模式达到 chunk_size、陈旧 active chunk 丢弃并 fallback。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestSafetyPublishContract",
+      "type": "class",
+      "name": "TestSafetyPublishContract",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        475,
+        503
+      ],
+      "summary": "验证每个候选动作触发一次 safety 与一次 publish，safety rejected 当 tick 不 fallback。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestSixOutcomeReducer",
+      "type": "class",
+      "name": "TestSixOutcomeReducer",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        511,
+        575
+      ],
+      "summary": "验证六态 outcome reducer：状态/锁存语义、deferred reason 仅投递一次后可恢复、publish result 在 echo 不匹配时的不变量。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestFallbackModes",
+      "type": "class",
+      "name": "TestFallbackModes",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        583,
+        615
+      ],
+      "summary": "验证 fallback 模式：safe_stop policy 无输出、hold policy 发布 held action、hold 不刷新 source age。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestStatusAndShutdown",
+      "type": "class",
+      "name": "TestStatusAndShutdown",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        623,
+        648
+      ],
+      "summary": "验证 runtime fault 覆盖 tick status、shutdown 收敛且无输出。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_control_loop.py:TestCandidateSelection",
+      "type": "class",
+      "name": "TestCandidateSelection",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "lineRange": [
+        656,
+        669
+      ],
+      "summary": "验证候选动作是 owned copy（隔离外部修改）。",
+      "tags": [
+        "test-class",
+        "control-loop",
+        "runtime",
+        "outcome-reducer"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_channel.py:TestInferenceRequest",
+      "type": "class",
+      "name": "TestInferenceRequest",
+      "filePath": "act/tests/runtime/test_inference_channel.py",
+      "lineRange": [
+        71,
+        100
+      ],
+      "summary": "InferenceRequest 数据类测试：合法 request、非法 request id、负 submit time 拒绝。",
+      "tags": [
+        "test-class",
+        "inference-channel",
+        "latest-queue",
+        "concurrency"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_channel.py:TestInferenceResult",
+      "type": "class",
+      "name": "TestInferenceResult",
+      "filePath": "act/tests/runtime/test_inference_channel.py",
+      "lineRange": [
+        103,
+        193
+      ],
+      "summary": "InferenceResult 测试：success 带 chunk 无 error、error 无 chunk、二者同时/皆无非法、failure 需非空 error、时间顺序、error message 截断 512、factory 使用异常名。",
+      "tags": [
+        "test-class",
+        "inference-channel",
+        "latest-queue",
+        "concurrency"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_channel.py:TestLatestQueueBasics",
+      "type": "class",
+      "name": "TestLatestQueueBasics",
+      "filePath": "act/tests/runtime/test_inference_channel.py",
+      "lineRange": [
+        201,
+        231
+      ],
+      "summary": "LatestQueue 基础测试：容量为 1、无参构造、put/take、容量 1 evict、非阻塞空 take 返回 None、负 timeout 拒绝。",
+      "tags": [
+        "test-class",
+        "inference-channel",
+        "latest-queue",
+        "concurrency"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_channel.py:TestLatestQueueClose",
+      "type": "class",
+      "name": "TestLatestQueueClose",
+      "filePath": "act/tests/runtime/test_inference_channel.py",
+      "lineRange": [
+        234,
+        272
+      ],
+      "summary": "LatestQueue close 测试：close 后 put 抛错、close 幂等、close 清空并计数、close 后 take 返回 None 无残留、drop source 返回独立 channel。",
+      "tags": [
+        "test-class",
+        "inference-channel",
+        "latest-queue",
+        "concurrency"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_channel.py:TestLatestQueueTimeoutWakeup",
+      "type": "class",
+      "name": "TestLatestQueueTimeoutWakeup",
+      "filePath": "act/tests/runtime/test_inference_channel.py",
+      "lineRange": [
+        275,
+        318
+      ],
+      "summary": "LatestQueue 超时唤醒测试：阻塞 take 收到 item、有界 timeout 返回 None、spurious wakeup 不丢失 item。",
+      "tags": [
+        "test-class",
+        "inference-channel",
+        "latest-queue",
+        "concurrency"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:FakeInferenceService",
+      "type": "class",
+      "name": "FakeInferenceService",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        78,
+        95
+      ],
+      "summary": "Fake inference service 替身，实现 predict_action_chunk 用于隔离真实 PyTorch policy。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:SerialProbeService",
+      "type": "class",
+      "name": "SerialProbeService",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        98,
+        122
+      ],
+      "summary": "串行探针 service，用于测试并发与延迟度量。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:RecordingResultQueue",
+      "type": "class",
+      "name": "RecordingResultQueue",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        125,
+        135
+      ],
+      "summary": "记录型 result queue 替身，捕获 put_latest 调用。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:ScriptedClock",
+      "type": "class",
+      "name": "ScriptedClock",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        138,
+        151
+      ],
+      "summary": "脚本化时钟替身，按预设序列返回时间用于确定性测试。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:IncrementClock",
+      "type": "class",
+      "name": "IncrementClock",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        154,
+        163
+      ],
+      "summary": "递增时钟替身，每次调用按固定步长前进。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:TestHappyPathAndConcurrency",
+      "type": "class",
+      "name": "TestHappyPathAndConcurrency",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        171,
+        220
+      ],
+      "summary": "工作线程 happy path：成功发布 result、最大并发为 1。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:TestErrorRecovery",
+      "type": "class",
+      "name": "TestErrorRecovery",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        228,
+        288
+      ],
+      "summary": "错误恢复：异常转 terminal error 后 worker 继续、KeyboardInterrupt 不被吞。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:TestClockInvalid",
+      "type": "class",
+      "name": "TestClockInvalid",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        296,
+        327
+      ],
+      "summary": "时钟非法：非 finite 与倒退时钟均为 fatal。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:TestRateLimit",
+      "type": "class",
+      "name": "TestRateLimit",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        335,
+        382
+      ],
+      "summary": "rate limit 测试：首个 request 立即处理、尊重 period、rate limit 不产生 error。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:TestStop",
+      "type": "class",
+      "name": "TestStop",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        390,
+        465
+      ],
+      "summary": "stop 测试：policy idle 前停止不调用 policy、policy 后停止丢弃 result 并退出、stop 幂等、清理后无活跃线程。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:TestClosedResultQueue",
+      "type": "class",
+      "name": "TestClosedResultQueue",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        473,
+        512
+      ],
+      "summary": "closed result queue 测试：shutdown 后 late result 被丢弃、非预期 closed result queue 保持 queue 不变量。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_inference_worker.py:TestFakePorts",
+      "type": "class",
+      "name": "TestFakePorts",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "lineRange": [
+        520,
+        557
+      ],
+      "summary": "fake port 测试：blocking port 报告 latency、error port 产生 error result。",
+      "tags": [
+        "test-class",
+        "inference-worker",
+        "threading",
+        "rate-limit"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_observation_buffer.py:FakeClock",
+      "type": "class",
+      "name": "FakeClock",
+      "filePath": "act/tests/runtime/test_observation_buffer.py",
+      "lineRange": [
+        44,
+        54
+      ],
+      "summary": "Fake 时钟替身，支持 advance 用于确定性过期测试。",
+      "tags": [
+        "test-class",
+        "observation-buffer",
+        "thread-safe",
+        "metrics"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/runtime/test_observation_buffer.py:TestObservationMetrics",
+      "type": "class",
+      "name": "TestObservationMetrics",
+      "filePath": "act/tests/runtime/test_observation_buffer.py",
+      "lineRange": [
+        62,
+        84
+      ],
+      "summary": "ObservationMetrics 测试：默认值与字段赋值。",
+      "tags": [
+        "test-class",
+        "observation-buffer",
+        "thread-safe",
+        "metrics"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_observation_buffer.py:TestSetAndGet",
+      "type": "class",
+      "name": "TestSetAndGet",
+      "filePath": "act/tests/runtime/test_observation_buffer.py",
+      "lineRange": [
+        92,
+        130
+      ],
+      "summary": "ObservationBuffer set/get 测试：set/get、空返回 None、latest_only 语义、max_age 未过期/过期。",
+      "tags": [
+        "test-class",
+        "observation-buffer",
+        "thread-safe",
+        "metrics"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_observation_buffer.py:TestMetricsCounters",
+      "type": "class",
+      "name": "TestMetricsCounters",
+      "filePath": "act/tests/runtime/test_observation_buffer.py",
+      "lineRange": [
+        138,
+        177
+      ],
+      "summary": "metrics 计数器测试：ready/stale count、record missing fields/error、metrics_updated_at_s。",
+      "tags": [
+        "test-class",
+        "observation-buffer",
+        "thread-safe",
+        "metrics"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/runtime/test_observation_buffer.py:TestConcurrentAccess",
+      "type": "class",
+      "name": "TestConcurrentAccess",
+      "filePath": "act/tests/runtime/test_observation_buffer.py",
+      "lineRange": [
+        185,
+        241
+      ],
+      "summary": "并发访问测试：并发读写一致、并发 metrics snapshot 一致。",
+      "tags": [
+        "test-class",
+        "observation-buffer",
+        "thread-safe",
+        "metrics"
+      ],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:act/tests/repo/test_normalization.py",
+      "target": "class:act/tests/repo/test_normalization.py:TestActionStateNormalizer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_normalizer_loader.py",
+      "target": "class:act/tests/repo/test_normalizer_loader.py:TestLoadBundleNormalizers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:SpySafety",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:FakePublisher",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestChunkUsable",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestFallbackSelection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestOutstandingRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestCorrelation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestCursorHorizonAge",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestSafetyPublishContract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestSixOutcomeReducer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestFallbackModes",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestStatusAndShutdown",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestCandidateSelection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestInferenceRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestInferenceResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestLatestQueueBasics",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestLatestQueueClose",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestLatestQueueTimeoutWakeup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:FakeInferenceService",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:SerialProbeService",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:RecordingResultQueue",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:ScriptedClock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:IncrementClock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestHappyPathAndConcurrency",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestErrorRecovery",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestClockInvalid",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestRateLimit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestStop",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestClosedResultQueue",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestFakePorts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:FakeClock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:TestObservationMetrics",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:TestSetAndGet",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:TestMetricsCounters",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:TestConcurrentAccess",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_normalization.py",
+      "target": "class:act/tests/repo/test_normalization.py:TestActionStateNormalizer",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/repo/test_normalizer_loader.py",
+      "target": "class:act/tests/repo/test_normalizer_loader.py:TestLoadBundleNormalizers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:SpySafety",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:FakePublisher",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestChunkUsable",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestFallbackSelection",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestOutstandingRequest",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestCorrelation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestCursorHorizonAge",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestSafetyPublishContract",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestSixOutcomeReducer",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestFallbackModes",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestStatusAndShutdown",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "class:act/tests/runtime/test_control_loop.py:TestCandidateSelection",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestInferenceRequest",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestInferenceResult",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestLatestQueueBasics",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestLatestQueueClose",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_channel.py",
+      "target": "class:act/tests/runtime/test_inference_channel.py:TestLatestQueueTimeoutWakeup",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:FakeInferenceService",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:SerialProbeService",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:RecordingResultQueue",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:ScriptedClock",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:IncrementClock",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestHappyPathAndConcurrency",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestErrorRecovery",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestClockInvalid",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestRateLimit",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestStop",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestClosedResultQueue",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "class:act/tests/runtime/test_inference_worker.py:TestFakePorts",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:FakeClock",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:TestObservationMetrics",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:TestSetAndGet",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:TestMetricsCounters",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/runtime/test_observation_buffer.py",
+      "target": "class:act/tests/runtime/test_observation_buffer.py:TestConcurrentAccess",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/repo/normalization.py",
+      "target": "file:act/tests/repo/test_normalization.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalizer_loader.py",
+      "target": "file:act/tests/repo/test_normalizer_loader.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/control_loop.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/runtime_metrics.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_worker.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/runtime_metrics.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/observation_buffer.py",
+      "target": "file:act/tests/runtime/test_observation_buffer.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/runtime/test_observation_buffer.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

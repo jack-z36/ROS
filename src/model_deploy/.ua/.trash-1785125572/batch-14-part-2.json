@@ -1,0 +1,2026 @@
+{
+  "nodes": [
+    {
+      "id": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "file",
+      "name": "test_l2_03_gate.py",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "summary": "L2_03 集成门测试：ACT 推理全链路（normalizer → input spec → policy → action chunk）的端到端验证、各级失败熔断、输出形状/维度/NAN 拒绝及源码边界扫描。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "inference-chain",
+        "boundary-scan"
+      ],
+      "complexity": "complex",
+      "languageNotes": "使用 StubPolicy / RecordingNormalizer 等 fake 对象隔离 PyTorch，测试覆盖 6 种 stage 失败场景。"
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "file",
+      "name": "test_l2_04_gate.py",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "summary": "L2_04 集成门测试：SafetyGuard 纯函数 filter_action 的全面验证——输入形状/有限性、四元数候选、参考帧选择、pose 平移/旋转限幅、gripper 范围/步长投影及双臂 16 维装配。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "safety-guard",
+        "validation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "file",
+      "name": "test_l2_05_gate.py",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "summary": "L2_05 集成门测试：ActionPublisher 全链路（B1 safety → B2 messages → B3 publish）的 mock 集成验证，覆盖 17 组 Gate 场景（类型/配置/permit/split/partial/status）及源码边界扫描。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "action-publisher",
+        "boundary-scan"
+      ],
+      "complexity": "complex",
+      "languageNotes": "使用大量 _Mock* fake 消息类型替代 ROS msg，实现无 ROS 环境下的同步多 tick 集成测试。"
+    },
+    {
+      "id": "file:act/tests/integration/test_startup_failure.py",
+      "type": "file",
+      "name": "test_startup_failure.py",
+      "filePath": "act/tests/integration/test_startup_failure.py",
+      "summary": "启动失败路径测试：验证非法 YAML 根类型、control_hz 为零、缺失 bundle 段、维度不匹配及 normalizer 维度不匹配均能在启动期正确终止。",
+      "tags": [
+        "test",
+        "startup-failure",
+        "validation",
+        "config"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/repo/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/repo/__init__.py",
+      "summary": "repo 测试子包的 Python package marker。",
+      "tags": [
+        "entry-point",
+        "package-init",
+        "test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/tests/repo/test_act_runtime_resources.py",
+      "type": "file",
+      "name": "test_act_runtime_resources.py",
+      "filePath": "act/tests/repo/test_act_runtime_resources.py",
+      "summary": "PolicyInputSpec 不变量与 load_act_runtime_resources 聚合加载测试：覆盖 frozen、camera key 排序/去重、CHW shape/dtype/value_range 约束及 loader 注册/缺失/维度不匹配失败路径。",
+      "tags": [
+        "test",
+        "validation",
+        "policy-input-spec",
+        "resource-loader",
+        "repo"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:act/tests/repo/test_bundle_reader.py",
+      "type": "file",
+      "name": "test_bundle_reader.py",
+      "filePath": "act/tests/repo/test_bundle_reader.py",
+      "summary": "BundleReader 文件完整性检查与路径解析测试：覆盖 manifest/normalizers/experiment_config/adapter 缺失检测、adapter 目录解析及 checkpoint 路径（manifest/directory scan pt & safetensors）回退。",
+      "tags": [
+        "test",
+        "bundle-reader",
+        "repo",
+        "path-resolution",
+        "file-validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/repo/test_experiment_config_loader.py",
+      "type": "file",
+      "name": "test_experiment_config_loader.py",
+      "filePath": "act/tests/repo/test_experiment_config_loader.py",
+      "summary": "experiment_config_loader 加载测试：正常加载、文件缺失/BAD YAML/根非 mapping/标量根等异常拒绝，以及维度字段保留与缺失字段不自动填充。",
+      "tags": [
+        "test",
+        "experiment-config",
+        "repo",
+        "loader",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/repo/test_manifest_parser.py",
+      "type": "file",
+      "name": "test_manifest_parser.py",
+      "filePath": "act/tests/repo/test_manifest_parser.py",
+      "summary": "bundle manifest JSON 解析测试：合法解析、文件缺失与 JSON 格式错误的拒绝路径。",
+      "tags": [
+        "test",
+        "manifest-parser",
+        "repo",
+        "json",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_03_gate.py:StubPolicy",
+      "type": "class",
+      "name": "StubPolicy",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "lineRange": [
+        112,
+        157
+      ],
+      "summary": "测试替身 policy：实现 predict_action_chunk 与 parameters，用于隔离 PyTorch 推理。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "inference-chain"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_03_gate.py:RecordingNormalizer",
+      "type": "class",
+      "name": "RecordingNormalizer",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "lineRange": [
+        211,
+        237
+      ],
+      "summary": "记录型 normalizer 替身：记录 normalize/unnormalize 调用方向与次数，用于验证调用契约。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "inference-chain"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_03_gate.py:TestFullChain",
+      "type": "class",
+      "name": "TestFullChain",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "lineRange": [
+        303,
+        409
+      ],
+      "summary": "L2_03 全链路集成：normalizer→input spec→policy→action chunk 返回合法 chunk、sentinel 保留、调用方向正确、select_action 不被调用、输出无 runtime metadata。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "inference-chain"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_03_gate.py:TestErrorStopsChain",
+      "type": "class",
+      "name": "TestErrorStopsChain",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "lineRange": [
+        417,
+        534
+      ],
+      "summary": "L2_03 各级失败熔断：stage1/2/3 失败、原始 shape 错误、action dim 不匹配、过长/过短/2D/NAN 输出均被拒绝且不修复。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "inference-chain"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_03_gate.py:TestBoundary",
+      "type": "class",
+      "name": "TestBoundary",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "lineRange": [
+        641,
+        809
+      ],
+      "summary": "L2_03 源码边界扫描：无 resource IO/runtime state/ROS/hardware/safety/smoothing，仅允许的 layer 出现且源文件存在。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "inference-chain"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestTypesResult",
+      "type": "class",
+      "name": "TestTypesResult",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        134,
+        188
+      ],
+      "summary": "验证 SafetyResult 三个状态字段完整、rejected 不携带 action、pass 必携带 action 的类型契约。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestInputShape",
+      "type": "class",
+      "name": "TestInputShape",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        196,
+        214
+      ],
+      "summary": "验证输入非 16 维被拒绝、2D 输入不被 ravel。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestInputFinite",
+      "type": "class",
+      "name": "TestInputFinite",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        222,
+        238
+      ],
+      "summary": "验证 NAN/INF 输入被拒绝。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestQuatCandidate",
+      "type": "class",
+      "name": "TestQuatCandidate",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        246,
+        274
+      ],
+      "summary": "验证四元数候选零范数被拒绝、近单位范数被接受并重新归一化。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestReferenceOrder",
+      "type": "class",
+      "name": "TestReferenceOrder",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        282,
+        298
+      ],
+      "summary": "验证参考帧优先选择 previous 而非 observation。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestReferenceBootstrap",
+      "type": "class",
+      "name": "TestReferenceBootstrap",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        301,
+        315
+      ],
+      "summary": "验证无 previous 时使用 observation 作为参考帧。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestReferenceMissing",
+      "type": "class",
+      "name": "TestReferenceMissing",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        318,
+        325
+      ],
+      "summary": "验证 previous 与 observation 同时缺失时被拒绝。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestPoseTranslation",
+      "type": "class",
+      "name": "TestPoseTranslation",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        333,
+        346
+      ],
+      "summary": "验证 pose 平移超过欧氏限幅阈值（恰阈值）被裁剪。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestPoseRotation",
+      "type": "class",
+      "name": "TestPoseRotation",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        354,
+        369
+      ],
+      "summary": "验证 pose 旋转超过角度阈值（恰阈值）被裁剪。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestGripperRange",
+      "type": "class",
+      "name": "TestGripperRange",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        377,
+        395
+      ],
+      "summary": "验证 gripper 超出范围被投影回 action domain。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestGripperStep",
+      "type": "class",
+      "name": "TestGripperStep",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        403,
+        421
+      ],
+      "summary": "验证 gripper 单步超出限制被投影。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestBimanualAssembly",
+      "type": "class",
+      "name": "TestBimanualAssembly",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        429,
+        470
+      ],
+      "summary": "验证双臂左右独立、16 维装配顺序正确。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestOutputInvariant",
+      "type": "class",
+      "name": "TestOutputInvariant",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        478,
+        512
+      ],
+      "summary": "验证调整后的 action 仍然合法（输出不变量）。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestResultStatus",
+      "type": "class",
+      "name": "TestResultStatus",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        520,
+        547
+      ],
+      "summary": "验证 pass/adjusted/rejected 状态语义一致。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestPurityImport",
+      "type": "class",
+      "name": "TestPurityImport",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        555,
+        596
+      ],
+      "summary": "验证 SafetyGuard 无 forbidden 导入、guard 无状态（不存储 previous）。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_04_gate.py:TestPublicPortFreeze",
+      "type": "class",
+      "name": "TestPublicPortFreeze",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "lineRange": [
+        604,
+        650
+      ],
+      "summary": "验证 filter_action 精确签名、SafetyResult 无 accepted/reason 字段、guard 仅含 frozen 配置状态。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "safety-guard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:RecordingPublisher",
+      "type": "class",
+      "name": "RecordingPublisher",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        92,
+        98
+      ],
+      "summary": "记录型 publisher 替身，捕获 publish 调用用于断言。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:FakeNode",
+      "type": "class",
+      "name": "FakeNode",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        106,
+        117
+      ],
+      "summary": "Fake ROS 节点替身，提供 create_publisher 工厂方法。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG01Types",
+      "type": "class",
+      "name": "TestG01Types",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        260,
+        338
+      ],
+      "summary": "Gate G01 类型契约：CommandPermit 不变量、request 拒绝非法且 frozen、pose target frozen tuple、result 拒绝矛盾字段。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG02ConfigDefaultOff",
+      "type": "class",
+      "name": "TestG02ConfigDefaultOff",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        346,
+        372
+      ],
+      "summary": "Gate G02：command_output 在 dataclass/YAML 默认关闭，YAML 无法静默启用。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG03ConfigEnabled",
+      "type": "class",
+      "name": "TestG03ConfigEnabled",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        380,
+        396
+      ],
+      "summary": "Gate G03：command_output 可由 dataclass 关键字与 deploy 配置显式启用。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG04B1Safe",
+      "type": "class",
+      "name": "TestG04B1Safe",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        404,
+        424
+      ],
+      "summary": "Gate G04 B1 安全：pass/adjusted 构建完整 C4，B1 不读取 accepted 字段。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG05B1Failures",
+      "type": "class",
+      "name": "TestG05B1Failures",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        432,
+        463
+      ],
+      "summary": "Gate G05 B1 失败：rejected 抛错、shape 错误、NAN、gripper 越界均被拒绝。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG06B1Split",
+      "type": "class",
+      "name": "TestG06B1Split",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        471,
+        495
+      ],
+      "summary": "Gate G06 B1 拆分与帧：action 拆分正确、gripper 0/50/100 映射正确。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG07B2Messages",
+      "type": "class",
+      "name": "TestG07B2Messages",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        503,
+        522
+      ],
+      "summary": "Gate G07 B2 消息：五条消息无 status 字段、可在无 ROS 环境导入。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG08B2Failure",
+      "type": "class",
+      "name": "TestG08B2Failure",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        530,
+        550
+      ],
+      "summary": "Gate G08 B2 失败：policy 长度非法抛错、无 publish 调用、晚失败不产生部分 bundle。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG09B3Disabled",
+      "type": "class",
+      "name": "TestG09B3Disabled",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        558,
+        569
+      ],
+      "summary": "Gate G09 B3 禁用：command_output 关闭时不发布任何命令。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG10B3PermitBlocked",
+      "type": "class",
+      "name": "TestG10B3PermitBlocked",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        577,
+        594
+      ],
+      "summary": "Gate G10 B3 permit 阻塞：safety rejected 时带 reason 阻塞发布。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG11B3Enabled",
+      "type": "class",
+      "name": "TestG11B3Enabled",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        602,
+        610
+      ],
+      "summary": "Gate G11 B3 启用：permit 通过时发布四条命令。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG12B3PolicyFail",
+      "type": "class",
+      "name": "TestG12B3PolicyFail",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        618,
+        627
+      ],
+      "summary": "Gate G12 B3 policy 失败：policy 失败停止全部发布。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG13B3Partial",
+      "type": "class",
+      "name": "TestG13B3Partial",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        635,
+        653
+      ],
+      "summary": "Gate G13 B3 部分失败：第三条命令失败产生 partial，第一条命令失败整体 failed。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG14GripperState",
+      "type": "class",
+      "name": "TestG14GripperState",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        661,
+        691
+      ],
+      "summary": "Gate G14 gripper 状态：初始发布设置 cache、deadband 跳过不算失败、失败 gripper 不更新 cache。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG15Status",
+      "type": "class",
+      "name": "TestG15Status",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        699,
+        729
+      ],
+      "summary": "Gate G15 状态一致性：unknown/null、blocked、partial 状态字段一致。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG16Boundary",
+      "type": "class",
+      "name": "TestG16Boundary",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        737,
+        769
+      ],
+      "summary": "Gate G16 边界扫描：L2_05 源码无 forbidden token/import、无 L2_05 artifact 出现在 repo/runtime。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_05_gate.py:TestG17MockIntegration",
+      "type": "class",
+      "name": "TestG17MockIntegration",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "lineRange": [
+        777,
+        811
+      ],
+      "summary": "Gate G17 mock 集成：多 tick 同步一致、partial 后恢复健康不触发 fallback。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "action-publisher"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_startup_failure.py:TestStartupWithValidConfig",
+      "type": "class",
+      "name": "TestStartupWithValidConfig",
+      "filePath": "act/tests/integration/test_startup_failure.py",
+      "lineRange": [
+        35,
+        49
+      ],
+      "summary": "正向：合法配置在启动期成功加载。",
+      "tags": [
+        "test-class",
+        "startup-failure",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_startup_failure.py:TestStartupFailureOnInvalidConfig",
+      "type": "class",
+      "name": "TestStartupFailureOnInvalidConfig",
+      "filePath": "act/tests/integration/test_startup_failure.py",
+      "lineRange": [
+        52,
+        112
+      ],
+      "summary": "验证非法 YAML 根类型、control_hz 为零、缺失 bundle 段、维度不匹配、normalizer 维度不匹配均在启动期失败。",
+      "tags": [
+        "test-class",
+        "startup-failure",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/repo/test_act_runtime_resources.py:TestPolicyInputSpecInvariants",
+      "type": "class",
+      "name": "TestPolicyInputSpecInvariants",
+      "filePath": "act/tests/repo/test_act_runtime_resources.py",
+      "lineRange": [
+        111,
+        171
+      ],
+      "summary": "PolicyInputSpec 不变量测试：合法 spec、frozen、bad state_dim 拒绝、camera key 排序/去重、CHW shape/dtype/value_range 约束、非正 chunk 拒绝。",
+      "tags": [
+        "test-class",
+        "policy-input-spec",
+        "resource-loader"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/repo/test_act_runtime_resources.py:TestLoadActRuntimeResources",
+      "type": "class",
+      "name": "TestLoadActRuntimeResources",
+      "filePath": "act/tests/repo/test_act_runtime_resources.py",
+      "lineRange": [
+        179,
+        254
+      ],
+      "summary": "load_act_runtime_resources 聚合加载测试：派生 spec 与聚合 policy、frozen、注册 loader、无 loader 抛错、metadata 缺失/normalizer dim 不匹配/config chunk 不匹配/空 bundle 快速失败。",
+      "tags": [
+        "test-class",
+        "policy-input-spec",
+        "resource-loader"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/repo/test_bundle_reader.py:TestCheckBundleFiles",
+      "type": "class",
+      "name": "TestCheckBundleFiles",
+      "filePath": "act/tests/repo/test_bundle_reader.py",
+      "lineRange": [
+        31,
+        65
+      ],
+      "summary": "Bundle 文件完整性检查：完整 bundle 通过、manifest/normalizers/experiment_config/adapter 单缺失与多缺失均抛错、bundle 目录不存在抛错。",
+      "tags": [
+        "test-class",
+        "bundle-reader",
+        "path-resolution"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/repo/test_bundle_reader.py:TestResolveAdapterDir",
+      "type": "class",
+      "name": "TestResolveAdapterDir",
+      "filePath": "act/tests/repo/test_bundle_reader.py",
+      "lineRange": [
+        68,
+        78
+      ],
+      "summary": "adapter 目录解析：存在返回、不存在抛错。",
+      "tags": [
+        "test-class",
+        "bundle-reader",
+        "path-resolution"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/repo/test_bundle_reader.py:TestResolveCheckpointPath",
+      "type": "class",
+      "name": "TestResolveCheckpointPath",
+      "filePath": "act/tests/repo/test_bundle_reader.py",
+      "lineRange": [
+        81,
+        116
+      ],
+      "summary": "checkpoint 路径解析：manifest pretrained 路径、目录扫描 .pt/.safetensors 回退、checkpoint 目录回退、无 checkpoint 抛错。",
+      "tags": [
+        "test-class",
+        "bundle-reader",
+        "path-resolution"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/repo/test_bundle_reader.py:TestConstants",
+      "type": "class",
+      "name": "TestConstants",
+      "filePath": "act/tests/repo/test_bundle_reader.py",
+      "lineRange": [
+        119,
+        121
+      ],
+      "summary": "验证 bundle schema version 常量。",
+      "tags": [
+        "test-class",
+        "bundle-reader",
+        "path-resolution"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/repo/test_experiment_config_loader.py:TestLoadExperimentConfig",
+      "type": "class",
+      "name": "TestLoadExperimentConfig",
+      "filePath": "act/tests/repo/test_experiment_config_loader.py",
+      "lineRange": [
+        20,
+        67
+      ],
+      "summary": "experiment_config 加载测试：正常加载、文件缺失/BAD YAML/根非 mapping/标量根拒绝、维度字段保留、缺失字段不自动填充。",
+      "tags": [
+        "test-class",
+        "experiment-config",
+        "loader"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/repo/test_manifest_parser.py:TestLoadBundleManifest",
+      "type": "class",
+      "name": "TestLoadBundleManifest",
+      "filePath": "act/tests/repo/test_manifest_parser.py",
+      "lineRange": [
+        11,
+        38
+      ],
+      "summary": "bundle manifest 解析测试：合法 JSON 解析、文件缺失抛错、BAD JSON 抛错。",
+      "tags": [
+        "test-class",
+        "manifest-parser",
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_03_gate.py:_make_input_spec",
+      "type": "function",
+      "name": "_make_input_spec",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "lineRange": [
+        184,
+        203
+      ],
+      "summary": "构造 PolicyInputSpec 测试 fixture，支持 chunk_size/camera_keys/image_size 参数化。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate",
+        "boundary-scan"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_03_gate.py:_make_snapshot",
+      "type": "function",
+      "name": "_make_snapshot",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "lineRange": [
+        245,
+        285
+      ],
+      "summary": "构造 ObservationSnapshot 测试 fixture。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate",
+        "boundary-scan"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_03_gate.py:_list_l2_03_source_files",
+      "type": "function",
+      "name": "_list_l2_03_source_files",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "lineRange": [
+        551,
+        561
+      ],
+      "summary": "枚举 L2_03 layer 源文件列表用于边界扫描。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate",
+        "boundary-scan"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_03_gate.py:_check_forbidden_imports",
+      "type": "function",
+      "name": "_check_forbidden_imports",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "lineRange": [
+        617,
+        641
+      ],
+      "summary": "检查 L2_03 源文件不含 forbidden import 的工具函数。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate",
+        "boundary-scan"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:StubPolicy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:RecordingNormalizer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:TestFullChain",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:TestErrorStopsChain",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:TestBoundary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "function:act/tests/integration/test_l2_03_gate.py:_make_input_spec",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "function:act/tests/integration/test_l2_03_gate.py:_make_snapshot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "function:act/tests/integration/test_l2_03_gate.py:_list_l2_03_source_files",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "function:act/tests/integration/test_l2_03_gate.py:_check_forbidden_imports",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestTypesResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestInputShape",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestInputFinite",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestQuatCandidate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestReferenceOrder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestReferenceBootstrap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestReferenceMissing",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestPoseTranslation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestPoseRotation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestGripperRange",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestGripperStep",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestBimanualAssembly",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestOutputInvariant",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestResultStatus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestPurityImport",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestPublicPortFreeze",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:RecordingPublisher",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:FakeNode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG01Types",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG02ConfigDefaultOff",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG03ConfigEnabled",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG04B1Safe",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG05B1Failures",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG06B1Split",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG07B2Messages",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG08B2Failure",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG09B3Disabled",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG10B3PermitBlocked",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG11B3Enabled",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG12B3PolicyFail",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG13B3Partial",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG14GripperState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG15Status",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG16Boundary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG17MockIntegration",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_startup_failure.py",
+      "target": "class:act/tests/integration/test_startup_failure.py:TestStartupWithValidConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_startup_failure.py",
+      "target": "class:act/tests/integration/test_startup_failure.py:TestStartupFailureOnInvalidConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_act_runtime_resources.py",
+      "target": "class:act/tests/repo/test_act_runtime_resources.py:TestPolicyInputSpecInvariants",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_act_runtime_resources.py",
+      "target": "class:act/tests/repo/test_act_runtime_resources.py:TestLoadActRuntimeResources",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_bundle_reader.py",
+      "target": "class:act/tests/repo/test_bundle_reader.py:TestCheckBundleFiles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_bundle_reader.py",
+      "target": "class:act/tests/repo/test_bundle_reader.py:TestResolveAdapterDir",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_bundle_reader.py",
+      "target": "class:act/tests/repo/test_bundle_reader.py:TestResolveCheckpointPath",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_bundle_reader.py",
+      "target": "class:act/tests/repo/test_bundle_reader.py:TestConstants",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_experiment_config_loader.py",
+      "target": "class:act/tests/repo/test_experiment_config_loader.py:TestLoadExperimentConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/repo/test_manifest_parser.py",
+      "target": "class:act/tests/repo/test_manifest_parser.py:TestLoadBundleManifest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:StubPolicy",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:RecordingNormalizer",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:TestFullChain",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:TestErrorStopsChain",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "class:act/tests/integration/test_l2_03_gate.py:TestBoundary",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "function:act/tests/integration/test_l2_03_gate.py:_make_input_spec",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "function:act/tests/integration/test_l2_03_gate.py:_make_snapshot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "function:act/tests/integration/test_l2_03_gate.py:_list_l2_03_source_files",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_03_gate.py",
+      "target": "function:act/tests/integration/test_l2_03_gate.py:_check_forbidden_imports",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestTypesResult",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestInputShape",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestInputFinite",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestQuatCandidate",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestReferenceOrder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestReferenceBootstrap",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestReferenceMissing",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestPoseTranslation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestPoseRotation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestGripperRange",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestGripperStep",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestBimanualAssembly",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestOutputInvariant",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestResultStatus",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestPurityImport",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_04_gate.py",
+      "target": "class:act/tests/integration/test_l2_04_gate.py:TestPublicPortFreeze",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:RecordingPublisher",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:FakeNode",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG01Types",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG02ConfigDefaultOff",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG03ConfigEnabled",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG04B1Safe",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG05B1Failures",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG06B1Split",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG07B2Messages",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG08B2Failure",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG09B3Disabled",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG10B3PermitBlocked",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG11B3Enabled",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG12B3PolicyFail",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG13B3Partial",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG14GripperState",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG15Status",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG16Boundary",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_05_gate.py",
+      "target": "class:act/tests/integration/test_l2_05_gate.py:TestG17MockIntegration",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_startup_failure.py",
+      "target": "class:act/tests/integration/test_startup_failure.py:TestStartupWithValidConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_startup_failure.py",
+      "target": "class:act/tests/integration/test_startup_failure.py:TestStartupFailureOnInvalidConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/repo/test_act_runtime_resources.py",
+      "target": "class:act/tests/repo/test_act_runtime_resources.py:TestPolicyInputSpecInvariants",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/repo/test_act_runtime_resources.py",
+      "target": "class:act/tests/repo/test_act_runtime_resources.py:TestLoadActRuntimeResources",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/repo/test_bundle_reader.py",
+      "target": "class:act/tests/repo/test_bundle_reader.py:TestCheckBundleFiles",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/repo/test_bundle_reader.py",
+      "target": "class:act/tests/repo/test_bundle_reader.py:TestResolveAdapterDir",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/repo/test_bundle_reader.py",
+      "target": "class:act/tests/repo/test_bundle_reader.py:TestResolveCheckpointPath",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/repo/test_bundle_reader.py",
+      "target": "class:act/tests/repo/test_bundle_reader.py:TestConstants",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/repo/test_experiment_config_loader.py",
+      "target": "class:act/tests/repo/test_experiment_config_loader.py:TestLoadExperimentConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/repo/test_manifest_parser.py",
+      "target": "class:act/tests/repo/test_manifest_parser.py:TestLoadBundleManifest",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalization.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/__init__.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/action_publisher.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_startup_failure.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/repo/test_act_runtime_resources.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/tests/repo/test_act_runtime_resources.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/repo/test_act_runtime_resources.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/bundle_reader.py",
+      "target": "file:act/tests/repo/test_bundle_reader.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/experiment_config_loader.py",
+      "target": "file:act/tests/repo/test_experiment_config_loader.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/manifest_parser.py",
+      "target": "file:act/tests/repo/test_manifest_parser.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

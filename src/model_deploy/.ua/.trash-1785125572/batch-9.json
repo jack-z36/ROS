@@ -1,0 +1,99 @@
+{
+  "nodes": [
+    {
+      "id": "document:act_system/CMakeLists.txt",
+      "type": "document",
+      "name": "CMakeLists.txt",
+      "filePath": "act_system/CMakeLists.txt",
+      "summary": "act_system 包的 ament_cmake 构建清单；作为纯资源包，无任何编译目标，仅将 launch/ 目录与启动脚本安装到 share 与 lib 路径下。",
+      "tags": ["configuration", "build-system", "ros-package", "ament-cmake", "infrastructure"],
+      "complexity": "simple",
+      "languageNotes": "ROS2 ament_cmake 纯资源包典型写法：用 install(DIRECTORY) 与 install(PROGRAMS) 直接发布 launch 资源与可执行脚本，跳过 add_library/add_executable 阶段。"
+    },
+    {
+      "id": "document:act_system/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "act_system/README.md",
+      "summary": "act_system 系统集成包的中文使用文档，详述一键启动脚本流程、启动的四大组件、参数与环境变量、真机前置条件、故障排查（含 conda Python 冲突修复）以及测试结果与未验证项。",
+      "tags": ["documentation", "ros-package", "deployment", "orchestration", "entry-point"],
+      "complexity": "moderate",
+      "languageNotes": "中文技术文档范例：表格化展示组件映射与参数说明，结合脚本流程编号与核对表输出示例，便于真机部署排障。"
+    },
+    {
+      "id": "config:act_system/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "act_system/package.xml",
+      "summary": "act_system 的 ROS2 包清单（format 3，ament_cmake 构建工具），声明对 rm65_dual_arm、elephant_gripper、dual_fisheye_camera、launch、launch_ros 的 exec_depend，明确本包只做启动编排、不含 SDK/推理/deadman 逻辑。",
+      "tags": ["configuration", "ros-package", "manifest", "ament-cmake", "infrastructure"],
+      "complexity": "simple",
+      "languageNotes": "ROS2 package.xml format 3 标准：buildtool_depend 声明 ament_cmake，exec_depend 罗列运行时依赖包，export/build_type 标记构建类型。"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:act_system/README.md",
+      "target": "document:act_system/CMakeLists.txt",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:act_system/README.md",
+      "target": "config:act_system/package.xml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "document:act_system/CMakeLists.txt",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "document:act_system/README.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:act_system/README.md",
+      "target": "file:act_system/launch/act_system.launch.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:act_system/README.md",
+      "target": "file:act_system/scripts/start_act_system.sh",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "file:elephant_gripper/launch/elephant_gripper.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

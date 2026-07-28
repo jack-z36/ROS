@@ -1,0 +1,107 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 2,
+  "filesSkipped": [
+    "requirements.txt"
+  ],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 2,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 2
+    }
+  },
+  "results": [
+    {
+      "path": "ENVIRONMENT.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 61,
+      "nonEmptyLines": 43,
+      "sections": [
+        {
+          "heading": "Model Deploy — 环境依赖",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "运行环境",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "系统依赖",
+          "level": 3,
+          "line": 10
+        },
+        {
+          "heading": "构建方式",
+          "level": 3,
+          "line": 19
+        },
+        {
+          "heading": "测试",
+          "level": 3,
+          "line": 29
+        },
+        {
+          "heading": "包列表",
+          "level": 3,
+          "line": 42
+        },
+        {
+          "heading": "启动入口",
+          "level": 3,
+          "line": 49
+        },
+        {
+          "heading": "udev（真机手动应用）",
+          "level": 3,
+          "line": 57
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 8
+      }
+    },
+    {
+      "path": "environment.yml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 31,
+      "nonEmptyLines": 30,
+      "sections": [
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 17
+        },
+        {
+          "heading": "channels",
+          "level": 1,
+          "line": 18
+        },
+        {
+          "heading": "dependencies",
+          "level": 1,
+          "line": 20
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    }
+  ]
+}

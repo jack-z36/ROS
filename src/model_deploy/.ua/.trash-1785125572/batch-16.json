@@ -1,0 +1,518 @@
+{
+  "nodes": [
+    {
+      "id": "document:act_interfaces/CMakeLists.txt",
+      "type": "document",
+      "name": "CMakeLists.txt",
+      "filePath": "act_interfaces/CMakeLists.txt",
+      "summary": "act_interfaces 包的 ament_cmake 构建清单，调用 rosidl_generate_interfaces 从三个 .msg 文件生成 ROS2 消息类型并声明对 std_msgs 的依赖。",
+      "tags": ["build-system", "ros-interface", "ament-cmake", "schema-generation"],
+      "complexity": "simple",
+      "languageNotes": "使用 rosidl_default_generators 在构建期把 .msg 转成多语言绑定，DEPENDENCIES std_msgs 暴露传递依赖。"
+    },
+    {
+      "id": "schema:act_interfaces/msg/CommandPermit.msg",
+      "type": "schema",
+      "name": "CommandPermit.msg",
+      "filePath": "act_interfaces/msg/CommandPermit.msg",
+      "summary": "定义 CommandPermit 消息：携带 stamp、allowed 布尔与 reason_code，作为人类许可令牌在 ACT 命令下发前做新鲜度/有效性校验。",
+      "tags": ["ros-interface", "schema-definition", "safety", "msg", "permit"],
+      "complexity": "simple"
+    },
+    {
+      "id": "schema:act_interfaces/msg/GripperHealth.msg",
+      "type": "schema",
+      "name": "GripperHealth.msg",
+      "filePath": "act_interfaces/msg/GripperHealth.msg",
+      "summary": "定义 GripperHealth 消息：独立暴露左右大象夹爪的连接、急停、SDK 返回码、控制器错误码与 reason 字段，供消费方直接读取无需再做左右拆分。",
+      "tags": ["ros-interface", "schema-definition", "health", "msg", "gripper"],
+      "complexity": "simple",
+      "languageNotes": "注释中固化了睿尔曼 SDK 错误码（-1~-6）与控制器 16 位错误码（0x1001 等）的语义对照表。"
+    },
+    {
+      "id": "schema:act_interfaces/msg/HardwareHealth.msg",
+      "type": "schema",
+      "name": "HardwareHealth.msg",
+      "filePath": "act_interfaces/msg/HardwareHealth.msg",
+      "summary": "定义 HardwareHealth 消息：聚合整体 status (OK/DEGRADED/FAULT)、左右连接状态、急停标志与 detail 摘要，作为硬件健康总线上统一的状态载体。",
+      "tags": ["ros-interface", "schema-definition", "health", "msg", "status"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:act_interfaces/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "act_interfaces/package.xml",
+      "summary": "act_interfaces ROS2 包清单（ament_cmake），声明 rosidl 接口生成/运行时依赖并将包归入 rosidl_interface_packages 组。",
+      "tags": ["configuration", "ros-package", "manifest", "rosidl"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act_system/launch/act_system.launch.py",
+      "type": "file",
+      "name": "act_system.launch.py",
+      "filePath": "act_system/launch/act_system.launch.py",
+      "summary": "ACT 部署栈的总 launch 入口，一条命令拉起 RM65 双臂、大象夹爪、双鱼眼相机与 ACT 推理节点；对缺失可执行文件的硬件组件做容错跳过并以 fail-closed 默认关闭真实命令输出。",
+      "tags": ["entry-point", "launch", "orchestration", "ros2", "fault-tolerant"],
+      "complexity": "complex",
+      "languageNotes": "ACT 节点以 ExecuteProcess + 内联 _ACT_BOOTSTRAP 启动，预导入 rclpy.node 规避 act/ 包顶层只 import rclpy 的陷阱，无需改动上游包。"
+    },
+    {
+      "id": "file:act_system/scripts/start_act_system.sh",
+      "type": "file",
+      "name": "start_act_system.sh",
+      "filePath": "act_system/scripts/start_act_system.sh",
+      "summary": "ACT 系统一键启动 bash 脚本：source ROS/workspace setup、按需自动 colcon build、拉起总 launch 并在等待后做组件核对表检查，环境变量驱动构建与 ACT Python 解释器选择。",
+      "tags": ["entry-point", "shell", "deployment", "build-orchestration", "script"],
+      "complexity": "complex",
+      "languageNotes": "显式把 /usr/bin 前置 PATH 以避免 conda base 的 python3 干扰 rclpy/消息绑定；set -euo pipefail 保证失败即停。"
+    },
+    {
+      "id": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "type": "config",
+      "name": "dual_fisheye_camera.yaml",
+      "filePath": "dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "summary": "双鱼眼相机默认参数：强制 /dev/v4l/by-path 稳定设备路径、固定 rgb8 输出与 YUYV 像素格式、V4L2 buffer 时间戳与 sensor_data QoS，并配置 camera_health 监控频率与发布 topic。",
+      "tags": ["configuration", "camera", "v4l2", "ros-parameters", "calibration"],
+      "complexity": "simple",
+      "languageNotes": "注释强调禁止裸 /dev/videoX 枚举，必须用 by-path/by-id 稳定路径以避免 USB 拓扑漂移。"
+    },
+    {
+      "id": "file:dual_fisheye_camera/dual_fisheye_camera/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "dual_fisheye_camera/dual_fisheye_camera/__init__.py",
+      "summary": "dual_fisheye_camera Python 包的空初始化标记文件，仅用于声明包结构。",
+      "tags": ["entry-point", "barrel", "package-marker"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "file",
+      "name": "camera_health_node.py",
+      "filePath": "dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "summary": "ROS2 节点 CameraHealthNode：订阅左右鱼眼 image，按帧超时阈值判定每侧连接状态，定时发布 act_interfaces/HardwareHealth 汇总消息到 /hardware/camera/health。",
+      "tags": ["ros-node", "health-monitor", "sensor", "event-handler", "middleware"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "type": "file",
+      "name": "dual_fisheye_camera.launch.py",
+      "filePath": "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "summary": "双鱼眼相机包 launch 文件：先用 v4l2-ctl 设定左右帧率，再以 OnProcessExit 门控启动两个 v4l2_camera_node 实例与一个 camera_health_node，使用 OpaqueFunction 预解析参数避免多实例串扰。",
+      "tags": ["entry-point", "launch", "ros2", "camera", "multi-instance"],
+      "complexity": "complex",
+      "languageNotes": "沿用 gopro_pose_record 的 OpaqueFunction + 预解析参数模式，确保左右两路在同一 launch context 下参数不串扰。"
+    },
+    {
+      "id": "file:dual_fisheye_camera/resource/dual_fisheye_camera",
+      "type": "file",
+      "name": "dual_fisheye_camera",
+      "filePath": "dual_fisheye_camera/resource/dual_fisheye_camera",
+      "summary": "ament_index 资源标记文件（空内容），用于向 ROS2 工具链注册 dual_fisheye_camera 为可用包。",
+      "tags": ["package-marker", "ament-index", "resource"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:dual_fisheye_camera/setup.py",
+      "type": "file",
+      "name": "setup.py",
+      "filePath": "dual_fisheye_camera/setup.py",
+      "summary": "dual_fisheye_camera 包的 setuptools 构建脚本：声明包数据（launch/config/package.xml/resource）并注册 camera_health_node 控制台入口指向 camera_health_node:main。",
+      "tags": ["build-system", "setuptools", "ros-package", "entry-point"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/config/99-elephant-gripper.rules",
+      "type": "file",
+      "name": "99-elephant-gripper.rules",
+      "filePath": "elephant_gripper/config/99-elephant-gripper.rules",
+      "summary": "udev 规则模板：按 USB 拓扑路径 (ID_PATH) 把两路 CH340 USB-485 适配器分别固定为 /dev/elephant_gripper_left 与 right 符号链接，规避 VID/PID 无法区分的问题。",
+      "tags": ["configuration", "udev", "device-mapping", "serial", "infrastructure"],
+      "complexity": "simple",
+      "languageNotes": "因两路适配器同为 CH340 (1a86:7523)，必须用 ID_PATH 而非 VID/PID 区分左右；上线前需手动填入真机 ID_PATH。"
+    },
+    {
+      "id": "config:elephant_gripper/config/elephant_gripper.yaml",
+      "type": "config",
+      "name": "elephant_gripper.yaml",
+      "filePath": "elephant_gripper/config/elephant_gripper.yaml",
+      "summary": "大象夹爪节点默认参数：串口符号链接、波特率、夹爪 ID、轮询/发布频率、permit 超时安全门控、重连退避区间与 width↔angle 线性标定，支持 use_fake_serial 切换。",
+      "tags": ["configuration", "gripper", "ros-parameters", "safety", "serial"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/conftest.py",
+      "type": "file",
+      "name": "conftest.py",
+      "filePath": "elephant_gripper/conftest.py",
+      "summary": "pytest 引导文件：把包根插入 sys.path，使得在未安装/未 source overlay 时也能通过 python3 -m pytest 直接 import elephant_gripper。",
+      "tags": ["test", "configuration", "pytest", "bootstrap"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/__init__.py",
+      "summary": "elephant_gripper Python 包根的空初始化标记文件，声明顶层包结构。",
+      "tags": ["entry-point", "barrel", "package-marker"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/config/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/config/__init__.py",
+      "summary": "elephant_gripper.config 子包的空初始化标记文件。",
+      "tags": ["barrel", "package-marker"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/repo/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/repo/__init__.py",
+      "summary": "elephant_gripper.repo 子包的空初始化标记文件。",
+      "tags": ["barrel", "package-marker"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/runtime/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/__init__.py",
+      "summary": "elephant_gripper.runtime 子包的空初始化标记文件。",
+      "tags": ["barrel", "package-marker"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/__init__.py",
+      "summary": "elephant_gripper.service 子包的空初始化标记文件，承载与 ROS 解耦的协议编解码等纯函数模块。",
+      "tags": ["barrel", "package-marker", "service"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "type": "file",
+      "name": "frame_codec.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "summary": "大象 myGripper-F100 的 Modbus 风格帧编解码纯函数库（无串口/无 ROS 依赖）：CRC-16/MODBUS 校验、帧构建（使能/停止/读角度/读夹持/设角度）与响应解析，移植自 gripper_ctrl.py。",
+      "tags": ["utility", "serialization", "protocol", "modbus", "crc"],
+      "complexity": "moderate",
+      "languageNotes": "模块级预计算 256 项 CRC 表换取运行时性能；HEADER/帧长/功能码/寄存器地址均以模块常量固化，帧格式 FE FE | len | id | func | reg | data | crc。"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/types/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/types/__init__.py",
+      "summary": "elephant_gripper.types 子包的空初始化标记文件，预留类型定义位置。",
+      "tags": ["barrel", "package-marker", "type-definition"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/ui/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/ui/__init__.py",
+      "summary": "elephant_gripper.ui 子包的空初始化标记文件。",
+      "tags": ["barrel", "package-marker", "ui"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/launch/elephant_gripper.launch.py",
+      "type": "file",
+      "name": "elephant_gripper.launch.py",
+      "filePath": "elephant_gripper/launch/elephant_gripper.launch.py",
+      "summary": "elephant_gripper 包 launch 文件：以默认 elephant_gripper.yaml 为参数启动 elephant_gripper_node，config_file 参数可覆盖配置路径。",
+      "tags": ["entry-point", "launch", "ros2", "gripper"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act_system/launch/act_system.launch.py:_find_workspace_root",
+      "type": "function",
+      "name": "_find_workspace_root",
+      "filePath": "act_system/launch/act_system.launch.py",
+      "lineRange": [47, 67],
+      "summary": "从当前文件位置向上查找 workspace 根（依据 src/model_deploy/act/ui/act_deploy_node.py 标记文件），支持 ACT_WS_ROOT 环境变量显式覆盖，找不到时抛 RuntimeError。",
+      "tags": ["utility", "path-resolution", "workspace"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act_system/launch/act_system.launch.py:_executable_exists",
+      "type": "function",
+      "name": "_executable_exists",
+      "filePath": "act_system/launch/act_system.launch.py",
+      "lineRange": [81, 87],
+      "summary": "检查指定 ROS 包的可执行文件是否已安装到 lib/<pkg>/<executable>，包不存在时返回 False。",
+      "tags": ["utility", "validation", "discovery"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act_system/launch/act_system.launch.py:_include_hardware_launch",
+      "type": "function",
+      "name": "_include_hardware_launch",
+      "filePath": "act_system/launch/act_system.launch.py",
+      "lineRange": [90, 117],
+      "summary": "构造单个硬件包的 IncludeLaunchDescription 动作；所需可执行文件缺失时改为 LogInfo 跳过并告警，避免单组件未就绪拖死整个总 launch。",
+      "tags": ["launch", "fault-tolerant", "middleware"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act_system/launch/act_system.launch.py:_make_hardware_includes",
+      "type": "function",
+      "name": "_make_hardware_includes",
+      "filePath": "act_system/launch/act_system.launch.py",
+      "lineRange": [120, 138],
+      "summary": "汇总 RM65 双臂、大象夹爪、双鱼眼相机三个硬件包的 include 动作（含各自可执行文件可用性检查）。",
+      "tags": ["launch", "orchestration", "middleware"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act_system/launch/act_system.launch.py:_make_act_node_process",
+      "type": "function",
+      "name": "_make_act_node_process",
+      "filePath": "act_system/launch/act_system.launch.py",
+      "lineRange": [141, 167],
+      "summary": "构造 ACT 部署节点 ExecuteProcess：以内联 _ACT_BOOTSTRAP 启动、前置 PYTHONPATH=workspace/src，并按 enable_command_output 参数条件追加 --enable-command-output。",
+      "tags": ["launch", "process", "entry-point", "middleware"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act_system/launch/act_system.launch.py:_on_any_process_exit",
+      "type": "function",
+      "name": "_on_any_process_exit",
+      "filePath": "act_system/launch/act_system.launch.py",
+      "lineRange": [170, 178],
+      "summary": "OnProcessExit 事件回调：任一子进程退出时打印进程名与 returncode，便于操作者定位失败组件。",
+      "tags": ["event-handler", "launch", "observability"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act_system/launch/act_system.launch.py:generate_launch_description",
+      "type": "function",
+      "name": "generate_launch_description",
+      "filePath": "act_system/launch/act_system.launch.py",
+      "lineRange": [181, 211],
+      "summary": "总 launch 入口工厂：声明 act_config/act_python/enable_command_output 参数，串联硬件 include、ACT 节点进程与全局进程退出事件处理，返回 LaunchDescription。",
+      "tags": ["entry-point", "factory", "launch", "ros2"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act_system/scripts/start_act_system.sh:cleanup",
+      "type": "function",
+      "name": "cleanup",
+      "filePath": "act_system/scripts/start_act_system.sh",
+      "lineRange": [139, 160],
+      "summary": "脚本退出时的清理 trap：终止后台 launch 进程并回收资源，避免遗留 ROS 子进程。",
+      "tags": ["utility", "lifecycle", "process-management"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act_system/scripts/start_act_system.sh:check_component",
+      "type": "function",
+      "name": "check_component",
+      "filePath": "act_system/scripts/start_act_system.sh",
+      "lineRange": [176, 191],
+      "summary": "组件核对表单元：检查单个 ROS 节点/话题是否已就绪，输出 PASS/FAIL 行用于启动后健康核对。",
+      "tags": ["validation", "health-check", "script"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py:CameraHealthNode",
+      "type": "class",
+      "name": "CameraHealthNode",
+      "filePath": "dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "lineRange": [42, 143],
+      "summary": "订阅左右鱼眼 image 的 ROS2 节点：维护每侧 _SideState（最近帧时间戳/连接状态），按 frame_timeout_sec 判定连通性并以 health_hz 频率发布 HardwareHealth 汇总消息。",
+      "tags": ["ros-node", "health-monitor", "event-handler", "sensor", "middleware"],
+      "complexity": "complex",
+      "languageNotes": "继承 rclpy.node.Node，使用 qos_profile_sensor_data 订阅图像、create_publisher 发布 HardwareHealth，构造期声明并校验多个 ROS 参数。"
+    },
+    {
+      "id": "function:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "lineRange": [156, 165],
+      "summary": "节点入口：rclpy.init 初始化、构造 CameraHealthNode 并 spin，退出时销毁节点并 shutdown。",
+      "tags": ["entry-point", "ros-node", "lifecycle"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:_load_yaml_params",
+      "type": "function",
+      "name": "_load_yaml_params",
+      "filePath": "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "lineRange": [33, 40],
+      "summary": "解析 params_file launch 参数，未提供或路径不存在时回退到包内默认 dual_fisheye_camera.yaml。",
+      "tags": ["utility", "launch", "configuration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:_make_camera_pair",
+      "type": "function",
+      "name": "_make_camera_pair",
+      "filePath": "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "lineRange": [43, 88],
+      "summary": "构造单侧（left/right）相机启动对：v4l2-ctl 设帧率 ExecuteProcess + v4l2_camera_node，预解析全部 launch 参数以保证多实例安全，由调用方注册 OnProcessExit 门控。",
+      "tags": ["launch", "factory", "camera", "multi-instance"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:_launch_setup",
+      "type": "function",
+      "name": "_launch_setup",
+      "filePath": "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "lineRange": [91, 122],
+      "summary": "OpaqueFunction setup 回调：加载 yaml 参数、构造左右相机对与 camera_health_node，并注册 OnProcessExit 事件门控实现帧率设置→节点启动的顺序依赖。",
+      "tags": ["launch", "orchestration", "event-handler", "middleware"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:generate_launch_description",
+      "type": "function",
+      "name": "generate_launch_description",
+      "filePath": "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "lineRange": [131, 160],
+      "summary": "launch 入口工厂：声明全部左右设备/帧率/topic 等参数并以 OpaqueFunction(_launch_setup) 延迟组装，返回 LaunchDescription。",
+      "tags": ["entry-point", "factory", "launch", "ros2"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:_build_crc_table",
+      "type": "function",
+      "name": "_build_crc_table",
+      "filePath": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "lineRange": [36, 46],
+      "summary": "模块加载时预计算 CRC-16/MODBUS 的 256 项查找表（多项式 0xA001），返回不可变 tuple 供 crc16 运行时查表加速。",
+      "tags": ["utility", "crc", "initialization"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:crc16",
+      "type": "function",
+      "name": "crc16",
+      "filePath": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "lineRange": [52, 61],
+      "summary": "对 payload 计算 CRC-16/MODBUS（初始 0xFFFF），返回大端 2 字节，与参考实现及 golden vectors 对齐。",
+      "tags": ["utility", "crc", "serialization", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:build_frame",
+      "type": "function",
+      "name": "build_frame",
+      "filePath": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "lineRange": [64, 84],
+      "summary": "按 FE FE | len | gripper_id | func | reg | data 布局组装一帧并追加 crc16 校验，返回 11 字节完整帧。",
+      "tags": ["serialization", "protocol", "factory"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:build_set_angle_frame",
+      "type": "function",
+      "name": "build_set_angle_frame",
+      "filePath": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "lineRange": [117, 122],
+      "summary": "构造设角度指令帧：校验 angle 范围（越界抛 ValueError）后委托 build_frame 写入 REG_SET_ANGLE 寄存器。",
+      "tags": ["serialization", "protocol", "validation", "command"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:parse_response",
+      "type": "function",
+      "name": "parse_response",
+      "filePath": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "lineRange": [134, 168],
+      "summary": "解析夹爪串口响应帧：校验长度、地址、CRC 与期望寄存器，返回 ParsedResponse（func_code/reg_addr/data），失败时抛带 hex 调试信息的异常。",
+      "tags": ["serialization", "protocol", "validation", "parser"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:elephant_gripper/launch/elephant_gripper.launch.py:generate_launch_description",
+      "type": "function",
+      "name": "generate_launch_description",
+      "filePath": "elephant_gripper/launch/elephant_gripper.launch.py",
+      "lineRange": [8, 30],
+      "summary": "launch 入口工厂：以包内 elephant_gripper.yaml 为默认 config_file，启动 elephant_gripper_node 并把配置路径作为参数传入。",
+      "tags": ["entry-point", "factory", "launch", "ros2"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_find_workspace_root", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_executable_exists", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_include_hardware_launch", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_make_hardware_includes", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_make_act_node_process", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_on_any_process_exit", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:generate_launch_description", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act_system/scripts/start_act_system.sh", "target": "function:act_system/scripts/start_act_system.sh:cleanup", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act_system/scripts/start_act_system.sh", "target": "function:act_system/scripts/start_act_system.sh:check_component", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py", "target": "class:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py:CameraHealthNode", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py", "target": "function:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py:main", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:_load_yaml_params", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:_make_camera_pair", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:_launch_setup", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:generate_launch_description", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:_build_crc_table", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:crc16", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:build_frame", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:build_set_angle_frame", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:parse_response", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/launch/elephant_gripper.launch.py", "target": "function:elephant_gripper/launch/elephant_gripper.launch.py:generate_launch_description", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_find_workspace_root", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_executable_exists", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_include_hardware_launch", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_make_hardware_includes", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_make_act_node_process", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:_on_any_process_exit", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "function:act_system/launch/act_system.launch.py:generate_launch_description", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py", "target": "class:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py:CameraHealthNode", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py", "target": "function:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py:main", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:_load_yaml_params", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:_make_camera_pair", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:_launch_setup", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "function:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py:generate_launch_description", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:_build_crc_table", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:crc16", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:build_frame", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:build_set_angle_frame", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/service/frame_codec.py", "target": "function:elephant_gripper/elephant_gripper/service/frame_codec.py:parse_response", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/launch/elephant_gripper.launch.py", "target": "function:elephant_gripper/launch/elephant_gripper.launch.py:generate_launch_description", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "schema:act_interfaces/msg/HardwareHealth.msg", "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py", "type": "defines_schema", "direction": "forward", "weight": 0.8},
+
+    {"source": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml", "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml", "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "config:elephant_gripper/config/elephant_gripper.yaml", "target": "file:elephant_gripper/launch/elephant_gripper.launch.py", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "config:act_interfaces/package.xml", "target": "schema:act_interfaces/msg/CommandPermit.msg", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "config:act_interfaces/package.xml", "target": "schema:act_interfaces/msg/GripperHealth.msg", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "config:act_interfaces/package.xml", "target": "schema:act_interfaces/msg/HardwareHealth.msg", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "config:act_interfaces/package.xml", "target": "document:act_interfaces/CMakeLists.txt", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "document:act_interfaces/CMakeLists.txt", "target": "schema:act_interfaces/msg/CommandPermit.msg", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "document:act_interfaces/CMakeLists.txt", "target": "schema:act_interfaces/msg/GripperHealth.msg", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "document:act_interfaces/CMakeLists.txt", "target": "schema:act_interfaces/msg/HardwareHealth.msg", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "file:dual_fisheye_camera/setup.py", "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "file:dual_fisheye_camera/setup.py", "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "type": "configures", "direction": "forward", "weight": 0.6},
+    {"source": "file:elephant_gripper/config/99-elephant-gripper.rules", "target": "config:elephant_gripper/config/elephant_gripper.yaml", "type": "configures", "direction": "forward", "weight": 0.6},
+
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "file:elephant_gripper/launch/elephant_gripper.launch.py", "type": "depends_on", "direction": "forward", "weight": 0.6},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "type": "depends_on", "direction": "forward", "weight": 0.6},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py", "type": "depends_on", "direction": "forward", "weight": 0.6},
+    {"source": "file:act_system/launch/act_system.launch.py", "target": "file:act/ui/act_deploy_node.py", "type": "depends_on", "direction": "forward", "weight": 0.6},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py", "type": "depends_on", "direction": "forward", "weight": 0.6},
+    {"source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py", "target": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml", "type": "depends_on", "direction": "forward", "weight": 0.6},
+    {"source": "file:elephant_gripper/launch/elephant_gripper.launch.py", "target": "config:elephant_gripper/config/elephant_gripper.yaml", "type": "depends_on", "direction": "forward", "weight": 0.6},
+    {"source": "file:act_system/scripts/start_act_system.sh", "target": "file:act_system/launch/act_system.launch.py", "type": "depends_on", "direction": "forward", "weight": 0.6},
+
+    {"source": "file:dual_fisheye_camera/setup.py", "target": "file:dual_fisheye_camera/resource/dual_fisheye_camera", "type": "related", "direction": "forward", "weight": 0.5}
+  ]
+}

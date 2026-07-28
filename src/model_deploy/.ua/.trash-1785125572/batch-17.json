@@ -1,0 +1,1593 @@
+{
+  "nodes": [
+    {
+      "id": "file:elephant_gripper/resource/elephant_gripper",
+      "type": "file",
+      "name": "elephant_gripper",
+      "filePath": "elephant_gripper/resource/elephant_gripper",
+      "summary": "ament_index 资源标记文件，注册 elephant_gripper 为 ROS2 可识别包。空文件，仅靠文件名存在生效。",
+      "tags": [
+        "entry-point",
+        "package-marker",
+        "ros2"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/setup.py",
+      "type": "file",
+      "name": "setup.py",
+      "filePath": "elephant_gripper/setup.py",
+      "summary": "elephant_gripper 包的 setuptools 安装脚本，声明入口点 elephant_gripper_node、data_files（config/launch/package.xml）及依赖（pyserial、PyYAML）。",
+      "tags": [
+        "entry-point",
+        "build-system",
+        "packaging",
+        "ros2"
+      ],
+      "complexity": "simple",
+      "languageNotes": "ROS2 Python 包标准 setup.py，通过 entry_points 暴露 console_scripts 节点可执行项。"
+    },
+    {
+      "id": "file:elephant_gripper/tests/service/test_frame_codec.py",
+      "type": "file",
+      "name": "test_frame_codec.py",
+      "filePath": "elephant_gripper/tests/service/test_frame_codec.py",
+      "summary": "frame_codec 的 pytest 单元测试：CRC-16 表查与位运算等价性、golden 帧向量、parse_response 边界与异常路径（短帧/坏头/CRC 不匹配/寄存器回显不一致/夹爪 ID 错误）。",
+      "tags": [
+        "test",
+        "crc",
+        "protocol",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:gripper_ctrl.py",
+      "type": "file",
+      "name": "gripper_ctrl.py",
+      "filePath": "gripper_ctrl.py",
+      "summary": "大象 myGripper-F100 夹爪的命令行调试脚本：把 0.0~1.0 开合度映射为角度，按自定义 Modbus 帧序列（上使能→设角度→读角度）通过 USB-485 串口下发。",
+      "tags": [
+        "entry-point",
+        "cli",
+        "serial",
+        "protocol",
+        "gripper"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "独立单文件脚本，CRC-16 MODBUS（多项式 0xA001，big-endian）就地实现，与 frame_codec 模块的查表实现互为参照。"
+    },
+    {
+      "id": "config:rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "type": "config",
+      "name": "rm65_dual_arm.yaml",
+      "filePath": "rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "summary": "RM65 双臂节点默认参数：左右臂 IP/端口/frame_id、运动速度、安全上限（单步位移 1cm / 角度 ~2.9°）、发布频率与 topic 名称。默认值按最保守安全取值，启动期硬性校验防误配。",
+      "tags": [
+        "configuration",
+        "ros2",
+        "safety",
+        "hardware"
+      ],
+      "complexity": "simple",
+      "languageNotes": "YAML 顶层键 rm65_dual_arm_node 对应节点名，ros__parameters 下分组 left_arm/right_arm/motion/safety/publish/topics。"
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "type": "file",
+      "name": "delta_guard.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "summary": "微小运动安全闸头文件：定义 DeltaResult、启动期硬上限常量（5cm/11.5°）、compute_pose_delta 与 check_delta 声明。落实'测试指令必须尽可能小'的硬性安全要求。",
+      "tags": [
+        "header",
+        "safety",
+        "validation",
+        "cpp"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "旋转角度按四元数夹角的 2*acos(|q_rel.w|) 计算；未读取真实 TCP 时拒绝避免假设零位。"
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "type": "file",
+      "name": "permit_guard.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "summary": "人工安全许可守卫头文件：声明 PermitGuard 线程安全缓存类、is_permit_well_formed 与 PermitResult。对齐 act CommandPermit fail-closed 设计，许可无效/过期/异常一律拒绝。",
+      "tags": [
+        "header",
+        "safety",
+        "validation",
+        "cpp"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "CommandPermit 消息本身不带时间戳，stale 判断用节点本地单调时钟；reason_code 与 act 侧稳定码对齐。"
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "file",
+      "name": "pose_conversion.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "summary": "位姿转换头文件：定义 RmPose/RmQuat/RmEuler 镜像结构体与四元数↔欧拉角↔整体位姿互转、合法性校验函数声明。刻意不 include 厂商头文件以解耦纯逻辑测试。",
+      "tags": [
+        "header",
+        "utility",
+        "serialization",
+        "cpp"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "睿尔曼 rm_quat_t 字段顺序 (w,x,y,z) 与 ROS Quaternion (x,y,z,w) 相反，互转需重排；欧拉角按 ZYX 内蕴 yaw-pitch-roll 与 REP-103/tf2 一致。"
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "type": "file",
+      "name": "rm65_arm.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "summary": "单臂 SDK 封装头文件：声明 Rm65Arm 类、ArmSnapshot 快照结构、Side 枚举。唯一直接 include 厂商 rm_service.h 的编译单元，封装 handle 生命周期/状态读取/运动/急停。",
+      "tags": [
+        "header",
+        "service",
+        "hardware",
+        "cpp"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "rm_init/rm_destroy 全局一次（RM_TRIPLE_MODE_E）；rm_create_robot_arm 返回 handle，最大连接数 5；非线程安全由调用方串行化。"
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "type": "file",
+      "name": "rm65_dual_arm_node.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "summary": "RM65 双臂主节点头文件：声明 Rm65DualArmNode（继承 rclcpp::Node）、NodeConfig、订阅/发布/service/定时器成员及多重闸门编排契约（permit→validator→delta→estop→SDK）。",
+      "tags": [
+        "header",
+        "entry-point",
+        "ros2",
+        "safety",
+        "cpp"
+      ],
+      "complexity": "complex",
+      "languageNotes": "运动调用通过 left/right_motion_mutex_ 串行化避免左右回调并发竞争同一臂的 SDK 调用；estop_active_ 用 atomic 全局影响两侧闸门。"
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/target_validator.hpp",
+      "type": "file",
+      "name": "target_validator.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/target_validator.hpp",
+      "summary": "目标位姿执行前校验头文件：声明 ValidationResult 与 validate_target，校验 frame_id/finite/quaternion 范数/stale 等单条 PoseStamped 的静态与时间属性，不涉及位移或许可。",
+      "tags": [
+        "header",
+        "validation",
+        "safety",
+        "cpp"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "type": "file",
+      "name": "rm65_dual_arm.launch.py",
+      "filePath": "rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "summary": "RM65 双臂节点 ROS2 launch 文件：加载 config yaml 作默认参数，默认把 /arm/*_tcp_pose remap 到 /act/observation/arm/*_tcp_pose 让 ACT 节点零配置订阅。",
+      "tags": [
+        "entry-point",
+        "ros2",
+        "launch",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:rm65_dual_arm/lib/SDK_VENDOR_README.txt",
+      "type": "document",
+      "name": "SDK_VENDOR_README.txt",
+      "filePath": "rm65_dual_arm/lib/SDK_VENDOR_README.txt",
+      "summary": "厂商 SDK 取用说明：指引如何从官方睿尔曼 SDK 包获取 libRM_Service.so* 及头文件并放入 lib/ 目录，供 install_libs.sh 部署与 CMake 条件编译使用。",
+      "tags": [
+        "documentation",
+        "vendor",
+        "hardware",
+        "setup"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:rm65_dual_arm/lib/install_libs.sh",
+      "type": "file",
+      "name": "install_libs.sh",
+      "filePath": "rm65_dual_arm/lib/install_libs.sh",
+      "summary": "部署脚本：以 root 把 vendor 的 libRM_Service.so* 安装到 /usr/local/lib 并执行 ldconfig 刷新缓存，含存在性预检与 ldconfig 验证。",
+      "tags": [
+        "script",
+        "infrastructure",
+        "deployment",
+        "shell"
+      ],
+      "complexity": "simple",
+      "languageNotes": "bash set -euo pipefail 严格模式；install -m 0755 保证权限；末尾 grep ldconfig 输出做安装自检。"
+    },
+    {
+      "id": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "type": "file",
+      "name": "delta_guard.cpp",
+      "filePath": "rm65_dual_arm/src/delta_guard.cpp",
+      "summary": "delta_guard 实现：compute_pose_delta 计算位移/旋转差，check_delta 主闸门相对真实 TCP 校验单步上限，超限或当前位姿非法返回带稳定 reason_code 的 DeltaResult。",
+      "tags": [
+        "safety",
+        "validation",
+        "cpp"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:rm65_dual_arm/src/permit_guard.cpp",
+      "type": "file",
+      "name": "permit_guard.cpp",
+      "filePath": "rm65_dual_arm/src/permit_guard.cpp",
+      "summary": "permit_guard 实现：is_permit_well_formed 校验字段自洽，PermitGuard::update/resolve 缓存并解析当前许可，按 MISSING/STALE/SOURCE_ERROR/DENIED 返回 fail-closed 结果。",
+      "tags": [
+        "safety",
+        "validation",
+        "cpp"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "file",
+      "name": "pose_conversion.cpp",
+      "filePath": "rm65_dual_arm/src/pose_conversion.cpp",
+      "summary": "pose_conversion 实现：四元数合法性校验、睿尔曼↔ROS 四元数重排、ZYX 欧拉角↔四元数互转、整体位姿双向转换，含 NaN/Inf/范数失败时填 reason。",
+      "tags": [
+        "utility",
+        "serialization",
+        "math",
+        "cpp"
+      ],
+      "complexity": "complex",
+      "languageNotes": "欧拉角提取含万向锁处理（pitch 接近 ±π/2 时用 copysign），结果 cast 回 float 匹配 rm_euler_t。"
+    },
+    {
+      "id": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "type": "file",
+      "name": "rm65_arm.cpp",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "summary": "Rm65Arm 实现：rm_init/rm_destroy 全局管理、connect/disconnect 连接生命周期、update_state 读状态、fill_pose_from_state 镜像拷贝、movel/set_emergency_stop/hard_stop 运动与急停，sdk_code_text 错误码翻译。",
+      "tags": [
+        "service",
+        "hardware",
+        "ros2",
+        "cpp"
+      ],
+      "complexity": "complex",
+      "languageNotes": "唯一直接调用厂商 SDK（rm_create_robot_arm/rm_movel/rm_set_arm_emergency_stop 等）的编译单元；用 std::call_once 保证全局单次初始化。"
+    },
+    {
+      "id": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "file",
+      "name": "rm65_dual_arm_node.cpp",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "summary": "RM65 双臂主节点实现：构造与参数加载校验、左右目标/permit/急停回调、handle_target 编排多重闸门（permit→validator→delta→estop→movel）、pose/health 定时器发布、main 入口。",
+      "tags": [
+        "entry-point",
+        "ros2",
+        "safety",
+        "service",
+        "cpp"
+      ],
+      "complexity": "complex",
+      "languageNotes": "load_and_validate_config 用 declare_parameter<T> 逐项声明并对硬性约束（IP 不同、速度/步长上下限）抛 std::runtime_error fail-fast。"
+    },
+    {
+      "id": "file:rm65_dual_arm/src/target_validator.cpp",
+      "type": "file",
+      "name": "target_validator.cpp",
+      "filePath": "rm65_dual_arm/src/target_validator.cpp",
+      "summary": "target_validator 实现：stamp_to_sec 时间转换，validate_target 校验 frame_id 匹配、有限性、四元数范数、stamp 过期/缺失，返回带稳定 reason_code 的 ValidationResult。",
+      "tags": [
+        "validation",
+        "safety",
+        "cpp"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:rm65_dual_arm/tests/test_delta_guard.cpp",
+      "type": "file",
+      "name": "test_delta_guard.cpp",
+      "filePath": "rm65_dual_arm/tests/test_delta_guard.cpp",
+      "summary": "delta_guard 的 GoogleTest 单元测试：覆盖正常位移/旋转差计算、超限拒绝、当前 TCP 缺失/NaN/坏四元数等路径，含 make_pose/make_rm_pose 构造辅助。",
+      "tags": [
+        "test",
+        "safety",
+        "cpp"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:rm65_dual_arm/tests/test_permit_guard.cpp",
+      "type": "file",
+      "name": "test_permit_guard.cpp",
+      "filePath": "rm65_dual_arm/tests/test_permit_guard.cpp",
+      "summary": "permit_guard 的 GoogleTest 单元测试：覆盖字段自洽校验、update/resolve 的 MISSING/STALE/DENIED/SOURCE_ERROR 各分支及最新许可覆盖语义。",
+      "tags": [
+        "test",
+        "safety",
+        "cpp"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:rm65_dual_arm/tests/test_pose_conversion.cpp",
+      "type": "file",
+      "name": "test_pose_conversion.cpp",
+      "filePath": "rm65_dual_arm/tests/test_pose_conversion.cpp",
+      "summary": "pose_conversion 的 GoogleTest 单元测试：四元数重排、合法性校验、欧拉角↔四元数往返、整体位姿双向转换与非法输入拒绝，含 quat_eq 容差比较辅助。",
+      "tags": [
+        "test",
+        "math",
+        "serialization",
+        "cpp"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:rm65_dual_arm/tests/test_target_validator.cpp",
+      "type": "file",
+      "name": "test_target_validator.cpp",
+      "filePath": "rm65_dual_arm/tests/test_target_validator.cpp",
+      "summary": "target_validator 的 GoogleTest 单元测试：覆盖 frame_id 匹配/不符、NaN/Inf/范数异常、stamp 过期与缺失等拒绝路径及合法通过路径，含 make_target 构造辅助。",
+      "tags": [
+        "test",
+        "validation",
+        "cpp"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:elephant_gripper/tests/service/test_frame_codec.py:_bitloop_crc",
+      "type": "function",
+      "name": "_bitloop_crc",
+      "filePath": "elephant_gripper/tests/service/test_frame_codec.py",
+      "lineRange": [
+        8,
+        17
+      ],
+      "summary": "测试辅助：按位运算逐字节计算 CRC-16 MODBUS（多项式 0xA001，big-endian），作为 fc.crc16 查表实现的参照真值。",
+      "tags": [
+        "utility",
+        "crc",
+        "test-helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:gripper_ctrl.py:crc16_modbus",
+      "type": "function",
+      "name": "crc16_modbus",
+      "filePath": "gripper_ctrl.py",
+      "lineRange": [
+        18,
+        28
+      ],
+      "summary": "按位运算计算 CRC-16 MODBUS 校验码并返回 2 字节 big-endian。",
+      "tags": [
+        "utility",
+        "crc",
+        "protocol"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:gripper_ctrl.py:send_cmd",
+      "type": "function",
+      "name": "send_cmd",
+      "filePath": "gripper_ctrl.py",
+      "lineRange": [
+        40,
+        49
+      ],
+      "summary": "通过串口下发一帧指令，打印 hex 形式的发送与响应（或无响应提示），返回响应字节。",
+      "tags": [
+        "serial",
+        "protocol",
+        "io"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:gripper_ctrl.py:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "gripper_ctrl.py",
+      "lineRange": [
+        52,
+        91
+      ],
+      "summary": "脚本入口：解析命令行开合度参数（0.0~1.0），归一化为角度，打开串口后按序下发上使能→设角度→读角度三帧指令。",
+      "tags": [
+        "entry-point",
+        "cli",
+        "serial"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/launch/rm65_dual_arm.launch.py:generate_launch_description",
+      "type": "function",
+      "name": "generate_launch_description",
+      "filePath": "rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "lineRange": [
+        31,
+        63
+      ],
+      "summary": "ROS2 launch 入口：声明 params_file 参数（默认包内 yaml），构造 rm65_dual_arm_node 节点并把 /arm/*_tcp_pose remap 到 /act/observation/arm/*_tcp_pose。",
+      "tags": [
+        "entry-point",
+        "ros2",
+        "launch"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/delta_guard.cpp:compute_pose_delta",
+      "type": "function",
+      "name": "compute_pose_delta",
+      "filePath": "rm65_dual_arm/src/delta_guard.cpp",
+      "lineRange": [
+        20,
+        73
+      ],
+      "summary": "计算两位姿间位移（m）与旋转角度（rad，四元数夹角的 2 倍），任一四元数非法或非有限返回 false 并填 reason。",
+      "tags": [
+        "safety",
+        "math",
+        "validation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/delta_guard.cpp:check_delta",
+      "type": "function",
+      "name": "check_delta",
+      "filePath": "rm65_dual_arm/src/delta_guard.cpp",
+      "lineRange": [
+        75,
+        121
+      ],
+      "summary": "delta_guard 主闸门：相对当前真实 TCP（RmPose）校验目标位姿的单步位移/角度是否在上限内，缺失/NaN/超限返回带稳定 reason_code 的 DeltaResult。",
+      "tags": [
+        "safety",
+        "validation",
+        "entry-point"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/permit_guard.cpp:resolve",
+      "type": "function",
+      "name": "resolve",
+      "filePath": "rm65_dual_arm/src/permit_guard.cpp",
+      "lineRange": [
+        29,
+        76
+      ],
+      "summary": "解析当前有效许可：按未收/过期/字段不自洽/明确拒绝/允许返回 fail-closed PermitResult，透传上游 reason_code。",
+      "tags": [
+        "safety",
+        "validation",
+        "entry-point"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/pose_conversion.cpp:is_valid_ros_quaternion",
+      "type": "function",
+      "name": "is_valid_ros_quaternion",
+      "filePath": "rm65_dual_arm/src/pose_conversion.cpp",
+      "lineRange": [
+        21,
+        44
+      ],
+      "summary": "校验 ROS 四元数有限且模长接近 1（容差 tol），非法时填 reason，供 delta_guard/target_validator 复用。",
+      "tags": [
+        "validation",
+        "math",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_quat_to_ros",
+      "type": "function",
+      "name": "rm_quat_to_ros",
+      "filePath": "rm65_dual_arm/src/pose_conversion.cpp",
+      "lineRange": [
+        46,
+        55
+      ],
+      "summary": "睿尔曼 rm_quat_t (w,x,y,z) -> ROS Quaternion (x,y,z,w) 的纯字段重排。",
+      "tags": [
+        "serialization",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_quat_to_rm",
+      "type": "function",
+      "name": "ros_quat_to_rm",
+      "filePath": "rm65_dual_arm/src/pose_conversion.cpp",
+      "lineRange": [
+        57,
+        66
+      ],
+      "summary": "ROS Quaternion (x,y,z,w) -> 睿尔曼 rm_quat_t (w,x,y,z) 的纯字段重排，不校验合法性。",
+      "tags": [
+        "serialization",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/pose_conversion.cpp:euler_to_ros_quaternion",
+      "type": "function",
+      "name": "euler_to_ros_quaternion",
+      "filePath": "rm65_dual_arm/src/pose_conversion.cpp",
+      "lineRange": [
+        68,
+        87
+      ],
+      "summary": "ZYX 内蕴欧拉角 [roll,pitch,yaw] (rad) -> ROS 四元数，公式与 REP-103/tf2 一致。",
+      "tags": [
+        "math",
+        "serialization"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_quaternion_to_euler",
+      "type": "function",
+      "name": "ros_quaternion_to_euler",
+      "filePath": "rm65_dual_arm/src/pose_conversion.cpp",
+      "lineRange": [
+        89,
+        123
+      ],
+      "summary": "ROS 四元数 -> 睿尔曼欧拉角 [rx,ry,rz] (rad)，euler_to_ros_quaternion 的逆运算，含万向锁处理。",
+      "tags": [
+        "math",
+        "serialization"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_pose_to_ros_pose",
+      "type": "function",
+      "name": "rm_pose_to_ros_pose",
+      "filePath": "rm65_dual_arm/src/pose_conversion.cpp",
+      "lineRange": [
+        125,
+        143
+      ],
+      "summary": "RmPose（优先 quaternion）-> ROS Pose，位置直接拷贝、四元数重排并校验合法性，非法返回 false。",
+      "tags": [
+        "serialization",
+        "math"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_pose_to_rm_pose",
+      "type": "function",
+      "name": "ros_pose_to_rm_pose",
+      "filePath": "rm65_dual_arm/src/pose_conversion.cpp",
+      "lineRange": [
+        145,
+        162
+      ],
+      "summary": "ROS Pose -> RmPose，位置直接拷贝、姿态同时填 quaternion 与由 q 计算的 euler，四元数非法返回 false。",
+      "tags": [
+        "serialization",
+        "math"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_arm.cpp:sdk_code_text",
+      "type": "function",
+      "name": "sdk_code_text",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "lineRange": [
+        32,
+        45
+      ],
+      "summary": "把厂商 SDK API 返回码翻译为人类可读字符串（成功/控制器参数错/发送失败/接收超时/解析失败/到位失败等）。",
+      "tags": [
+        "utility",
+        "hardware",
+        "error-handling"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_arm.cpp:init_global",
+      "type": "function",
+      "name": "init_global",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "lineRange": [
+        59,
+        70
+      ],
+      "summary": "全局初始化：std::call_once 保证 rm_init(RM_TRIPLE_MODE_E) 整个进程只调用一次，幂等返回 0。",
+      "tags": [
+        "hardware",
+        "singleton",
+        "service"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_arm.cpp:connect",
+      "type": "function",
+      "name": "connect",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "lineRange": [
+        81,
+        120
+      ],
+      "summary": "通过 rm_create_robot_arm 建立 IP:port 连接，成功更新 connected，失败/达上限时清理 handle 并填 reason。",
+      "tags": [
+        "hardware",
+        "service",
+        "io"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_arm.cpp:disconnect",
+      "type": "function",
+      "name": "disconnect",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "lineRange": [
+        122,
+        131
+      ],
+      "summary": "幂等断开：rm_delete_robot_arm 释放 handle 并更新 connected=false。",
+      "tags": [
+        "hardware",
+        "service",
+        "io"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_arm.cpp:fill_pose_from_state",
+      "type": "function",
+      "name": "fill_pose_from_state",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "lineRange": [
+        133,
+        153
+      ],
+      "summary": "把 SDK rm_current_arm_state_t 的 pose 逐字段拷到 RmPose 镜像，校验有限性与四元数合法性，非法返回 false 不更新快照。",
+      "tags": [
+        "hardware",
+        "serialization",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_arm.cpp:movel",
+      "type": "function",
+      "name": "movel",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "lineRange": [
+        194,
+        227
+      ],
+      "summary": "下发 rm_movel 目标位姿（速度百分比/融合半径/阻塞标志），返回 SDK 码并在失败时同步快照 sdk_code/reason。",
+      "tags": [
+        "hardware",
+        "service",
+        "motion-control"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_arm.cpp:set_emergency_stop",
+      "type": "function",
+      "name": "set_emergency_stop",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "lineRange": [
+        229,
+        244
+      ],
+      "summary": "调用 rm_set_arm_emergency_stop 设置/恢复急停，同步更新 estop_active 并返回 SDK 码。",
+      "tags": [
+        "hardware",
+        "safety",
+        "service"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_arm.cpp:hard_stop",
+      "type": "function",
+      "name": "hard_stop",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "lineRange": [
+        246,
+        256
+      ],
+      "summary": "调用 rm_set_arm_stop 执行不可恢复的轨迹急停，仅用于硬急停路径。",
+      "tags": [
+        "hardware",
+        "safety",
+        "service"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:Rm65DualArmNode",
+      "type": "function",
+      "name": "Rm65DualArmNode",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "lineRange": [
+        43,
+        110
+      ],
+      "summary": "构造函数：加载校验配置、init_global 全局 SDK、创建左右 Rm65Arm、注册发布/订阅/service、构造 pose/health wall_timer，并尝试连接两臂。",
+      "tags": [
+        "entry-point",
+        "ros2",
+        "service"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:~Rm65DualArmNode",
+      "type": "function",
+      "name": "~Rm65DualArmNode",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "lineRange": [
+        112,
+        121
+      ],
+      "summary": "析构：断开左右臂连接，RAII 收尾。",
+      "tags": [
+        "ros2",
+        "service",
+        "lifecycle"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:load_and_validate_config",
+      "type": "function",
+      "name": "load_and_validate_config",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "lineRange": [
+        123,
+        191
+      ],
+      "summary": "逐项 declare_parameter 读取配置，对硬性约束（左右 IP 不同、速度/步长上下限、frame_id 固定）做 fail-fast 校验，任一违反抛 std::runtime_error。",
+      "tags": [
+        "validation",
+        "configuration",
+        "safety"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:on_emergency_stop",
+      "type": "function",
+      "name": "on_emergency_stop",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "lineRange": [
+        217,
+        243
+      ],
+      "summary": "/hardware/rm65/emergency_stop service 回调：根据 SetBool 对左右臂调用 set_emergency_stop，更新全局 estop_active 并填响应。",
+      "tags": [
+        "service",
+        "safety",
+        "event-handler"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:handle_target",
+      "type": "function",
+      "name": "handle_target",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "lineRange": [
+        245,
+        303
+      ],
+      "summary": "核心闸门编排：对单侧目标依次过 permit_guard→target_validator→delta_guard→estop→SDK 连接检查，全部通过才下发 rm_movel，任一失败填 reject_reason。",
+      "tags": [
+        "entry-point",
+        "safety",
+        "validation",
+        "service"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:on_pose_timer",
+      "type": "function",
+      "name": "on_pose_timer",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "lineRange": [
+        305,
+        330
+      ],
+      "summary": "pose 定时回调：update_state 读左右臂状态，转 ROS Pose 后发布到 /arm/{left,right}_tcp_pose。",
+      "tags": [
+        "ros2",
+        "service",
+        "event-handler"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:on_health_timer",
+      "type": "function",
+      "name": "on_health_timer",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "lineRange": [
+        332,
+        363
+      ],
+      "summary": "health 定时回调：聚合左右臂快照与缓存的健康信息，发布 /hardware/rm65/health HardwareHealth 消息。",
+      "tags": [
+        "ros2",
+        "service",
+        "event-handler",
+        "monitoring"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "lineRange": [
+        371,
+        388
+      ],
+      "summary": "可执行入口：rclcpp::init、构造 Rm65DualArmNode 并 spin，捕获构造异常打 FATAL 后退出，退出前 destroy_global 收尾。",
+      "tags": [
+        "entry-point",
+        "ros2"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:rm65_dual_arm/src/target_validator.cpp:validate_target",
+      "type": "function",
+      "name": "validate_target",
+      "filePath": "rm65_dual_arm/src/target_validator.cpp",
+      "lineRange": [
+        23,
+        78
+      ],
+      "summary": "对单条 PoseStamped 做静态与时间校验：frame_id 匹配、有限性、四元数范数、stamp 过期/缺失，返回带稳定 reason_code 的 ValidationResult。",
+      "tags": [
+        "validation",
+        "safety",
+        "entry-point"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:rm65_dual_arm/tests/test_delta_guard.cpp:make_rm_pose",
+      "type": "function",
+      "name": "make_rm_pose",
+      "filePath": "rm65_dual_arm/tests/test_delta_guard.cpp",
+      "lineRange": [
+        38,
+        51
+      ],
+      "summary": "测试辅助：用 x/y/z 与四元数 qw/qx/qy/qz 构造 RmPose 镜像结构体，供 check_delta 用例使用。",
+      "tags": [
+        "test-helper",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:rm65_dual_arm/tests/test_target_validator.cpp:make_target",
+      "type": "function",
+      "name": "make_target",
+      "filePath": "rm65_dual_arm/tests/test_target_validator.cpp",
+      "lineRange": [
+        15,
+        33
+      ],
+      "summary": "测试辅助：按 frame_id、stamp_sec 与 x/y/z 构造 PoseStamped（含秒→纳秒 stamp 拆分），供 validate_target 用例使用。",
+      "tags": [
+        "test-helper",
+        "data-model"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:elephant_gripper/tests/service/test_frame_codec.py",
+      "target": "function:elephant_gripper/tests/service/test_frame_codec.py:_bitloop_crc",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:gripper_ctrl.py",
+      "target": "function:gripper_ctrl.py:crc16_modbus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:gripper_ctrl.py",
+      "target": "function:gripper_ctrl.py:send_cmd",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:gripper_ctrl.py",
+      "target": "function:gripper_ctrl.py:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "target": "function:rm65_dual_arm/launch/rm65_dual_arm.launch.py:generate_launch_description",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "function:rm65_dual_arm/src/delta_guard.cpp:compute_pose_delta",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "function:rm65_dual_arm/src/delta_guard.cpp:check_delta",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/permit_guard.cpp",
+      "target": "function:rm65_dual_arm/src/permit_guard.cpp:resolve",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:is_valid_ros_quaternion",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_quat_to_ros",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_quat_to_rm",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:euler_to_ros_quaternion",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_quaternion_to_euler",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_pose_to_ros_pose",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_pose_to_rm_pose",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:sdk_code_text",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:init_global",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:connect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:disconnect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:fill_pose_from_state",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:movel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:set_emergency_stop",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:hard_stop",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:Rm65DualArmNode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:~Rm65DualArmNode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:load_and_validate_config",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:on_emergency_stop",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:handle_target",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:on_pose_timer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:on_health_timer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/src/target_validator.cpp",
+      "target": "function:rm65_dual_arm/src/target_validator.cpp:validate_target",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/tests/test_delta_guard.cpp",
+      "target": "function:rm65_dual_arm/tests/test_delta_guard.cpp:make_rm_pose",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:rm65_dual_arm/tests/test_target_validator.cpp",
+      "target": "function:rm65_dual_arm/tests/test_target_validator.cpp:make_target",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_frame_codec.py",
+      "target": "function:elephant_gripper/tests/service/test_frame_codec.py:_bitloop_crc",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:gripper_ctrl.py",
+      "target": "function:gripper_ctrl.py:crc16_modbus",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:gripper_ctrl.py",
+      "target": "function:gripper_ctrl.py:send_cmd",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:gripper_ctrl.py",
+      "target": "function:gripper_ctrl.py:main",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "target": "function:rm65_dual_arm/launch/rm65_dual_arm.launch.py:generate_launch_description",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_frame_codec.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:rm65_dual_arm/src/delta_guard.cpp:check_delta",
+      "target": "function:rm65_dual_arm/src/delta_guard.cpp:compute_pose_delta",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/delta_guard.cpp:compute_pose_delta",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:is_valid_ros_quaternion",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/delta_guard.cpp:check_delta",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_pose_to_ros_pose",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_pose_to_ros_pose",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_quat_to_ros",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_pose_to_ros_pose",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:is_valid_ros_quaternion",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_pose_to_rm_pose",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_quat_to_rm",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_pose_to_rm_pose",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_quaternion_to_euler",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/pose_conversion.cpp:ros_pose_to_rm_pose",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:is_valid_ros_quaternion",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_arm.cpp:movel",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:sdk_code_text",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_arm.cpp:set_emergency_stop",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:sdk_code_text",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_arm.cpp:fill_pose_from_state",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_quat_to_ros",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_arm.cpp:fill_pose_from_state",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:is_valid_ros_quaternion",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:Rm65DualArmNode",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:load_and_validate_config",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:Rm65DualArmNode",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:init_global",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:Rm65DualArmNode",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:connect",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:~Rm65DualArmNode",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:disconnect",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:on_emergency_stop",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:set_emergency_stop",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:handle_target",
+      "target": "function:rm65_dual_arm/src/target_validator.cpp:validate_target",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:handle_target",
+      "target": "function:rm65_dual_arm/src/delta_guard.cpp:check_delta",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:handle_target",
+      "target": "function:rm65_dual_arm/src/rm65_arm.cpp:movel",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:handle_target",
+      "target": "function:rm65_dual_arm/src/permit_guard.cpp:resolve",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:on_pose_timer",
+      "target": "function:rm65_dual_arm/src/pose_conversion.cpp:rm_pose_to_ros_pose",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:main",
+      "target": "function:rm65_dual_arm/src/rm65_dual_arm_node.cpp:Rm65DualArmNode",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "file:rm65_dual_arm/tests/test_delta_guard.cpp",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/src/permit_guard.cpp",
+      "target": "file:rm65_dual_arm/tests/test_permit_guard.cpp",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "file:rm65_dual_arm/tests/test_pose_conversion.cpp",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/src/target_validator.cpp",
+      "target": "file:rm65_dual_arm/tests/test_target_validator.cpp",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "target": "file:elephant_gripper/tests/service/test_frame_codec.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/target_validator.cpp",
+      "target": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/src/permit_guard.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/src/target_validator.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "target": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "triggers",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:rm65_dual_arm/lib/SDK_VENDOR_README.txt",
+      "target": "file:rm65_dual_arm/lib/install_libs.sh",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/lib/install_libs.sh",
+      "target": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "type": "provisions",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/permit_guard.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/target_validator.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/target_validator.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

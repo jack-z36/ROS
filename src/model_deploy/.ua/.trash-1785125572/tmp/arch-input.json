@@ -1,0 +1,5786 @@
+{
+  "fileNodes": [
+    {
+      "id": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "file",
+      "name": "schema.py",
+      "filePath": "elephant_gripper/elephant_gripper/config/schema.py",
+      "summary": "定义 Elephant 夹爪的配置数据模型，包括链路配置、宽度-角度标定参数与节点级运行参数，并在 dataclass 构造时逐项执行完整性校验。",
+      "tags": [
+        "data-model",
+        "configuration",
+        "validation",
+        "schema-definition",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "type": "file",
+      "name": "config_loader.py",
+      "filePath": "elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "summary": "从 YAML 文件或 ROS 参数字典中解析并组装夹爪节点配置，提供类型转换、范围校验与缺省值填充的辅助函数。",
+      "tags": [
+        "configuration",
+        "factory",
+        "validation",
+        "yaml-parsing",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "type": "file",
+      "name": "serial_link.py",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "summary": "基于后台线程管理单侧夹爪串行链路，负责命令下发、遥测读取、急停（estop）与指数退避重连，是硬件通信的核心运行时组件。",
+      "tags": [
+        "runtime",
+        "serial",
+        "hardware",
+        "threading",
+        "service",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "type": "file",
+      "name": "health_aggregator.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "summary": "汇总左右夹爪链路的健康信号，依据连接状态、连续错误计数与接收时延判定设备与节点的健康等级。",
+      "tags": [
+        "monitoring",
+        "health",
+        "aggregation",
+        "service",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "type": "file",
+      "name": "mapping.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/mapping.py",
+      "summary": "提供夹爪宽度与电机角度之间的双向线性映射，基于标定参数做限幅与取整。",
+      "tags": [
+        "utility",
+        "mapping",
+        "calibration",
+        "math",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "file",
+      "name": "gripper_types.py",
+      "filePath": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "summary": "定义夹爪包的共享类型词汇表，包括侧别枚举、夹持状态、健康等级、状态采样、命令及设备/节点健康报告等数据类。",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "enumeration",
+        "shared-types",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "type": "file",
+      "name": "test_config_loader.py",
+      "filePath": "elephant_gripper/tests/repo/test_config_loader.py",
+      "summary": "针对配置加载器的合法加载、缺失字段、非法取值与默认值场景编写单元测试。",
+      "tags": [
+        "test",
+        "configuration",
+        "validation",
+        "unit-test"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "type": "file",
+      "name": "test_serial_link.py",
+      "filePath": "elephant_gripper/tests/runtime/test_serial_link.py",
+      "summary": "使用 FakeSerial 验证串行链路的遥测更新、命令下发、急停阻断与断连健康降级行为。",
+      "tags": [
+        "test",
+        "serial",
+        "hardware",
+        "integration-test"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/tests/service/test_health_aggregator.py",
+      "type": "file",
+      "name": "test_health_aggregator.py",
+      "filePath": "elephant_gripper/tests/service/test_health_aggregator.py",
+      "summary": "验证设备与节点健康聚合逻辑，覆盖断连、错误阈值、接收陈旧与急停细节上报等场景。",
+      "tags": [
+        "test",
+        "monitoring",
+        "health",
+        "unit-test"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/tests/service/test_mapping.py",
+      "type": "file",
+      "name": "test_mapping.py",
+      "filePath": "elephant_gripper/tests/service/test_mapping.py",
+      "summary": "检验宽度-角度映射的端点值、限幅行为、受限标定区间与往返稳定性。",
+      "tags": [
+        "test",
+        "mapping",
+        "calibration",
+        "unit-test"
+      ]
+    },
+    {
+      "id": "file:act/repo/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/repo/__init__.py",
+      "summary": "act/repo 包入口，统一导出 bundle 读取、manifest 解析、experiment 配置加载、normalizer 加载与运行时资源装配等仓库层模块。",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "repository-layer",
+        "re-export",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/repo/act_runtime_resources.py",
+      "type": "file",
+      "name": "act_runtime_resources.py",
+      "filePath": "act/repo/act_runtime_resources.py",
+      "summary": "装配 ACT 运行时所需的全部资源（policy 加载器、state/action normalizer、PolicyInputSpec），并执行 bundle 结构与维度一致性的交叉校验，产出 ActRuntimeResources。",
+      "tags": [
+        "repository-layer",
+        "factory",
+        "runtime-resources",
+        "validation",
+        "policy-loading",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/repo/bundle_reader.py",
+      "type": "file",
+      "name": "bundle_reader.py",
+      "filePath": "act/repo/bundle_reader.py",
+      "summary": "解析 bundle 目录结构，提供 adapter 目录定位、必需文件校验与 checkpoint 路径解析（优先 manifest 显式声明，缺失时 rglob 回退查找）。",
+      "tags": [
+        "repository-layer",
+        "bundle-io",
+        "validation",
+        "checkpoint",
+        "file-system",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/repo/experiment_config_loader.py",
+      "type": "file",
+      "name": "experiment_config_loader.py",
+      "filePath": "act/repo/experiment_config_loader.py",
+      "summary": "从 YAML 文件加载 experiment 配置并校验返回类型为字典，失败时抛出 ExperimentConfigLoadError。",
+      "tags": [
+        "repository-layer",
+        "config-loader",
+        "yaml",
+        "validation",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/repo/manifest_parser.py",
+      "type": "file",
+      "name": "manifest_parser.py",
+      "filePath": "act/repo/manifest_parser.py",
+      "summary": "读取 bundle 目录下的 manifest JSON 文件并解析为字典，供运行时资源装配消费。",
+      "tags": [
+        "repository-layer",
+        "manifest",
+        "json",
+        "bundle-io",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/repo/normalization.py",
+      "type": "file",
+      "name": "normalization.py",
+      "filePath": "act/repo/normalization.py",
+      "summary": "定义 ActionStateNormalizer，基于 mean/std 向量对 state 或 action 做逐分量线性 normalize/unnormalize，未配置维度的索引保持恒等。",
+      "tags": [
+        "repository-layer",
+        "normalization",
+        "data-model",
+        "numpy",
+        "transform",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/repo/normalizer_loader.py",
+      "type": "file",
+      "name": "normalizer_loader.py",
+      "filePath": "act/repo/normalizer_loader.py",
+      "summary": "从 bundle 目录的 normalizers JSON 加载 state 与 action 两路 ActionStateNormalizer 实例，缺失时回退为恒等归一化。",
+      "tags": [
+        "repository-layer",
+        "normalizer-loader",
+        "json",
+        "bundle-io",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/types/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/types/__init__.py",
+      "summary": "act.types 子包的 barrel 入口，集中再导出 action_publish、action_spec、contract_result、observation、safety_result、state_spec 模块中的公共类型，供 act 推理栈统一消费。",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "type-definition",
+        "re-export",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/types/action_publish.py",
+      "type": "file",
+      "name": "action_publish.py",
+      "filePath": "act/types/action_publish.py",
+      "summary": "定义动作下发链路的核心 dataclass：发布请求、命令许可、双臂位姿目标、话题载荷捆绑包，以及最终汇总动作下发结果（含安全状态、命令计数、失败阶段等诊断字段），每个类在 __post_init__ 中执行严格的数值与类型校验。",
+      "tags": [
+        "data-model",
+        "validation",
+        "serialization",
+        "publish-pipeline",
+        "type-definition",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/types/action_spec.py",
+      "type": "file",
+      "name": "action_spec.py",
+      "filePath": "act/types/action_spec.py",
+      "summary": "定义动作张量规范：ActionSpec 持有左右臂 TCP 动作与夹爪开合度，提供 as_vector() 展平为浮点向量；附带 ensure_action_vector 与 split_action 工具函数完成 (7+7+1+1) 维动作的校验与拆解。",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "action-spec",
+        "utility",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/types/contract_result.py",
+      "type": "file",
+      "name": "contract_result.py",
+      "filePath": "act/types/contract_result.py",
+      "summary": "定义数据契约校验结果类型：BundleContractResult 描述 bundle 文件契约通过/失败状态，NormalizerContractResult 描述归一化器维度契约校验结果，二者均提供 is_pass() 便捷谓词。",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "validation",
+        "contract",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/types/observation.py",
+      "type": "file",
+      "name": "observation.py",
+      "filePath": "act/types/observation.py",
+      "summary": "定义观测数据模型：ObservationState 封装双臂 TCP 位姿与夹爪宽度，ObservationSnapshot 携带多路图像、关节状态与编码后状态向量并在构造时统一规范化为 float32 连续数组；ObservationFreshnessResult 记录各字段的新鲜度与缺失情况。",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "observation",
+        "validation",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/types/safety_result.py",
+      "type": "file",
+      "name": "safety_result.py",
+      "filePath": "act/types/safety_result.py",
+      "summary": "定义安全闸控的数据结构：SafetyStatus 与 SafetyCode 枚举描述安全闸的离散状态，SafetyFinding 记录单条安全发现（含 code、side、前后值与详情），SafetyResult 聚合动作下发前的安全状态、被评估动作与发现列表。",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "safety",
+        "validation",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/types/state_spec.py",
+      "type": "file",
+      "name": "state_spec.py",
+      "filePath": "act/types/state_spec.py",
+      "summary": "定义观测状态张量规范：StateSpec 维护按段名组织的关节分段维度与偏移并提供 total_dim()，配合 ensure_state_vector 与 encode_state 将双臂位姿 + 夹爪宽度拼接并校验为模型输入所需的一维 float32 状态向量。",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "state-spec",
+        "utility",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "file",
+      "name": "fake_serial.py",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "summary": "在内存中模拟 gripper 串口设备请求/响应的脚本化 stand-in，仅实现 serial.Serial 被 GripperSerialLink 使用到的子集，使 runtime 与 supervisor 可在无硬件条件下被测试。",
+      "tags": [
+        "test-double",
+        "serial",
+        "hardware-simulation",
+        "gripper",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "type": "file",
+      "name": "gripper_supervisor.py",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "summary": "协调左右两个 gripper link、permit 状态与急停（estop）的核心调度器；仅做 O(1) 决策与快照，所有串口 I/O 委托给 link 工作线程，且不导入任何 ROS 依赖。",
+      "tags": [
+        "service",
+        "orchestrator",
+        "permit-gating",
+        "estop",
+        "gripper",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "type": "file",
+      "name": "permit_gate.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "summary": "命令放行判定的唯一真相源（pure function，无 ROS 依赖）：仅在 permit 存在、allowed=True 且未超过 timeout 时返回 True，体现 default-deny 安全语义。",
+      "tags": [
+        "permit-gating",
+        "validation",
+        "pure-function",
+        "safety",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "file",
+      "name": "command_permit.py",
+      "filePath": "elephant_gripper/elephant_gripper/types/command_permit.py",
+      "summary": "服务层使用的本地（RAM）CommandPermit 不可变 dataclass，刻意与 ROS act_interfaces/CommandPermit 消息解耦，使 service 层无需导入 ROS 即可推理 permit。",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "permit",
+        "dataclass"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "type": "file",
+      "name": "elephant_gripper_node.py",
+      "filePath": "elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "summary": "elephant_gripper 的 ROS 2 节点，是唯一导入 rclpy 与 act_interfaces 消息的层；负责 ROS 消息与 RAM 类型互转，并将所有串口 I/O 委托给 GripperSupervisor 的工作线程，回调保持 O(1)。",
+      "tags": [
+        "entry-point",
+        "ros-node",
+        "api-handler",
+        "gripper",
+        "adapter"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "type": "file",
+      "name": "test_supervisor.py",
+      "filePath": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "summary": "针对 GripperSupervisor 的运行时行为测试：覆盖无 permit 丢命令、有效 permit 放行、permit 过期、estop 锁存与清除、健康聚合等关键路径，使用 FakeSerial 无硬件运行。",
+      "tags": [
+        "test",
+        "supervisor",
+        "permit-gating",
+        "estop",
+        "gripper"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "type": "file",
+      "name": "test_permit_gate.py",
+      "filePath": "elephant_gripper/tests/service/test_permit_gate.py",
+      "summary": "针对 evaluate_permit 纯函数的边界测试：覆盖缺失、denied、新鲜放行、过期、恰好等于 timeout、未来时间戳等分支。",
+      "tags": [
+        "test",
+        "permit-gating",
+        "validation",
+        "unit-test"
+      ]
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "file",
+      "name": "test_l2_06_gate.py",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "summary": "L2-06 关卡式集成测试，将 act/ 全栈（config→repo→runtime→service→types→ui）装配进 FakeClock/FakeNode/StubService 替身，分 G01-G12 十二个 TestClass 覆盖类型契约、配置、seam、信道、worker、调度、回退、生命周期、全链路 tracer、ROS 空运行与命令默认拒绝等行为。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "ros-stub",
+        "composition-root"
+      ]
+    },
+    {
+      "id": "file:act/tests/types/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/types/__init__.py",
+      "summary": "tests/types 子包的空标记包文件，仅占位以使 model_deploy.act.tests.types 成为合法 Python package，不导出任何符号。",
+      "tags": [
+        "entry-point",
+        "package-init",
+        "marker"
+      ]
+    },
+    {
+      "id": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "file",
+      "name": "test_act_deploy_main.py",
+      "filePath": "act/tests/ui/test_act_deploy_main.py",
+      "summary": "针对 act_deploy_node 模块的 main() 入口与 build_arg_parser CLI 进行单元/边界测试，使用 patched_main + FakeRclpy + FakeDeployNode 替身验证返回码、命令输出标志传递、构造异常与键盘中断处理，并断言模块加载阶段不导入 ROS。",
+      "tags": [
+        "test",
+        "entry-point",
+        "cli-parser",
+        "ros-stub",
+        "return-code"
+      ]
+    },
+    {
+      "id": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "file",
+      "name": "test_act_deploy_node.py",
+      "filePath": "act/tests/ui/test_act_deploy_node.py",
+      "summary": "针对 ActDeployNode 的组合装配与生命周期进行单元测试：FakeActDeployNode 通过 _ros_* 私有 hook 注入替身（create_timer/cancel_timer/create_metrics_publisher/time_seconds/destroy_node），覆盖原子启动、定时器驱动 tick、控制环错误锁存、permit 解析拒绝路径、C20 遥测主题稳定 JSON 与幂等/超时关闭。",
+      "tags": [
+        "test",
+        "lifecycle",
+        "ros-stub",
+        "telemetry",
+        "composition"
+      ]
+    },
+    {
+      "id": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "file",
+      "name": "test_startup_preflight.py",
+      "filePath": "act/tests/ui/test_startup_preflight.py",
+      "summary": "针对 run_startup_preflight 启动契约进行 B12 单元测试：用 _spec/_loose_spec 工厂对照 inference_service、pipeline、resources 各组件逐一注入偏差（state/action/chunk/camera/image layout/dtype/value_range/shapes、clock domain、queue capacity、permit_source），断言 preflight 在 canonical 集合上通过、在任一偏差上失败。",
+      "tags": [
+        "test",
+        "validation",
+        "contract",
+        "preflight",
+        "spec-identity"
+      ]
+    },
+    {
+      "id": "file:act/ui/act_deploy_node.py",
+      "type": "file",
+      "name": "act_deploy_node.py",
+      "filePath": "act/ui/act_deploy_node.py",
+      "summary": "ACT 部署框架的进程/ROS 组合根节点（L2-06），原子化装配 L2-02..05 公共对象与运行时（ControlLoop + InferenceWorker），通过 ROS 定时器驱动控制循环并向 /act/metrics 发布运行时遥测，保证有界、失败即关闭的生命周期管理。",
+      "tags": [
+        "entry-point",
+        "ros-node",
+        "lifecycle",
+        "composition-root",
+        "telemetry",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/ui/action_publisher.py",
+      "type": "file",
+      "name": "action_publisher.py",
+      "filePath": "act/ui/action_publisher.py",
+      "summary": "ACT 部署的 ROS 候选消息打包（deploy_043）与门控发布（deploy_044）模块，将策略动作打包为五条 ROS 消息（policy/左右臂/左右夹爪），按 CLI 主开关与每滴答 CommandPermit 双重门控写入命令话题，并实现夹爪防抖与状态发布。",
+      "tags": [
+        "ros-publisher",
+        "message-packing",
+        "gated-publish",
+        "action-output",
+        "anti-flutter",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/ui/observation_pipeline.py",
+      "type": "file",
+      "name": "observation_pipeline.py",
+      "filePath": "act/ui/observation_pipeline.py",
+      "summary": "观测流水线的冻结类型化组装门面（deploy_057），从单一 DeployConfig 与规范 PolicyInputSpec 装配完整 L2-02 观测链（collector + buffer + adapter），所有 RAM 校验先于任何 ROS 订阅创建，确保错误配置快速失败而非泄漏部分订阅。",
+      "tags": [
+        "facade",
+        "observation-pipeline",
+        "validation",
+        "factory",
+        "fail-fast",
+        "tested"
+      ]
+    },
+    {
+      "id": "document:ENVIRONMENT.md",
+      "type": "document",
+      "name": "ENVIRONMENT.md",
+      "filePath": "ENVIRONMENT.md",
+      "summary": "model_deploy 工作空间的运行环境说明文档，明确硬件驱动节点不使用 conda 而依赖 ROS2 Jazzy 系统包与系统 Python，并列出系统依赖、colcon 构建步骤、测试命令、包列表、启动入口与 udev 规则。",
+      "tags": [
+        "documentation",
+        "环境配置",
+        "ros2",
+        "构建说明",
+        "部署"
+      ]
+    },
+    {
+      "id": "config:environment.yml",
+      "type": "config",
+      "name": "environment.yml",
+      "filePath": "environment.yml",
+      "summary": "model_deploy Conda 环境定义文件，固定环境名为 model_deploy（Python 3.12），声明 torch/torchvision/numpy/pyyaml/opencv-python/pytest 的版本下界，并注释说明 RTX 5080 Blackwell 需用 cu128 索引单独安装 PyTorch。",
+      "tags": [
+        "configuration",
+        "conda",
+        "环境依赖",
+        "pytorch",
+        "build-system"
+      ]
+    },
+    {
+      "id": "document:requirements.txt",
+      "type": "document",
+      "name": "requirements.txt",
+      "filePath": "requirements.txt",
+      "summary": "model_deploy Conda 环境的 pip 依赖清单，服务于 act/ 推理栈，声明 torch(cu128)/torchvision/numpy/pyyaml/opencv-python/pytest 的版本下界，并备注 act 核心层完全不依赖 ROS、pi05 重型依赖不在清单内。",
+      "tags": [
+        "documentation",
+        "依赖清单",
+        "pip",
+        "pytorch",
+        "环境配置"
+      ]
+    },
+    {
+      "id": "file:act/scripts/l2_02_verify.sh",
+      "type": "file",
+      "name": "l2_02_verify.sh",
+      "filePath": "act/scripts/l2_02_verify.sh",
+      "summary": "L2-02 ObservationSnapshot 统一验收脚本，按 L2 Gate 12 标签逐项运行 pytest 与 ripgrep 边界扫描，分组输出 PASS/FAIL/BLOCKED，并校验 ObservationSnapshot 在 types/service/runtime/ui 各层的契约。",
+      "tags": [
+        "test",
+        "verification",
+        "shell",
+        "ci-cd",
+        "boundary-scan",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/scripts/l2_03_verify.sh",
+      "type": "file",
+      "name": "l2_03_verify.sh",
+      "filePath": "act/scripts/l2_03_verify.sh",
+      "summary": "L2-03 ACT Inference 统一验收脚本，分批运行 ActInferenceService 的 observation_batch、policy、postprocess 阶段测试，并执行三阶段闭环 Gate 集成测试，强制无 ROS/硬件/safety 越界。",
+      "tags": [
+        "test",
+        "verification",
+        "shell",
+        "ci-cd",
+        "act-inference",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/scripts/l2_05_verify.sh",
+      "type": "file",
+      "name": "l2_05_verify.sh",
+      "filePath": "act/scripts/l2_05_verify.sh",
+      "summary": "L2-05 Action Publisher 验收脚本，通过 --case 子命令切换 local/command-disabled/permit-blocked/topic-payloads/ros-message-bundle/command-enabled-mock/ros-observe 七种场景，运行 G01-G17 标签并在 ROS/硬件缺失时记录预期 BLOCKED。",
+      "tags": [
+        "test",
+        "verification",
+        "shell",
+        "ci-cd",
+        "action-publisher",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/scripts/l2_06_verify.sh",
+      "type": "file",
+      "name": "l2_06_verify.sh",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "summary": "L2-06 Gate 跨模块集成验收脚本，作为 L2-02→L2-03→L2-06→L2-04→L2-05 tracer bullet 唯一入口，运行 G01-G12 真实 production contract 集成测试与全量回归 baseline，外部 scope (ros-dry-run/real-policy-dry-run) 记 BLOCKED_ENV/BLOCKED_ARTIFACT/BLOCKED_HARDWARE。",
+      "tags": [
+        "test",
+        "verification",
+        "shell",
+        "ci-cd",
+        "integration-gate",
+        "tested"
+      ]
+    },
+    {
+      "id": "document:act_system/CMakeLists.txt",
+      "type": "document",
+      "name": "CMakeLists.txt",
+      "filePath": "act_system/CMakeLists.txt",
+      "summary": "act_system 包的 ament_cmake 构建清单；作为纯资源包，无任何编译目标，仅将 launch/ 目录与启动脚本安装到 share 与 lib 路径下。",
+      "tags": [
+        "configuration",
+        "build-system",
+        "ros-package",
+        "ament-cmake",
+        "infrastructure"
+      ]
+    },
+    {
+      "id": "document:act_system/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "act_system/README.md",
+      "summary": "act_system 系统集成包的中文使用文档，详述一键启动脚本流程、启动的四大组件、参数与环境变量、真机前置条件、故障排查（含 conda Python 冲突修复）以及测试结果与未验证项。",
+      "tags": [
+        "documentation",
+        "ros-package",
+        "deployment",
+        "orchestration",
+        "entry-point"
+      ]
+    },
+    {
+      "id": "config:act_system/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "act_system/package.xml",
+      "summary": "act_system 的 ROS2 包清单（format 3，ament_cmake 构建工具），声明对 rm65_dual_arm、elephant_gripper、dual_fisheye_camera、launch、launch_ros 的 exec_depend，明确本包只做启动编排、不含 SDK/推理/deadman 逻辑。",
+      "tags": [
+        "configuration",
+        "ros-package",
+        "manifest",
+        "ament-cmake",
+        "infrastructure"
+      ]
+    },
+    {
+      "id": "document:dual_fisheye_camera/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "dual_fisheye_camera/README.md",
+      "summary": "双鱼眼相机 ROS 2 节点包 dual_fisheye_camera 的说明文档：阐述通过 V4L2 持续发布左右鱼眼图像流与相机 HardwareHealth 状态的设计，复用 v4l2_camera_node 而不重写驱动。包含发布/订阅 topic、Health 字段映射、构建运行步骤、关键约束与真机风险清单共 13 个章节。",
+      "tags": [
+        "documentation",
+        "ros",
+        "camera",
+        "entry-point",
+        "v4l2"
+      ]
+    },
+    {
+      "id": "config:dual_fisheye_camera/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "dual_fisheye_camera/package.xml",
+      "summary": "ROS 2 ament_python 包清单文件，声明 dual_fisheye_camera 的构建类型与依赖：rclpy、sensor_msgs、launch、launch_ros，运行时依赖 v4l2_camera、v4l-utils 与 act_interfaces，并提供 ament_lint/pytest 测试依赖。",
+      "tags": [
+        "configuration",
+        "ros",
+        "package-manifest",
+        "ament-python",
+        "build-system"
+      ]
+    },
+    {
+      "id": "config:dual_fisheye_camera/setup.cfg",
+      "type": "config",
+      "name": "setup.cfg",
+      "filePath": "dual_fisheye_camera/setup.cfg",
+      "summary": "Python 包安装脚本路径配置，指定 develop 与 install 阶段的可执行脚本落点为 $base/lib/dual_fisheye_camera，配合 ament_python 的 setup.py 注册入口点。",
+      "tags": [
+        "configuration",
+        "ros",
+        "ament-python",
+        "build-system"
+      ]
+    },
+    {
+      "id": "document:elephant_gripper/elephant_gripper_architecture.md",
+      "type": "document",
+      "name": "elephant_gripper_architecture.md",
+      "filePath": "elephant_gripper/elephant_gripper_architecture.md",
+      "summary": "elephant_gripper 这个 ROS 2（Jazzy / ament_python）节点的设计文档，详述六层分层架构（types→config→repo→service→runtime→ui）、双 USB-485 自定义 Modbus 协议帧、每夹爪独立事务线程的并发模型，以及许可门控、急停、指数退避重连等 Fail-safe 策略。",
+      "tags": [
+        "documentation",
+        "architecture",
+        "ros2",
+        "hardware-driver",
+        "fail-safe"
+      ]
+    },
+    {
+      "id": "config:elephant_gripper/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "elephant_gripper/package.xml",
+      "summary": "elephant_gripper 这个 ROS 2 ament_python 包的 manifest（package format 3），声明构建类型为 ament_python，并列出运行期依赖（rclpy、std_msgs、std_srvs、act_interfaces、python3-serial、launch_ros 等）与 lint/测试依赖。",
+      "tags": [
+        "configuration",
+        "ros2",
+        "ament-python",
+        "package-manifest",
+        "build-system"
+      ]
+    },
+    {
+      "id": "config:elephant_gripper/setup.cfg",
+      "type": "config",
+      "name": "setup.cfg",
+      "filePath": "elephant_gripper/setup.cfg",
+      "summary": "elephant_gripper 包的 setuptools 配置，指定 develop 与 install 阶段脚本安装到 $base/lib/elephant_gripper，是 ament_python 包将可执行节点装入 ROS 安装树的标准配置。",
+      "tags": [
+        "configuration",
+        "ros2",
+        "ament-python",
+        "setuptools",
+        "build-system"
+      ]
+    },
+    {
+      "id": "document:rm65_dual_arm/CMakeLists.txt",
+      "type": "document",
+      "name": "CMakeLists.txt",
+      "filePath": "rm65_dual_arm/CMakeLists.txt",
+      "summary": "rm65_dual_arm 包的 ament_cmake 构建脚本：声明对 rclcpp/geometry_msgs/act_interfaces 等的依赖，按 vendor 方式集成睿尔曼 libRM_Service.so，并条件构建 rm65_dual_arm_node 可执行文件与四组纯逻辑 gtest。",
+      "tags": [
+        "build-system",
+        "cmake",
+        "ros2",
+        "ament-cmake",
+        "infrastructure"
+      ]
+    },
+    {
+      "id": "document:rm65_dual_arm/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "rm65_dual_arm/README.md",
+      "summary": "rm65_dual_arm 双臂 ROS2 节点的完整说明文档，覆盖 topic/service 接口、多重安全闸门（permit_guard/target_validator/delta_guard）、delta_guard 微小运动安全规约、vendor SDK 集成步骤、构建测试流程与强制真机测试规约。",
+      "tags": [
+        "documentation",
+        "ros2",
+        "safety",
+        "dual-arm",
+        "entry-point"
+      ]
+    },
+    {
+      "id": "config:rm65_dual_arm/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "rm65_dual_arm/package.xml",
+      "summary": "rm65_dual_arm ROS2 包清单（format 3），声明包描述、Apache-2.0 许可、buildtool_depend ament_cmake，以及 rclcpp/geometry_msgs/std_msgs/std_srvs/act_interfaces 等运行与编译依赖和 ament_cmake_gtest 测试依赖。",
+      "tags": [
+        "configuration",
+        "ros2",
+        "package-manifest",
+        "ament-cmake",
+        "infrastructure"
+      ]
+    },
+    {
+      "id": "file:.ua/.understandignore",
+      "type": "file",
+      "name": ".understandignore",
+      "filePath": ".ua/.understandignore",
+      "summary": "Understand-Anything 分析工具的忽略规则模板文件，按 .gitignore 语法列出可排除的测试/构建产物 glob，默认全部被注释（未启用）。",
+      "tags": [
+        "configuration",
+        "documentation",
+        "build-system",
+        "ignore-rules"
+      ]
+    },
+    {
+      "id": "config:.ua/config.json",
+      "type": "config",
+      "name": "config.json",
+      "filePath": ".ua/config.json",
+      "summary": "Understand-Anything 工具链的项目级配置：声明输出语言为中文，并设定 pi05/ 与 third_party/ 的排除模式。",
+      "tags": [
+        "configuration",
+        "tooling",
+        "localization"
+      ]
+    },
+    {
+      "id": "file:__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "__init__.py",
+      "summary": "工作空间根 Python 包标识符，空文件，仅用于将 model_deploy 目录标记为可导入包。",
+      "tags": [
+        "package-marker",
+        "entry-point",
+        "boilerplate"
+      ]
+    },
+    {
+      "id": "file:act/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/__init__.py",
+      "summary": "act 子包（ACT 模型推理栈）的包标识符，空文件，标记 model_deploy.act 为可导入包。",
+      "tags": [
+        "package-marker",
+        "entry-point",
+        "boilerplate"
+      ]
+    },
+    {
+      "id": "file:act/config/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/config/__init__.py",
+      "summary": "act.config 包的公共门面，集中重新导出 schema.py 中的全部 dataclass 与校验/加载函数，供其它模块按包路径导入。",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "config",
+        "facade",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/config/schema.py",
+      "type": "file",
+      "name": "schema.py",
+      "filePath": "act/config/schema.py",
+      "summary": "ACT 部署配置的核心定义文件：以 frozen dataclass 描述 runtime/topics/safety/image/command_output 各节，提供 from_mapping 装配、bundle 与 normalizer 契约校验以及 load_deploy_config 的 YAML 编排入口。",
+      "tags": [
+        "config",
+        "data-model",
+        "validation",
+        "schema",
+        "serialization",
+        "tested"
+      ]
+    },
+    {
+      "id": "config:act/config_files/deploy.yaml",
+      "type": "config",
+      "name": "deploy.yaml",
+      "filePath": "act/config_files/deploy.yaml",
+      "summary": "ACT 部署的默认配置实例（dry-run 模式），声明 runtime/image/topics/safety/command_output 全部默认值，供本地开发与测试使用；bundle_dir 留空须运行时指定。",
+      "tags": [
+        "configuration",
+        "deployment",
+        "ros-topics",
+        "safety-thresholds"
+      ]
+    },
+    {
+      "id": "file:act/runtime/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/runtime/__init__.py",
+      "summary": "act.runtime 包的公共门面，重新导出 ControlLoop 及其配置、Fallback/Candidate 选择、推理通道、推理 worker 与 RuntimeMetrics 等运行时稳定 API。",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "facade",
+        "runtime"
+      ]
+    },
+    {
+      "id": "file:act/runtime/control_loop.py",
+      "type": "file",
+      "name": "control_loop.py",
+      "filePath": "act/runtime/control_loop.py",
+      "summary": "ACT 推理栈的核心控制环：在每个 tick 内协调观测采集、推理提交、chunk 接受/丢弃、动作选择、安全降级（fallback）、状态机更新与指令发布，是整个运行时的中枢调度器。",
+      "tags": [
+        "runtime",
+        "control-loop",
+        "state-machine",
+        "safety",
+        "entry-point",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/runtime/inference_channel.py",
+      "type": "file",
+      "name": "inference_channel.py",
+      "filePath": "act/runtime/inference_channel.py",
+      "summary": "定义推理请求/结果的数据载体 InferenceRequest/InferenceResult，以及去重保最新的 LatestQueue 队列，作为控制环与推理 worker 之间的线程安全通信通道。",
+      "tags": [
+        "runtime",
+        "data-model",
+        "queue",
+        "concurrency",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/runtime/inference_worker.py",
+      "type": "file",
+      "name": "inference_worker.py",
+      "filePath": "act/runtime/inference_worker.py",
+      "summary": "InferenceWorker 类：后台线程从 LatestQueue 取请求、调用推理服务、限速并经 LatestQueue 回写结果，负责将推理执行与控制环解耦。",
+      "tags": [
+        "runtime",
+        "worker",
+        "concurrency",
+        "inference",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/runtime/observation_buffer.py",
+      "type": "file",
+      "name": "observation_buffer.py",
+      "filePath": "act/runtime/observation_buffer.py",
+      "summary": "ObservationBuffer 维护最新一次观测快照，记录缺失字段与陈旧统计（ObservationMetrics），并向控制环提供 latest_observation 与 metrics 快照接口。",
+      "tags": [
+        "runtime",
+        "buffer",
+        "observation",
+        "data-model",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/runtime/runtime_metrics.py",
+      "type": "file",
+      "name": "runtime_metrics.py",
+      "filePath": "act/runtime/runtime_metrics.py",
+      "summary": "运行时指标聚合模块：以 RuntimeMetricsSnapshot 快照对外暴露 tick/推理/安全/发布等计数与最近状态，内部用一组 _ev_* 处理函数实现事件驱动的不可变状态更新。",
+      "tags": [
+        "runtime",
+        "metrics",
+        "monitoring",
+        "data-model",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/service/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/service/__init__.py",
+      "summary": "act.service 包的公共门面，重新导出 ACT 推理服务、观测批处理、安全守卫与动作后处理/适配器等服务层稳定 API。",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "facade",
+        "service",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/service/act_inference.py",
+      "type": "file",
+      "name": "act_inference.py",
+      "filePath": "act/service/act_inference.py",
+      "summary": "ActInferenceService 封装 ACT 策略模型：加载 checkpoint、解析设备、校验输入契约，并暴露 predict_action_chunk 执行一次推理；同时提供模块级 run_act_inference 便捷函数。",
+      "tags": [
+        "service",
+        "inference",
+        "pytorch",
+        "entry-point",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/service/action_chunk_postprocess.py",
+      "type": "file",
+      "name": "action_chunk_postprocess.py",
+      "filePath": "act/service/action_chunk_postprocess.py",
+      "summary": "动作 chunk 后处理流水线：校验原始输出结构、去 batch 维、反归一化、转 CPU float32 数组，并做最终契约校验，统一由 postprocess_action_chunk 串联。",
+      "tags": [
+        "service",
+        "postprocessing",
+        "serialization",
+        "validation",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/service/action_output_adapter.py",
+      "type": "file",
+      "name": "action_output_adapter.py",
+      "filePath": "act/service/action_output_adapter.py",
+      "summary": "动作输出适配器：将安全过滤后的动作向量映射为 ROS 话题可发布的双臂位姿目标与夹爪指令（build_topic_payloads），并校验动作可发布性。",
+      "tags": [
+        "service",
+        "adapter",
+        "serialization",
+        "ros-topics",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/service/image_preprocess.py",
+      "type": "file",
+      "name": "image_preprocess.py",
+      "filePath": "act/service/image_preprocess.py",
+      "summary": "图像预处理工具：按 ImageConfig（target_shape/dtype/resize 尺寸）将原始观测图像 resize、归一化并转为模型期望的 NCHW tensor。",
+      "tags": [
+        "service",
+        "preprocessing",
+        "image",
+        "pytorch",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/service/observation_batch.py",
+      "type": "file",
+      "name": "observation_batch.py",
+      "filePath": "act/service/observation_batch.py",
+      "summary": "观测批处理流水线：将观测快照编码、tensorize、归一化、绑定图像、加 batch 维并组装为 ACT 前向输入（prepare_observation_batch），含模型输入兼容性校验。",
+      "tags": [
+        "service",
+        "preprocessing",
+        "batch",
+        "pytorch",
+        "validation",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/service/observation_collector.py",
+      "type": "file",
+      "name": "observation_collector.py",
+      "filePath": "act/service/observation_collector.py",
+      "summary": "ObservationCollector 聚合来自多个回调的图像、TCP 位姿与夹爪状态，统一时间戳并对外提供 snapshot 与新鲜度/缺失字段检查，是观测侧的统一入口。",
+      "tags": [
+        "service",
+        "observation",
+        "aggregator",
+        "ros-topics",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/service/safety_guard.py",
+      "type": "file",
+      "name": "safety_guard.py",
+      "filePath": "act/service/safety_guard.py",
+      "summary": "安全守卫模块：SafetyGuard.filter_action 对候选双臂动作做平移/旋转步长限制、夹爪范围与步长裁剪及四元数规范化，确保发布动作始终落在可执行的安全包络内。",
+      "tags": [
+        "service",
+        "safety",
+        "validation",
+        "control",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/tests/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/__init__.py",
+      "summary": "act.tests 包标识符，空文件，用于将测试目录标记为可导入包。",
+      "tags": [
+        "package-marker",
+        "test",
+        "boilerplate"
+      ]
+    },
+    {
+      "id": "file:act/tests/config/test_command_output_config.py",
+      "type": "file",
+      "name": "test_command_output_config.py",
+      "filePath": "act/tests/config/test_command_output_config.py",
+      "summary": "CommandOutputConfig 的单元测试：覆盖默认关闭、调用方显式开启、YAML 持久化开启被拒绝，以及 pose_frame/gripper 域/qos 等校验失败路径。",
+      "tags": [
+        "test",
+        "validation",
+        "config",
+        "unit-test"
+      ]
+    },
+    {
+      "id": "file:act/tests/config/test_contract.py",
+      "type": "file",
+      "name": "test_contract.py",
+      "filePath": "act/tests/config/test_contract.py",
+      "summary": "契约校验的端到端测试：构造临时 bundle 与 deploy.yaml，验证 bundle 完整性、normalizer 维度匹配以及 load_deploy_config 在 dim 不匹配或 bundle 不完整时的失败行为。",
+      "tags": [
+        "test",
+        "validation",
+        "contract",
+        "integration-test"
+      ]
+    },
+    {
+      "id": "file:act/tests/config/test_contract_check.py",
+      "type": "file",
+      "name": "test_contract_check.py",
+      "filePath": "act/tests/config/test_contract_check.py",
+      "summary": "check_bundle_contract / check_normalizer_contract / load_deploy_config 的单元测试，逐一覆盖完整 bundle 通过、checkpoint/adapter 缺失、state/action 维度不匹配以及根类型错误等分支。",
+      "tags": [
+        "test",
+        "validation",
+        "contract",
+        "unit-test"
+      ]
+    },
+    {
+      "id": "file:act/tests/config/test_deploy_config.py",
+      "type": "file",
+      "name": "test_deploy_config.py",
+      "filePath": "act/tests/config/test_deploy_config.py",
+      "summary": "DeployConfig 聚合构造与 frozen 不可变性测试，验证非法配置（缺失字段、类型错误）在入口处被拒绝。",
+      "tags": [
+        "test",
+        "validation",
+        "config",
+        "frozen",
+        "deploy-config"
+      ]
+    },
+    {
+      "id": "file:act/tests/config/test_runtime_config.py",
+      "type": "file",
+      "name": "test_runtime_config.py",
+      "filePath": "act/tests/config/test_runtime_config.py",
+      "summary": "RuntimeConfig 校验测试：覆盖 control/inference hz 正值约束、chunk_size horizon 关系、fallback_policy 枚举及 mode 合法性。",
+      "tags": [
+        "test",
+        "validation",
+        "runtime-config",
+        "config"
+      ]
+    },
+    {
+      "id": "file:act/tests/config/test_safety_config.py",
+      "type": "file",
+      "name": "test_safety_config.py",
+      "filePath": "act/tests/config/test_safety_config.py",
+      "summary": "SafetyConfig 默认值与 deploy 配置集成测试，验证 translation/rotation 步长、gripper 范围、四元数归一化等约束以及 legacy 字段被拒绝。",
+      "tags": [
+        "test",
+        "validation",
+        "safety",
+        "config",
+        "deploy-config"
+      ]
+    },
+    {
+      "id": "file:act/tests/config/test_schema.py",
+      "type": "file",
+      "name": "test_schema.py",
+      "filePath": "act/tests/config/test_schema.py",
+      "summary": "config.schema 模块的综合测试：合法配置解析、维度宽放、runtime 校验、topic 命名空间、typed validator 及禁止 smoothing/bridge 字段的回归守护。",
+      "tags": [
+        "test",
+        "validation",
+        "schema",
+        "config",
+        "regression-guard"
+      ]
+    },
+    {
+      "id": "file:act/tests/config/test_startup_resources_seams.py",
+      "type": "file",
+      "name": "test_startup_resources_seams.py",
+      "filePath": "act/tests/config/test_startup_resources_seams.py",
+      "summary": "启动期资源加载 seam 测试：默认 deploy.yaml 解析、command_output 关键字开关、observation_age / queue_size 约束、camera 映射 canonical 格式及空 bundle 拒绝。",
+      "tags": [
+        "test",
+        "validation",
+        "startup",
+        "resources",
+        "camera-mapping"
+      ]
+    },
+    {
+      "id": "config:act/tests/fixtures/l2_06_fake.yaml",
+      "type": "config",
+      "name": "l2_06_fake.yaml",
+      "filePath": "act/tests/fixtures/l2_06_fake.yaml",
+      "summary": "L2_06 集成门测试使用的 fake deploy.yaml fixture，包含 bundle/runtime/image/topics/safety/command_output 六个顶层配置段。",
+      "tags": [
+        "test-fixture",
+        "configuration",
+        "yaml",
+        "l2-gate"
+      ]
+    },
+    {
+      "id": "file:act/tests/integration/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/integration/__init__.py",
+      "summary": "integration 测试子包的 Python package marker。",
+      "tags": [
+        "entry-point",
+        "package-init",
+        "test"
+      ]
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "file",
+      "name": "test_l2_01_gate.py",
+      "filePath": "act/tests/integration/test_l2_01_gate.py",
+      "summary": "L2_01 集成门测试：验证合法配置可加载、非法维度/bundle 缺失文件/normalizer 维度不匹配在启动期失败，并扫描源码确保无 smoothing 配置泄漏。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "startup-validation",
+        "boundary-scan"
+      ]
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "file",
+      "name": "test_l2_02_gate.py",
+      "filePath": "act/tests/integration/test_l2_02_gate.py",
+      "summary": "L2_02 集成门测试：observation 采集管线 mock 全链路、缺失字段/陈旧 pipeline 拒绝、边界无越权（不触碰 inference/config repo）及 ROS-free 导入验证。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "observation",
+        "boundary-scan"
+      ]
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "file",
+      "name": "test_l2_03_gate.py",
+      "filePath": "act/tests/integration/test_l2_03_gate.py",
+      "summary": "L2_03 集成门测试：ACT 推理全链路（normalizer → input spec → policy → action chunk）的端到端验证、各级失败熔断、输出形状/维度/NAN 拒绝及源码边界扫描。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "inference-chain",
+        "boundary-scan"
+      ]
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "file",
+      "name": "test_l2_04_gate.py",
+      "filePath": "act/tests/integration/test_l2_04_gate.py",
+      "summary": "L2_04 集成门测试：SafetyGuard 纯函数 filter_action 的全面验证——输入形状/有限性、四元数候选、参考帧选择、pose 平移/旋转限幅、gripper 范围/步长投影及双臂 16 维装配。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "safety-guard",
+        "validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "file",
+      "name": "test_l2_05_gate.py",
+      "filePath": "act/tests/integration/test_l2_05_gate.py",
+      "summary": "L2_05 集成门测试：ActionPublisher 全链路（B1 safety → B2 messages → B3 publish）的 mock 集成验证，覆盖 17 组 Gate 场景（类型/配置/permit/split/partial/status）及源码边界扫描。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "action-publisher",
+        "boundary-scan"
+      ]
+    },
+    {
+      "id": "file:act/tests/integration/test_startup_failure.py",
+      "type": "file",
+      "name": "test_startup_failure.py",
+      "filePath": "act/tests/integration/test_startup_failure.py",
+      "summary": "启动失败路径测试：验证非法 YAML 根类型、control_hz 为零、缺失 bundle 段、维度不匹配及 normalizer 维度不匹配均能在启动期正确终止。",
+      "tags": [
+        "test",
+        "startup-failure",
+        "validation",
+        "config"
+      ]
+    },
+    {
+      "id": "file:act/tests/repo/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/repo/__init__.py",
+      "summary": "repo 测试子包的 Python package marker。",
+      "tags": [
+        "entry-point",
+        "package-init",
+        "test"
+      ]
+    },
+    {
+      "id": "file:act/tests/repo/test_act_runtime_resources.py",
+      "type": "file",
+      "name": "test_act_runtime_resources.py",
+      "filePath": "act/tests/repo/test_act_runtime_resources.py",
+      "summary": "PolicyInputSpec 不变量与 load_act_runtime_resources 聚合加载测试：覆盖 frozen、camera key 排序/去重、CHW shape/dtype/value_range 约束及 loader 注册/缺失/维度不匹配失败路径。",
+      "tags": [
+        "test",
+        "validation",
+        "policy-input-spec",
+        "resource-loader",
+        "repo"
+      ]
+    },
+    {
+      "id": "file:act/tests/repo/test_bundle_reader.py",
+      "type": "file",
+      "name": "test_bundle_reader.py",
+      "filePath": "act/tests/repo/test_bundle_reader.py",
+      "summary": "BundleReader 文件完整性检查与路径解析测试：覆盖 manifest/normalizers/experiment_config/adapter 缺失检测、adapter 目录解析及 checkpoint 路径（manifest/directory scan pt & safetensors）回退。",
+      "tags": [
+        "test",
+        "bundle-reader",
+        "repo",
+        "path-resolution",
+        "file-validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/repo/test_experiment_config_loader.py",
+      "type": "file",
+      "name": "test_experiment_config_loader.py",
+      "filePath": "act/tests/repo/test_experiment_config_loader.py",
+      "summary": "experiment_config_loader 加载测试：正常加载、文件缺失/BAD YAML/根非 mapping/标量根等异常拒绝，以及维度字段保留与缺失字段不自动填充。",
+      "tags": [
+        "test",
+        "experiment-config",
+        "repo",
+        "loader",
+        "validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/repo/test_manifest_parser.py",
+      "type": "file",
+      "name": "test_manifest_parser.py",
+      "filePath": "act/tests/repo/test_manifest_parser.py",
+      "summary": "bundle manifest JSON 解析测试：合法解析、文件缺失与 JSON 格式错误的拒绝路径。",
+      "tags": [
+        "test",
+        "manifest-parser",
+        "repo",
+        "json",
+        "validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/repo/test_normalization.py",
+      "type": "file",
+      "name": "test_normalization.py",
+      "filePath": "act/tests/repo/test_normalization.py",
+      "summary": "ActionStateNormalizer 归一化器测试：构造/字段、normalize/unnormalize 基本与 batch 调用、roundtrip、零 range 维度、identity 索引及维度不匹配拒绝。",
+      "tags": [
+        "test",
+        "normalization",
+        "repo",
+        "roundtrip",
+        "validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/repo/test_normalizer_loader.py",
+      "type": "file",
+      "name": "test_normalizer_loader.py",
+      "filePath": "act/tests/repo/test_normalizer_loader.py",
+      "summary": "normalizer_loader JSON 加载测试：正常 roundtrip、文件缺失/BAD JSON/state/action key 缺失拒绝及 numpy 值正确还原。",
+      "tags": [
+        "test",
+        "normalizer-loader",
+        "repo",
+        "json",
+        "numpy"
+      ]
+    },
+    {
+      "id": "file:act/tests/runtime/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/runtime/__init__.py",
+      "summary": "runtime 测试子包的 Python package marker。",
+      "tags": [
+        "entry-point",
+        "package-init",
+        "test"
+      ]
+    },
+    {
+      "id": "file:act/tests/runtime/test_control_loop.py",
+      "type": "file",
+      "name": "test_control_loop.py",
+      "filePath": "act/tests/runtime/test_control_loop.py",
+      "summary": "ControlLoop 控制循环核心测试：chunk 可用性判定、fallback 选择策略（safe_stop/hold）、outstanding request 唯一性、result 关联与 runtime fault 锁存、cursor/horizon/age 管理、safety-publish 契约及六态 outcome reducer。",
+      "tags": [
+        "test",
+        "control-loop",
+        "runtime",
+        "fallback",
+        "outcome-reducer"
+      ]
+    },
+    {
+      "id": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "file",
+      "name": "test_inference_channel.py",
+      "filePath": "act/tests/runtime/test_inference_channel.py",
+      "summary": "InferenceRequest/InferenceResult 数据类与 LatestQueue（容量 1、evict、close、timeout wakeup）的并发原语测试。",
+      "tags": [
+        "test",
+        "inference-channel",
+        "runtime",
+        "latest-queue",
+        "concurrency"
+      ]
+    },
+    {
+      "id": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "file",
+      "name": "test_inference_worker.py",
+      "filePath": "act/tests/runtime/test_inference_worker.py",
+      "summary": "InferenceWorker 工作线程测试：成功发布/最大并发为 1、异常转 terminal error 后继续、KeyboardInterrupt 不被吞、时钟非有限/倒退 fatal、rate limit、stop 幂等/清理及 closed result queue 丢弃语义。",
+      "tags": [
+        "test",
+        "inference-worker",
+        "runtime",
+        "threading",
+        "rate-limit"
+      ]
+    },
+    {
+      "id": "file:act/tests/runtime/test_observation_buffer.py",
+      "type": "file",
+      "name": "test_observation_buffer.py",
+      "filePath": "act/tests/runtime/test_observation_buffer.py",
+      "summary": "ObservationBuffer 线程安全缓冲测试：set/get/latest_only 语义、max_age 过期、metrics 计数器（ready/stale/missing/error）及并发读写一致性。",
+      "tags": [
+        "test",
+        "observation-buffer",
+        "runtime",
+        "thread-safe",
+        "metrics"
+      ]
+    },
+    {
+      "id": "file:act/tests/runtime/test_runtime_metrics.py",
+      "type": "file",
+      "name": "test_runtime_metrics.py",
+      "filePath": "act/tests/runtime/test_runtime_metrics.py",
+      "summary": "对 act/runtime/runtime_metrics 模块的运行期度量工具进行单元测试，覆盖快照构造、事件记录、丢弃分类与并发更新四类场景。",
+      "tags": [
+        "test",
+        "unit-test",
+        "runtime-metrics",
+        "pytest",
+        "concurrency"
+      ]
+    },
+    {
+      "id": "file:act/tests/service/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/service/__init__.py",
+      "summary": "service 测试子包的标记模块，无任何业务逻辑。",
+      "tags": [
+        "package-init",
+        "test",
+        "barrel"
+      ]
+    },
+    {
+      "id": "file:act/tests/service/test_act_inference.py",
+      "type": "file",
+      "name": "test_act_inference.py",
+      "filePath": "act/tests/service/test_act_inference.py",
+      "summary": "对 ActInferenceService 与 run_act_inference 推理入口进行全面单元测试，覆盖构造校验、契约校验、端到端推理、stub policy 替换与各阶段失败传播。",
+      "tags": [
+        "test",
+        "unit-test",
+        "inference",
+        "contract-validation",
+        "stub-policy"
+      ]
+    },
+    {
+      "id": "file:act/tests/service/test_action_chunk_postprocess.py",
+      "type": "file",
+      "name": "test_action_chunk_postprocess.py",
+      "filePath": "act/tests/service/test_action_chunk_postprocess.py",
+      "summary": "测试 action_chunk_postprocess 模块对推理原始输出的后处理链路：去 batch 维度、反归一化、CPU float32 转换及最终 ActionChunk 契约组装。",
+      "tags": [
+        "test",
+        "unit-test",
+        "postprocess",
+        "normalization",
+        "contract-validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/service/test_action_output_adapter.py",
+      "type": "file",
+      "name": "test_action_output_adapter.py",
+      "filePath": "act/tests/service/test_action_output_adapter.py",
+      "summary": "测试 action_output_adapter 模块将 SafetyResult 与 ActionSpec 组合产出 TopicPayloadBundle 的适配逻辑，覆盖 pass/adjust/reject 三种安全裁决路径及非有限向量异常。",
+      "tags": [
+        "test",
+        "unit-test",
+        "adapter",
+        "safety",
+        "contract-validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/service/test_image_preprocess.py",
+      "type": "file",
+      "name": "test_image_preprocess.py",
+      "filePath": "act/tests/service/test_image_preprocess.py",
+      "summary": "测试 image_preprocess 模块对原始 RGB 图像的 CHW float32 [0,1] 预处理，覆盖配置构造、合法预处理、非法输入与无 ROS 环境下的导入回退。",
+      "tags": [
+        "test",
+        "unit-test",
+        "image-preprocess",
+        "config",
+        "ros-optional"
+      ]
+    },
+    {
+      "id": "file:act/tests/service/test_observation_batch.py",
+      "type": "file",
+      "name": "test_observation_batch.py",
+      "filePath": "act/tests/service/test_observation_batch.py",
+      "summary": "测试 observation_batch 模块将 ObservationSnapshot 转换为推理所用 ActBatch 的全链路：模型输入兼容性校验、状态张量化与归一化、图像绑定、batch 维组装与设备对齐。",
+      "tags": [
+        "test",
+        "unit-test",
+        "observation",
+        "batch-assembly",
+        "tensorization"
+      ]
+    },
+    {
+      "id": "file:act/tests/service/test_observation_collector.py",
+      "type": "file",
+      "name": "test_observation_collector.py",
+      "filePath": "act/tests/service/test_observation_collector.py",
+      "summary": "测试 observation_collector 模块在并发更新下对 ObservationSnapshot 的字段填充、缺失/陈旧拒绝、新鲜度结果与默认状态编解码行为。",
+      "tags": [
+        "test",
+        "unit-test",
+        "observation",
+        "concurrency",
+        "freshness"
+      ]
+    },
+    {
+      "id": "file:act/tests/service/test_safety_guard.py",
+      "type": "file",
+      "name": "test_safety_guard.py",
+      "filePath": "act/tests/service/test_safety_guard.py",
+      "summary": "对 SafetyGuard 安全护栏进行单元测试，覆盖构造、pass/adjust/reject 三类裁决路径、参考帧选择、纯函数性与公共端口契约。",
+      "tags": [
+        "test",
+        "unit-test",
+        "safety",
+        "guard",
+        "contract-validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/service/test_safety_primitives.py",
+      "type": "file",
+      "name": "test_safety_primitives.py",
+      "filePath": "act/tests/service/test_safety_primitives.py",
+      "summary": "对 safety_guard 内部的安全原语进行细粒度单元测试，覆盖 16D 动作向量校验、有限性检查、四元数规范化、参考选择、平移/旋转步长限制、夹爪投影与 build_safe_action 组装。",
+      "tags": [
+        "test",
+        "unit-test",
+        "safety",
+        "primitives",
+        "quaternion"
+      ]
+    },
+    {
+      "id": "file:act/tests/types/test_action_chunk.py",
+      "type": "file",
+      "name": "test_action_chunk.py",
+      "filePath": "act/tests/types/test_action_chunk.py",
+      "summary": "测试 ActionChunk 冻结数据类的构造契约：合法 (N,16) float32 有限数组、单行/大块合法构造，以及维度、dtype、rank、有限性、空数组等非法输入的拒绝。",
+      "tags": [
+        "test",
+        "unit-test",
+        "data-model",
+        "validation",
+        "frozen-dataclass"
+      ]
+    },
+    {
+      "id": "file:act/tests/types/test_action_publish.py",
+      "type": "file",
+      "name": "test_action_publish.py",
+      "filePath": "act/tests/types/test_action_publish.py",
+      "summary": "测试 action_publish 类型模块的命令许可、发布请求、ArmPoseTarget、TopicPayloadBundle、PublishOutcome、ActionPublishResult 与发布溯源等数据契约。",
+      "tags": [
+        "test",
+        "unit-test",
+        "data-model",
+        "action-publish",
+        "contract-validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/types/test_action_spec.py",
+      "type": "file",
+      "name": "test_action_spec.py",
+      "filePath": "act/tests/types/test_action_spec.py",
+      "summary": "测试 action_spec 模块的常量定义、ActionSpec 数据模型、ensure_action_vector 校验与 split_action 拆分逻辑。",
+      "tags": [
+        "test",
+        "unit-test",
+        "data-model",
+        "action-spec",
+        "validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/types/test_contract_result.py",
+      "type": "file",
+      "name": "test_contract_result.py",
+      "filePath": "act/tests/types/test_contract_result.py",
+      "summary": "测试 contract_result 模块的 BundleContractResult 与 NormalizerContractResult 两类契约结果类型的字段约束与组装行为。",
+      "tags": [
+        "test",
+        "unit-test",
+        "data-model",
+        "contract-result",
+        "validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/types/test_observation.py",
+      "type": "file",
+      "name": "test_observation.py",
+      "filePath": "act/tests/types/test_observation.py",
+      "summary": "测试 observation 类型模块的 ObservationState、ObservationSnapshot、ObservationFreshnessResult 数据契约，以及无 ROS 环境下仍可导入的行为。",
+      "tags": [
+        "test",
+        "unit-test",
+        "data-model",
+        "observation",
+        "ros-optional"
+      ]
+    },
+    {
+      "id": "file:act/tests/types/test_safety_result.py",
+      "type": "file",
+      "name": "test_safety_result.py",
+      "filePath": "act/tests/types/test_safety_result.py",
+      "summary": "测试 safety_result 类型模块的 SafetyStatus、SafetyCode、SafetyFinding、SafetyResult 数据契约及模块导出面（__all__）。",
+      "tags": [
+        "test",
+        "unit-test",
+        "data-model",
+        "safety-result",
+        "contract-validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/types/test_state_spec.py",
+      "type": "file",
+      "name": "test_state_spec.py",
+      "filePath": "act/tests/types/test_state_spec.py",
+      "summary": "测试 state_spec 模块的常量定义、StateSpec 数据模型、ensure_state_vector 校验与 encode_state 编码逻辑。",
+      "tags": [
+        "test",
+        "unit-test",
+        "data-model",
+        "state-spec",
+        "validation"
+      ]
+    },
+    {
+      "id": "file:act/tests/ui/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/ui/__init__.py",
+      "summary": "ui 测试子包的标记模块，无任何业务逻辑。",
+      "tags": [
+        "package-init",
+        "test",
+        "barrel"
+      ]
+    },
+    {
+      "id": "file:act/tests/ui/test_action_publisher.py",
+      "type": "file",
+      "name": "test_action_publisher.py",
+      "filePath": "act/tests/ui/test_action_publisher.py",
+      "summary": "对 ActionPublisher 进行单元测试，覆盖构造校验（G09）、安全门控（G10）、命令项路由（G11）、部分失败处理（G12）与夹爪防抖（G13）等门控规则。",
+      "tags": [
+        "test",
+        "unit-test",
+        "action-publisher",
+        "gating",
+        "ros"
+      ]
+    },
+    {
+      "id": "file:act/tests/ui/test_action_publisher_messages.py",
+      "type": "file",
+      "name": "test_action_publisher_messages.py",
+      "filePath": "act/tests/ui/test_action_publisher_messages.py",
+      "summary": "测试 build_ros_messages 将 TopicPayloadBundle 转换为 ROS 消息（PoseStamped、Float32MultiArray、Float64 等）的细节，使用大量 Mock 消息类型避免依赖真实 rclpy。",
+      "tags": [
+        "test",
+        "unit-test",
+        "ros-messages",
+        "serialization",
+        "mock"
+      ]
+    },
+    {
+      "id": "file:act/tests/ui/test_observation_pipeline.py",
+      "type": "file",
+      "name": "test_observation_pipeline.py",
+      "filePath": "act/tests/ui/test_observation_pipeline.py",
+      "summary": "测试 ObservationPipeline 与 build_observation_pipeline 的公共接缝、fail-fast 行为、单调新鲜度、深度所有权与订阅回滚能力。",
+      "tags": [
+        "test",
+        "unit-test",
+        "observation-pipeline",
+        "fail-fast",
+        "rollback"
+      ]
+    },
+    {
+      "id": "file:act/tests/ui/test_observation_ros_adapter.py",
+      "type": "file",
+      "name": "test_observation_ros_adapter.py",
+      "filePath": "act/tests/ui/test_observation_ros_adapter.py",
+      "summary": "对 ObservationRosAdapter 进行单元测试，覆盖无 ROS 环境导入、配置/spec 一致性校验、图像/TCP 位姿/夹爪三类回调的消息解码与边界处理。",
+      "tags": [
+        "test",
+        "unit-test",
+        "ros-adapter",
+        "observation",
+        "ros-optional"
+      ]
+    },
+    {
+      "id": "file:act/types/action_chunk.py",
+      "type": "file",
+      "name": "action_chunk.py",
+      "filePath": "act/types/action_chunk.py",
+      "summary": "定义 ActionChunk 冻结数据类，作为 ACT 推理管道 L2-03 到 L2-06 之间唯一的跨模块输出类型，仅携带原始动作数组（无运行期元数据）。",
+      "tags": [
+        "data-model",
+        "value-object",
+        "type-definition",
+        "frozen-dataclass",
+        "validation",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/ui/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/ui/__init__.py",
+      "summary": "act.ui 包的 barrel 入口，统一导出 ActionPublisher、ActDeployNode、ObservationPipeline 及其构建函数，构成 L2-05 ROS 输出适配与观测管道的公共 API 表面。",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "package-init",
+        "public-api",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:act/ui/observation_ros_adapter.py",
+      "type": "file",
+      "name": "observation_ros_adapter.py",
+      "filePath": "act/ui/observation_ros_adapter.py",
+      "summary": "ObservationRosAdapter 作为 ROS 消息与 service/runtime 层 RAM 值之间的桥接器，将 Image/CompressedImage/Pose/gripper 消息解码、预处理后写入 ObservationCollector，并在快照就绪时推入 ObservationBuffer。",
+      "tags": [
+        "middleware",
+        "adapter",
+        "ros",
+        "observation",
+        "service",
+        "tested"
+      ]
+    },
+    {
+      "id": "document:act_interfaces/CMakeLists.txt",
+      "type": "document",
+      "name": "CMakeLists.txt",
+      "filePath": "act_interfaces/CMakeLists.txt",
+      "summary": "act_interfaces 包的 ament_cmake 构建清单，调用 rosidl_generate_interfaces 从三个 .msg 文件生成 ROS2 消息类型并声明对 std_msgs 的依赖。",
+      "tags": [
+        "build-system",
+        "ros-interface",
+        "ament-cmake",
+        "schema-generation"
+      ]
+    },
+    {
+      "id": "schema:act_interfaces/msg/CommandPermit.msg",
+      "type": "schema",
+      "name": "CommandPermit.msg",
+      "filePath": "act_interfaces/msg/CommandPermit.msg",
+      "summary": "定义 CommandPermit 消息：携带 stamp、allowed 布尔与 reason_code，作为人类许可令牌在 ACT 命令下发前做新鲜度/有效性校验。",
+      "tags": [
+        "ros-interface",
+        "schema-definition",
+        "safety",
+        "msg",
+        "permit"
+      ]
+    },
+    {
+      "id": "schema:act_interfaces/msg/GripperHealth.msg",
+      "type": "schema",
+      "name": "GripperHealth.msg",
+      "filePath": "act_interfaces/msg/GripperHealth.msg",
+      "summary": "定义 GripperHealth 消息：独立暴露左右大象夹爪的连接、急停、SDK 返回码、控制器错误码与 reason 字段，供消费方直接读取无需再做左右拆分。",
+      "tags": [
+        "ros-interface",
+        "schema-definition",
+        "health",
+        "msg",
+        "gripper"
+      ]
+    },
+    {
+      "id": "schema:act_interfaces/msg/HardwareHealth.msg",
+      "type": "schema",
+      "name": "HardwareHealth.msg",
+      "filePath": "act_interfaces/msg/HardwareHealth.msg",
+      "summary": "定义 HardwareHealth 消息：聚合整体 status (OK/DEGRADED/FAULT)、左右连接状态、急停标志与 detail 摘要，作为硬件健康总线上统一的状态载体。",
+      "tags": [
+        "ros-interface",
+        "schema-definition",
+        "health",
+        "msg",
+        "status"
+      ]
+    },
+    {
+      "id": "config:act_interfaces/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "act_interfaces/package.xml",
+      "summary": "act_interfaces ROS2 包清单（ament_cmake），声明 rosidl 接口生成/运行时依赖并将包归入 rosidl_interface_packages 组。",
+      "tags": [
+        "configuration",
+        "ros-package",
+        "manifest",
+        "rosidl"
+      ]
+    },
+    {
+      "id": "file:act_system/launch/act_system.launch.py",
+      "type": "file",
+      "name": "act_system.launch.py",
+      "filePath": "act_system/launch/act_system.launch.py",
+      "summary": "ACT 部署栈的总 launch 入口，一条命令拉起 RM65 双臂、大象夹爪、双鱼眼相机与 ACT 推理节点；对缺失可执行文件的硬件组件做容错跳过并以 fail-closed 默认关闭真实命令输出。",
+      "tags": [
+        "entry-point",
+        "launch",
+        "orchestration",
+        "ros2",
+        "fault-tolerant"
+      ]
+    },
+    {
+      "id": "file:act_system/scripts/start_act_system.sh",
+      "type": "file",
+      "name": "start_act_system.sh",
+      "filePath": "act_system/scripts/start_act_system.sh",
+      "summary": "ACT 系统一键启动 bash 脚本：source ROS/workspace setup、按需自动 colcon build、拉起总 launch 并在等待后做组件核对表检查，环境变量驱动构建与 ACT Python 解释器选择。",
+      "tags": [
+        "entry-point",
+        "shell",
+        "deployment",
+        "build-orchestration",
+        "script"
+      ]
+    },
+    {
+      "id": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "type": "config",
+      "name": "dual_fisheye_camera.yaml",
+      "filePath": "dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "summary": "双鱼眼相机默认参数：强制 /dev/v4l/by-path 稳定设备路径、固定 rgb8 输出与 YUYV 像素格式、V4L2 buffer 时间戳与 sensor_data QoS，并配置 camera_health 监控频率与发布 topic。",
+      "tags": [
+        "configuration",
+        "camera",
+        "v4l2",
+        "ros-parameters",
+        "calibration"
+      ]
+    },
+    {
+      "id": "file:dual_fisheye_camera/dual_fisheye_camera/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "dual_fisheye_camera/dual_fisheye_camera/__init__.py",
+      "summary": "dual_fisheye_camera Python 包的空初始化标记文件，仅用于声明包结构。",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "package-marker"
+      ]
+    },
+    {
+      "id": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "file",
+      "name": "camera_health_node.py",
+      "filePath": "dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "summary": "ROS2 节点 CameraHealthNode：订阅左右鱼眼 image，按帧超时阈值判定每侧连接状态，定时发布 act_interfaces/HardwareHealth 汇总消息到 /hardware/camera/health。",
+      "tags": [
+        "ros-node",
+        "health-monitor",
+        "sensor",
+        "event-handler",
+        "middleware"
+      ]
+    },
+    {
+      "id": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "type": "file",
+      "name": "dual_fisheye_camera.launch.py",
+      "filePath": "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "summary": "双鱼眼相机包 launch 文件：先用 v4l2-ctl 设定左右帧率，再以 OnProcessExit 门控启动两个 v4l2_camera_node 实例与一个 camera_health_node，使用 OpaqueFunction 预解析参数避免多实例串扰。",
+      "tags": [
+        "entry-point",
+        "launch",
+        "ros2",
+        "camera",
+        "multi-instance"
+      ]
+    },
+    {
+      "id": "file:dual_fisheye_camera/resource/dual_fisheye_camera",
+      "type": "file",
+      "name": "dual_fisheye_camera",
+      "filePath": "dual_fisheye_camera/resource/dual_fisheye_camera",
+      "summary": "ament_index 资源标记文件（空内容），用于向 ROS2 工具链注册 dual_fisheye_camera 为可用包。",
+      "tags": [
+        "package-marker",
+        "ament-index",
+        "resource"
+      ]
+    },
+    {
+      "id": "file:dual_fisheye_camera/setup.py",
+      "type": "file",
+      "name": "setup.py",
+      "filePath": "dual_fisheye_camera/setup.py",
+      "summary": "dual_fisheye_camera 包的 setuptools 构建脚本：声明包数据（launch/config/package.xml/resource）并注册 camera_health_node 控制台入口指向 camera_health_node:main。",
+      "tags": [
+        "build-system",
+        "setuptools",
+        "ros-package",
+        "entry-point"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/config/99-elephant-gripper.rules",
+      "type": "file",
+      "name": "99-elephant-gripper.rules",
+      "filePath": "elephant_gripper/config/99-elephant-gripper.rules",
+      "summary": "udev 规则模板：按 USB 拓扑路径 (ID_PATH) 把两路 CH340 USB-485 适配器分别固定为 /dev/elephant_gripper_left 与 right 符号链接，规避 VID/PID 无法区分的问题。",
+      "tags": [
+        "configuration",
+        "udev",
+        "device-mapping",
+        "serial",
+        "infrastructure"
+      ]
+    },
+    {
+      "id": "config:elephant_gripper/config/elephant_gripper.yaml",
+      "type": "config",
+      "name": "elephant_gripper.yaml",
+      "filePath": "elephant_gripper/config/elephant_gripper.yaml",
+      "summary": "大象夹爪节点默认参数：串口符号链接、波特率、夹爪 ID、轮询/发布频率、permit 超时安全门控、重连退避区间与 width↔angle 线性标定，支持 use_fake_serial 切换。",
+      "tags": [
+        "configuration",
+        "gripper",
+        "ros-parameters",
+        "safety",
+        "serial"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/conftest.py",
+      "type": "file",
+      "name": "conftest.py",
+      "filePath": "elephant_gripper/conftest.py",
+      "summary": "pytest 引导文件：把包根插入 sys.path，使得在未安装/未 source overlay 时也能通过 python3 -m pytest 直接 import elephant_gripper。",
+      "tags": [
+        "test",
+        "configuration",
+        "pytest",
+        "bootstrap"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/__init__.py",
+      "summary": "elephant_gripper Python 包根的空初始化标记文件，声明顶层包结构。",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "package-marker"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/config/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/config/__init__.py",
+      "summary": "elephant_gripper.config 子包的空初始化标记文件。",
+      "tags": [
+        "barrel",
+        "package-marker"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/repo/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/repo/__init__.py",
+      "summary": "elephant_gripper.repo 子包的空初始化标记文件。",
+      "tags": [
+        "barrel",
+        "package-marker"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/runtime/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/__init__.py",
+      "summary": "elephant_gripper.runtime 子包的空初始化标记文件。",
+      "tags": [
+        "barrel",
+        "package-marker"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/__init__.py",
+      "summary": "elephant_gripper.service 子包的空初始化标记文件，承载与 ROS 解耦的协议编解码等纯函数模块。",
+      "tags": [
+        "barrel",
+        "package-marker",
+        "service",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "type": "file",
+      "name": "frame_codec.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "summary": "大象 myGripper-F100 的 Modbus 风格帧编解码纯函数库（无串口/无 ROS 依赖）：CRC-16/MODBUS 校验、帧构建（使能/停止/读角度/读夹持/设角度）与响应解析，移植自 gripper_ctrl.py。",
+      "tags": [
+        "utility",
+        "serialization",
+        "protocol",
+        "modbus",
+        "crc"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/types/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/types/__init__.py",
+      "summary": "elephant_gripper.types 子包的空初始化标记文件，预留类型定义位置。",
+      "tags": [
+        "barrel",
+        "package-marker",
+        "type-definition"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/ui/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "elephant_gripper/elephant_gripper/ui/__init__.py",
+      "summary": "elephant_gripper.ui 子包的空初始化标记文件。",
+      "tags": [
+        "barrel",
+        "package-marker",
+        "ui"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/launch/elephant_gripper.launch.py",
+      "type": "file",
+      "name": "elephant_gripper.launch.py",
+      "filePath": "elephant_gripper/launch/elephant_gripper.launch.py",
+      "summary": "elephant_gripper 包 launch 文件：以默认 elephant_gripper.yaml 为参数启动 elephant_gripper_node，config_file 参数可覆盖配置路径。",
+      "tags": [
+        "entry-point",
+        "launch",
+        "ros2",
+        "gripper"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/resource/elephant_gripper",
+      "type": "file",
+      "name": "elephant_gripper",
+      "filePath": "elephant_gripper/resource/elephant_gripper",
+      "summary": "ament_index 资源标记文件，注册 elephant_gripper 为 ROS2 可识别包。空文件，仅靠文件名存在生效。",
+      "tags": [
+        "entry-point",
+        "package-marker",
+        "ros2"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/setup.py",
+      "type": "file",
+      "name": "setup.py",
+      "filePath": "elephant_gripper/setup.py",
+      "summary": "elephant_gripper 包的 setuptools 安装脚本，声明入口点 elephant_gripper_node、data_files（config/launch/package.xml）及依赖（pyserial、PyYAML）。",
+      "tags": [
+        "entry-point",
+        "build-system",
+        "packaging",
+        "ros2"
+      ]
+    },
+    {
+      "id": "file:elephant_gripper/tests/service/test_frame_codec.py",
+      "type": "file",
+      "name": "test_frame_codec.py",
+      "filePath": "elephant_gripper/tests/service/test_frame_codec.py",
+      "summary": "frame_codec 的 pytest 单元测试：CRC-16 表查与位运算等价性、golden 帧向量、parse_response 边界与异常路径（短帧/坏头/CRC 不匹配/寄存器回显不一致/夹爪 ID 错误）。",
+      "tags": [
+        "test",
+        "crc",
+        "protocol",
+        "validation"
+      ]
+    },
+    {
+      "id": "file:gripper_ctrl.py",
+      "type": "file",
+      "name": "gripper_ctrl.py",
+      "filePath": "gripper_ctrl.py",
+      "summary": "大象 myGripper-F100 夹爪的命令行调试脚本：把 0.0~1.0 开合度映射为角度，按自定义 Modbus 帧序列（上使能→设角度→读角度）通过 USB-485 串口下发。",
+      "tags": [
+        "entry-point",
+        "cli",
+        "serial",
+        "protocol",
+        "gripper"
+      ]
+    },
+    {
+      "id": "config:rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "type": "config",
+      "name": "rm65_dual_arm.yaml",
+      "filePath": "rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "summary": "RM65 双臂节点默认参数：左右臂 IP/端口/frame_id、运动速度、安全上限（单步位移 1cm / 角度 ~2.9°）、发布频率与 topic 名称。默认值按最保守安全取值，启动期硬性校验防误配。",
+      "tags": [
+        "configuration",
+        "ros2",
+        "safety",
+        "hardware"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "type": "file",
+      "name": "delta_guard.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "summary": "微小运动安全闸头文件：定义 DeltaResult、启动期硬上限常量（5cm/11.5°）、compute_pose_delta 与 check_delta 声明。落实'测试指令必须尽可能小'的硬性安全要求。",
+      "tags": [
+        "header",
+        "safety",
+        "validation",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "type": "file",
+      "name": "permit_guard.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "summary": "人工安全许可守卫头文件：声明 PermitGuard 线程安全缓存类、is_permit_well_formed 与 PermitResult。对齐 act CommandPermit fail-closed 设计，许可无效/过期/异常一律拒绝。",
+      "tags": [
+        "header",
+        "safety",
+        "validation",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "file",
+      "name": "pose_conversion.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "summary": "位姿转换头文件：定义 RmPose/RmQuat/RmEuler 镜像结构体与四元数↔欧拉角↔整体位姿互转、合法性校验函数声明。刻意不 include 厂商头文件以解耦纯逻辑测试。",
+      "tags": [
+        "header",
+        "utility",
+        "serialization",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "type": "file",
+      "name": "rm65_arm.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "summary": "单臂 SDK 封装头文件：声明 Rm65Arm 类、ArmSnapshot 快照结构、Side 枚举。唯一直接 include 厂商 rm_service.h 的编译单元，封装 handle 生命周期/状态读取/运动/急停。",
+      "tags": [
+        "header",
+        "service",
+        "hardware",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "type": "file",
+      "name": "rm65_dual_arm_node.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "summary": "RM65 双臂主节点头文件：声明 Rm65DualArmNode（继承 rclcpp::Node）、NodeConfig、订阅/发布/service/定时器成员及多重闸门编排契约（permit→validator→delta→estop→SDK）。",
+      "tags": [
+        "header",
+        "entry-point",
+        "ros2",
+        "safety",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/include/rm65_dual_arm/target_validator.hpp",
+      "type": "file",
+      "name": "target_validator.hpp",
+      "filePath": "rm65_dual_arm/include/rm65_dual_arm/target_validator.hpp",
+      "summary": "目标位姿执行前校验头文件：声明 ValidationResult 与 validate_target，校验 frame_id/finite/quaternion 范数/stale 等单条 PoseStamped 的静态与时间属性，不涉及位移或许可。",
+      "tags": [
+        "header",
+        "validation",
+        "safety",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "type": "file",
+      "name": "rm65_dual_arm.launch.py",
+      "filePath": "rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "summary": "RM65 双臂节点 ROS2 launch 文件：加载 config yaml 作默认参数，默认把 /arm/*_tcp_pose remap 到 /act/observation/arm/*_tcp_pose 让 ACT 节点零配置订阅。",
+      "tags": [
+        "entry-point",
+        "ros2",
+        "launch",
+        "configuration"
+      ]
+    },
+    {
+      "id": "document:rm65_dual_arm/lib/SDK_VENDOR_README.txt",
+      "type": "document",
+      "name": "SDK_VENDOR_README.txt",
+      "filePath": "rm65_dual_arm/lib/SDK_VENDOR_README.txt",
+      "summary": "厂商 SDK 取用说明：指引如何从官方睿尔曼 SDK 包获取 libRM_Service.so* 及头文件并放入 lib/ 目录，供 install_libs.sh 部署与 CMake 条件编译使用。",
+      "tags": [
+        "documentation",
+        "vendor",
+        "hardware",
+        "setup"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/lib/install_libs.sh",
+      "type": "file",
+      "name": "install_libs.sh",
+      "filePath": "rm65_dual_arm/lib/install_libs.sh",
+      "summary": "部署脚本：以 root 把 vendor 的 libRM_Service.so* 安装到 /usr/local/lib 并执行 ldconfig 刷新缓存，含存在性预检与 ldconfig 验证。",
+      "tags": [
+        "script",
+        "infrastructure",
+        "deployment",
+        "shell"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "type": "file",
+      "name": "delta_guard.cpp",
+      "filePath": "rm65_dual_arm/src/delta_guard.cpp",
+      "summary": "delta_guard 实现：compute_pose_delta 计算位移/旋转差，check_delta 主闸门相对真实 TCP 校验单步上限，超限或当前位姿非法返回带稳定 reason_code 的 DeltaResult。",
+      "tags": [
+        "safety",
+        "validation",
+        "cpp",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/src/permit_guard.cpp",
+      "type": "file",
+      "name": "permit_guard.cpp",
+      "filePath": "rm65_dual_arm/src/permit_guard.cpp",
+      "summary": "permit_guard 实现：is_permit_well_formed 校验字段自洽，PermitGuard::update/resolve 缓存并解析当前许可，按 MISSING/STALE/SOURCE_ERROR/DENIED 返回 fail-closed 结果。",
+      "tags": [
+        "safety",
+        "validation",
+        "cpp",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "file",
+      "name": "pose_conversion.cpp",
+      "filePath": "rm65_dual_arm/src/pose_conversion.cpp",
+      "summary": "pose_conversion 实现：四元数合法性校验、睿尔曼↔ROS 四元数重排、ZYX 欧拉角↔四元数互转、整体位姿双向转换，含 NaN/Inf/范数失败时填 reason。",
+      "tags": [
+        "utility",
+        "serialization",
+        "math",
+        "cpp",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "type": "file",
+      "name": "rm65_arm.cpp",
+      "filePath": "rm65_dual_arm/src/rm65_arm.cpp",
+      "summary": "Rm65Arm 实现：rm_init/rm_destroy 全局管理、connect/disconnect 连接生命周期、update_state 读状态、fill_pose_from_state 镜像拷贝、movel/set_emergency_stop/hard_stop 运动与急停，sdk_code_text 错误码翻译。",
+      "tags": [
+        "service",
+        "hardware",
+        "ros2",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "file",
+      "name": "rm65_dual_arm_node.cpp",
+      "filePath": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "summary": "RM65 双臂主节点实现：构造与参数加载校验、左右目标/permit/急停回调、handle_target 编排多重闸门（permit→validator→delta→estop→movel）、pose/health 定时器发布、main 入口。",
+      "tags": [
+        "entry-point",
+        "ros2",
+        "safety",
+        "service",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/src/target_validator.cpp",
+      "type": "file",
+      "name": "target_validator.cpp",
+      "filePath": "rm65_dual_arm/src/target_validator.cpp",
+      "summary": "target_validator 实现：stamp_to_sec 时间转换，validate_target 校验 frame_id 匹配、有限性、四元数范数、stamp 过期/缺失，返回带稳定 reason_code 的 ValidationResult。",
+      "tags": [
+        "validation",
+        "safety",
+        "cpp",
+        "tested"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/tests/test_delta_guard.cpp",
+      "type": "file",
+      "name": "test_delta_guard.cpp",
+      "filePath": "rm65_dual_arm/tests/test_delta_guard.cpp",
+      "summary": "delta_guard 的 GoogleTest 单元测试：覆盖正常位移/旋转差计算、超限拒绝、当前 TCP 缺失/NaN/坏四元数等路径，含 make_pose/make_rm_pose 构造辅助。",
+      "tags": [
+        "test",
+        "safety",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/tests/test_permit_guard.cpp",
+      "type": "file",
+      "name": "test_permit_guard.cpp",
+      "filePath": "rm65_dual_arm/tests/test_permit_guard.cpp",
+      "summary": "permit_guard 的 GoogleTest 单元测试：覆盖字段自洽校验、update/resolve 的 MISSING/STALE/DENIED/SOURCE_ERROR 各分支及最新许可覆盖语义。",
+      "tags": [
+        "test",
+        "safety",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/tests/test_pose_conversion.cpp",
+      "type": "file",
+      "name": "test_pose_conversion.cpp",
+      "filePath": "rm65_dual_arm/tests/test_pose_conversion.cpp",
+      "summary": "pose_conversion 的 GoogleTest 单元测试：四元数重排、合法性校验、欧拉角↔四元数往返、整体位姿双向转换与非法输入拒绝，含 quat_eq 容差比较辅助。",
+      "tags": [
+        "test",
+        "math",
+        "serialization",
+        "cpp"
+      ]
+    },
+    {
+      "id": "file:rm65_dual_arm/tests/test_target_validator.cpp",
+      "type": "file",
+      "name": "test_target_validator.cpp",
+      "filePath": "rm65_dual_arm/tests/test_target_validator.cpp",
+      "summary": "target_validator 的 GoogleTest 单元测试：覆盖 frame_id 匹配/不符、NaN/Inf/范数异常、stamp 过期与缺失等拒绝路径及合法通过路径，含 make_target 构造辅助。",
+      "tags": [
+        "test",
+        "validation",
+        "cpp"
+      ]
+    }
+  ],
+  "importEdges": [
+    {
+      "source": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_health_aggregator.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_health_aggregator.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_mapping.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_mapping.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/bundle_reader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/experiment_config_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/manifest_parser.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/normalizer_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/action_publish.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/action_spec.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/observation.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/safety_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/state_spec.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/types/safety_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/types/action_spec.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/ui/action_publisher.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/ui/observation_pipeline.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/__init__.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/bundle_reader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/experiment_config_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/manifest_parser.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/normalizer_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_command_output_config.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_frame_codec.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ],
+  "allEdges": [
+    {
+      "source": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_health_aggregator.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_health_aggregator.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_mapping.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_mapping.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "target": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "target": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "target": "file:elephant_gripper/tests/service/test_mapping.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "target": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "target": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "target": "file:elephant_gripper/tests/service/test_health_aggregator.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "target": "file:elephant_gripper/tests/service/test_mapping.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "target": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "target": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "target": "file:elephant_gripper/tests/service/test_health_aggregator.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/bundle_reader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/experiment_config_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/manifest_parser.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/repo/normalizer_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/action_publish.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/action_spec.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/observation.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/safety_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/types/state_spec.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/types/safety_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/types/action_spec.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "target": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "target": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/ui/act_deploy_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/service/act_inference.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/service/safety_guard.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/runtime/control_loop.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/runtime/inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/runtime/inference_worker.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/runtime/runtime_metrics.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/ui/action_publisher.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/ui/observation_pipeline.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/config/schema.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/action_chunk.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/action_publish.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/action_spec.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/observation.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/safety_result.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/ui/act_deploy_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/config/schema.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/service/act_inference.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/control_loop.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_worker.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/runtime_metrics.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/action_publisher.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/observation_pipeline.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalization.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/ui/act_deploy_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/config/schema.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/runtime/inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_node.py",
+      "target": "file:act/types/action_publish.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/ui/act_deploy_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/config/schema.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_startup_preflight.py",
+      "target": "file:act/runtime/inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/ui/test_startup_preflight.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/ui/test_act_deploy_node.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/ui/action_publisher.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/ui/observation_pipeline.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "document:ENVIRONMENT.md",
+      "target": "config:environment.yml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:ENVIRONMENT.md",
+      "target": "document:requirements.txt",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:environment.yml",
+      "target": "document:requirements.txt",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/scripts/l2_02_verify.sh",
+      "target": "file:act/tests/types/test_observation.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_02_verify.sh",
+      "target": "file:act/tests/service/test_observation_collector.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_02_verify.sh",
+      "target": "file:act/tests/service/test_image_preprocess.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_02_verify.sh",
+      "target": "file:act/tests/runtime/test_observation_buffer.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_02_verify.sh",
+      "target": "file:act/tests/ui/test_observation_ros_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_02_verify.sh",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_03_verify.sh",
+      "target": "file:act/tests/types/test_action_chunk.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_03_verify.sh",
+      "target": "file:act/tests/service/test_observation_batch.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_03_verify.sh",
+      "target": "file:act/tests/service/test_act_inference.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_03_verify.sh",
+      "target": "file:act/tests/service/test_action_chunk_postprocess.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_03_verify.sh",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_05_verify.sh",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_06_verify.sh",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_05_verify.sh",
+      "target": "file:act/types/action_publish.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_05_verify.sh",
+      "target": "file:act/config/schema.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_05_verify.sh",
+      "target": "file:act/service/action_output_adapter.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_05_verify.sh",
+      "target": "file:act/ui/action_publisher.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_02_verify.sh",
+      "target": "file:act/scripts/l2_03_verify.sh",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_03_verify.sh",
+      "target": "file:act/scripts/l2_05_verify.sh",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_05_verify.sh",
+      "target": "file:act/scripts/l2_06_verify.sh",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/scripts/l2_06_verify.sh",
+      "target": "file:act/scripts/l2_02_verify.sh",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:act_system/README.md",
+      "target": "document:act_system/CMakeLists.txt",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:act_system/README.md",
+      "target": "config:act_system/package.xml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "document:act_system/CMakeLists.txt",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "document:act_system/README.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:act_system/README.md",
+      "target": "file:act_system/launch/act_system.launch.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:act_system/README.md",
+      "target": "file:act_system/scripts/start_act_system.sh",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "file:elephant_gripper/launch/elephant_gripper.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:act_system/package.xml",
+      "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "file:dual_fisheye_camera/setup.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "config:dual_fisheye_camera/package.xml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:dual_fisheye_camera/package.xml",
+      "target": "config:dual_fisheye_camera/setup.cfg",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:dual_fisheye_camera/package.xml",
+      "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:dual_fisheye_camera/package.xml",
+      "target": "file:dual_fisheye_camera/setup.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:dual_fisheye_camera/setup.cfg",
+      "target": "file:dual_fisheye_camera/setup.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:elephant_gripper/setup.cfg",
+      "target": "config:elephant_gripper/package.xml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:elephant_gripper/elephant_gripper_architecture.md",
+      "target": "config:elephant_gripper/package.xml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:rm65_dual_arm/README.md",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:rm65_dual_arm/README.md",
+      "target": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:rm65_dual_arm/README.md",
+      "target": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:rm65_dual_arm/CMakeLists.txt",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:rm65_dual_arm/CMakeLists.txt",
+      "target": "config:rm65_dual_arm/package.xml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:rm65_dual_arm/package.xml",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/config/__init__.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/bundle_reader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/experiment_config_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/manifest_parser.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/repo/normalizer_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "config:act/config_files/deploy.yaml",
+      "target": "file:act/config/schema.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:.ua/config.json",
+      "target": "file:.ua/.understandignore",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_command_output_config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_contract.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_contract_check.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/tests/config/test_command_output_config.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_deploy_config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_runtime_config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_safety_config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_schema.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_startup_resources_seams.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/tests/config/test_startup_resources_seams.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/contract_result.py",
+      "target": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/state_spec.py",
+      "target": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/observation_collector.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/observation_buffer.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/image_preprocess.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/observation_ros_adapter.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:act/tests/fixtures/l2_06_fake.yaml",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalization.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/integration/test_l2_03_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/__init__.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/integration/test_l2_04_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/action_publisher.py",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_startup_failure.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/repo/test_act_runtime_resources.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/tests/repo/test_act_runtime_resources.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/repo/test_act_runtime_resources.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/bundle_reader.py",
+      "target": "file:act/tests/repo/test_bundle_reader.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/experiment_config_loader.py",
+      "target": "file:act/tests/repo/test_experiment_config_loader.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/manifest_parser.py",
+      "target": "file:act/tests/repo/test_manifest_parser.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalization.py",
+      "target": "file:act/tests/repo/test_normalization.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalizer_loader.py",
+      "target": "file:act/tests/repo/test_normalizer_loader.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/control_loop.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/runtime_metrics.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/runtime/test_control_loop.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_worker.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/runtime_metrics.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/runtime/test_inference_worker.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/observation_buffer.py",
+      "target": "file:act/tests/runtime/test_observation_buffer.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/runtime/test_observation_buffer.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/tests/runtime/test_control_loop.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/runtime/test_inference_worker.py",
+      "target": "file:act/tests/runtime/test_inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/runtime/runtime_metrics.py",
+      "target": "file:act/tests/runtime/test_runtime_metrics.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/service/test_act_inference.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/service/test_act_inference.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalization.py",
+      "target": "file:act/tests/service/test_act_inference.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "file:act/tests/service/test_act_inference.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/service/test_act_inference.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/service/test_act_inference.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalization.py",
+      "target": "file:act/tests/service/test_action_chunk_postprocess.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/action_chunk_postprocess.py",
+      "target": "file:act/tests/service/test_action_chunk_postprocess.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/service/test_action_chunk_postprocess.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/service/test_action_chunk_postprocess.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/service/test_action_output_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/service/test_action_output_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/service/test_action_output_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/service/test_action_output_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "file:act/tests/service/test_action_output_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/image_preprocess.py",
+      "target": "file:act/tests/service/test_image_preprocess.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/__init__.py",
+      "target": "file:act/tests/service/test_image_preprocess.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/service/test_observation_batch.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalization.py",
+      "target": "file:act/tests/service/test_observation_batch.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/observation_batch.py",
+      "target": "file:act/tests/service/test_observation_batch.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/service/test_observation_batch.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/observation_collector.py",
+      "target": "file:act/tests/service/test_observation_collector.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/service/test_observation_collector.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/service/test_safety_guard.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/__init__.py",
+      "target": "file:act/tests/service/test_safety_guard.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "file:act/tests/service/test_safety_guard.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/service/test_safety_guard.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/service/test_safety_guard.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/service/test_safety_guard.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "file:act/tests/service/test_safety_primitives.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/service/test_safety_primitives.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/service/test_safety_primitives.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/service/test_safety_primitives.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/types/test_action_chunk.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/types/test_action_chunk.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/types/test_action_publish.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/types/test_action_publish.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/types/test_action_publish.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/types/test_action_spec.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/contract_result.py",
+      "target": "file:act/tests/types/test_contract_result.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/types/test_observation.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/__init__.py",
+      "target": "file:act/tests/types/test_observation.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/types/test_safety_result.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/types/test_safety_result.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/state_spec.py",
+      "target": "file:act/tests/types/test_state_spec.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/ui/test_action_publisher.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/ui/test_action_publisher.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/ui/test_action_publisher.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/ui/test_action_publisher.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/__init__.py",
+      "target": "file:act/tests/ui/test_action_publisher.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/action_publisher.py",
+      "target": "file:act/tests/ui/test_action_publisher.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/ui/test_action_publisher_messages.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/__init__.py",
+      "target": "file:act/tests/ui/test_action_publisher_messages.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/action_publisher.py",
+      "target": "file:act/tests/ui/test_action_publisher_messages.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/__init__.py",
+      "target": "file:act/tests/ui/test_observation_pipeline.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/tests/ui/test_observation_pipeline.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/observation_collector.py",
+      "target": "file:act/tests/ui/test_observation_pipeline.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/__init__.py",
+      "target": "file:act/tests/ui/test_observation_pipeline.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/observation_pipeline.py",
+      "target": "file:act/tests/ui/test_observation_pipeline.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/observation_buffer.py",
+      "target": "file:act/tests/ui/test_observation_pipeline.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/__init__.py",
+      "target": "file:act/tests/ui/test_observation_ros_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/tests/ui/test_observation_ros_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/observation_buffer.py",
+      "target": "file:act/tests/ui/test_observation_ros_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/observation_collector.py",
+      "target": "file:act/tests/ui/test_observation_ros_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/__init__.py",
+      "target": "file:act/tests/ui/test_observation_ros_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/observation_ros_adapter.py",
+      "target": "file:act/tests/ui/test_observation_ros_adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "schema:act_interfaces/msg/HardwareHealth.msg",
+      "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "defines_schema",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:elephant_gripper/config/elephant_gripper.yaml",
+      "target": "file:elephant_gripper/launch/elephant_gripper.launch.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:act_interfaces/package.xml",
+      "target": "schema:act_interfaces/msg/CommandPermit.msg",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:act_interfaces/package.xml",
+      "target": "schema:act_interfaces/msg/GripperHealth.msg",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:act_interfaces/package.xml",
+      "target": "schema:act_interfaces/msg/HardwareHealth.msg",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:act_interfaces/package.xml",
+      "target": "document:act_interfaces/CMakeLists.txt",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:act_interfaces/CMakeLists.txt",
+      "target": "schema:act_interfaces/msg/CommandPermit.msg",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:act_interfaces/CMakeLists.txt",
+      "target": "schema:act_interfaces/msg/GripperHealth.msg",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:act_interfaces/CMakeLists.txt",
+      "target": "schema:act_interfaces/msg/HardwareHealth.msg",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:dual_fisheye_camera/setup.py",
+      "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:dual_fisheye_camera/setup.py",
+      "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:elephant_gripper/config/99-elephant-gripper.rules",
+      "target": "config:elephant_gripper/config/elephant_gripper.yaml",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act_system/launch/act_system.launch.py",
+      "target": "file:elephant_gripper/launch/elephant_gripper.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act_system/launch/act_system.launch.py",
+      "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act_system/launch/act_system.launch.py",
+      "target": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act_system/launch/act_system.launch.py",
+      "target": "file:act/ui/act_deploy_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "target": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:elephant_gripper/launch/elephant_gripper.launch.py",
+      "target": "config:elephant_gripper/config/elephant_gripper.yaml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act_system/scripts/start_act_system.sh",
+      "target": "file:act_system/launch/act_system.launch.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:dual_fisheye_camera/setup.py",
+      "target": "file:dual_fisheye_camera/resource/dual_fisheye_camera",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_frame_codec.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "file:rm65_dual_arm/tests/test_delta_guard.cpp",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/src/permit_guard.cpp",
+      "target": "file:rm65_dual_arm/tests/test_permit_guard.cpp",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "file:rm65_dual_arm/tests/test_pose_conversion.cpp",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/src/target_validator.cpp",
+      "target": "file:rm65_dual_arm/tests/test_target_validator.cpp",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "target": "file:elephant_gripper/tests/service/test_frame_codec.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/target_validator.cpp",
+      "target": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/src/permit_guard.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/src/target_validator.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "target": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "triggers",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:rm65_dual_arm/lib/SDK_VENDOR_README.txt",
+      "target": "file:rm65_dual_arm/lib/install_libs.sh",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:rm65_dual_arm/lib/install_libs.sh",
+      "target": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "type": "provisions",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/permit_guard.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_arm.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/src/target_validator.cpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/target_validator.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "target": "file:rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:rm65_dual_arm/README.md",
+      "target": "config:rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

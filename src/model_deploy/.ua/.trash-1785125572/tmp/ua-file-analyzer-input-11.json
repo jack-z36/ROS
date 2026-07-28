@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "elephant_gripper/elephant_gripper_architecture.md", "language": "markdown", "sizeLines": 70, "fileCategory": "docs"},
+    {"path": "elephant_gripper/package.xml", "language": "xml", "sizeLines": 30, "fileCategory": "config"},
+    {"path": "elephant_gripper/setup.cfg", "language": "config", "sizeLines": 4, "fileCategory": "config"}
+  ],
+  "batchImportData": {
+    "elephant_gripper/elephant_gripper_architecture.md": [],
+    "elephant_gripper/package.xml": [],
+    "elephant_gripper/setup.cfg": []
+  }
+}

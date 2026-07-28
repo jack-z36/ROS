@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "rm65_dual_arm/CMakeLists.txt", "language": "txt", "sizeLines": 98, "fileCategory": "docs"},
+    {"path": "rm65_dual_arm/README.md", "language": "markdown", "sizeLines": 147, "fileCategory": "docs"},
+    {"path": "rm65_dual_arm/package.xml", "language": "xml", "sizeLines": 26, "fileCategory": "config"}
+  ],
+  "batchImportData": {
+    "rm65_dual_arm/CMakeLists.txt": [],
+    "rm65_dual_arm/README.md": [],
+    "rm65_dual_arm/package.xml": []
+  }
+}

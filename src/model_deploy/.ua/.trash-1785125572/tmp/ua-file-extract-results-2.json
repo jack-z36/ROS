@@ -1,0 +1,1162 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 7,
+  "filesSkipped": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 7,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 7,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "act/repo/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 41,
+      "nonEmptyLines": 40,
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "act/repo/act_runtime_resources.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 366,
+      "nonEmptyLines": 310,
+      "functions": [
+        {
+          "name": "_cfg_error",
+          "startLine": 65,
+          "endLine": 69,
+          "params": [
+            "msg"
+          ]
+        },
+        {
+          "name": "register_policy_loader",
+          "startLine": 191,
+          "endLine": 199,
+          "params": [
+            "fn"
+          ]
+        },
+        {
+          "name": "load_act_runtime_resources",
+          "startLine": 207,
+          "endLine": 325,
+          "params": [
+            "config",
+            "load_policy"
+          ]
+        },
+        {
+          "name": "_load_experiment_config_mapping",
+          "startLine": 333,
+          "endLine": 340,
+          "params": [
+            "bundle_dir"
+          ]
+        },
+        {
+          "name": "_metadata_int",
+          "startLine": 343,
+          "endLine": 366,
+          "params": [
+            "manifest",
+            "exp",
+            "key"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "PolicyInputSpec",
+          "startLine": 78,
+          "endLine": 152,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "state_key",
+            "state_dim",
+            "image_prefix",
+            "camera_keys",
+            "image_shapes",
+            "image_layout",
+            "image_dtype",
+            "image_value_range",
+            "action_dim",
+            "chunk_size"
+          ]
+        },
+        {
+          "name": "RuntimeResourceCrossCheck",
+          "startLine": 156,
+          "endLine": 164,
+          "methods": [
+            "is_pass"
+          ],
+          "properties": [
+            "passed",
+            "issues"
+          ]
+        },
+        {
+          "name": "ActRuntimeResources",
+          "startLine": 168,
+          "endLine": 181,
+          "methods": [],
+          "properties": [
+            "policy",
+            "state_normalizer",
+            "action_normalizer",
+            "policy_input_spec",
+            "bundle_dir",
+            "cross_check"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_cfg_error",
+          "line": 65,
+          "isDefault": false
+        },
+        {
+          "name": "PolicyInputSpec",
+          "line": 77,
+          "isDefault": false
+        },
+        {
+          "name": "RuntimeResourceCrossCheck",
+          "line": 155,
+          "isDefault": false
+        },
+        {
+          "name": "ActRuntimeResources",
+          "line": 167,
+          "isDefault": false
+        },
+        {
+          "name": "register_policy_loader",
+          "line": 191,
+          "isDefault": false
+        },
+        {
+          "name": "load_act_runtime_resources",
+          "line": 207,
+          "isDefault": false
+        },
+        {
+          "name": "_load_experiment_config_mapping",
+          "line": 333,
+          "isDefault": false
+        },
+        {
+          "name": "_metadata_int",
+          "line": 343,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_cfg_error",
+          "callee": "DeployConfigError",
+          "lineNumber": 69
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 103
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "self.state_key.strip",
+          "lineNumber": 103
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 104
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 106
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 109
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "self.image_prefix.strip",
+          "lineNumber": 109
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 110
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 112
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "sorted",
+          "lineNumber": 113
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "list",
+          "lineNumber": 113
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 114
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "len",
+          "lineNumber": 115
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "set",
+          "lineNumber": 115
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "len",
+          "lineNumber": 115
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 116
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 118
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 122
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 126
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "len",
+          "lineNumber": 130
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "len",
+          "lineNumber": 130
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 131
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "len",
+          "lineNumber": 136
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 138
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 139
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 143
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 148
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_cfg_error",
+          "lineNumber": 152
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_cfg_error",
+          "lineNumber": 232
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "config.bundle.resolved_bundle_dir.resolve",
+          "lineNumber": 237
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "check_bundle_files",
+          "lineNumber": 240
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_cfg_error",
+          "lineNumber": 242
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "', '.join",
+          "lineNumber": 243
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "resolve_checkpoint_path",
+          "lineNumber": 246
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_cfg_error",
+          "lineNumber": 248
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "load_bundle_manifest",
+          "lineNumber": 251
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_load_experiment_config_mapping",
+          "lineNumber": 252
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_metadata_int",
+          "lineNumber": 254
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_metadata_int",
+          "lineNumber": 255
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_metadata_int",
+          "lineNumber": 256
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "conflict.append",
+          "lineNumber": 260
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "conflict.append",
+          "lineNumber": 265
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "conflict.append",
+          "lineNumber": 270
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_cfg_error",
+          "lineNumber": 275
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "\"; \".join",
+          "lineNumber": 275
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "tuple",
+          "lineNumber": 279
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "sorted",
+          "lineNumber": 279
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "images.keys",
+          "lineNumber": 279
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "tuple",
+          "lineNumber": 281
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "PolicyInputSpec",
+          "lineNumber": 282
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "load_bundle_normalizers",
+          "lineNumber": 296
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "norm_conflict.append",
+          "lineNumber": 299
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "norm_conflict.append",
+          "lineNumber": 303
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_cfg_error",
+          "lineNumber": 307
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "\"; \".join",
+          "lineNumber": 307
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "_cfg_error",
+          "lineNumber": 312
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "loader",
+          "lineNumber": 316
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "ActRuntimeResources",
+          "lineNumber": 318
+        },
+        {
+          "caller": "load_act_runtime_resources",
+          "callee": "RuntimeResourceCrossCheck",
+          "lineNumber": 324
+        },
+        {
+          "caller": "_load_experiment_config_mapping",
+          "callee": "load_experiment_config",
+          "lineNumber": 336
+        },
+        {
+          "caller": "_metadata_int",
+          "callee": "manifest.get",
+          "lineNumber": 351
+        },
+        {
+          "caller": "_metadata_int",
+          "callee": "isinstance",
+          "lineNumber": 351
+        },
+        {
+          "caller": "_metadata_int",
+          "callee": "isinstance",
+          "lineNumber": 352
+        },
+        {
+          "caller": "_metadata_int",
+          "callee": "isinstance",
+          "lineNumber": 354
+        },
+        {
+          "caller": "_metadata_int",
+          "callee": "_cfg_error",
+          "lineNumber": 357
+        },
+        {
+          "caller": "_metadata_int",
+          "callee": "int",
+          "lineNumber": 362
+        },
+        {
+          "caller": "_metadata_int",
+          "callee": "_cfg_error",
+          "lineNumber": 364
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 8,
+        "functionCount": 5,
+        "classCount": 3
+      }
+    },
+    {
+      "path": "act/repo/bundle_reader.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 131,
+      "nonEmptyLines": 103,
+      "functions": [
+        {
+          "name": "resolve_bundle_adapter_dir",
+          "startLine": 33,
+          "endLine": 51,
+          "params": [
+            "bundle_dir"
+          ]
+        },
+        {
+          "name": "check_bundle_files",
+          "startLine": 54,
+          "endLine": 80,
+          "params": [
+            "bundle_dir"
+          ]
+        },
+        {
+          "name": "resolve_checkpoint_path",
+          "startLine": 83,
+          "endLine": 131,
+          "params": [
+            "bundle_dir"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "BundleStructureError",
+          "startLine": 23,
+          "endLine": 30,
+          "methods": [],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "BundleStructureError",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "resolve_bundle_adapter_dir",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "check_bundle_files",
+          "line": 54,
+          "isDefault": false
+        },
+        {
+          "name": "resolve_checkpoint_path",
+          "line": 83,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "resolve_bundle_adapter_dir",
+          "callee": "Path(bundle_dir).expanduser().resolve",
+          "lineNumber": 45
+        },
+        {
+          "caller": "resolve_bundle_adapter_dir",
+          "callee": "Path(bundle_dir).expanduser",
+          "lineNumber": 45
+        },
+        {
+          "caller": "resolve_bundle_adapter_dir",
+          "callee": "Path",
+          "lineNumber": 45
+        },
+        {
+          "caller": "resolve_bundle_adapter_dir",
+          "callee": "adapter_dir.is_dir",
+          "lineNumber": 47
+        },
+        {
+          "caller": "resolve_bundle_adapter_dir",
+          "callee": "FileNotFoundError",
+          "lineNumber": 48
+        },
+        {
+          "caller": "check_bundle_files",
+          "callee": "Path(bundle_dir).expanduser().resolve",
+          "lineNumber": 67
+        },
+        {
+          "caller": "check_bundle_files",
+          "callee": "Path(bundle_dir).expanduser",
+          "lineNumber": 67
+        },
+        {
+          "caller": "check_bundle_files",
+          "callee": "Path",
+          "lineNumber": 67
+        },
+        {
+          "caller": "check_bundle_files",
+          "callee": "bundle_dir.is_dir",
+          "lineNumber": 68
+        },
+        {
+          "caller": "check_bundle_files",
+          "callee": "BundleStructureError",
+          "lineNumber": 69
+        },
+        {
+          "caller": "check_bundle_files",
+          "callee": "candidate.is_dir",
+          "lineNumber": 75
+        },
+        {
+          "caller": "check_bundle_files",
+          "callee": "missing.append",
+          "lineNumber": 76
+        },
+        {
+          "caller": "check_bundle_files",
+          "callee": "candidate.is_file",
+          "lineNumber": 78
+        },
+        {
+          "caller": "check_bundle_files",
+          "callee": "missing.append",
+          "lineNumber": 79
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "Path(bundle_dir).expanduser().resolve",
+          "lineNumber": 103
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "Path(bundle_dir).expanduser",
+          "lineNumber": 103
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "Path",
+          "lineNumber": 103
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "manifest_path.is_file",
+          "lineNumber": 107
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "manifest_path.open",
+          "lineNumber": 109
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "json.load",
+          "lineNumber": 110
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "manifest.get(\"model\", {}).get",
+          "lineNumber": 111
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "manifest.get",
+          "lineNumber": 111
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "Path",
+          "lineNumber": 113
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "candidate.is_absolute",
+          "lineNumber": 114
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "candidate.exists",
+          "lineNumber": 116
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "candidate.resolve",
+          "lineNumber": 117
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "sorted",
+          "lineNumber": 122
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "bundle_dir.rglob",
+          "lineNumber": 122
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "entry.is_file",
+          "lineNumber": 123
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "entry.resolve",
+          "lineNumber": 124
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "entry.is_dir",
+          "lineNumber": 125
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "entry.resolve",
+          "lineNumber": 127
+        },
+        {
+          "caller": "resolve_checkpoint_path",
+          "callee": "BundleStructureError",
+          "lineNumber": 129
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 4,
+        "functionCount": 3,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "act/repo/experiment_config_loader.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 63,
+      "nonEmptyLines": 46,
+      "functions": [
+        {
+          "name": "load_experiment_config",
+          "startLine": 29,
+          "endLine": 63,
+          "params": [
+            "path"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ExperimentConfigLoadError",
+          "startLine": 19,
+          "endLine": 26,
+          "methods": [],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ExperimentConfigLoadError",
+          "line": 19,
+          "isDefault": false
+        },
+        {
+          "name": "load_experiment_config",
+          "line": 29,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "load_experiment_config",
+          "callee": "Path(path).expanduser().resolve",
+          "lineNumber": 43
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "Path(path).expanduser",
+          "lineNumber": 43
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "Path",
+          "lineNumber": 43
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "path.is_file",
+          "lineNumber": 45
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "ExperimentConfigLoadError",
+          "lineNumber": 46
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "path.open",
+          "lineNumber": 51
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "yaml.safe_load",
+          "lineNumber": 52
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "ExperimentConfigLoadError",
+          "lineNumber": 54
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "isinstance",
+          "lineNumber": 58
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "ExperimentConfigLoadError",
+          "lineNumber": 59
+        },
+        {
+          "caller": "load_experiment_config",
+          "callee": "type",
+          "lineNumber": 60
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "act/repo/manifest_parser.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 24,
+      "functions": [
+        {
+          "name": "load_bundle_manifest",
+          "startLine": 17,
+          "endLine": 33,
+          "params": [
+            "bundle_dir"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "load_bundle_manifest",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "load_bundle_manifest",
+          "callee": "Path(bundle_dir).expanduser().resolve",
+          "lineNumber": 30
+        },
+        {
+          "caller": "load_bundle_manifest",
+          "callee": "Path(bundle_dir).expanduser",
+          "lineNumber": 30
+        },
+        {
+          "caller": "load_bundle_manifest",
+          "callee": "Path",
+          "lineNumber": 30
+        },
+        {
+          "caller": "load_bundle_manifest",
+          "callee": "manifest_path.open",
+          "lineNumber": 32
+        },
+        {
+          "caller": "load_bundle_manifest",
+          "callee": "json.load",
+          "lineNumber": 33
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "act/repo/normalization.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 130,
+      "nonEmptyLines": 109,
+      "classes": [
+        {
+          "name": "ActionStateNormalizer",
+          "startLine": 15,
+          "endLine": 130,
+          "methods": [
+            "__init__",
+            "normalize",
+            "unnormalize",
+            "__call__",
+            "_as_vector",
+            "_as_array",
+            "_build_identity_mask"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ActionStateNormalizer",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "self._as_vector",
+          "lineNumber": 35
+        },
+        {
+          "caller": "__init__",
+          "callee": "int",
+          "lineNumber": 36
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._as_vector",
+          "lineNumber": 37
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._build_identity_mask",
+          "lineNumber": 40
+        },
+        {
+          "caller": "normalize",
+          "callee": "self._as_array",
+          "lineNumber": 51
+        },
+        {
+          "caller": "normalize",
+          "callee": "np.where",
+          "lineNumber": 53
+        },
+        {
+          "caller": "normalize",
+          "callee": "np.where",
+          "lineNumber": 58
+        },
+        {
+          "caller": "normalize",
+          "callee": "normalized.astype",
+          "lineNumber": 59
+        },
+        {
+          "caller": "unnormalize",
+          "callee": "self._as_array",
+          "lineNumber": 70
+        },
+        {
+          "caller": "unnormalize",
+          "callee": "np.where",
+          "lineNumber": 71
+        },
+        {
+          "caller": "unnormalize",
+          "callee": "np.where",
+          "lineNumber": 76
+        },
+        {
+          "caller": "unnormalize",
+          "callee": "restored.astype",
+          "lineNumber": 77
+        },
+        {
+          "caller": "__call__",
+          "callee": "self.normalize",
+          "lineNumber": 80
+        },
+        {
+          "caller": "_as_vector",
+          "callee": "np.asarray(values, dtype=np.float32).ravel",
+          "lineNumber": 92
+        },
+        {
+          "caller": "_as_vector",
+          "callee": "np.asarray",
+          "lineNumber": 92
+        },
+        {
+          "caller": "_as_vector",
+          "callee": "ValueError",
+          "lineNumber": 94
+        },
+        {
+          "caller": "_as_array",
+          "callee": "np.asarray",
+          "lineNumber": 100
+        },
+        {
+          "caller": "_as_array",
+          "callee": "ValueError",
+          "lineNumber": 102
+        },
+        {
+          "caller": "_build_identity_mask",
+          "callee": "np.zeros",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_build_identity_mask",
+          "callee": "np.asarray",
+          "lineNumber": 114
+        },
+        {
+          "caller": "_build_identity_mask",
+          "callee": "indices.ravel",
+          "lineNumber": 116
+        },
+        {
+          "caller": "_build_identity_mask",
+          "callee": "ValueError",
+          "lineNumber": 118
+        },
+        {
+          "caller": "_build_identity_mask",
+          "callee": "indices.astype",
+          "lineNumber": 122
+        },
+        {
+          "caller": "_build_identity_mask",
+          "callee": "indices.ravel().tolist",
+          "lineNumber": 123
+        },
+        {
+          "caller": "_build_identity_mask",
+          "callee": "indices.ravel",
+          "lineNumber": 123
+        },
+        {
+          "caller": "_build_identity_mask",
+          "callee": "int",
+          "lineNumber": 124
+        },
+        {
+          "caller": "_build_identity_mask",
+          "callee": "ValueError",
+          "lineNumber": 126
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "act/repo/normalizer_loader.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 52,
+      "nonEmptyLines": 40,
+      "functions": [
+        {
+          "name": "load_bundle_normalizers",
+          "startLine": 18,
+          "endLine": 52,
+          "params": [
+            "bundle_dir"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "load_bundle_normalizers",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "load_bundle_normalizers",
+          "callee": "Path(bundle_dir).expanduser().resolve",
+          "lineNumber": 34
+        },
+        {
+          "caller": "load_bundle_normalizers",
+          "callee": "Path(bundle_dir).expanduser",
+          "lineNumber": 34
+        },
+        {
+          "caller": "load_bundle_normalizers",
+          "callee": "Path",
+          "lineNumber": 34
+        },
+        {
+          "caller": "load_bundle_normalizers",
+          "callee": "normalizer_path.open",
+          "lineNumber": 36
+        },
+        {
+          "caller": "load_bundle_normalizers",
+          "callee": "json.load",
+          "lineNumber": 37
+        },
+        {
+          "caller": "load_bundle_normalizers",
+          "callee": "ActionStateNormalizer",
+          "lineNumber": 42
+        },
+        {
+          "caller": "load_bundle_normalizers",
+          "callee": "state_payload.get",
+          "lineNumber": 45
+        },
+        {
+          "caller": "load_bundle_normalizers",
+          "callee": "ActionStateNormalizer",
+          "lineNumber": 47
+        },
+        {
+          "caller": "load_bundle_normalizers",
+          "callee": "action_payload.get",
+          "lineNumber": 50
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

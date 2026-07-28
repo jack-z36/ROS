@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "dual_fisheye_camera/README.md", "language": "markdown", "sizeLines": 136, "fileCategory": "docs"},
+    {"path": "dual_fisheye_camera/package.xml", "language": "xml", "sizeLines": 30, "fileCategory": "config"},
+    {"path": "dual_fisheye_camera/setup.cfg", "language": "config", "sizeLines": 5, "fileCategory": "config"}
+  ],
+  "batchImportData": {
+    "dual_fisheye_camera/README.md": [],
+    "dual_fisheye_camera/package.xml": [],
+    "dual_fisheye_camera/setup.cfg": []
+  }
+}

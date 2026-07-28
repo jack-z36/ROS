@@ -1,0 +1,275 @@
+{
+  "nodes": [
+    {
+      "id": "file:act/repo/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/repo/__init__.py",
+      "summary": "act/repo 包入口，统一导出 bundle 读取、manifest 解析、experiment 配置加载、normalizer 加载与运行时资源装配等仓库层模块。",
+      "tags": ["entry-point", "barrel", "repository-layer", "re-export"],
+      "complexity": "simple",
+      "languageNotes": "Python 包级 barrel，通过相对导入汇聚子模块公共符号。"
+    },
+    {
+      "id": "file:act/repo/act_runtime_resources.py",
+      "type": "file",
+      "name": "act_runtime_resources.py",
+      "filePath": "act/repo/act_runtime_resources.py",
+      "summary": "装配 ACT 运行时所需的全部资源（policy 加载器、state/action normalizer、PolicyInputSpec），并执行 bundle 结构与维度一致性的交叉校验，产出 ActRuntimeResources。",
+      "tags": ["repository-layer", "factory", "runtime-resources", "validation", "policy-loading"],
+      "complexity": "complex",
+      "languageNotes": "通过 register_policy_loader 注册表实现 policy 加载器的可插拔注入，便于测试桩替换。"
+    },
+    {
+      "id": "file:act/repo/bundle_reader.py",
+      "type": "file",
+      "name": "bundle_reader.py",
+      "filePath": "act/repo/bundle_reader.py",
+      "summary": "解析 bundle 目录结构，提供 adapter 目录定位、必需文件校验与 checkpoint 路径解析（优先 manifest 显式声明，缺失时 rglob 回退查找）。",
+      "tags": ["repository-layer", "bundle-io", "validation", "checkpoint", "file-system"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/repo/experiment_config_loader.py",
+      "type": "file",
+      "name": "experiment_config_loader.py",
+      "filePath": "act/repo/experiment_config_loader.py",
+      "summary": "从 YAML 文件加载 experiment 配置并校验返回类型为字典，失败时抛出 ExperimentConfigLoadError。",
+      "tags": ["repository-layer", "config-loader", "yaml", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/repo/manifest_parser.py",
+      "type": "file",
+      "name": "manifest_parser.py",
+      "filePath": "act/repo/manifest_parser.py",
+      "summary": "读取 bundle 目录下的 manifest JSON 文件并解析为字典，供运行时资源装配消费。",
+      "tags": ["repository-layer", "manifest", "json", "bundle-io"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/repo/normalization.py",
+      "type": "file",
+      "name": "normalization.py",
+      "filePath": "act/repo/normalization.py",
+      "summary": "定义 ActionStateNormalizer，基于 mean/std 向量对 state 或 action 做逐分量线性 normalize/unnormalize，未配置维度的索引保持恒等。",
+      "tags": ["repository-layer", "normalization", "data-model", "numpy", "transform"],
+      "complexity": "moderate",
+      "languageNotes": "通过索引掩码实现选择性归一化，未配置 mean/std 的维度经 _build_identity_mask 标记后保持恒等。"
+    },
+    {
+      "id": "file:act/repo/normalizer_loader.py",
+      "type": "file",
+      "name": "normalizer_loader.py",
+      "filePath": "act/repo/normalizer_loader.py",
+      "summary": "从 bundle 目录的 normalizers JSON 加载 state 与 action 两路 ActionStateNormalizer 实例，缺失时回退为恒等归一化。",
+      "tags": ["repository-layer", "normalizer-loader", "json", "bundle-io"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/repo/act_runtime_resources.py:load_act_runtime_resources",
+      "type": "function",
+      "name": "load_act_runtime_resources",
+      "filePath": "act/repo/act_runtime_resources.py",
+      "lineRange": [207, 325],
+      "summary": "编排运行时全部资源加载：校验 bundle 文件、解析 checkpoint、读取 manifest、构造 PolicyInputSpec、加载 normalizer，再通过注入的 loader 装配 policy，最终产出 ActRuntimeResources 与交叉校验结果。",
+      "tags": ["factory", "runtime-resources", "validation", "orchestrator"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:act/repo/act_runtime_resources.py:register_policy_loader",
+      "type": "function",
+      "name": "register_policy_loader",
+      "filePath": "act/repo/act_runtime_resources.py",
+      "lineRange": [191, 199],
+      "summary": "将自定义 policy 加载函数注册到全局 loader 表，支持运行时注入与测试桩替换。",
+      "tags": ["registry", "policy-loading", "hook"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/repo/act_runtime_resources.py:_metadata_int",
+      "type": "function",
+      "name": "_metadata_int",
+      "filePath": "act/repo/act_runtime_resources.py",
+      "lineRange": [343, 366],
+      "summary": "从 manifest 与 experiment 配置中提取指定键的整型元数据，完成类型与范围校验后返回。",
+      "tags": ["validation", "metadata", "parsing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/repo/act_runtime_resources.py:PolicyInputSpec",
+      "type": "class",
+      "name": "PolicyInputSpec",
+      "filePath": "act/repo/act_runtime_resources.py",
+      "lineRange": [78, 152],
+      "summary": "描述 policy 输入契约的不可变数据类，涵盖 state 维度、相机键、图像形状/layout/dtype/value_range、action 维度与 chunk_size，并在 __post_init__ 中执行完备性校验。",
+      "tags": ["data-model", "validation", "policy-input", "contract"],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/repo/act_runtime_resources.py:RuntimeResourceCrossCheck",
+      "type": "class",
+      "name": "RuntimeResourceCrossCheck",
+      "filePath": "act/repo/act_runtime_resources.py",
+      "lineRange": [156, 164],
+      "summary": "承载运行时资源交叉校验结果（是否通过与问题清单）的不可变结果对象。",
+      "tags": ["data-model", "result", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/repo/act_runtime_resources.py:ActRuntimeResources",
+      "type": "class",
+      "name": "ActRuntimeResources",
+      "filePath": "act/repo/act_runtime_resources.py",
+      "lineRange": [168, 181],
+      "summary": "聚合已加载运行时资源的容器：policy、state/action normalizer、PolicyInputSpec、bundle 目录与交叉校验结果。",
+      "tags": ["data-model", "container", "runtime-resources"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/repo/bundle_reader.py:resolve_bundle_adapter_dir",
+      "type": "function",
+      "name": "resolve_bundle_adapter_dir",
+      "filePath": "act/repo/bundle_reader.py",
+      "lineRange": [33, 51],
+      "summary": "定位 bundle 下的 adapter 目录并返回解析后的绝对路径，不存在时抛出 FileNotFoundError。",
+      "tags": ["bundle-io", "file-system", "resolution"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/repo/bundle_reader.py:check_bundle_files",
+      "type": "function",
+      "name": "check_bundle_files",
+      "filePath": "act/repo/bundle_reader.py",
+      "lineRange": [54, 80],
+      "summary": "校验 bundle 根目录以及 adapter 子目录与必需文件是否齐备，返回缺失项列表。",
+      "tags": ["bundle-io", "validation", "file-system"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/repo/bundle_reader.py:resolve_checkpoint_path",
+      "type": "function",
+      "name": "resolve_checkpoint_path",
+      "filePath": "act/repo/bundle_reader.py",
+      "lineRange": [83, 131],
+      "summary": "解析 checkpoint 路径：优先采用 manifest 显式声明，否则在 bundle 内 rglob 查找 checkpoint 文件，全部失败时抛出 BundleStructureError。",
+      "tags": ["bundle-io", "checkpoint", "resolution", "fallback"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/repo/bundle_reader.py:BundleStructureError",
+      "type": "class",
+      "name": "BundleStructureError",
+      "filePath": "act/repo/bundle_reader.py",
+      "lineRange": [23, 30],
+      "summary": "bundle 目录结构异常或必需文件/checkpoint 缺失时抛出的领域异常。",
+      "tags": ["error", "exception", "bundle-io"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/repo/experiment_config_loader.py:load_experiment_config",
+      "type": "function",
+      "name": "load_experiment_config",
+      "filePath": "act/repo/experiment_config_loader.py",
+      "lineRange": [29, 63],
+      "summary": "读取并解析 experiment YAML 配置文件，校验返回值为字典类型，文件缺失或类型不符时抛出 ExperimentConfigLoadError。",
+      "tags": ["config-loader", "yaml", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/repo/experiment_config_loader.py:ExperimentConfigLoadError",
+      "type": "class",
+      "name": "ExperimentConfigLoadError",
+      "filePath": "act/repo/experiment_config_loader.py",
+      "lineRange": [19, 26],
+      "summary": "experiment 配置加载或类型校验失败时抛出的领域异常。",
+      "tags": ["error", "exception", "config-loader"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/repo/manifest_parser.py:load_bundle_manifest",
+      "type": "function",
+      "name": "load_bundle_manifest",
+      "filePath": "act/repo/manifest_parser.py",
+      "lineRange": [17, 33],
+      "summary": "读取 bundle 目录下的 manifest JSON 文件并解析返回字典。",
+      "tags": ["manifest", "json", "bundle-io"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/repo/normalization.py:ActionStateNormalizer",
+      "type": "class",
+      "name": "ActionStateNormalizer",
+      "filePath": "act/repo/normalization.py",
+      "lineRange": [15, 130],
+      "summary": "逐分量线性归一化器，依据 mean/std 向量对 state 或 action 执行 normalize/unnormalize，通过索引掩码让未配置维度保持恒等，并支持 __call__ 直达 normalize。",
+      "tags": ["normalization", "data-model", "numpy", "transform"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:act/repo/normalizer_loader.py:load_bundle_normalizers",
+      "type": "function",
+      "name": "load_bundle_normalizers",
+      "filePath": "act/repo/normalizer_loader.py",
+      "lineRange": [18, 52],
+      "summary": "从 bundle 的 normalizers JSON 加载 state 与 action 两路 ActionStateNormalizer，文件缺失或解析异常时回退为恒等归一化。",
+      "tags": ["normalizer-loader", "json", "bundle-io", "fallback"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {"source": "file:act/repo/__init__.py", "target": "file:act/repo/act_runtime_resources.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:act/repo/__init__.py", "target": "file:act/repo/bundle_reader.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:act/repo/__init__.py", "target": "file:act/repo/experiment_config_loader.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:act/repo/__init__.py", "target": "file:act/repo/manifest_parser.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:act/repo/__init__.py", "target": "file:act/repo/normalization.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:act/repo/__init__.py", "target": "file:act/repo/normalizer_loader.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "function:act/repo/act_runtime_resources.py:load_act_runtime_resources", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "function:act/repo/act_runtime_resources.py:register_policy_loader", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "function:act/repo/act_runtime_resources.py:_metadata_int", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "class:act/repo/act_runtime_resources.py:PolicyInputSpec", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "class:act/repo/act_runtime_resources.py:RuntimeResourceCrossCheck", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "class:act/repo/act_runtime_resources.py:ActRuntimeResources", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act/repo/bundle_reader.py", "target": "function:act/repo/bundle_reader.py:resolve_bundle_adapter_dir", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/repo/bundle_reader.py", "target": "function:act/repo/bundle_reader.py:check_bundle_files", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/repo/bundle_reader.py", "target": "function:act/repo/bundle_reader.py:resolve_checkpoint_path", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/repo/bundle_reader.py", "target": "class:act/repo/bundle_reader.py:BundleStructureError", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act/repo/experiment_config_loader.py", "target": "function:act/repo/experiment_config_loader.py:load_experiment_config", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/repo/experiment_config_loader.py", "target": "class:act/repo/experiment_config_loader.py:ExperimentConfigLoadError", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act/repo/manifest_parser.py", "target": "function:act/repo/manifest_parser.py:load_bundle_manifest", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act/repo/normalization.py", "target": "class:act/repo/normalization.py:ActionStateNormalizer", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act/repo/normalizer_loader.py", "target": "function:act/repo/normalizer_loader.py:load_bundle_normalizers", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "function:act/repo/act_runtime_resources.py:load_act_runtime_resources", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "function:act/repo/act_runtime_resources.py:register_policy_loader", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "class:act/repo/act_runtime_resources.py:PolicyInputSpec", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "class:act/repo/act_runtime_resources.py:RuntimeResourceCrossCheck", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "class:act/repo/act_runtime_resources.py:ActRuntimeResources", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:act/repo/bundle_reader.py", "target": "function:act/repo/bundle_reader.py:resolve_bundle_adapter_dir", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/repo/bundle_reader.py", "target": "function:act/repo/bundle_reader.py:check_bundle_files", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/repo/bundle_reader.py", "target": "function:act/repo/bundle_reader.py:resolve_checkpoint_path", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/repo/bundle_reader.py", "target": "class:act/repo/bundle_reader.py:BundleStructureError", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:act/repo/experiment_config_loader.py", "target": "function:act/repo/experiment_config_loader.py:load_experiment_config", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/repo/experiment_config_loader.py", "target": "class:act/repo/experiment_config_loader.py:ExperimentConfigLoadError", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:act/repo/manifest_parser.py", "target": "function:act/repo/manifest_parser.py:load_bundle_manifest", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:act/repo/normalization.py", "target": "class:act/repo/normalization.py:ActionStateNormalizer", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:act/repo/normalizer_loader.py", "target": "function:act/repo/normalizer_loader.py:load_bundle_normalizers", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "function:act/repo/act_runtime_resources.py:load_act_runtime_resources", "target": "function:act/repo/bundle_reader.py:check_bundle_files", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/repo/act_runtime_resources.py:load_act_runtime_resources", "target": "function:act/repo/bundle_reader.py:resolve_checkpoint_path", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/repo/act_runtime_resources.py:load_act_runtime_resources", "target": "function:act/repo/manifest_parser.py:load_bundle_manifest", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/repo/act_runtime_resources.py:load_act_runtime_resources", "target": "function:act/repo/normalizer_loader.py:load_bundle_normalizers", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/repo/normalizer_loader.py:load_bundle_normalizers", "target": "class:act/repo/normalization.py:ActionStateNormalizer", "type": "calls", "direction": "forward", "weight": 0.8}
+  ]
+}

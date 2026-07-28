@@ -1,0 +1,28 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "act/repo/__init__.py", "language": "python", "sizeLines": 41, "fileCategory": "code"},
+    {"path": "act/repo/act_runtime_resources.py", "language": "python", "sizeLines": 366, "fileCategory": "code"},
+    {"path": "act/repo/bundle_reader.py", "language": "python", "sizeLines": 131, "fileCategory": "code"},
+    {"path": "act/repo/experiment_config_loader.py", "language": "python", "sizeLines": 63, "fileCategory": "code"},
+    {"path": "act/repo/manifest_parser.py", "language": "python", "sizeLines": 33, "fileCategory": "code"},
+    {"path": "act/repo/normalization.py", "language": "python", "sizeLines": 130, "fileCategory": "code"},
+    {"path": "act/repo/normalizer_loader.py", "language": "python", "sizeLines": 52, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    "act/repo/__init__.py": [
+      "act/repo/act_runtime_resources.py",
+      "act/repo/bundle_reader.py",
+      "act/repo/experiment_config_loader.py",
+      "act/repo/manifest_parser.py",
+      "act/repo/normalization.py",
+      "act/repo/normalizer_loader.py"
+    ],
+    "act/repo/act_runtime_resources.py": [],
+    "act/repo/bundle_reader.py": [],
+    "act/repo/experiment_config_loader.py": [],
+    "act/repo/manifest_parser.py": [],
+    "act/repo/normalization.py": [],
+    "act/repo/normalizer_loader.py": []
+  }
+}

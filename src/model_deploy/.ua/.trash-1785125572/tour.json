@@ -1,0 +1,115 @@
+[
+  {
+    "order": 1,
+    "title": "工作空间概览与环境",
+    "description": "从根目录的 ENVIRONMENT.md 开始建立全局认知。这份文档明确了 model_deploy 是一个 ROS2 Jazzy 多包工作空间，列出了各包（act、act_system、act_interfaces、rm65_dual_arm、elephant_gripper、dual_fisheye_camera）的职责、系统 Python 与 conda 的边界、colcon 构建命令、测试入口以及 udev 规则。先读它，你就能在脑海中勾勒出整个部署栈的边界，为后续每一步定位坐标。",
+    "nodeIds": [
+      "document:ENVIRONMENT.md"
+    ]
+  },
+  {
+    "order": 2,
+    "title": "一键启动总入口",
+    "description": "act_system.launch.py 是整个部署栈的“一键启动”组合根：一条命令依次拉起 RM65 双臂、大象夹爪、双鱼眼相机与 ACT 推理节点，并对缺失可执行文件的硬件组件做容错跳过。它揭示了项目的顶层结构——推理大脑（act）与三套硬件执行器如何被编排在同一进程中。读它你就理解了 Step 3 之后每个节点最终被谁、以何种顺序唤起。",
+    "nodeIds": [
+      "file:act_system/launch/act_system.launch.py"
+    ],
+    "languageLesson": "ROS2 launch 文件用 Python 描述拓扑而不是声明式配置：通过 IncludeLaunchDescription 组合子 launch、用 OnProcessExit/EventHandler 做时序门控、以 LaunchConfiguration 透传参数，把“多节点协同”表达为可编程的依赖图。"
+  },
+  {
+    "order": 3,
+    "title": "ACT 推理组合根",
+    "description": "在上一步的总 launch 中，ACT 推理大脑以 act/ui/act_deploy_node.py 的形式被拉起。它是进程内的组合根（L2-06）：原子化装配 L2-02..05 各层公共对象与运行时（ControlLoop + InferenceWorker），再通过 ROS 定时器驱动控制循环。act/ui/__init__.py 作为 barrel 入口统一导出该层公共 API，把对外契约收敛到一处。理解它就抓住了 act/ 内部分层如何被装配成可运行节点。",
+    "nodeIds": [
+      "file:act/ui/act_deploy_node.py",
+      "file:act/ui/__init__.py"
+    ],
+    "languageLesson": "Python 的 barrel 模块（__init__.py 集中 re-export）让包对外暴露一个稳定的公共 API 面，调用方只需 import act.ui，内部模块重构不影响下游导入路径。"
+  },
+  {
+    "order": 4,
+    "title": "运行时调度中枢",
+    "description": "承接 Step 3 的组合根，进入推理运行时的内核。control_loop.py 在每个 tick 内协调观测采集、推理提交、chunk 接受/丢弃、动作选择、安全降级（fallback）与状态机更新，是整个 act 运行时的中枢调度。inference_worker.py 作为后台线程从去重队列取请求、调用推理服务并限速回写，把耗时的 PyTorch 前向与控制环解耦；inference_channel.py 提供两者之间的数据载体与“保最新、去重”的 LatestQueue。",
+    "nodeIds": [
+      "file:act/runtime/control_loop.py",
+      "file:act/runtime/inference_worker.py",
+      "file:act/runtime/inference_channel.py"
+    ],
+    "languageLesson": "将推理执行（worker 线程）与决策调度（control loop）用一条容量为 1 的“保最新”队列隔开，是机器人控制中典型的 producer/consumer 解耦：避免慢推理拖累固定频率的 tick，又保证控制环始终拿到最新结果。"
+  },
+  {
+    "order": 5,
+    "title": "类型与契约层",
+    "description": "前两步的运行时穿梭着一批冻结数据类，它们是各层之间唯一的内存数据契约。action_chunk.py 定义 ActionChunk——L2-03 推理到 L2-06 集成之间唯一的跨模块输出类型；observation.py 描述带多路图像与关节状态的观测快照；safety_result.py 用 SafetyStatus/SafetyCode 枚举刻画安全闸的离散裁决。掌握这套词汇表，后续读 service/runtime/ui 任何模块都能对号入座。",
+    "nodeIds": [
+      "file:act/types/action_chunk.py",
+      "file:act/types/observation.py",
+      "file:act/types/safety_result.py"
+    ],
+    "languageLesson": "Python 的 frozen dataclass（@dataclass(frozen=True)）给出“值对象”语义：构造后不可变、可哈希、可在 __post_init__ 里做一次性完整性校验，非常适合充当跨模块的内存契约，杜绝运行期被悄悄篡改。"
+  },
+  {
+    "order": 6,
+    "title": "配置与运行时资源装配",
+    "description": "现在看 Step 3 组合根启动时加载的两类基础。config/schema.py 用 frozen dataclass 描述 runtime/topics/safety/image/command_output 各节配置，并在构造期逐项校验、冻结成不可变树；repo/act_runtime_resources.py 则装配运行时所需的 policy 加载器、state/action normalizer 与 PolicyInputSpec，并对 bundle 结构与维度一致性做契约检查。前者是“怎么配”，后者是“配出来的资源长什么样”，二者共同决定了启动期能否通过 fail-closed 门。",
+    "nodeIds": [
+      "file:act/config/schema.py",
+      "file:act/repo/act_runtime_resources.py"
+    ],
+    "languageLesson": "把配置校验前置到 dataclass 构造期（fail fast at the boundary），让运行时代码只需处理“已合法”的对象——这是分层架构里“边界处校验、内部信任”原则的典型落地。"
+  },
+  {
+    "order": 7,
+    "title": "观测、推理与安全服务",
+    "description": "回到推理链路的业务核心（与 ROS 解耦的纯领域逻辑）。observation_collector.py 聚合多回调里的图像、TCP 位姿与夹爪状态并统一时间戳，是观测侧入口；act_inference.py 封装 ACT 策略模型的 checkpoint 加载、设备解析与 predict_action_chunk 单步推理；safety_guard.py 的 filter_action 则对候选动作做平移/旋转步长与夹爪范围裁剪，确保发布的动作始终落在安全包络内。三者串起 Step 4 控制环里“采观测→推动作→过安全闸”的主干。",
+    "nodeIds": [
+      "file:act/service/observation_collector.py",
+      "file:act/service/act_inference.py",
+      "file:act/service/safety_guard.py"
+    ]
+  },
+  {
+    "order": 8,
+    "title": "RM65 双臂节点与安全闸链",
+    "description": "从推理大脑切到硬件执行端。rm65_dual_arm_node.cpp 是 C++ 写的 RM65 双臂主节点（rclcpp::Node），其 handle_target 编排了一条多重安全闸链：permit_guard → target_validator → delta_guard → estop → movel。delta_guard.cpp 落实“测试指令必须尽可能小”的硬上限（5cm/11.5°），permit_guard.cpp 则对齐 ACT 的 CommandPermit fail-closed 语义。这条链正是 Step 7 安全包络在真机一侧的兜底防线。",
+    "nodeIds": [
+      "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "file:rm65_dual_arm/src/delta_guard.cpp",
+      "file:rm65_dual_arm/src/permit_guard.cpp"
+    ],
+    "languageLesson": "C++ 在 ROS2 里用 rclcpp::Node 组织生命周期，多重安全闸以“串联早退”方式编排：每道闸返回带稳定 reason_code 的结果对象，任一不过立即短路返回，形成可审计、可测试的 fail-closed 控制流。"
+  },
+  {
+    "order": 9,
+    "title": "大象夹爪运行时与协议编解码",
+    "description": "Step 2 总 launch 拉起的另一套硬件是大象夹爪。gripper_supervisor.py 协调左右两条链路、permit 状态与急停，只做 O(1) 决策与快照，所有串口 I/O 委托给工作线程、且不导入任何 ROS 依赖；serial_link.py 是那条后台线程，负责命令下发、遥测读取、急停与指数退避重连；frame_codec.py 是 Modbus 风格帧的纯函数库（CRC-16/MODBUS、帧构建与响应解析），与串口、ROS 完全解耦，便于离线单测。这是 Step 8 之外第二条“纯逻辑层 + ROS 薄壳”的硬件集成范例。",
+    "nodeIds": [
+      "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "file:elephant_gripper/elephant_gripper/service/frame_codec.py"
+    ],
+    "languageLesson": "把协议编解码（frame_codec）写成不依赖串口与 ROS 的纯函数库，再由 serial_link 工作线程做 I/O、supervisor 做决策——这种“协议/传输/调度”三层剥离让每一层都可独立用脚本化数据驱动测试，是嵌入式通信代码可测性的关键。"
+  },
+  {
+    "order": 10,
+    "title": "ROS2 消息接口契约",
+    "description": "前几步里反复出现的 CommandPermit 许可与 HardwareHealth 健康总线，其 schema 定义在 act_interfaces 的三个 .msg 文件里。CommandPermit.msg 携带 stamp/allowed/reason_code 作为人类许可令牌，被 Step 8 的 permit_guard 与 Step 9 的 permit_gate 共同消费；HardwareHealth.msg 聚合整体 OK/DEGRADED/FAULT 状态供相机与夹爪节点发布；GripperHealth.msg 独立暴露左右夹爪细节。它们是跨语言、跨节点通信的唯一契约，由 rosidl 生成 Python/C++ 绑定。",
+    "nodeIds": [
+      "schema:act_interfaces/msg/CommandPermit.msg",
+      "schema:act_interfaces/msg/HardwareHealth.msg",
+      "schema:act_interfaces/msg/GripperHealth.msg"
+    ],
+    "languageLesson": "ROS2 自定义消息用 .msg 文件声明字段类型，由 rosidl 在构建期生成各语言绑定——schema 即契约，跨节点通信必须先约定消息再实现逻辑，这强迫团队在写代码前先把数据形状固定下来。"
+  },
+  {
+    "order": 11,
+    "title": "集成测试门与验收脚本",
+    "description": "作为收尾，看项目如何把前面所有层“焊”在一起验证。test_l2_06_gate.py 是 L2-06 关卡式集成测试，将 config→repo→runtime→service→types→ui 全栈装配进 FakeClock/FakeNode/Stub 环境跑真实流程；l2_06_verify.sh 作为统一验收入口串联 L2-02→L2-06 的 tracer bullet；elephant_gripper_architecture.md 则是 Step 9 夹爪六层架构的设计文档，可作为回溯任何疑点的权威说明。测试与文档共同保证了各层边界的 fail-closed 语义不被回归破坏。",
+    "nodeIds": [
+      "file:act/tests/integration/test_l2_06_gate.py",
+      "file:act/scripts/l2_06_verify.sh",
+      "document:elephant_gripper/elephant_gripper_architecture.md"
+    ],
+    "languageLesson": "“L2 关卡（gate）”式的端到端集成测试用 fake 时钟与替身节点替代真实硬件，把跨层契约（维度、新鲜度、安全裁决）断言在一条 tracer bullet 上——既能在 CI 里无硬件运行，又能逐关卡定位回归，是机器人软件 CI 化的核心实践。"
+  }
+]

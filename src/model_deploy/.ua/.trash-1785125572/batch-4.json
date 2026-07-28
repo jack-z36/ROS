@@ -1,0 +1,693 @@
+{
+  "nodes": [
+    {
+      "id": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "file",
+      "name": "fake_serial.py",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "summary": "在内存中模拟 gripper 串口设备请求/响应的脚本化 stand-in，仅实现 serial.Serial 被 GripperSerialLink 使用到的子集，使 runtime 与 supervisor 可在无硬件条件下被测试。",
+      "tags": [
+        "test-double",
+        "serial",
+        "hardware-simulation",
+        "gripper"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "通过 frame_codec 解析请求帧并构造响应帧，复用真实协议编解码路径以保证测试逼真度。"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "type": "file",
+      "name": "gripper_supervisor.py",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "summary": "协调左右两个 gripper link、permit 状态与急停（estop）的核心调度器；仅做 O(1) 决策与快照，所有串口 I/O 委托给 link 工作线程，且不导入任何 ROS 依赖。",
+      "tags": [
+        "service",
+        "orchestrator",
+        "permit-gating",
+        "estop",
+        "gripper"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "通过 threading.Lock 保护 permit 状态，default-deny 语义：未收到 permit 前所有命令都被丢弃。"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "type": "file",
+      "name": "permit_gate.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "summary": "命令放行判定的唯一真相源（pure function，无 ROS 依赖）：仅在 permit 存在、allowed=True 且未超过 timeout 时返回 True，体现 default-deny 安全语义。",
+      "tags": [
+        "permit-gating",
+        "validation",
+        "pure-function",
+        "safety"
+      ],
+      "complexity": "simple",
+      "languageNotes": "时钟回退（future stamp）被钳制为 0，避免因单调时钟异常误判过期。"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "file",
+      "name": "command_permit.py",
+      "filePath": "elephant_gripper/elephant_gripper/types/command_permit.py",
+      "summary": "服务层使用的本地（RAM）CommandPermit 不可变 dataclass，刻意与 ROS act_interfaces/CommandPermit 消息解耦，使 service 层无需导入 ROS 即可推理 permit。",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "permit",
+        "dataclass"
+      ],
+      "complexity": "simple",
+      "languageNotes": "frozen dataclass + classmethod denied() 提供 default-deny 工厂，维护 allowed 与 reason_code 的互斥不变式。"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "type": "file",
+      "name": "elephant_gripper_node.py",
+      "filePath": "elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "summary": "elephant_gripper 的 ROS 2 节点，是唯一导入 rclpy 与 act_interfaces 消息的层；负责 ROS 消息与 RAM 类型互转，并将所有串口 I/O 委托给 GripperSupervisor 的工作线程，回调保持 O(1)。",
+      "tags": [
+        "entry-point",
+        "ros-node",
+        "api-handler",
+        "gripper",
+        "adapter"
+      ],
+      "complexity": "complex",
+      "languageNotes": "使用 MutuallyExclusive/Reentrant callback group 区分命令、estop 服务与定时发布，确保 estop 服务可随时抢占。"
+    },
+    {
+      "id": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "type": "file",
+      "name": "test_supervisor.py",
+      "filePath": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "summary": "针对 GripperSupervisor 的运行时行为测试：覆盖无 permit 丢命令、有效 permit 放行、permit 过期、estop 锁存与清除、健康聚合等关键路径，使用 FakeSerial 无硬件运行。",
+      "tags": [
+        "test",
+        "supervisor",
+        "permit-gating",
+        "estop",
+        "gripper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "type": "file",
+      "name": "test_permit_gate.py",
+      "filePath": "elephant_gripper/tests/service/test_permit_gate.py",
+      "summary": "针对 evaluate_permit 纯函数的边界测试：覆盖缺失、denied、新鲜放行、过期、恰好等于 timeout、未来时间戳等分支。",
+      "tags": [
+        "test",
+        "permit-gating",
+        "validation",
+        "unit-test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/runtime/fake_serial.py:FakeSerial",
+      "type": "class",
+      "name": "FakeSerial",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "lineRange": [
+        21,
+        118
+      ],
+      "summary": "确定性回环式 fake 串口，解析写入帧并依据内部 angle/clamp 状态构造响应；维护 set_angle/stop/disable/enable 计数供测试断言使用。",
+      "tags": [
+        "test-double",
+        "serial",
+        "hardware-simulation",
+        "gripper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/runtime/fake_serial.py:make_fake_serial_factory",
+      "type": "function",
+      "name": "make_fake_serial_factory",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "lineRange": [
+        121,
+        137
+      ],
+      "summary": "返回一个闭包工厂，签名为 (port, baudrate, timeout, gripper_id) -> FakeSerial，用于作为 serial_factory 注入 GripperSerialLink。",
+      "tags": [
+        "factory",
+        "test-double",
+        "serial"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py:GripperSupervisor",
+      "type": "class",
+      "name": "GripperSupervisor",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "lineRange": [
+        31,
+        142
+      ],
+      "summary": "持有当前 permit 并在路由命令时加以校验的核心调度类；管理左右 GripperSerialLink、estop 锁存状态与节点级健康聚合，所有方法保持 O(1)。",
+      "tags": [
+        "service",
+        "orchestrator",
+        "permit-gating",
+        "estop",
+        "gripper"
+      ],
+      "complexity": "complex",
+      "languageNotes": "permit 状态以 threading.Lock 保护，default-deny：初始化即置为 denied('no_permit_yet')。"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/permit_gate.py:evaluate_permit",
+      "type": "function",
+      "name": "evaluate_permit",
+      "filePath": "elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "lineRange": [
+        14,
+        33
+      ],
+      "summary": "判定 permit 是否允许立即执行命令的纯函数：permit 为 None、allowed=False 或年龄超过 timeout_s 均判否，时钟回退钳制为 0。",
+      "tags": [
+        "permit-gating",
+        "validation",
+        "pure-function",
+        "safety"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/types/command_permit.py:CommandPermit",
+      "type": "class",
+      "name": "CommandPermit",
+      "filePath": "elephant_gripper/elephant_gripper/types/command_permit.py",
+      "lineRange": [
+        16,
+        33
+      ],
+      "summary": "不可变 dataclass，承载 allowed、reason_code 与单调时钟戳 stamp_monotonic_s；提供 denied() 类方法构造 default-deny 实例。",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "permit",
+        "dataclass"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py:ElephantGripperNode",
+      "type": "class",
+      "name": "ElephantGripperNode",
+      "filePath": "elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "lineRange": [
+        37,
+        203
+      ],
+      "summary": "继承 rclpy Node 的 ROS 适配层，加载配置、装配 GripperSupervisor、注册左右目标位姿订阅、permit 订阅、estop 服务以及状态/健康定时发布。",
+      "tags": [
+        "ros-node",
+        "api-handler",
+        "adapter",
+        "gripper",
+        "entry-point"
+      ],
+      "complexity": "complex",
+      "languageNotes": "通过 MutuallyExclusive/Reentrant callback group 分离命令、estop 与发布路径，保证 estop 可抢占。"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "lineRange": [
+        206,
+        226
+      ],
+      "summary": "节点入口：初始化 rclpy、构造 ElephantGripperNode 并以 MultiThreadedExecutor 驱动，捕获 KeyboardInterrupt/ExternalShutdownException 后优雅清理。",
+      "tags": [
+        "entry-point",
+        "ros-node",
+        "bootstrap"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/tests/runtime/test_supervisor.py:_node_config",
+      "type": "function",
+      "name": "_node_config",
+      "filePath": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "lineRange": [
+        16,
+        31
+      ],
+      "summary": "测试辅助：基于默认 base 字典与 **kwargs 覆盖，构造含左右 GripperLinkConfig 的 NodeConfig。",
+      "tags": [
+        "test",
+        "fixture",
+        "config"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_command_accepted_with_fresh_permit",
+      "type": "function",
+      "name": "test_command_accepted_with_fresh_permit",
+      "filePath": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "lineRange": [
+        63,
+        76
+      ],
+      "summary": "验证注入新鲜 allowed permit 后，route_command 被放行且 latest_state 反映下发角度。",
+      "tags": [
+        "test",
+        "permit-gating",
+        "supervisor"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_expired_permit_drops_command",
+      "type": "function",
+      "name": "test_expired_permit_drops_command",
+      "filePath": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "lineRange": [
+        79,
+        92
+      ],
+      "summary": "验证 permit 超过 timeout 后命令被丢弃，确保 stale permit 不被执行。",
+      "tags": [
+        "test",
+        "permit-gating",
+        "supervisor"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_estop_latches_and_blocks_commands",
+      "type": "function",
+      "name": "test_estop_latches_and_blocks_commands",
+      "filePath": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "lineRange": [
+        105,
+        119
+      ],
+      "summary": "验证 estop_all 后命令被阻断并锁存，aggregate_health 反映 estop 激活状态。",
+      "tags": [
+        "test",
+        "estop",
+        "supervisor",
+        "safety"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_clear_estop_reenables_commands",
+      "type": "function",
+      "name": "test_clear_estop_reenables_commands",
+      "filePath": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "lineRange": [
+        122,
+        136
+      ],
+      "summary": "验证 clear_estop 解除锁存后命令恢复放行，覆盖 estop 复位的关键路径。",
+      "tags": [
+        "test",
+        "estop",
+        "supervisor"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_health_ok_when_connected",
+      "type": "function",
+      "name": "test_health_ok_when_connected",
+      "filePath": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "lineRange": [
+        139,
+        149
+      ],
+      "summary": "验证 FakeSerial 连接正常时 aggregate_health 报告 OK 状态。",
+      "tags": [
+        "test",
+        "health",
+        "supervisor"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "target": "class:elephant_gripper/elephant_gripper/runtime/fake_serial.py:FakeSerial",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "target": "function:elephant_gripper/elephant_gripper/runtime/fake_serial.py:make_fake_serial_factory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "class:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py:GripperSupervisor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "target": "function:elephant_gripper/elephant_gripper/service/permit_gate.py:evaluate_permit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "target": "class:elephant_gripper/elephant_gripper/types/command_permit.py:CommandPermit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "class:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py:ElephantGripperNode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "function:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "function:elephant_gripper/tests/runtime/test_supervisor.py:_node_config",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_command_accepted_with_fresh_permit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_expired_permit_drops_command",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_estop_latches_and_blocks_commands",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_clear_estop_reenables_commands",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "function:elephant_gripper/tests/runtime/test_supervisor.py:test_health_ok_when_connected",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "target": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "target": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "target": "class:elephant_gripper/elephant_gripper/runtime/fake_serial.py:FakeSerial",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "target": "function:elephant_gripper/elephant_gripper/runtime/fake_serial.py:make_fake_serial_factory",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "class:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py:GripperSupervisor",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "target": "function:elephant_gripper/elephant_gripper/service/permit_gate.py:evaluate_permit",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/types/command_permit.py",
+      "target": "class:elephant_gripper/elephant_gripper/types/command_permit.py:CommandPermit",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "class:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py:ElephantGripperNode",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "function:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py:main",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "function:elephant_gripper/elephant_gripper/service/permit_gate.py:evaluate_permit",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "function:elephant_gripper/elephant_gripper/service/health_aggregator.py:evaluate_device_health",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "function:elephant_gripper/elephant_gripper/service/health_aggregator.py:aggregate_node_health",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "function:elephant_gripper/elephant_gripper/runtime/fake_serial.py:make_fake_serial_factory",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "class:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py:GripperSupervisor",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "target": "function:elephant_gripper/elephant_gripper/repo/config_loader.py:load_config",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "target": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "target": "file:elephant_gripper/tests/service/test_permit_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "target": "file:elephant_gripper/tests/runtime/test_supervisor.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

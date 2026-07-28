@@ -1,0 +1,102 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 1,
+  "filesSkipped": [
+    "dual_fisheye_camera/package.xml",
+    "dual_fisheye_camera/setup.cfg"
+  ],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 1,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 1
+    }
+  },
+  "results": [
+    {
+      "path": "dual_fisheye_camera/README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 136,
+      "nonEmptyLines": 102,
+      "sections": [
+        {
+          "heading": "dual_fisheye_camera",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "一句话功能",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "发布 / 订阅",
+          "level": 2,
+          "line": 10
+        },
+        {
+          "heading": "落点说明",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "包结构",
+          "level": 2,
+          "line": 28
+        },
+        {
+          "heading": "依赖",
+          "level": 2,
+          "line": 43
+        },
+        {
+          "heading": "构建",
+          "level": 2,
+          "line": 53
+        },
+        {
+          "heading": "运行",
+          "level": 2,
+          "line": 63
+        },
+        {
+          "heading": "验证",
+          "level": 2,
+          "line": 76
+        },
+        {
+          "heading": "Health 字段映射（相机场景）",
+          "level": 2,
+          "line": 98
+        },
+        {
+          "heading": "关键约束（实现遵守情况）",
+          "level": 2,
+          "line": 114
+        },
+        {
+          "heading": "未验证项（无真机环境时）",
+          "level": 2,
+          "line": 123
+        },
+        {
+          "heading": "真机风险 / 急停准备",
+          "level": 2,
+          "line": 131
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    }
+  ]
+}

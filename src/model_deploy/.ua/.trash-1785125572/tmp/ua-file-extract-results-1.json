@@ -1,0 +1,2588 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 10,
+  "filesSkipped": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 10,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 10,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "elephant_gripper/elephant_gripper/config/schema.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 119,
+      "nonEmptyLines": 100,
+      "classes": [
+        {
+          "name": "ConfigError",
+          "startLine": 20,
+          "endLine": 21,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "WidthAngleCalibration",
+          "startLine": 25,
+          "endLine": 44,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "angle_closed",
+            "angle_open"
+          ]
+        },
+        {
+          "name": "GripperLinkConfig",
+          "startLine": 48,
+          "endLine": 88,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "side",
+            "port",
+            "baudrate",
+            "gripper_id",
+            "serial_timeout_s",
+            "enable_wait_s",
+            "set_angle_wait_s",
+            "poll_hz",
+            "reconnect_backoff_min_s",
+            "reconnect_backoff_max_s",
+            "command_min",
+            "command_max",
+            "calibration"
+          ]
+        },
+        {
+          "name": "NodeConfig",
+          "startLine": 92,
+          "endLine": 119,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "left",
+            "right",
+            "publish_hz",
+            "health_publish_hz",
+            "permit_timeout_s",
+            "command_timeout_s",
+            "hardware_id",
+            "estop_on_startup",
+            "use_fake_serial"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ConfigError",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "WidthAngleCalibration",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "GripperLinkConfig",
+          "line": 47,
+          "isDefault": false
+        },
+        {
+          "name": "NodeConfig",
+          "line": 91,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 40
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 44
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 67
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 69
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 71
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 73
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 75
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 77
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 79
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 81
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 85
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 107
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 109
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 111
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 113
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 115
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 117
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ConfigError",
+          "lineNumber": 119
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 0,
+        "classCount": 4
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 149,
+      "nonEmptyLines": 118,
+      "functions": [
+        {
+          "name": "load_config",
+          "startLine": 27,
+          "endLine": 41,
+          "params": [
+            "config_file",
+            "node_name"
+          ]
+        },
+        {
+          "name": "_extract_ros_params",
+          "startLine": 44,
+          "endLine": 50,
+          "params": [
+            "raw",
+            "node_name"
+          ]
+        },
+        {
+          "name": "parse_node_config",
+          "startLine": 53,
+          "endLine": 105,
+          "params": [
+            "params"
+          ]
+        },
+        {
+          "name": "_parse_calibration",
+          "startLine": 108,
+          "endLine": 116,
+          "params": [
+            "raw"
+          ]
+        },
+        {
+          "name": "_as_int",
+          "startLine": 119,
+          "endLine": 123,
+          "params": [
+            "value",
+            "name"
+          ]
+        },
+        {
+          "name": "_as_float",
+          "startLine": 126,
+          "endLine": 130,
+          "params": [
+            "value",
+            "name"
+          ]
+        },
+        {
+          "name": "_as_bool",
+          "startLine": 133,
+          "endLine": 142,
+          "params": [
+            "value",
+            "name"
+          ]
+        },
+        {
+          "name": "_required_str",
+          "startLine": 145,
+          "endLine": 149,
+          "params": [
+            "params",
+            "name"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "load_config",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "_extract_ros_params",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "parse_node_config",
+          "line": 53,
+          "isDefault": false
+        },
+        {
+          "name": "_parse_calibration",
+          "line": 108,
+          "isDefault": false
+        },
+        {
+          "name": "_as_int",
+          "line": 119,
+          "isDefault": false
+        },
+        {
+          "name": "_as_float",
+          "line": 126,
+          "isDefault": false
+        },
+        {
+          "name": "_as_bool",
+          "line": 133,
+          "isDefault": false
+        },
+        {
+          "name": "_required_str",
+          "line": 145,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "load_config",
+          "callee": "Path(os.path.expandvars(config_file)).expanduser",
+          "lineNumber": 30
+        },
+        {
+          "caller": "load_config",
+          "callee": "Path",
+          "lineNumber": 30
+        },
+        {
+          "caller": "load_config",
+          "callee": "os.path.expandvars",
+          "lineNumber": 30
+        },
+        {
+          "caller": "load_config",
+          "callee": "path.is_file",
+          "lineNumber": 31
+        },
+        {
+          "caller": "load_config",
+          "callee": "ConfigError",
+          "lineNumber": 32
+        },
+        {
+          "caller": "load_config",
+          "callee": "path.open",
+          "lineNumber": 34
+        },
+        {
+          "caller": "load_config",
+          "callee": "yaml.safe_load",
+          "lineNumber": 35
+        },
+        {
+          "caller": "load_config",
+          "callee": "isinstance",
+          "lineNumber": 37
+        },
+        {
+          "caller": "load_config",
+          "callee": "ConfigError",
+          "lineNumber": 38
+        },
+        {
+          "caller": "load_config",
+          "callee": "_extract_ros_params",
+          "lineNumber": 40
+        },
+        {
+          "caller": "load_config",
+          "callee": "parse_node_config",
+          "lineNumber": 41
+        },
+        {
+          "caller": "_extract_ros_params",
+          "callee": "raw.get",
+          "lineNumber": 45
+        },
+        {
+          "caller": "_extract_ros_params",
+          "callee": "isinstance",
+          "lineNumber": 46
+        },
+        {
+          "caller": "_extract_ros_params",
+          "callee": "isinstance",
+          "lineNumber": 46
+        },
+        {
+          "caller": "_extract_ros_params",
+          "callee": "node_block.get",
+          "lineNumber": 46
+        },
+        {
+          "caller": "_extract_ros_params",
+          "callee": "isinstance",
+          "lineNumber": 48
+        },
+        {
+          "caller": "_extract_ros_params",
+          "callee": "raw.get",
+          "lineNumber": 48
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "isinstance",
+          "lineNumber": 56
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "ConfigError",
+          "lineNumber": 57
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_required_str",
+          "lineNumber": 59
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_required_str",
+          "lineNumber": 60
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_int",
+          "lineNumber": 62
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 62
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_int",
+          "lineNumber": 63
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 63
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 64
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 64
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 65
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 65
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 66
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 66
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 67
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 67
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 68
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 69
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 71
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 72
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 74
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 74
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 75
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 75
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_parse_calibration",
+          "lineNumber": 76
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 76
+        },
+        {
+          "caller": "_link",
+          "callee": "GripperLinkConfig",
+          "lineNumber": 79
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "NodeConfig",
+          "lineNumber": 95
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_link",
+          "lineNumber": 96
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_link",
+          "lineNumber": 97
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 98
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 98
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 99
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 99
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 100
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 100
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_float",
+          "lineNumber": 101
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 101
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "str(params.get(\"hardware_id\", \"elephant_gripper\")).strip",
+          "lineNumber": 102
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "str",
+          "lineNumber": 102
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 102
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_bool",
+          "lineNumber": 103
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 103
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "_as_bool",
+          "lineNumber": 104
+        },
+        {
+          "caller": "parse_node_config",
+          "callee": "params.get",
+          "lineNumber": 104
+        },
+        {
+          "caller": "_parse_calibration",
+          "callee": "WidthAngleCalibration",
+          "lineNumber": 110
+        },
+        {
+          "caller": "_parse_calibration",
+          "callee": "isinstance",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_parse_calibration",
+          "callee": "ConfigError",
+          "lineNumber": 112
+        },
+        {
+          "caller": "_parse_calibration",
+          "callee": "WidthAngleCalibration",
+          "lineNumber": 113
+        },
+        {
+          "caller": "_parse_calibration",
+          "callee": "_as_int",
+          "lineNumber": 114
+        },
+        {
+          "caller": "_parse_calibration",
+          "callee": "raw.get",
+          "lineNumber": 114
+        },
+        {
+          "caller": "_parse_calibration",
+          "callee": "_as_int",
+          "lineNumber": 115
+        },
+        {
+          "caller": "_parse_calibration",
+          "callee": "raw.get",
+          "lineNumber": 115
+        },
+        {
+          "caller": "_as_int",
+          "callee": "int",
+          "lineNumber": 121
+        },
+        {
+          "caller": "_as_int",
+          "callee": "ConfigError",
+          "lineNumber": 123
+        },
+        {
+          "caller": "_as_float",
+          "callee": "float",
+          "lineNumber": 128
+        },
+        {
+          "caller": "_as_float",
+          "callee": "ConfigError",
+          "lineNumber": 130
+        },
+        {
+          "caller": "_as_bool",
+          "callee": "isinstance",
+          "lineNumber": 134
+        },
+        {
+          "caller": "_as_bool",
+          "callee": "isinstance",
+          "lineNumber": 136
+        },
+        {
+          "caller": "_as_bool",
+          "callee": "value.strip().lower",
+          "lineNumber": 137
+        },
+        {
+          "caller": "_as_bool",
+          "callee": "value.strip",
+          "lineNumber": 137
+        },
+        {
+          "caller": "_as_bool",
+          "callee": "ConfigError",
+          "lineNumber": 142
+        },
+        {
+          "caller": "_required_str",
+          "callee": "str(params.get(name, \"\")).strip",
+          "lineNumber": 146
+        },
+        {
+          "caller": "_required_str",
+          "callee": "str",
+          "lineNumber": 146
+        },
+        {
+          "caller": "_required_str",
+          "callee": "params.get",
+          "lineNumber": 146
+        },
+        {
+          "caller": "_required_str",
+          "callee": "ConfigError",
+          "lineNumber": 148
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 8,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 324,
+      "nonEmptyLines": 279,
+      "functions": [
+        {
+          "name": "_default_serial_factory",
+          "startLine": 35,
+          "endLine": 45,
+          "params": [
+            "port",
+            "baudrate",
+            "timeout",
+            "gripper_id"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "GripperSerialLink",
+          "startLine": 48,
+          "endLine": 324,
+          "methods": [
+            "__init__",
+            "side",
+            "start",
+            "stop",
+            "submit_command",
+            "latest_state",
+            "health_signal",
+            "trigger_estop",
+            "clear_estop",
+            "estop_active",
+            "_run",
+            "_open_serial",
+            "_transaction_cycle",
+            "_request",
+            "_take_pending_command",
+            "_safe_disable_locked",
+            "_close_serial_locked",
+            "_record_error",
+            "_reset_errors",
+            "_set_connected",
+            "_interruptible_sleep",
+            "_log"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_default_serial_factory",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "GripperSerialLink",
+          "line": 48,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_default_serial_factory",
+          "callee": "serial.Serial",
+          "lineNumber": 38
+        },
+        {
+          "caller": "__init__",
+          "callee": "threading.Lock",
+          "lineNumber": 66
+        },
+        {
+          "caller": "__init__",
+          "callee": "threading.Lock",
+          "lineNumber": 67
+        },
+        {
+          "caller": "__init__",
+          "callee": "threading.Event",
+          "lineNumber": 68
+        },
+        {
+          "caller": "__init__",
+          "callee": "threading.Event",
+          "lineNumber": 69
+        },
+        {
+          "caller": "__init__",
+          "callee": "GripperStateSample.placeholder",
+          "lineNumber": 75
+        },
+        {
+          "caller": "start",
+          "callee": "self._stop_event.clear",
+          "lineNumber": 91
+        },
+        {
+          "caller": "start",
+          "callee": "threading.Thread",
+          "lineNumber": 92
+        },
+        {
+          "caller": "start",
+          "callee": "self._thread.start",
+          "lineNumber": 97
+        },
+        {
+          "caller": "stop",
+          "callee": "self._stop_event.set",
+          "lineNumber": 100
+        },
+        {
+          "caller": "stop",
+          "callee": "thread.is_alive",
+          "lineNumber": 102
+        },
+        {
+          "caller": "stop",
+          "callee": "thread.join",
+          "lineNumber": 103
+        },
+        {
+          "caller": "stop",
+          "callee": "self._safe_disable_locked",
+          "lineNumber": 107
+        },
+        {
+          "caller": "stop",
+          "callee": "self._close_serial_locked",
+          "lineNumber": 108
+        },
+        {
+          "caller": "health_signal",
+          "callee": "LinkHealthInput",
+          "lineNumber": 128
+        },
+        {
+          "caller": "trigger_estop",
+          "callee": "self._estop_event.set",
+          "lineNumber": 140
+        },
+        {
+          "caller": "trigger_estop",
+          "callee": "serial_obj.write",
+          "lineNumber": 146
+        },
+        {
+          "caller": "trigger_estop",
+          "callee": "fc.stop_frame",
+          "lineNumber": 146
+        },
+        {
+          "caller": "trigger_estop",
+          "callee": "serial_obj.write",
+          "lineNumber": 147
+        },
+        {
+          "caller": "trigger_estop",
+          "callee": "fc.disable_frame",
+          "lineNumber": 147
+        },
+        {
+          "caller": "trigger_estop",
+          "callee": "self._log",
+          "lineNumber": 149
+        },
+        {
+          "caller": "clear_estop",
+          "callee": "self._estop_event.clear",
+          "lineNumber": 152
+        },
+        {
+          "caller": "estop_active",
+          "callee": "self._estop_event.is_set",
+          "lineNumber": 156
+        },
+        {
+          "caller": "_run",
+          "callee": "self._stop_event.is_set",
+          "lineNumber": 161
+        },
+        {
+          "caller": "_run",
+          "callee": "self._open_serial",
+          "lineNumber": 163
+        },
+        {
+          "caller": "_run",
+          "callee": "self._interruptible_sleep",
+          "lineNumber": 164
+        },
+        {
+          "caller": "_run",
+          "callee": "min",
+          "lineNumber": 165
+        },
+        {
+          "caller": "_run",
+          "callee": "self._transaction_cycle",
+          "lineNumber": 170
+        },
+        {
+          "caller": "_run",
+          "callee": "self._record_error",
+          "lineNumber": 172
+        },
+        {
+          "caller": "_run",
+          "callee": "self._close_serial_locked",
+          "lineNumber": 174
+        },
+        {
+          "caller": "_run",
+          "callee": "self._interruptible_sleep",
+          "lineNumber": 175
+        },
+        {
+          "caller": "_run",
+          "callee": "min",
+          "lineNumber": 176
+        },
+        {
+          "caller": "_run",
+          "callee": "self._interruptible_sleep",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "self._serial_factory",
+          "lineNumber": 184
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "self._record_error",
+          "lineNumber": 191
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "self._set_connected",
+          "lineNumber": 192
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "self._set_connected",
+          "lineNumber": 196
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "self._reset_errors",
+          "lineNumber": 197
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "self._log",
+          "lineNumber": 198
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "self._estop_event.is_set",
+          "lineNumber": 200
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "serial_obj.write",
+          "lineNumber": 203
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "fc.enable_frame",
+          "lineNumber": 203
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "self._record_error",
+          "lineNumber": 205
+        },
+        {
+          "caller": "_open_serial",
+          "callee": "self._interruptible_sleep",
+          "lineNumber": 207
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "self._take_pending_command",
+          "lineNumber": 216
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "self._estop_event.is_set",
+          "lineNumber": 217
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "width_to_angle",
+          "lineNumber": 218
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "self._estop_event.is_set",
+          "lineNumber": 220
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "serial_obj.write",
+          "lineNumber": 221
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "fc.build_set_angle_frame",
+          "lineNumber": 221
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "self._interruptible_sleep",
+          "lineNumber": 223
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "self._request",
+          "lineNumber": 226
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "fc.read_angle_frame",
+          "lineNumber": 227
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "self._record_error",
+          "lineNumber": 230
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "self._request",
+          "lineNumber": 235
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "fc.read_clamp_frame",
+          "lineNumber": 236
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "ClampStatus.from_raw",
+          "lineNumber": 239
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "angle_to_width",
+          "lineNumber": 241
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "time.monotonic",
+          "lineNumber": 242
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "GripperStateSample",
+          "lineNumber": 243
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "max",
+          "lineNumber": 246
+        },
+        {
+          "caller": "_transaction_cycle",
+          "callee": "min",
+          "lineNumber": 246
+        },
+        {
+          "caller": "_request",
+          "callee": "serial_obj.reset_input_buffer",
+          "lineNumber": 262
+        },
+        {
+          "caller": "_request",
+          "callee": "serial_obj.write",
+          "lineNumber": 263
+        },
+        {
+          "caller": "_request",
+          "callee": "serial_obj.read",
+          "lineNumber": 264
+        },
+        {
+          "caller": "_request",
+          "callee": "fc.parse_response",
+          "lineNumber": 265
+        },
+        {
+          "caller": "_safe_disable_locked",
+          "callee": "serial_obj.write",
+          "lineNumber": 285
+        },
+        {
+          "caller": "_safe_disable_locked",
+          "callee": "fc.disable_frame",
+          "lineNumber": 285
+        },
+        {
+          "caller": "_safe_disable_locked",
+          "callee": "self._log",
+          "lineNumber": 287
+        },
+        {
+          "caller": "_close_serial_locked",
+          "callee": "self._set_connected",
+          "lineNumber": 292
+        },
+        {
+          "caller": "_close_serial_locked",
+          "callee": "getattr",
+          "lineNumber": 296
+        },
+        {
+          "caller": "_close_serial_locked",
+          "callee": "serial_obj.close",
+          "lineNumber": 297
+        },
+        {
+          "caller": "_close_serial_locked",
+          "callee": "self._log",
+          "lineNumber": 299
+        },
+        {
+          "caller": "_record_error",
+          "callee": "self._log",
+          "lineNumber": 305
+        },
+        {
+          "caller": "_interruptible_sleep",
+          "callee": "self._stop_event.wait",
+          "lineNumber": 319
+        },
+        {
+          "caller": "_log",
+          "callee": "getattr",
+          "lineNumber": 324
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 98,
+      "nonEmptyLines": 80,
+      "functions": [
+        {
+          "name": "evaluate_device_health",
+          "startLine": 32,
+          "endLine": 72,
+          "params": [
+            "signal",
+            "error_degraded_threshold",
+            "error_fault_threshold",
+            "rx_stale_s"
+          ]
+        },
+        {
+          "name": "aggregate_node_health",
+          "startLine": 75,
+          "endLine": 98,
+          "params": [
+            "left",
+            "right",
+            "hardware_id",
+            "estop_active"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "LinkHealthInput",
+          "startLine": 22,
+          "endLine": 29,
+          "methods": [],
+          "properties": [
+            "side",
+            "connected",
+            "consecutive_errors",
+            "seconds_since_rx",
+            "last_detail"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "LinkHealthInput",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "evaluate_device_health",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "aggregate_node_health",
+          "line": 75,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "evaluate_device_health",
+          "callee": "DeviceHealth",
+          "lineNumber": 41
+        },
+        {
+          "caller": "evaluate_device_health",
+          "callee": "DeviceHealth",
+          "lineNumber": 67
+        },
+        {
+          "caller": "aggregate_node_health",
+          "callee": "HealthLevel",
+          "lineNumber": 83
+        },
+        {
+          "caller": "aggregate_node_health",
+          "callee": "max",
+          "lineNumber": 83
+        },
+        {
+          "caller": "aggregate_node_health",
+          "callee": "int",
+          "lineNumber": 83
+        },
+        {
+          "caller": "aggregate_node_health",
+          "callee": "int",
+          "lineNumber": 83
+        },
+        {
+          "caller": "aggregate_node_health",
+          "callee": "details.append",
+          "lineNumber": 86
+        },
+        {
+          "caller": "aggregate_node_health",
+          "callee": "details.append",
+          "lineNumber": 88
+        },
+        {
+          "caller": "aggregate_node_health",
+          "callee": "details.append",
+          "lineNumber": 90
+        },
+        {
+          "caller": "aggregate_node_health",
+          "callee": "NodeHealth",
+          "lineNumber": 91
+        },
+        {
+          "caller": "aggregate_node_health",
+          "callee": "\"; \".join",
+          "lineNumber": 97
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/mapping.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 28,
+      "functions": [
+        {
+          "name": "_clamp",
+          "startLine": 18,
+          "endLine": 19,
+          "params": [
+            "value",
+            "low",
+            "high"
+          ]
+        },
+        {
+          "name": "width_to_angle",
+          "startLine": 22,
+          "endLine": 29,
+          "params": [
+            "width",
+            "calib"
+          ]
+        },
+        {
+          "name": "angle_to_width",
+          "startLine": 32,
+          "endLine": 39,
+          "params": [
+            "angle",
+            "calib"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_clamp",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "width_to_angle",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "angle_to_width",
+          "line": 32,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_clamp",
+          "callee": "max",
+          "lineNumber": 19
+        },
+        {
+          "caller": "_clamp",
+          "callee": "min",
+          "lineNumber": 19
+        },
+        {
+          "caller": "width_to_angle",
+          "callee": "_clamp",
+          "lineNumber": 25
+        },
+        {
+          "caller": "width_to_angle",
+          "callee": "int",
+          "lineNumber": 28
+        },
+        {
+          "caller": "width_to_angle",
+          "callee": "round",
+          "lineNumber": 28
+        },
+        {
+          "caller": "width_to_angle",
+          "callee": "int",
+          "lineNumber": 29
+        },
+        {
+          "caller": "width_to_angle",
+          "callee": "_clamp",
+          "lineNumber": 29
+        },
+        {
+          "caller": "angle_to_width",
+          "callee": "_clamp",
+          "lineNumber": 39
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 132,
+      "nonEmptyLines": 98,
+      "classes": [
+        {
+          "name": "GripperSide",
+          "startLine": 14,
+          "endLine": 18,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "ClampStatus",
+          "startLine": 21,
+          "endLine": 34,
+          "methods": [
+            "from_raw"
+          ],
+          "properties": []
+        },
+        {
+          "name": "HealthLevel",
+          "startLine": 37,
+          "endLine": 45,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "GripperStateSample",
+          "startLine": 58,
+          "endLine": 95,
+          "methods": [
+            "__post_init__",
+            "placeholder"
+          ],
+          "properties": [
+            "side",
+            "width",
+            "angle",
+            "clamp_status",
+            "monotonic_s",
+            "valid"
+          ]
+        },
+        {
+          "name": "GripperCommand",
+          "startLine": 99,
+          "endLine": 110,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "side",
+            "target_width"
+          ]
+        },
+        {
+          "name": "DeviceHealth",
+          "startLine": 114,
+          "endLine": 120,
+          "methods": [],
+          "properties": [
+            "side",
+            "connected",
+            "status",
+            "detail"
+          ]
+        },
+        {
+          "name": "NodeHealth",
+          "startLine": 124,
+          "endLine": 132,
+          "methods": [],
+          "properties": [
+            "hardware_id",
+            "status",
+            "left",
+            "right",
+            "estop_active",
+            "detail"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GripperSide",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "ClampStatus",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "HealthLevel",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "GripperStateSample",
+          "line": 57,
+          "isDefault": false
+        },
+        {
+          "name": "GripperCommand",
+          "line": 98,
+          "isDefault": false
+        },
+        {
+          "name": "DeviceHealth",
+          "line": 113,
+          "isDefault": false
+        },
+        {
+          "name": "NodeHealth",
+          "line": 123,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "from_raw",
+          "callee": "cls",
+          "lineNumber": 32
+        },
+        {
+          "caller": "from_raw",
+          "callee": "int",
+          "lineNumber": 32
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 76
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 80
+        },
+        {
+          "caller": "placeholder",
+          "callee": "cls",
+          "lineNumber": 88
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 107
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 7,
+        "functionCount": 0,
+        "classCount": 7
+      }
+    },
+    {
+      "path": "elephant_gripper/tests/repo/test_config_loader.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 95,
+      "nonEmptyLines": 73,
+      "functions": [
+        {
+          "name": "_write",
+          "startLine": 29,
+          "endLine": 32,
+          "params": [
+            "tmp_path",
+            "text"
+          ]
+        },
+        {
+          "name": "test_load_valid_config",
+          "startLine": 35,
+          "endLine": 42,
+          "params": [
+            "tmp_path"
+          ]
+        },
+        {
+          "name": "test_missing_file_raises",
+          "startLine": 45,
+          "endLine": 47,
+          "params": []
+        },
+        {
+          "name": "test_missing_left_port_raises",
+          "startLine": 50,
+          "endLine": 52,
+          "params": []
+        },
+        {
+          "name": "test_missing_right_port_raises",
+          "startLine": 55,
+          "endLine": 57,
+          "params": []
+        },
+        {
+          "name": "test_invalid_command_range_raises",
+          "startLine": 60,
+          "endLine": 69,
+          "params": []
+        },
+        {
+          "name": "test_invalid_calibration_raises",
+          "startLine": 72,
+          "endLine": 80,
+          "params": []
+        },
+        {
+          "name": "test_non_numeric_baudrate_raises",
+          "startLine": 83,
+          "endLine": 87,
+          "params": []
+        },
+        {
+          "name": "test_defaults_applied",
+          "startLine": 90,
+          "endLine": 95,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_write",
+          "line": 29,
+          "isDefault": false
+        },
+        {
+          "name": "test_load_valid_config",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "test_missing_file_raises",
+          "line": 45,
+          "isDefault": false
+        },
+        {
+          "name": "test_missing_left_port_raises",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "test_missing_right_port_raises",
+          "line": 55,
+          "isDefault": false
+        },
+        {
+          "name": "test_invalid_command_range_raises",
+          "line": 60,
+          "isDefault": false
+        },
+        {
+          "name": "test_invalid_calibration_raises",
+          "line": 72,
+          "isDefault": false
+        },
+        {
+          "name": "test_non_numeric_baudrate_raises",
+          "line": 83,
+          "isDefault": false
+        },
+        {
+          "name": "test_defaults_applied",
+          "line": 90,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_write",
+          "callee": "path.write_text",
+          "lineNumber": 31
+        },
+        {
+          "caller": "_write",
+          "callee": "str",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_load_valid_config",
+          "callee": "load_config",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_load_valid_config",
+          "callee": "_write",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_missing_file_raises",
+          "callee": "pytest.raises",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_missing_file_raises",
+          "callee": "load_config",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_missing_left_port_raises",
+          "callee": "pytest.raises",
+          "lineNumber": 51
+        },
+        {
+          "caller": "test_missing_left_port_raises",
+          "callee": "parse_node_config",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_missing_right_port_raises",
+          "callee": "pytest.raises",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_missing_right_port_raises",
+          "callee": "parse_node_config",
+          "lineNumber": 57
+        },
+        {
+          "caller": "test_invalid_command_range_raises",
+          "callee": "pytest.raises",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_invalid_command_range_raises",
+          "callee": "parse_node_config",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_invalid_calibration_raises",
+          "callee": "pytest.raises",
+          "lineNumber": 73
+        },
+        {
+          "caller": "test_invalid_calibration_raises",
+          "callee": "parse_node_config",
+          "lineNumber": 74
+        },
+        {
+          "caller": "test_non_numeric_baudrate_raises",
+          "callee": "pytest.raises",
+          "lineNumber": 84
+        },
+        {
+          "caller": "test_non_numeric_baudrate_raises",
+          "callee": "parse_node_config",
+          "lineNumber": 85
+        },
+        {
+          "caller": "test_defaults_applied",
+          "callee": "parse_node_config",
+          "lineNumber": 91
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 9,
+        "functionCount": 9,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/tests/runtime/test_serial_link.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 112,
+      "nonEmptyLines": 91,
+      "functions": [
+        {
+          "name": "_link_config",
+          "startLine": 11,
+          "endLine": 23,
+          "params": [
+            "side",
+            "**kwargs"
+          ]
+        },
+        {
+          "name": "_wait_until",
+          "startLine": 26,
+          "endLine": 32,
+          "params": [
+            "predicate",
+            "timeout",
+            "interval"
+          ]
+        },
+        {
+          "name": "test_telemetry_updates_from_fake",
+          "startLine": 35,
+          "endLine": 54,
+          "params": []
+        },
+        {
+          "name": "test_command_writes_set_angle",
+          "startLine": 57,
+          "endLine": 73,
+          "params": []
+        },
+        {
+          "name": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "startLine": 76,
+          "endLine": 96,
+          "params": []
+        },
+        {
+          "name": "test_disconnect_marks_unhealthy",
+          "startLine": 99,
+          "endLine": 112,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_link_config",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "_wait_until",
+          "line": 26,
+          "isDefault": false
+        },
+        {
+          "name": "test_telemetry_updates_from_fake",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "test_command_writes_set_angle",
+          "line": 57,
+          "isDefault": false
+        },
+        {
+          "name": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "line": 76,
+          "isDefault": false
+        },
+        {
+          "name": "test_disconnect_marks_unhealthy",
+          "line": 99,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_link_config",
+          "callee": "dict",
+          "lineNumber": 12
+        },
+        {
+          "caller": "_link_config",
+          "callee": "base.update",
+          "lineNumber": 22
+        },
+        {
+          "caller": "_link_config",
+          "callee": "GripperLinkConfig",
+          "lineNumber": 23
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "time.monotonic",
+          "lineNumber": 27
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "time.monotonic",
+          "lineNumber": 28
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "predicate",
+          "lineNumber": 29
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "time.sleep",
+          "lineNumber": 31
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "predicate",
+          "lineNumber": 32
+        },
+        {
+          "caller": "factory",
+          "callee": "FakeSerial",
+          "lineNumber": 39
+        },
+        {
+          "caller": "factory",
+          "callee": "fakes.append",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_telemetry_updates_from_fake",
+          "callee": "GripperSerialLink",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_telemetry_updates_from_fake",
+          "callee": "_link_config",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_telemetry_updates_from_fake",
+          "callee": "link.start",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_telemetry_updates_from_fake",
+          "callee": "_wait_until",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_telemetry_updates_from_fake",
+          "callee": "link.latest_state",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_telemetry_updates_from_fake",
+          "callee": "link.latest_state",
+          "lineNumber": 50
+        },
+        {
+          "caller": "test_telemetry_updates_from_fake",
+          "callee": "abs",
+          "lineNumber": 51
+        },
+        {
+          "caller": "test_telemetry_updates_from_fake",
+          "callee": "link.stop",
+          "lineNumber": 54
+        },
+        {
+          "caller": "factory",
+          "callee": "FakeSerial",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "GripperSerialLink",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "_link_config",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "link.start",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "_wait_until",
+          "lineNumber": 68
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "link.latest_state",
+          "lineNumber": 68
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "link.submit_command",
+          "lineNumber": 69
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "GripperCommand",
+          "lineNumber": 69
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "_wait_until",
+          "lineNumber": 70
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "_wait_until",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "link.latest_state",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_command_writes_set_angle",
+          "callee": "link.stop",
+          "lineNumber": 73
+        },
+        {
+          "caller": "factory",
+          "callee": "FakeSerial",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "GripperSerialLink",
+          "lineNumber": 84
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "_link_config",
+          "lineNumber": 84
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "link.start",
+          "lineNumber": 85
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "_wait_until",
+          "lineNumber": 87
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "link.latest_state",
+          "lineNumber": 87
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "link.trigger_estop",
+          "lineNumber": 88
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "_wait_until",
+          "lineNumber": 89
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "link.submit_command",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "GripperCommand",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "time.sleep",
+          "lineNumber": 93
+        },
+        {
+          "caller": "test_estop_blocks_set_angle_and_sends_stop_disable",
+          "callee": "link.stop",
+          "lineNumber": 96
+        },
+        {
+          "caller": "factory",
+          "callee": "OSError",
+          "lineNumber": 101
+        },
+        {
+          "caller": "test_disconnect_marks_unhealthy",
+          "callee": "GripperSerialLink",
+          "lineNumber": 103
+        },
+        {
+          "caller": "test_disconnect_marks_unhealthy",
+          "callee": "_link_config",
+          "lineNumber": 103
+        },
+        {
+          "caller": "test_disconnect_marks_unhealthy",
+          "callee": "link.start",
+          "lineNumber": 104
+        },
+        {
+          "caller": "test_disconnect_marks_unhealthy",
+          "callee": "_wait_until",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_disconnect_marks_unhealthy",
+          "callee": "link.health_signal",
+          "lineNumber": 107
+        },
+        {
+          "caller": "test_disconnect_marks_unhealthy",
+          "callee": "time.monotonic",
+          "lineNumber": 107
+        },
+        {
+          "caller": "test_disconnect_marks_unhealthy",
+          "callee": "link.health_signal",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_disconnect_marks_unhealthy",
+          "callee": "time.monotonic",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_disconnect_marks_unhealthy",
+          "callee": "link.stop",
+          "lineNumber": 112
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/tests/service/test_health_aggregator.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 79,
+      "nonEmptyLines": 61,
+      "functions": [
+        {
+          "name": "_signal",
+          "startLine": 15,
+          "endLine": 24,
+          "params": [
+            "**kwargs"
+          ]
+        },
+        {
+          "name": "test_disconnected_is_fault",
+          "startLine": 27,
+          "endLine": 32,
+          "params": []
+        },
+        {
+          "name": "test_healthy_is_ok",
+          "startLine": 35,
+          "endLine": 37,
+          "params": []
+        },
+        {
+          "name": "test_degraded_error_threshold",
+          "startLine": 40,
+          "endLine": 44,
+          "params": []
+        },
+        {
+          "name": "test_fault_error_threshold",
+          "startLine": 47,
+          "endLine": 51,
+          "params": []
+        },
+        {
+          "name": "test_stale_rx_is_degraded",
+          "startLine": 54,
+          "endLine": 58,
+          "params": []
+        },
+        {
+          "name": "test_node_status_is_worse_of_two",
+          "startLine": 61,
+          "endLine": 69,
+          "params": []
+        },
+        {
+          "name": "test_node_detail_reports_estop",
+          "startLine": 72,
+          "endLine": 79,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_signal",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "test_disconnected_is_fault",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "test_healthy_is_ok",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "test_degraded_error_threshold",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "test_fault_error_threshold",
+          "line": 47,
+          "isDefault": false
+        },
+        {
+          "name": "test_stale_rx_is_degraded",
+          "line": 54,
+          "isDefault": false
+        },
+        {
+          "name": "test_node_status_is_worse_of_two",
+          "line": 61,
+          "isDefault": false
+        },
+        {
+          "name": "test_node_detail_reports_estop",
+          "line": 72,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_signal",
+          "callee": "dict",
+          "lineNumber": 16
+        },
+        {
+          "caller": "_signal",
+          "callee": "base.update",
+          "lineNumber": 23
+        },
+        {
+          "caller": "_signal",
+          "callee": "LinkHealthInput",
+          "lineNumber": 24
+        },
+        {
+          "caller": "test_disconnected_is_fault",
+          "callee": "evaluate_device_health",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_disconnected_is_fault",
+          "callee": "_signal",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_healthy_is_ok",
+          "callee": "evaluate_device_health",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_healthy_is_ok",
+          "callee": "_signal",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_degraded_error_threshold",
+          "callee": "evaluate_device_health",
+          "lineNumber": 41
+        },
+        {
+          "caller": "test_degraded_error_threshold",
+          "callee": "_signal",
+          "lineNumber": 42
+        },
+        {
+          "caller": "test_fault_error_threshold",
+          "callee": "evaluate_device_health",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_fault_error_threshold",
+          "callee": "_signal",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_stale_rx_is_degraded",
+          "callee": "evaluate_device_health",
+          "lineNumber": 55
+        },
+        {
+          "caller": "test_stale_rx_is_degraded",
+          "callee": "_signal",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_node_status_is_worse_of_two",
+          "callee": "evaluate_device_health",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_node_status_is_worse_of_two",
+          "callee": "_signal",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_node_status_is_worse_of_two",
+          "callee": "evaluate_device_health",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_node_status_is_worse_of_two",
+          "callee": "_signal",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_node_status_is_worse_of_two",
+          "callee": "aggregate_node_health",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_node_detail_reports_estop",
+          "callee": "evaluate_device_health",
+          "lineNumber": 73
+        },
+        {
+          "caller": "test_node_detail_reports_estop",
+          "callee": "_signal",
+          "lineNumber": 73
+        },
+        {
+          "caller": "test_node_detail_reports_estop",
+          "callee": "evaluate_device_health",
+          "lineNumber": 74
+        },
+        {
+          "caller": "test_node_detail_reports_estop",
+          "callee": "_signal",
+          "lineNumber": 75
+        },
+        {
+          "caller": "test_node_detail_reports_estop",
+          "callee": "aggregate_node_health",
+          "lineNumber": 77
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 8,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/tests/service/test_mapping.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 45,
+      "nonEmptyLines": 32,
+      "functions": [
+        {
+          "name": "test_default_calibration_endpoints",
+          "startLine": 7,
+          "endLine": 11,
+          "params": []
+        },
+        {
+          "name": "test_width_to_angle_clamps",
+          "startLine": 14,
+          "endLine": 17,
+          "params": []
+        },
+        {
+          "name": "test_angle_to_width_endpoints",
+          "startLine": 20,
+          "endLine": 24,
+          "params": []
+        },
+        {
+          "name": "test_angle_to_width_clamps",
+          "startLine": 27,
+          "endLine": 30,
+          "params": []
+        },
+        {
+          "name": "test_restricted_calibration_range",
+          "startLine": 33,
+          "endLine": 38,
+          "params": []
+        },
+        {
+          "name": "test_roundtrip_stability",
+          "startLine": 41,
+          "endLine": 45,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "test_default_calibration_endpoints",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "test_width_to_angle_clamps",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "test_angle_to_width_endpoints",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "test_angle_to_width_clamps",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "test_restricted_calibration_range",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "test_roundtrip_stability",
+          "line": 41,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_default_calibration_endpoints",
+          "callee": "WidthAngleCalibration",
+          "lineNumber": 8
+        },
+        {
+          "caller": "test_default_calibration_endpoints",
+          "callee": "width_to_angle",
+          "lineNumber": 9
+        },
+        {
+          "caller": "test_default_calibration_endpoints",
+          "callee": "width_to_angle",
+          "lineNumber": 10
+        },
+        {
+          "caller": "test_default_calibration_endpoints",
+          "callee": "width_to_angle",
+          "lineNumber": 11
+        },
+        {
+          "caller": "test_width_to_angle_clamps",
+          "callee": "WidthAngleCalibration",
+          "lineNumber": 15
+        },
+        {
+          "caller": "test_width_to_angle_clamps",
+          "callee": "width_to_angle",
+          "lineNumber": 16
+        },
+        {
+          "caller": "test_width_to_angle_clamps",
+          "callee": "width_to_angle",
+          "lineNumber": 17
+        },
+        {
+          "caller": "test_angle_to_width_endpoints",
+          "callee": "WidthAngleCalibration",
+          "lineNumber": 21
+        },
+        {
+          "caller": "test_angle_to_width_endpoints",
+          "callee": "angle_to_width",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_angle_to_width_endpoints",
+          "callee": "angle_to_width",
+          "lineNumber": 23
+        },
+        {
+          "caller": "test_angle_to_width_endpoints",
+          "callee": "abs",
+          "lineNumber": 24
+        },
+        {
+          "caller": "test_angle_to_width_endpoints",
+          "callee": "angle_to_width",
+          "lineNumber": 24
+        },
+        {
+          "caller": "test_angle_to_width_clamps",
+          "callee": "WidthAngleCalibration",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_angle_to_width_clamps",
+          "callee": "angle_to_width",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_angle_to_width_clamps",
+          "callee": "angle_to_width",
+          "lineNumber": 30
+        },
+        {
+          "caller": "test_restricted_calibration_range",
+          "callee": "WidthAngleCalibration",
+          "lineNumber": 34
+        },
+        {
+          "caller": "test_restricted_calibration_range",
+          "callee": "width_to_angle",
+          "lineNumber": 35
+        },
+        {
+          "caller": "test_restricted_calibration_range",
+          "callee": "width_to_angle",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_restricted_calibration_range",
+          "callee": "width_to_angle",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_restricted_calibration_range",
+          "callee": "abs",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_restricted_calibration_range",
+          "callee": "angle_to_width",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_roundtrip_stability",
+          "callee": "WidthAngleCalibration",
+          "lineNumber": 42
+        },
+        {
+          "caller": "test_roundtrip_stability",
+          "callee": "range",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_roundtrip_stability",
+          "callee": "angle_to_width",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_roundtrip_stability",
+          "callee": "width_to_angle",
+          "lineNumber": 45
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    }
+  ]
+}

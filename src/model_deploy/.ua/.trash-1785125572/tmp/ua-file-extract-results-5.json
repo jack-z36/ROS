@@ -1,0 +1,4566 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 5,
+  "filesSkipped": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 5,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 5,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "act/tests/integration/test_l2_06_gate.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1207,
+      "nonEmptyLines": 1057,
+      "functions": [
+        {
+          "name": "_load_config",
+          "startLine": 249,
+          "endLine": 255,
+          "params": [
+            "command_output_enabled"
+          ]
+        },
+        {
+          "name": "_build_spec",
+          "startLine": 258,
+          "endLine": 271,
+          "params": [
+            "cfg"
+          ]
+        },
+        {
+          "name": "_build_resources",
+          "startLine": 274,
+          "endLine": 291,
+          "params": [
+            "cfg",
+            "spec"
+          ]
+        },
+        {
+          "name": "_make_snapshot",
+          "startLine": 294,
+          "endLine": 309,
+          "params": [
+            "img_size",
+            "captured_at_s"
+          ]
+        },
+        {
+          "name": "_make_chunk",
+          "startLine": 312,
+          "endLine": 313,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "build_composition",
+          "startLine": 316,
+          "endLine": 403,
+          "params": [
+            "command_output_enabled",
+            "permit_source",
+            "start_worker"
+          ]
+        },
+        {
+          "name": "feed_observation",
+          "startLine": 406,
+          "endLine": 423,
+          "params": [
+            "comp",
+            "clock"
+          ]
+        },
+        {
+          "name": "_safe_result",
+          "startLine": 1198,
+          "endLine": 1207,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "FakeClock",
+          "startLine": 122,
+          "endLine": 136,
+          "methods": [
+            "__init__",
+            "__call__",
+            "advance",
+            "set"
+          ],
+          "properties": []
+        },
+        {
+          "name": "NullClock",
+          "startLine": 139,
+          "endLine": 143,
+          "methods": [
+            "__call__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "RecordingPublisher",
+          "startLine": 146,
+          "endLine": 152,
+          "methods": [
+            "__init__",
+            "publish"
+          ],
+          "properties": []
+        },
+        {
+          "name": "FakeNode",
+          "startLine": 155,
+          "endLine": 166,
+          "methods": [
+            "__init__",
+            "create_publisher"
+          ],
+          "properties": []
+        },
+        {
+          "name": "FailingPublisher",
+          "startLine": 169,
+          "endLine": 173,
+          "methods": [
+            "publish"
+          ],
+          "properties": []
+        },
+        {
+          "name": "FakePolicy",
+          "startLine": 176,
+          "endLine": 202,
+          "methods": [
+            "__init__",
+            "predict_action_chunk"
+          ],
+          "properties": []
+        },
+        {
+          "name": "StubService",
+          "startLine": 205,
+          "endLine": 217,
+          "methods": [
+            "__init__",
+            "predict_action_chunk"
+          ],
+          "properties": []
+        },
+        {
+          "name": "DenySafetyPort",
+          "startLine": 220,
+          "endLine": 241,
+          "methods": [
+            "filter_action"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG01Types",
+          "startLine": 431,
+          "endLine": 490,
+          "methods": [
+            "test_action_chunk_contract",
+            "test_policy_input_spec_rejects_bad_dim",
+            "test_no_forbidden_tokens_in_l2_06_sources",
+            "test_no_forbidden_imports_in_l2_06_sources"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG02Config",
+          "startLine": 498,
+          "endLine": 543,
+          "methods": [
+            "test_default_command_output_disabled",
+            "test_yaml_cannot_silently_enable_command",
+            "test_build_arg_parser_only_two_flags",
+            "test_canonical_resources_and_spec_identity",
+            "test_loader_fails_fast_on_empty_bundle"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG03Seam",
+          "startLine": 551,
+          "endLine": 637,
+          "methods": [
+            "test_observation_pipeline_dry_run_env_blocked",
+            "test_collector_to_snapshot",
+            "test_service_predict_returns_chunk",
+            "test_safety_filter_pass_via_observation_reference",
+            "test_publisher_observed_provenance_disabled",
+            "test_publisher_published_provenance_enabled"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG04ChannelMetrics",
+          "startLine": 645,
+          "endLine": 716,
+          "methods": [
+            "test_inference_request_validation",
+            "test_inference_result_xor",
+            "test_latest_queue_capacity_one",
+            "test_runtime_metrics_immutable_snapshot"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG05Worker",
+          "startLine": 724,
+          "endLine": 781,
+          "methods": [
+            "test_worker_serial_success",
+            "test_worker_error_recovery",
+            "test_worker_clock_invalid_fatal"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG06Scheduling",
+          "startLine": 789,
+          "endLine": 862,
+          "methods": [
+            "_loop",
+            "test_correlation_and_active_chunk",
+            "test_prefetch_at_horizon",
+            "test_result_id_mismatch_latches_fault"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG07FallbackOutput",
+          "startLine": 870,
+          "endLine": 999,
+          "methods": [
+            "_make_loop",
+            "_seed_chunk",
+            "test_outcome_observed",
+            "test_outcome_published",
+            "test_outcome_blocked",
+            "test_outcome_rejected",
+            "test_outcome_failed",
+            "test_outcome_partial",
+            "test_observation_missing_fallback_deferred"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG08Lifecycle",
+          "startLine": 1007,
+          "endLine": 1066,
+          "methods": [
+            "test_preflight_passes_for_canonical_spec",
+            "test_preflight_spec_identity_mismatch",
+            "test_preflight_permit_source_missing_when_enabled",
+            "test_deny_permit_is_fail_closed",
+            "test_shutdown_convergence"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG09FullGate",
+          "startLine": 1074,
+          "endLine": 1114,
+          "methods": [
+            "test_full_tracer_publishes_and_shuts_down"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG10RosDryRun",
+          "startLine": 1123,
+          "endLine": 1150,
+          "methods": [
+            "test_dry_run_command_count_is_zero",
+            "test_ros_unavailable_records_env_blocked"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG11RealPolicyDryRun",
+          "startLine": 1159,
+          "endLine": 1166,
+          "methods": [
+            "test_real_bundle_loader_is_gated"
+          ],
+          "properties": []
+        },
+        {
+          "name": "TestG12RealCommand",
+          "startLine": 1175,
+          "endLine": 1195,
+          "methods": [
+            "test_default_deny_never_auto_enables_command",
+            "test_cli_parser_has_no_yaml_command_switch"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "FakeClock",
+          "line": 122,
+          "isDefault": false
+        },
+        {
+          "name": "NullClock",
+          "line": 139,
+          "isDefault": false
+        },
+        {
+          "name": "RecordingPublisher",
+          "line": 146,
+          "isDefault": false
+        },
+        {
+          "name": "FakeNode",
+          "line": 155,
+          "isDefault": false
+        },
+        {
+          "name": "FailingPublisher",
+          "line": 169,
+          "isDefault": false
+        },
+        {
+          "name": "FakePolicy",
+          "line": 176,
+          "isDefault": false
+        },
+        {
+          "name": "StubService",
+          "line": 205,
+          "isDefault": false
+        },
+        {
+          "name": "DenySafetyPort",
+          "line": 220,
+          "isDefault": false
+        },
+        {
+          "name": "_load_config",
+          "line": 249,
+          "isDefault": false
+        },
+        {
+          "name": "_build_spec",
+          "line": 258,
+          "isDefault": false
+        },
+        {
+          "name": "_build_resources",
+          "line": 274,
+          "isDefault": false
+        },
+        {
+          "name": "_make_snapshot",
+          "line": 294,
+          "isDefault": false
+        },
+        {
+          "name": "_make_chunk",
+          "line": 312,
+          "isDefault": false
+        },
+        {
+          "name": "build_composition",
+          "line": 316,
+          "isDefault": false
+        },
+        {
+          "name": "feed_observation",
+          "line": 406,
+          "isDefault": false
+        },
+        {
+          "name": "TestG01Types",
+          "line": 431,
+          "isDefault": false
+        },
+        {
+          "name": "TestG02Config",
+          "line": 498,
+          "isDefault": false
+        },
+        {
+          "name": "TestG03Seam",
+          "line": 551,
+          "isDefault": false
+        },
+        {
+          "name": "TestG04ChannelMetrics",
+          "line": 645,
+          "isDefault": false
+        },
+        {
+          "name": "TestG05Worker",
+          "line": 724,
+          "isDefault": false
+        },
+        {
+          "name": "TestG06Scheduling",
+          "line": 789,
+          "isDefault": false
+        },
+        {
+          "name": "TestG07FallbackOutput",
+          "line": 870,
+          "isDefault": false
+        },
+        {
+          "name": "TestG08Lifecycle",
+          "line": 1007,
+          "isDefault": false
+        },
+        {
+          "name": "TestG09FullGate",
+          "line": 1074,
+          "isDefault": false
+        },
+        {
+          "name": "TestG10RosDryRun",
+          "line": 1123,
+          "isDefault": false
+        },
+        {
+          "name": "TestG11RealPolicyDryRun",
+          "line": 1159,
+          "isDefault": false
+        },
+        {
+          "name": "TestG12RealCommand",
+          "line": 1175,
+          "isDefault": false
+        },
+        {
+          "name": "_safe_result",
+          "line": 1198,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "float",
+          "lineNumber": 126
+        },
+        {
+          "caller": "set",
+          "callee": "float",
+          "lineNumber": 136
+        },
+        {
+          "caller": "publish",
+          "callee": "self.messages.append",
+          "lineNumber": 152
+        },
+        {
+          "caller": "create_publisher",
+          "callee": "RecordingPublisher",
+          "lineNumber": 164
+        },
+        {
+          "caller": "create_publisher",
+          "callee": "self.created.append",
+          "lineNumber": 165
+        },
+        {
+          "caller": "publish",
+          "callee": "RuntimeError",
+          "lineNumber": 173
+        },
+        {
+          "caller": "predict_action_chunk",
+          "callee": "torch.zeros",
+          "lineNumber": 194
+        },
+        {
+          "caller": "predict_action_chunk",
+          "callee": "torch.tensor",
+          "lineNumber": 196
+        },
+        {
+          "caller": "predict_action_chunk",
+          "callee": "torch.tensor",
+          "lineNumber": 197
+        },
+        {
+          "caller": "predict_action_chunk",
+          "callee": "ValueError",
+          "lineNumber": 216
+        },
+        {
+          "caller": "filter_action",
+          "callee": "SafetyResult",
+          "lineNumber": 229
+        },
+        {
+          "caller": "filter_action",
+          "callee": "SafetyFinding",
+          "lineNumber": 233
+        },
+        {
+          "caller": "_load_config",
+          "callee": "yaml.safe_load",
+          "lineNumber": 250
+        },
+        {
+          "caller": "_load_config",
+          "callee": "_FIXTURE.read_text",
+          "lineNumber": 250
+        },
+        {
+          "caller": "_load_config",
+          "callee": "DeployConfig.from_mapping",
+          "lineNumber": 251
+        },
+        {
+          "caller": "_build_spec",
+          "callee": "PolicyInputSpec",
+          "lineNumber": 260
+        },
+        {
+          "caller": "_build_resources",
+          "callee": "ActionStateNormalizer",
+          "lineNumber": 275
+        },
+        {
+          "caller": "_build_resources",
+          "callee": "np.zeros",
+          "lineNumber": 276
+        },
+        {
+          "caller": "_build_resources",
+          "callee": "np.ones",
+          "lineNumber": 277
+        },
+        {
+          "caller": "_build_resources",
+          "callee": "ActionStateNormalizer",
+          "lineNumber": 279
+        },
+        {
+          "caller": "_build_resources",
+          "callee": "np.zeros",
+          "lineNumber": 280
+        },
+        {
+          "caller": "_build_resources",
+          "callee": "np.ones",
+          "lineNumber": 281
+        },
+        {
+          "caller": "_build_resources",
+          "callee": "FakePolicy",
+          "lineNumber": 283
+        },
+        {
+          "caller": "_build_resources",
+          "callee": "ActRuntimeResources",
+          "lineNumber": 284
+        },
+        {
+          "caller": "_build_resources",
+          "callee": "RuntimeResourceCrossCheck",
+          "lineNumber": 290
+        },
+        {
+          "caller": "_make_snapshot",
+          "callee": "np.full",
+          "lineNumber": 295
+        },
+        {
+          "caller": "_make_snapshot",
+          "callee": "ObservationState",
+          "lineNumber": 296
+        },
+        {
+          "caller": "_make_snapshot",
+          "callee": "np.array",
+          "lineNumber": 297
+        },
+        {
+          "caller": "_make_snapshot",
+          "callee": "np.array",
+          "lineNumber": 298
+        },
+        {
+          "caller": "_make_snapshot",
+          "callee": "np.array",
+          "lineNumber": 300
+        },
+        {
+          "caller": "_make_snapshot",
+          "callee": "np.array",
+          "lineNumber": 301
+        },
+        {
+          "caller": "_make_snapshot",
+          "callee": "ObservationSnapshot",
+          "lineNumber": 304
+        },
+        {
+          "caller": "_make_snapshot",
+          "callee": "np.full",
+          "lineNumber": 307
+        },
+        {
+          "caller": "_make_snapshot",
+          "callee": "float",
+          "lineNumber": 308
+        },
+        {
+          "caller": "_make_chunk",
+          "callee": "ActionChunk",
+          "lineNumber": 313
+        },
+        {
+          "caller": "_make_chunk",
+          "callee": "np.full",
+          "lineNumber": 313
+        },
+        {
+          "caller": "build_composition",
+          "callee": "_load_config",
+          "lineNumber": 323
+        },
+        {
+          "caller": "build_composition",
+          "callee": "_build_spec",
+          "lineNumber": 324
+        },
+        {
+          "caller": "build_composition",
+          "callee": "_build_resources",
+          "lineNumber": 325
+        },
+        {
+          "caller": "build_composition",
+          "callee": "ActInferenceService",
+          "lineNumber": 326
+        },
+        {
+          "caller": "build_composition",
+          "callee": "FakeClock",
+          "lineNumber": 333
+        },
+        {
+          "caller": "build_composition",
+          "callee": "FakeNode",
+          "lineNumber": 334
+        },
+        {
+          "caller": "build_composition",
+          "callee": "build_observation_pipeline",
+          "lineNumber": 335
+        },
+        {
+          "caller": "build_composition",
+          "callee": "SafetyGuard",
+          "lineNumber": 338
+        },
+        {
+          "caller": "build_composition",
+          "callee": "LatestQueue",
+          "lineNumber": 339
+        },
+        {
+          "caller": "build_composition",
+          "callee": "LatestQueue",
+          "lineNumber": 340
+        },
+        {
+          "caller": "build_composition",
+          "callee": "RuntimeMetrics",
+          "lineNumber": 341
+        },
+        {
+          "caller": "build_composition",
+          "callee": "InferenceWorker",
+          "lineNumber": 342
+        },
+        {
+          "caller": "build_composition",
+          "callee": "run_startup_preflight",
+          "lineNumber": 351
+        },
+        {
+          "caller": "build_composition",
+          "callee": "ActionPublisher",
+          "lineNumber": 362
+        },
+        {
+          "caller": "build_composition",
+          "callee": "pipeline.buffer.latest_observation",
+          "lineNumber": 364
+        },
+        {
+          "caller": "build_composition",
+          "callee": "ControlLoop",
+          "lineNumber": 366
+        },
+        {
+          "caller": "build_composition",
+          "callee": "ControlLoopConfig",
+          "lineNumber": 367
+        },
+        {
+          "caller": "build_composition",
+          "callee": "SimpleNamespace",
+          "lineNumber": 384
+        },
+        {
+          "caller": "build_composition",
+          "callee": "worker.start",
+          "lineNumber": 402
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "_make_snapshot",
+          "lineNumber": 409
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "clock",
+          "lineNumber": 409
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "comp.pipeline.collector.update_image",
+          "lineNumber": 410
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "comp.pipeline.collector.update_image",
+          "lineNumber": 411
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "comp.pipeline.collector.update_tcp_pose",
+          "lineNumber": 412
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "comp.pipeline.collector.update_tcp_pose",
+          "lineNumber": 415
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "comp.pipeline.collector.update_gripper_state",
+          "lineNumber": 418
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "comp.pipeline.collector.update_gripper_state",
+          "lineNumber": 419
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "comp.pipeline.collector.snapshot",
+          "lineNumber": 420
+        },
+        {
+          "caller": "feed_observation",
+          "callee": "comp.pipeline.buffer.set_observation",
+          "lineNumber": 422
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "_make_chunk",
+          "lineNumber": 434
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "pytest.raises",
+          "lineNumber": 438
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "ActionChunk",
+          "lineNumber": 439
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "np.zeros",
+          "lineNumber": 439
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "pytest.raises",
+          "lineNumber": 441
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "ActionChunk",
+          "lineNumber": 442
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "np.zeros",
+          "lineNumber": 442
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "pytest.raises",
+          "lineNumber": 444
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "ActionChunk",
+          "lineNumber": 445
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "np.zeros",
+          "lineNumber": 445
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "np.full",
+          "lineNumber": 447
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "float",
+          "lineNumber": 448
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "pytest.raises",
+          "lineNumber": 449
+        },
+        {
+          "caller": "test_action_chunk_contract",
+          "callee": "ActionChunk",
+          "lineNumber": 450
+        },
+        {
+          "caller": "test_policy_input_spec_rejects_bad_dim",
+          "callee": "pytest.raises",
+          "lineNumber": 453
+        },
+        {
+          "caller": "test_policy_input_spec_rejects_bad_dim",
+          "callee": "PolicyInputSpec",
+          "lineNumber": 454
+        },
+        {
+          "caller": "test_no_forbidden_tokens_in_l2_06_sources",
+          "callee": "(_ACT_SRC / rel).read_text",
+          "lineNumber": 469
+        },
+        {
+          "caller": "test_no_forbidden_tokens_in_l2_06_sources",
+          "callee": "re.sub",
+          "lineNumber": 470
+        },
+        {
+          "caller": "test_no_forbidden_tokens_in_l2_06_sources",
+          "callee": "re.sub",
+          "lineNumber": 471
+        },
+        {
+          "caller": "test_no_forbidden_tokens_in_l2_06_sources",
+          "callee": "\"\\n\".join",
+          "lineNumber": 472
+        },
+        {
+          "caller": "test_no_forbidden_tokens_in_l2_06_sources",
+          "callee": "re.sub",
+          "lineNumber": 472
+        },
+        {
+          "caller": "test_no_forbidden_tokens_in_l2_06_sources",
+          "callee": "text.split",
+          "lineNumber": 472
+        },
+        {
+          "caller": "test_no_forbidden_tokens_in_l2_06_sources",
+          "callee": "_FORBIDDEN_TOKEN_RE.search",
+          "lineNumber": 473
+        },
+        {
+          "caller": "test_no_forbidden_tokens_in_l2_06_sources",
+          "callee": "hit.group",
+          "lineNumber": 474
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "set",
+          "lineNumber": 478
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "__import__(\"ast\").parse",
+          "lineNumber": 480
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "__import__",
+          "lineNumber": 480
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "(_ACT_SRC / rel).read_text",
+          "lineNumber": 480
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "__import__(\"ast\").walk",
+          "lineNumber": 483
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "__import__",
+          "lineNumber": 483
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "isinstance",
+          "lineNumber": 484
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "__import__",
+          "lineNumber": 484
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "roots.add",
+          "lineNumber": 486
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "alias.name.split",
+          "lineNumber": 486
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "isinstance",
+          "lineNumber": 487
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "__import__",
+          "lineNumber": 487
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "roots.add",
+          "lineNumber": 489
+        },
+        {
+          "caller": "test_no_forbidden_imports_in_l2_06_sources",
+          "callee": "module.split",
+          "lineNumber": 489
+        },
+        {
+          "caller": "test_default_command_output_disabled",
+          "callee": "_load_config",
+          "lineNumber": 500
+        },
+        {
+          "caller": "test_yaml_cannot_silently_enable_command",
+          "callee": "pytest.raises",
+          "lineNumber": 505
+        },
+        {
+          "caller": "test_yaml_cannot_silently_enable_command",
+          "callee": "DeployConfig.from_mapping",
+          "lineNumber": 506
+        },
+        {
+          "caller": "test_yaml_cannot_silently_enable_command",
+          "callee": "Path",
+          "lineNumber": 514
+        },
+        {
+          "caller": "test_build_arg_parser_only_two_flags",
+          "callee": "build_arg_parser",
+          "lineNumber": 518
+        },
+        {
+          "caller": "test_build_arg_parser_only_two_flags",
+          "callee": "parser.parse_args",
+          "lineNumber": 520
+        },
+        {
+          "caller": "test_build_arg_parser_only_two_flags",
+          "callee": "parser.parse_args",
+          "lineNumber": 522
+        },
+        {
+          "caller": "test_canonical_resources_and_spec_identity",
+          "callee": "_load_config",
+          "lineNumber": 526
+        },
+        {
+          "caller": "test_canonical_resources_and_spec_identity",
+          "callee": "_build_spec",
+          "lineNumber": 527
+        },
+        {
+          "caller": "test_canonical_resources_and_spec_identity",
+          "callee": "_build_resources",
+          "lineNumber": 528
+        },
+        {
+          "caller": "test_canonical_resources_and_spec_identity",
+          "callee": "ActInferenceService",
+          "lineNumber": 532
+        },
+        {
+          "caller": "test_loader_fails_fast_on_empty_bundle",
+          "callee": "_load_config",
+          "lineNumber": 540
+        },
+        {
+          "caller": "test_loader_fails_fast_on_empty_bundle",
+          "callee": "pytest.raises",
+          "lineNumber": 542
+        },
+        {
+          "caller": "test_loader_fails_fast_on_empty_bundle",
+          "callee": "load_act_runtime_resources",
+          "lineNumber": 543
+        },
+        {
+          "caller": "test_observation_pipeline_dry_run_env_blocked",
+          "callee": "build_composition",
+          "lineNumber": 553
+        },
+        {
+          "caller": "test_collector_to_snapshot",
+          "callee": "build_composition",
+          "lineNumber": 558
+        },
+        {
+          "caller": "test_collector_to_snapshot",
+          "callee": "feed_observation",
+          "lineNumber": 559
+        },
+        {
+          "caller": "test_collector_to_snapshot",
+          "callee": "isinstance",
+          "lineNumber": 560
+        },
+        {
+          "caller": "test_collector_to_snapshot",
+          "callee": "set",
+          "lineNumber": 562
+        },
+        {
+          "caller": "test_collector_to_snapshot",
+          "callee": "snap.images.keys",
+          "lineNumber": 562
+        },
+        {
+          "caller": "test_service_predict_returns_chunk",
+          "callee": "build_composition",
+          "lineNumber": 565
+        },
+        {
+          "caller": "test_service_predict_returns_chunk",
+          "callee": "_make_snapshot",
+          "lineNumber": 566
+        },
+        {
+          "caller": "test_service_predict_returns_chunk",
+          "callee": "comp.inference_service.predict_action_chunk",
+          "lineNumber": 567
+        },
+        {
+          "caller": "test_service_predict_returns_chunk",
+          "callee": "isinstance",
+          "lineNumber": 568
+        },
+        {
+          "caller": "test_safety_filter_pass_via_observation_reference",
+          "callee": "build_composition",
+          "lineNumber": 572
+        },
+        {
+          "caller": "test_safety_filter_pass_via_observation_reference",
+          "callee": "_make_snapshot",
+          "lineNumber": 573
+        },
+        {
+          "caller": "test_safety_filter_pass_via_observation_reference",
+          "callee": "comp.safety_guard.filter_action",
+          "lineNumber": 575
+        },
+        {
+          "caller": "test_safety_filter_pass_via_observation_reference",
+          "callee": "ActionSpec",
+          "lineNumber": 576
+        },
+        {
+          "caller": "test_safety_filter_pass_via_observation_reference",
+          "callee": "np.array",
+          "lineNumber": 577
+        },
+        {
+          "caller": "test_safety_filter_pass_via_observation_reference",
+          "callee": "np.array",
+          "lineNumber": 578
+        },
+        {
+          "caller": "test_publisher_observed_provenance_disabled",
+          "callee": "build_composition",
+          "lineNumber": 589
+        },
+        {
+          "caller": "test_publisher_observed_provenance_disabled",
+          "callee": "comp.safety_guard.filter_action",
+          "lineNumber": 590
+        },
+        {
+          "caller": "test_publisher_observed_provenance_disabled",
+          "callee": "ActionSpec",
+          "lineNumber": 591
+        },
+        {
+          "caller": "test_publisher_observed_provenance_disabled",
+          "callee": "np.array",
+          "lineNumber": 592
+        },
+        {
+          "caller": "test_publisher_observed_provenance_disabled",
+          "callee": "np.array",
+          "lineNumber": 593
+        },
+        {
+          "caller": "test_publisher_observed_provenance_disabled",
+          "callee": "_make_snapshot",
+          "lineNumber": 597
+        },
+        {
+          "caller": "test_publisher_observed_provenance_disabled",
+          "callee": "ActionPublishRequest",
+          "lineNumber": 599
+        },
+        {
+          "caller": "test_publisher_observed_provenance_disabled",
+          "callee": "CommandPermit",
+          "lineNumber": 602
+        },
+        {
+          "caller": "test_publisher_observed_provenance_disabled",
+          "callee": "comp.publisher.publish",
+          "lineNumber": 606
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "build_composition",
+          "lineNumber": 614
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "CommandPermit",
+          "lineNumber": 616
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "comp.safety_guard.filter_action",
+          "lineNumber": 618
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "ActionSpec",
+          "lineNumber": 619
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "np.array",
+          "lineNumber": 620
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "np.array",
+          "lineNumber": 621
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "_make_snapshot",
+          "lineNumber": 625
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "ActionPublishRequest",
+          "lineNumber": 627
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "CommandPermit",
+          "lineNumber": 630
+        },
+        {
+          "caller": "test_publisher_published_provenance_enabled",
+          "callee": "comp.publisher.publish",
+          "lineNumber": 634
+        },
+        {
+          "caller": "test_inference_request_validation",
+          "callee": "_make_snapshot",
+          "lineNumber": 647
+        },
+        {
+          "caller": "test_inference_request_validation",
+          "callee": "pytest.raises",
+          "lineNumber": 648
+        },
+        {
+          "caller": "test_inference_request_validation",
+          "callee": "InferenceRequest",
+          "lineNumber": 649
+        },
+        {
+          "caller": "test_inference_request_validation",
+          "callee": "InferenceRequest",
+          "lineNumber": 650
+        },
+        {
+          "caller": "test_inference_result_xor",
+          "callee": "_make_snapshot",
+          "lineNumber": 654
+        },
+        {
+          "caller": "test_inference_result_xor",
+          "callee": "InferenceResult.success",
+          "lineNumber": 656
+        },
+        {
+          "caller": "test_inference_result_xor",
+          "callee": "_make_chunk",
+          "lineNumber": 662
+        },
+        {
+          "caller": "test_inference_result_xor",
+          "callee": "InferenceResult.error",
+          "lineNumber": 666
+        },
+        {
+          "caller": "test_inference_result_xor",
+          "callee": "ValueError",
+          "lineNumber": 672
+        },
+        {
+          "caller": "test_inference_result_xor",
+          "callee": "pytest.raises",
+          "lineNumber": 677
+        },
+        {
+          "caller": "test_inference_result_xor",
+          "callee": "InferenceResult",
+          "lineNumber": 678
+        },
+        {
+          "caller": "test_inference_result_xor",
+          "callee": "_make_chunk",
+          "lineNumber": 684
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "LatestQueue",
+          "lineNumber": 690
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "object",
+          "lineNumber": 692
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "object",
+          "lineNumber": 693
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "q.put_latest",
+          "lineNumber": 694
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "q.put_latest",
+          "lineNumber": 695
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "q.take_latest",
+          "lineNumber": 696
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "q.close",
+          "lineNumber": 698
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "pytest.raises",
+          "lineNumber": 699
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "q.put_latest",
+          "lineNumber": 700
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "object",
+          "lineNumber": 700
+        },
+        {
+          "caller": "test_latest_queue_capacity_one",
+          "callee": "q.take_latest",
+          "lineNumber": 701
+        },
+        {
+          "caller": "test_runtime_metrics_immutable_snapshot",
+          "callee": "FakeClock",
+          "lineNumber": 705
+        },
+        {
+          "caller": "test_runtime_metrics_immutable_snapshot",
+          "callee": "RuntimeMetrics",
+          "lineNumber": 706
+        },
+        {
+          "caller": "test_runtime_metrics_immutable_snapshot",
+          "callee": "m.snapshot",
+          "lineNumber": 707
+        },
+        {
+          "caller": "test_runtime_metrics_immutable_snapshot",
+          "callee": "m.record_event",
+          "lineNumber": 708
+        },
+        {
+          "caller": "test_runtime_metrics_immutable_snapshot",
+          "callee": "m.snapshot",
+          "lineNumber": 709
+        },
+        {
+          "caller": "test_runtime_metrics_immutable_snapshot",
+          "callee": "m.record_event",
+          "lineNumber": 714
+        },
+        {
+          "caller": "test_runtime_metrics_immutable_snapshot",
+          "callee": "m.snapshot",
+          "lineNumber": 715
+        },
+        {
+          "caller": "test_runtime_metrics_immutable_snapshot",
+          "callee": "dict(snap.publish_outcome_counts).get",
+          "lineNumber": 716
+        },
+        {
+          "caller": "test_runtime_metrics_immutable_snapshot",
+          "callee": "dict",
+          "lineNumber": 716
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "_make_chunk",
+          "lineNumber": 726
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "StubService",
+          "lineNumber": 727
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "LatestQueue",
+          "lineNumber": 728
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "LatestQueue",
+          "lineNumber": 729
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "RuntimeMetrics",
+          "lineNumber": 730
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "FakeClock",
+          "lineNumber": 730
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "InferenceWorker",
+          "lineNumber": 731
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "FakeClock",
+          "lineNumber": 733
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "_make_snapshot",
+          "lineNumber": 735
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "q.put_latest",
+          "lineNumber": 736
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "InferenceRequest",
+          "lineNumber": 736
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "worker.start",
+          "lineNumber": 737
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "rq.take_latest",
+          "lineNumber": 738
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "worker.stop",
+          "lineNumber": 739
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "q.close",
+          "lineNumber": 740
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "worker.join",
+          "lineNumber": 741
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "metrics.snapshot",
+          "lineNumber": 744
+        },
+        {
+          "caller": "test_worker_serial_success",
+          "callee": "worker.is_alive",
+          "lineNumber": 745
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "StubService",
+          "lineNumber": 748
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "_make_chunk",
+          "lineNumber": 748
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "LatestQueue",
+          "lineNumber": 749
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "LatestQueue",
+          "lineNumber": 750
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "RuntimeMetrics",
+          "lineNumber": 751
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "FakeClock",
+          "lineNumber": 751
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "InferenceWorker",
+          "lineNumber": 752
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "FakeClock",
+          "lineNumber": 754
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "_make_snapshot",
+          "lineNumber": 756
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "q.put_latest",
+          "lineNumber": 757
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "InferenceRequest",
+          "lineNumber": 757
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "worker.start",
+          "lineNumber": 758
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "rq.take_latest",
+          "lineNumber": 759
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "worker.stop",
+          "lineNumber": 760
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "q.close",
+          "lineNumber": 761
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "worker.join",
+          "lineNumber": 762
+        },
+        {
+          "caller": "test_worker_error_recovery",
+          "callee": "metrics.snapshot",
+          "lineNumber": 765
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "LatestQueue",
+          "lineNumber": 768
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "LatestQueue",
+          "lineNumber": 769
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "RuntimeMetrics",
+          "lineNumber": 770
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "NullClock",
+          "lineNumber": 770
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "InferenceWorker",
+          "lineNumber": 771
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "StubService",
+          "lineNumber": 772
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "_make_chunk",
+          "lineNumber": 772
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "NullClock",
+          "lineNumber": 774
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "_make_snapshot",
+          "lineNumber": 776
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "q.put_latest",
+          "lineNumber": 777
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "InferenceRequest",
+          "lineNumber": 777
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "worker.start",
+          "lineNumber": 778
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "worker.join",
+          "lineNumber": 779
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "metrics.snapshot",
+          "lineNumber": 780
+        },
+        {
+          "caller": "test_worker_clock_invalid_fatal",
+          "callee": "worker.is_alive",
+          "lineNumber": 781
+        },
+        {
+          "caller": "_loop",
+          "callee": "_load_config",
+          "lineNumber": 791
+        },
+        {
+          "caller": "_loop",
+          "callee": "_build_spec",
+          "lineNumber": 792
+        },
+        {
+          "caller": "_loop",
+          "callee": "FakeClock",
+          "lineNumber": 793
+        },
+        {
+          "caller": "_loop",
+          "callee": "LatestQueue",
+          "lineNumber": 794
+        },
+        {
+          "caller": "_loop",
+          "callee": "LatestQueue",
+          "lineNumber": 795
+        },
+        {
+          "caller": "_loop",
+          "callee": "RuntimeMetrics",
+          "lineNumber": 796
+        },
+        {
+          "caller": "_loop",
+          "callee": "SafetyGuard",
+          "lineNumber": 797
+        },
+        {
+          "caller": "_loop",
+          "callee": "ActionPublisher",
+          "lineNumber": 798
+        },
+        {
+          "caller": "_loop",
+          "callee": "FakeNode",
+          "lineNumber": 798
+        },
+        {
+          "caller": "_loop",
+          "callee": "_make_snapshot",
+          "lineNumber": 799
+        },
+        {
+          "caller": "_loop",
+          "callee": "ControlLoop",
+          "lineNumber": 800
+        },
+        {
+          "caller": "_loop",
+          "callee": "ControlLoopConfig",
+          "lineNumber": 801
+        },
+        {
+          "caller": "_loop",
+          "callee": "SimpleNamespace",
+          "lineNumber": 813
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "self._loop",
+          "lineNumber": 816
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "c.loop.tick",
+          "lineNumber": 818
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "CommandPermit",
+          "lineNumber": 818
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "c.metrics.snapshot",
+          "lineNumber": 819
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "c.rsq.put_latest",
+          "lineNumber": 821
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "InferenceResult.success",
+          "lineNumber": 821
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "_make_chunk",
+          "lineNumber": 823
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "c.loop.tick",
+          "lineNumber": 826
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "CommandPermit",
+          "lineNumber": 826
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "c.metrics.snapshot",
+          "lineNumber": 828
+        },
+        {
+          "caller": "test_correlation_and_active_chunk",
+          "callee": "c.metrics.snapshot",
+          "lineNumber": 829
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "self._loop",
+          "lineNumber": 832
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "c.loop.tick",
+          "lineNumber": 834
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "CommandPermit",
+          "lineNumber": 834
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "c.rsq.put_latest",
+          "lineNumber": 835
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "InferenceResult.success",
+          "lineNumber": 835
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "_make_chunk",
+          "lineNumber": 837
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "c.metrics.snapshot",
+          "lineNumber": 840
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "range",
+          "lineNumber": 841
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "c.loop.tick",
+          "lineNumber": 842
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "CommandPermit",
+          "lineNumber": 842
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "c.metrics.snapshot",
+          "lineNumber": 844
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "c.rsq.put_latest",
+          "lineNumber": 845
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "InferenceResult.success",
+          "lineNumber": 845
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "_make_chunk",
+          "lineNumber": 847
+        },
+        {
+          "caller": "test_prefetch_at_horizon",
+          "callee": "c.metrics.snapshot",
+          "lineNumber": 849
+        },
+        {
+          "caller": "test_result_id_mismatch_latches_fault",
+          "callee": "self._loop",
+          "lineNumber": 852
+        },
+        {
+          "caller": "test_result_id_mismatch_latches_fault",
+          "callee": "c.loop.tick",
+          "lineNumber": 853
+        },
+        {
+          "caller": "test_result_id_mismatch_latches_fault",
+          "callee": "CommandPermit",
+          "lineNumber": 853
+        },
+        {
+          "caller": "test_result_id_mismatch_latches_fault",
+          "callee": "c.rsq.put_latest",
+          "lineNumber": 855
+        },
+        {
+          "caller": "test_result_id_mismatch_latches_fault",
+          "callee": "InferenceResult.success",
+          "lineNumber": 855
+        },
+        {
+          "caller": "test_result_id_mismatch_latches_fault",
+          "callee": "_make_chunk",
+          "lineNumber": 857
+        },
+        {
+          "caller": "test_result_id_mismatch_latches_fault",
+          "callee": "c.loop.tick",
+          "lineNumber": 859
+        },
+        {
+          "caller": "test_result_id_mismatch_latches_fault",
+          "callee": "CommandPermit",
+          "lineNumber": 859
+        },
+        {
+          "caller": "test_result_id_mismatch_latches_fault",
+          "callee": "c.metrics.snapshot",
+          "lineNumber": 860
+        },
+        {
+          "caller": "_make_loop",
+          "callee": "_load_config",
+          "lineNumber": 872
+        },
+        {
+          "caller": "_make_loop",
+          "callee": "FakeClock",
+          "lineNumber": 873
+        },
+        {
+          "caller": "_make_loop",
+          "callee": "LatestQueue",
+          "lineNumber": 874
+        },
+        {
+          "caller": "_make_loop",
+          "callee": "LatestQueue",
+          "lineNumber": 875
+        },
+        {
+          "caller": "_make_loop",
+          "callee": "RuntimeMetrics",
+          "lineNumber": 876
+        },
+        {
+          "caller": "_make_loop",
+          "callee": "ControlLoop",
+          "lineNumber": 877
+        },
+        {
+          "caller": "_make_loop",
+          "callee": "ControlLoopConfig",
+          "lineNumber": 878
+        },
+        {
+          "caller": "_seed_chunk",
+          "callee": "loop.tick",
+          "lineNumber": 894
+        },
+        {
+          "caller": "_seed_chunk",
+          "callee": "CommandPermit",
+          "lineNumber": 894
+        },
+        {
+          "caller": "_seed_chunk",
+          "callee": "rsq.put_latest",
+          "lineNumber": 895
+        },
+        {
+          "caller": "_seed_chunk",
+          "callee": "InferenceResult.success",
+          "lineNumber": 895
+        },
+        {
+          "caller": "_seed_chunk",
+          "callee": "_make_chunk",
+          "lineNumber": 897
+        },
+        {
+          "caller": "_seed_chunk",
+          "callee": "loop.tick",
+          "lineNumber": 899
+        },
+        {
+          "caller": "_seed_chunk",
+          "callee": "CommandPermit",
+          "lineNumber": 899
+        },
+        {
+          "caller": "test_outcome_observed",
+          "callee": "_load_config",
+          "lineNumber": 902
+        },
+        {
+          "caller": "test_outcome_observed",
+          "callee": "ActionPublisher",
+          "lineNumber": 903
+        },
+        {
+          "caller": "test_outcome_observed",
+          "callee": "FakeNode",
+          "lineNumber": 903
+        },
+        {
+          "caller": "test_outcome_observed",
+          "callee": "_make_snapshot",
+          "lineNumber": 904
+        },
+        {
+          "caller": "test_outcome_observed",
+          "callee": "self._make_loop",
+          "lineNumber": 905
+        },
+        {
+          "caller": "test_outcome_observed",
+          "callee": "SafetyGuard",
+          "lineNumber": 906
+        },
+        {
+          "caller": "test_outcome_observed",
+          "callee": "self._seed_chunk",
+          "lineNumber": 908
+        },
+        {
+          "caller": "test_outcome_published",
+          "callee": "_load_config",
+          "lineNumber": 913
+        },
+        {
+          "caller": "test_outcome_published",
+          "callee": "ActionPublisher",
+          "lineNumber": 914
+        },
+        {
+          "caller": "test_outcome_published",
+          "callee": "FakeNode",
+          "lineNumber": 914
+        },
+        {
+          "caller": "test_outcome_published",
+          "callee": "_make_snapshot",
+          "lineNumber": 915
+        },
+        {
+          "caller": "test_outcome_published",
+          "callee": "self._make_loop",
+          "lineNumber": 916
+        },
+        {
+          "caller": "test_outcome_published",
+          "callee": "SafetyGuard",
+          "lineNumber": 917
+        },
+        {
+          "caller": "test_outcome_published",
+          "callee": "self._seed_chunk",
+          "lineNumber": 919
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "_load_config",
+          "lineNumber": 924
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "ActionPublisher",
+          "lineNumber": 925
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "FakeNode",
+          "lineNumber": 925
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "_make_snapshot",
+          "lineNumber": 926
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "self._make_loop",
+          "lineNumber": 927
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "SafetyGuard",
+          "lineNumber": 928
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "self._seed_chunk",
+          "lineNumber": 930
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "rsq.put_latest",
+          "lineNumber": 932
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "InferenceResult.success",
+          "lineNumber": 932
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "_make_chunk",
+          "lineNumber": 934
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "loop.tick",
+          "lineNumber": 936
+        },
+        {
+          "caller": "test_outcome_blocked",
+          "callee": "CommandPermit",
+          "lineNumber": 936
+        },
+        {
+          "caller": "test_outcome_rejected",
+          "callee": "_load_config",
+          "lineNumber": 941
+        },
+        {
+          "caller": "test_outcome_rejected",
+          "callee": "ActionPublisher",
+          "lineNumber": 942
+        },
+        {
+          "caller": "test_outcome_rejected",
+          "callee": "FakeNode",
+          "lineNumber": 942
+        },
+        {
+          "caller": "test_outcome_rejected",
+          "callee": "_make_snapshot",
+          "lineNumber": 943
+        },
+        {
+          "caller": "test_outcome_rejected",
+          "callee": "self._make_loop",
+          "lineNumber": 944
+        },
+        {
+          "caller": "test_outcome_rejected",
+          "callee": "DenySafetyPort",
+          "lineNumber": 945
+        },
+        {
+          "caller": "test_outcome_rejected",
+          "callee": "self._seed_chunk",
+          "lineNumber": 947
+        },
+        {
+          "caller": "test_outcome_rejected",
+          "callee": "metrics.snapshot",
+          "lineNumber": 949
+        },
+        {
+          "caller": "test_outcome_failed",
+          "callee": "_load_config",
+          "lineNumber": 952
+        },
+        {
+          "caller": "test_outcome_failed",
+          "callee": "ActionPublisher",
+          "lineNumber": 953
+        },
+        {
+          "caller": "test_outcome_failed",
+          "callee": "FakeNode",
+          "lineNumber": 953
+        },
+        {
+          "caller": "test_outcome_failed",
+          "callee": "FailingPublisher",
+          "lineNumber": 954
+        },
+        {
+          "caller": "test_outcome_failed",
+          "callee": "_make_snapshot",
+          "lineNumber": 955
+        },
+        {
+          "caller": "test_outcome_failed",
+          "callee": "self._make_loop",
+          "lineNumber": 956
+        },
+        {
+          "caller": "test_outcome_failed",
+          "callee": "SafetyGuard",
+          "lineNumber": 957
+        },
+        {
+          "caller": "test_outcome_failed",
+          "callee": "self._seed_chunk",
+          "lineNumber": 959
+        },
+        {
+          "caller": "test_outcome_partial",
+          "callee": "_load_config",
+          "lineNumber": 965
+        },
+        {
+          "caller": "test_outcome_partial",
+          "callee": "ActionPublisher",
+          "lineNumber": 966
+        },
+        {
+          "caller": "test_outcome_partial",
+          "callee": "FakeNode",
+          "lineNumber": 966
+        },
+        {
+          "caller": "test_outcome_partial",
+          "callee": "FailingPublisher",
+          "lineNumber": 967
+        },
+        {
+          "caller": "test_outcome_partial",
+          "callee": "_make_snapshot",
+          "lineNumber": 968
+        },
+        {
+          "caller": "test_outcome_partial",
+          "callee": "self._make_loop",
+          "lineNumber": 969
+        },
+        {
+          "caller": "test_outcome_partial",
+          "callee": "SafetyGuard",
+          "lineNumber": 970
+        },
+        {
+          "caller": "test_outcome_partial",
+          "callee": "self._seed_chunk",
+          "lineNumber": 972
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "_load_config",
+          "lineNumber": 978
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "ActionPublisher",
+          "lineNumber": 979
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "FakeNode",
+          "lineNumber": 979
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "FakeClock",
+          "lineNumber": 980
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "LatestQueue",
+          "lineNumber": 981
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "LatestQueue",
+          "lineNumber": 982
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "RuntimeMetrics",
+          "lineNumber": 983
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "ControlLoop",
+          "lineNumber": 985
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "ControlLoopConfig",
+          "lineNumber": 986
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "SafetyGuard",
+          "lineNumber": 993
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "loop.tick",
+          "lineNumber": 996
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "CommandPermit",
+          "lineNumber": 996
+        },
+        {
+          "caller": "test_observation_missing_fallback_deferred",
+          "callee": "metrics.snapshot",
+          "lineNumber": 997
+        },
+        {
+          "caller": "test_preflight_passes_for_canonical_spec",
+          "callee": "build_composition",
+          "lineNumber": 1009
+        },
+        {
+          "caller": "test_preflight_passes_for_canonical_spec",
+          "callee": "run_startup_preflight",
+          "lineNumber": 1011
+        },
+        {
+          "caller": "test_preflight_spec_identity_mismatch",
+          "callee": "build_composition",
+          "lineNumber": 1020
+        },
+        {
+          "caller": "test_preflight_spec_identity_mismatch",
+          "callee": "_build_spec",
+          "lineNumber": 1022
+        },
+        {
+          "caller": "test_preflight_spec_identity_mismatch",
+          "callee": "ActRuntimeResources",
+          "lineNumber": 1023
+        },
+        {
+          "caller": "test_preflight_spec_identity_mismatch",
+          "callee": "pytest.raises",
+          "lineNumber": 1031
+        },
+        {
+          "caller": "test_preflight_spec_identity_mismatch",
+          "callee": "run_startup_preflight",
+          "lineNumber": 1032
+        },
+        {
+          "caller": "test_preflight_permit_source_missing_when_enabled",
+          "callee": "build_composition",
+          "lineNumber": 1042
+        },
+        {
+          "caller": "test_preflight_permit_source_missing_when_enabled",
+          "callee": "pytest.raises",
+          "lineNumber": 1043
+        },
+        {
+          "caller": "test_preflight_permit_source_missing_when_enabled",
+          "callee": "run_startup_preflight",
+          "lineNumber": 1044
+        },
+        {
+          "caller": "test_deny_permit_is_fail_closed",
+          "callee": "_deny_command_permit",
+          "lineNumber": 1054
+        },
+        {
+          "caller": "test_shutdown_convergence",
+          "callee": "build_composition",
+          "lineNumber": 1059
+        },
+        {
+          "caller": "test_shutdown_convergence",
+          "callee": "CommandPermit",
+          "lineNumber": 1061
+        },
+        {
+          "caller": "test_shutdown_convergence",
+          "callee": "comp.control_loop.request_shutdown",
+          "lineNumber": 1063
+        },
+        {
+          "caller": "test_shutdown_convergence",
+          "callee": "comp.control_loop.tick",
+          "lineNumber": 1065
+        },
+        {
+          "caller": "test_shutdown_convergence",
+          "callee": "CommandPermit",
+          "lineNumber": 1065
+        },
+        {
+          "caller": "test_shutdown_convergence",
+          "callee": "comp.metrics.snapshot",
+          "lineNumber": 1066
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "build_composition",
+          "lineNumber": 1076
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "CommandPermit",
+          "lineNumber": 1078
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "range",
+          "lineNumber": 1086
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.clock.advance",
+          "lineNumber": 1087
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "feed_observation",
+          "lineNumber": 1088
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.control_loop.tick",
+          "lineNumber": 1089
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.clock",
+          "lineNumber": 1090
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.clock",
+          "lineNumber": 1090
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "CommandPermit",
+          "lineNumber": 1090
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.metrics.snapshot",
+          "lineNumber": 1095
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "any",
+          "lineNumber": 1105
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "len",
+          "lineNumber": 1105
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.control_loop.request_shutdown",
+          "lineNumber": 1108
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.worker.stop",
+          "lineNumber": 1109
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.request_queue.close",
+          "lineNumber": 1110
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.worker.join",
+          "lineNumber": 1111
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.result_queue.close",
+          "lineNumber": 1112
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.worker.is_alive",
+          "lineNumber": 1113
+        },
+        {
+          "caller": "test_full_tracer_publishes_and_shuts_down",
+          "callee": "comp.metrics.snapshot",
+          "lineNumber": 1114
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "build_composition",
+          "lineNumber": 1126
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "comp.safety_guard.filter_action",
+          "lineNumber": 1127
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "ActionSpec",
+          "lineNumber": 1128
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "np.array",
+          "lineNumber": 1129
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "np.array",
+          "lineNumber": 1130
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "_make_snapshot",
+          "lineNumber": 1133
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "ActionPublishRequest",
+          "lineNumber": 1135
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "CommandPermit",
+          "lineNumber": 1137
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "comp.publisher.publish",
+          "lineNumber": 1140
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "len",
+          "lineNumber": 1143
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "len",
+          "lineNumber": 1145
+        },
+        {
+          "caller": "test_dry_run_command_count_is_zero",
+          "callee": "len",
+          "lineNumber": 1146
+        },
+        {
+          "caller": "test_real_bundle_loader_is_gated",
+          "callee": "_load_config",
+          "lineNumber": 1163
+        },
+        {
+          "caller": "test_real_bundle_loader_is_gated",
+          "callee": "pytest.raises",
+          "lineNumber": 1165
+        },
+        {
+          "caller": "test_real_bundle_loader_is_gated",
+          "callee": "load_act_runtime_resources",
+          "lineNumber": 1166
+        },
+        {
+          "caller": "test_default_deny_never_auto_enables_command",
+          "callee": "_deny_command_permit",
+          "lineNumber": 1178
+        },
+        {
+          "caller": "test_default_deny_never_auto_enables_command",
+          "callee": "build_composition",
+          "lineNumber": 1182
+        },
+        {
+          "caller": "test_default_deny_never_auto_enables_command",
+          "callee": "comp.publisher.publish",
+          "lineNumber": 1183
+        },
+        {
+          "caller": "test_default_deny_never_auto_enables_command",
+          "callee": "ActionPublishRequest",
+          "lineNumber": 1183
+        },
+        {
+          "caller": "test_default_deny_never_auto_enables_command",
+          "callee": "_safe_result",
+          "lineNumber": 1184
+        },
+        {
+          "caller": "test_default_deny_never_auto_enables_command",
+          "callee": "CommandPermit",
+          "lineNumber": 1185
+        },
+        {
+          "caller": "test_cli_parser_has_no_yaml_command_switch",
+          "callee": "build_arg_parser",
+          "lineNumber": 1191
+        },
+        {
+          "caller": "test_cli_parser_has_no_yaml_command_switch",
+          "callee": "parser.parse_args",
+          "lineNumber": 1194
+        },
+        {
+          "caller": "_safe_result",
+          "callee": "SafetyResult",
+          "lineNumber": 1199
+        },
+        {
+          "caller": "_safe_result",
+          "callee": "ActionSpec",
+          "lineNumber": 1201
+        },
+        {
+          "caller": "_safe_result",
+          "callee": "np.array",
+          "lineNumber": 1202
+        },
+        {
+          "caller": "_safe_result",
+          "callee": "np.array",
+          "lineNumber": 1203
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 28,
+        "functionCount": 8,
+        "classCount": 20
+      }
+    },
+    {
+      "path": "act/tests/types/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "act/tests/ui/test_act_deploy_main.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 225,
+      "nonEmptyLines": 164,
+      "functions": [
+        {
+          "name": "_spec",
+          "startLine": 67,
+          "endLine": 81,
+          "params": []
+        },
+        {
+          "name": "_config",
+          "startLine": 84,
+          "endLine": 92,
+          "params": [
+            "command_output_enabled"
+          ]
+        },
+        {
+          "name": "_resources",
+          "startLine": 95,
+          "endLine": 101,
+          "params": [
+            "spec"
+          ]
+        },
+        {
+          "name": "_inference_service",
+          "startLine": 104,
+          "endLine": 111,
+          "params": [
+            "spec"
+          ]
+        },
+        {
+          "name": "test_parser_requires_config",
+          "startLine": 119,
+          "endLine": 122,
+          "params": []
+        },
+        {
+          "name": "test_parser_enable_flag_defaults_false",
+          "startLine": 125,
+          "endLine": 128,
+          "params": []
+        },
+        {
+          "name": "test_parser_enable_flag_can_be_set",
+          "startLine": 131,
+          "endLine": 135,
+          "params": []
+        },
+        {
+          "name": "patched_main",
+          "startLine": 144,
+          "endLine": 165,
+          "params": [
+            "monkeypatch"
+          ]
+        },
+        {
+          "name": "test_main_success_returns_zero",
+          "startLine": 168,
+          "endLine": 173,
+          "params": [
+            "patched_main"
+          ]
+        },
+        {
+          "name": "test_main_command_output_flag_passed_to_loader",
+          "startLine": 176,
+          "endLine": 186,
+          "params": [
+            "patched_main",
+            "monkeypatch"
+          ]
+        },
+        {
+          "name": "test_main_construction_error_returns_one",
+          "startLine": 189,
+          "endLine": 198,
+          "params": [
+            "patched_main",
+            "monkeypatch"
+          ]
+        },
+        {
+          "name": "test_main_keyboard_interrupt_returns_zero",
+          "startLine": 201,
+          "endLine": 208,
+          "params": [
+            "patched_main"
+          ]
+        },
+        {
+          "name": "test_main_config_load_error_returns_one",
+          "startLine": 211,
+          "endLine": 217,
+          "params": [
+            "patched_main",
+            "monkeypatch"
+          ]
+        },
+        {
+          "name": "test_main_does_not_import_ros_at_module_load",
+          "startLine": 220,
+          "endLine": 225,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "FakeRclpy",
+          "startLine": 25,
+          "endLine": 41,
+          "methods": [
+            "__init__",
+            "init",
+            "spin",
+            "shutdown",
+            "ok"
+          ],
+          "properties": []
+        },
+        {
+          "name": "FakeDeployNode",
+          "startLine": 44,
+          "endLine": 59,
+          "methods": [
+            "__init__",
+            "shutdown",
+            "destroy_node"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "FakeRclpy",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "FakeDeployNode",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "_spec",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "_config",
+          "line": 84,
+          "isDefault": false
+        },
+        {
+          "name": "_resources",
+          "line": 95,
+          "isDefault": false
+        },
+        {
+          "name": "_inference_service",
+          "line": 104,
+          "isDefault": false
+        },
+        {
+          "name": "test_parser_requires_config",
+          "line": 119,
+          "isDefault": false
+        },
+        {
+          "name": "test_parser_enable_flag_defaults_false",
+          "line": 125,
+          "isDefault": false
+        },
+        {
+          "name": "test_parser_enable_flag_can_be_set",
+          "line": 131,
+          "isDefault": false
+        },
+        {
+          "name": "patched_main",
+          "line": 143,
+          "isDefault": false
+        },
+        {
+          "name": "test_main_success_returns_zero",
+          "line": 168,
+          "isDefault": false
+        },
+        {
+          "name": "test_main_command_output_flag_passed_to_loader",
+          "line": 176,
+          "isDefault": false
+        },
+        {
+          "name": "test_main_construction_error_returns_one",
+          "line": 189,
+          "isDefault": false
+        },
+        {
+          "name": "test_main_keyboard_interrupt_returns_zero",
+          "line": 201,
+          "isDefault": false
+        },
+        {
+          "name": "test_main_config_load_error_returns_one",
+          "line": 211,
+          "isDefault": false
+        },
+        {
+          "name": "test_main_does_not_import_ros_at_module_load",
+          "line": 220,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_spec",
+          "callee": "PolicyInputSpec",
+          "lineNumber": 70
+        },
+        {
+          "caller": "_config",
+          "callee": "DeployConfig.from_mapping",
+          "lineNumber": 90
+        },
+        {
+          "caller": "_resources",
+          "callee": "SimpleNamespace",
+          "lineNumber": 96
+        },
+        {
+          "caller": "predict_action_chunk",
+          "callee": "SimpleNamespace",
+          "lineNumber": 109
+        },
+        {
+          "caller": "_inference_service",
+          "callee": "_FakeService",
+          "lineNumber": 111
+        },
+        {
+          "caller": "test_parser_requires_config",
+          "callee": "pytest.raises",
+          "lineNumber": 120
+        },
+        {
+          "caller": "test_parser_requires_config",
+          "callee": "build_arg_parser().parse_args",
+          "lineNumber": 121
+        },
+        {
+          "caller": "test_parser_requires_config",
+          "callee": "build_arg_parser",
+          "lineNumber": 121
+        },
+        {
+          "caller": "test_parser_enable_flag_defaults_false",
+          "callee": "build_arg_parser().parse_args",
+          "lineNumber": 126
+        },
+        {
+          "caller": "test_parser_enable_flag_defaults_false",
+          "callee": "build_arg_parser",
+          "lineNumber": 126
+        },
+        {
+          "caller": "test_parser_enable_flag_can_be_set",
+          "callee": "build_arg_parser().parse_args",
+          "lineNumber": 132
+        },
+        {
+          "caller": "test_parser_enable_flag_can_be_set",
+          "callee": "build_arg_parser",
+          "lineNumber": 132
+        },
+        {
+          "caller": "patched_main",
+          "callee": "FakeRclpy",
+          "lineNumber": 145
+        },
+        {
+          "caller": "patched_main",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 146
+        },
+        {
+          "caller": "patched_main",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 147
+        },
+        {
+          "caller": "patched_main",
+          "callee": "_spec",
+          "lineNumber": 151
+        },
+        {
+          "caller": "patched_main",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 152
+        },
+        {
+          "caller": "patched_main",
+          "callee": "_config",
+          "lineNumber": 153
+        },
+        {
+          "caller": "patched_main",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 155
+        },
+        {
+          "caller": "patched_main",
+          "callee": "_resources",
+          "lineNumber": 158
+        },
+        {
+          "caller": "patched_main",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 160
+        },
+        {
+          "caller": "patched_main",
+          "callee": "_inference_service",
+          "lineNumber": 163
+        },
+        {
+          "caller": "test_main_success_returns_zero",
+          "callee": "main",
+          "lineNumber": 169
+        },
+        {
+          "caller": "_fake_load",
+          "callee": "_config",
+          "lineNumber": 181
+        },
+        {
+          "caller": "test_main_command_output_flag_passed_to_loader",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 183
+        },
+        {
+          "caller": "test_main_command_output_flag_passed_to_loader",
+          "callee": "main",
+          "lineNumber": 184
+        },
+        {
+          "caller": "__init__",
+          "callee": "RuntimeError",
+          "lineNumber": 192
+        },
+        {
+          "caller": "test_main_construction_error_returns_one",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 194
+        },
+        {
+          "caller": "test_main_construction_error_returns_one",
+          "callee": "main",
+          "lineNumber": 197
+        },
+        {
+          "caller": "_raise_kb_int",
+          "callee": "KeyboardInterrupt",
+          "lineNumber": 203
+        },
+        {
+          "caller": "test_main_keyboard_interrupt_returns_zero",
+          "callee": "main",
+          "lineNumber": 206
+        },
+        {
+          "caller": "_boom",
+          "callee": "config_mod.DeployConfigError",
+          "lineNumber": 213
+        },
+        {
+          "caller": "test_main_config_load_error_returns_one",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 215
+        },
+        {
+          "caller": "test_main_config_load_error_returns_one",
+          "callee": "main",
+          "lineNumber": 216
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 16,
+        "functionCount": 14,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "act/tests/ui/test_act_deploy_node.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 429,
+      "nonEmptyLines": 330,
+      "functions": [
+        {
+          "name": "_spec",
+          "startLine": 140,
+          "endLine": 152,
+          "params": []
+        },
+        {
+          "name": "_config",
+          "startLine": 155,
+          "endLine": 161,
+          "params": []
+        },
+        {
+          "name": "_inference_service",
+          "startLine": 164,
+          "endLine": 173,
+          "params": [
+            "spec"
+          ]
+        },
+        {
+          "name": "_resources",
+          "startLine": 176,
+          "endLine": 177,
+          "params": [
+            "spec"
+          ]
+        },
+        {
+          "name": "node",
+          "startLine": 181,
+          "endLine": 193,
+          "params": []
+        },
+        {
+          "name": "test_atomic_startup_assembles_all_deps",
+          "startLine": 201,
+          "endLine": 216,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_worker_started_only_after_preflight",
+          "startLine": 219,
+          "endLine": 223,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_timers_fire_drives_tick_and_metrics",
+          "startLine": 226,
+          "endLine": 235,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_control_tick_invalid_monotonic_clock",
+          "startLine": 243,
+          "endLine": 249,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_control_tick_invalid_ros_time",
+          "startLine": 252,
+          "endLine": 257,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_control_tick_worker_fatal_latched",
+          "startLine": 260,
+          "endLine": 267,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_control_tick_worker_unexpectedly_dead",
+          "startLine": 270,
+          "endLine": 277,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_resolve_permit_denies_when_source_none",
+          "startLine": 285,
+          "endLine": 289,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_resolve_permit_denies_on_provider_error",
+          "startLine": 292,
+          "endLine": 300,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_resolve_permit_denies_on_bad_return_type",
+          "startLine": 303,
+          "endLine": 307,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_c20_telemetry_payload_is_stable_json",
+          "startLine": 315,
+          "endLine": 332,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_c20_only_writer_of_metrics_topic",
+          "startLine": 335,
+          "endLine": 343,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_shutdown_closes_queues_cancels_timers_returns_true",
+          "startLine": 351,
+          "endLine": 366,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_shutdown_is_idempotent",
+          "startLine": 369,
+          "endLine": 372,
+          "params": [
+            "node"
+          ]
+        },
+        {
+          "name": "test_shutdown_timeout_returns_false",
+          "startLine": 375,
+          "endLine": 398,
+          "params": [
+            "monkeypatch"
+          ]
+        },
+        {
+          "name": "test_atomic_recovery_on_pipeline_build_failure",
+          "startLine": 406,
+          "endLine": 429,
+          "params": [
+            "monkeypatch"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "FakeStringMsg",
+          "startLine": 32,
+          "endLine": 34,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        },
+        {
+          "name": "RecordingStringPublisher",
+          "startLine": 37,
+          "endLine": 42,
+          "methods": [
+            "__init__",
+            "publish"
+          ],
+          "properties": []
+        },
+        {
+          "name": "FakeTimer",
+          "startLine": 45,
+          "endLine": 56,
+          "methods": [
+            "__init__",
+            "cancel",
+            "fire"
+          ],
+          "properties": []
+        },
+        {
+          "name": "FakeNode",
+          "startLine": 59,
+          "endLine": 68,
+          "methods": [
+            "__init__",
+            "create_publisher"
+          ],
+          "properties": []
+        },
+        {
+          "name": "FakeClock",
+          "startLine": 71,
+          "endLine": 79,
+          "methods": [
+            "__init__",
+            "__call__",
+            "advance"
+          ],
+          "properties": []
+        },
+        {
+          "name": "FakeActDeployNode",
+          "startLine": 87,
+          "endLine": 132,
+          "methods": [
+            "__init__",
+            "_ros_create_timer",
+            "_ros_cancel_timer",
+            "_ros_create_metrics_publisher",
+            "_ros_time_seconds",
+            "_ros_destroy_node",
+            "advance_ros_time",
+            "fire_control_timer",
+            "fire_metrics_timer"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "FakeStringMsg",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "RecordingStringPublisher",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "FakeTimer",
+          "line": 45,
+          "isDefault": false
+        },
+        {
+          "name": "FakeNode",
+          "line": 59,
+          "isDefault": false
+        },
+        {
+          "name": "FakeClock",
+          "line": 71,
+          "isDefault": false
+        },
+        {
+          "name": "FakeActDeployNode",
+          "line": 87,
+          "isDefault": false
+        },
+        {
+          "name": "_spec",
+          "line": 140,
+          "isDefault": false
+        },
+        {
+          "name": "_config",
+          "line": 155,
+          "isDefault": false
+        },
+        {
+          "name": "_inference_service",
+          "line": 164,
+          "isDefault": false
+        },
+        {
+          "name": "_resources",
+          "line": 176,
+          "isDefault": false
+        },
+        {
+          "name": "node",
+          "line": 180,
+          "isDefault": false
+        },
+        {
+          "name": "test_atomic_startup_assembles_all_deps",
+          "line": 201,
+          "isDefault": false
+        },
+        {
+          "name": "test_worker_started_only_after_preflight",
+          "line": 219,
+          "isDefault": false
+        },
+        {
+          "name": "test_timers_fire_drives_tick_and_metrics",
+          "line": 226,
+          "isDefault": false
+        },
+        {
+          "name": "test_control_tick_invalid_monotonic_clock",
+          "line": 243,
+          "isDefault": false
+        },
+        {
+          "name": "test_control_tick_invalid_ros_time",
+          "line": 252,
+          "isDefault": false
+        },
+        {
+          "name": "test_control_tick_worker_fatal_latched",
+          "line": 260,
+          "isDefault": false
+        },
+        {
+          "name": "test_control_tick_worker_unexpectedly_dead",
+          "line": 270,
+          "isDefault": false
+        },
+        {
+          "name": "test_resolve_permit_denies_when_source_none",
+          "line": 285,
+          "isDefault": false
+        },
+        {
+          "name": "test_resolve_permit_denies_on_provider_error",
+          "line": 292,
+          "isDefault": false
+        },
+        {
+          "name": "test_resolve_permit_denies_on_bad_return_type",
+          "line": 303,
+          "isDefault": false
+        },
+        {
+          "name": "test_c20_telemetry_payload_is_stable_json",
+          "line": 315,
+          "isDefault": false
+        },
+        {
+          "name": "test_c20_only_writer_of_metrics_topic",
+          "line": 335,
+          "isDefault": false
+        },
+        {
+          "name": "test_shutdown_closes_queues_cancels_timers_returns_true",
+          "line": 351,
+          "isDefault": false
+        },
+        {
+          "name": "test_shutdown_is_idempotent",
+          "line": 369,
+          "isDefault": false
+        },
+        {
+          "name": "test_shutdown_timeout_returns_false",
+          "line": 375,
+          "isDefault": false
+        },
+        {
+          "name": "test_atomic_recovery_on_pipeline_build_failure",
+          "line": 406,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "publish",
+          "callee": "self.messages.append",
+          "lineNumber": 42
+        },
+        {
+          "caller": "publish",
+          "callee": "hasattr",
+          "lineNumber": 42
+        },
+        {
+          "caller": "publish",
+          "callee": "str",
+          "lineNumber": 42
+        },
+        {
+          "caller": "fire",
+          "callee": "self.callback",
+          "lineNumber": 56
+        },
+        {
+          "caller": "create_publisher",
+          "callee": "RecordingStringPublisher",
+          "lineNumber": 66
+        },
+        {
+          "caller": "create_publisher",
+          "callee": "self.created_publishers.append",
+          "lineNumber": 67
+        },
+        {
+          "caller": "__init__",
+          "callee": "float",
+          "lineNumber": 73
+        },
+        {
+          "caller": "__init__",
+          "callee": "FakeNode.__init__",
+          "lineNumber": 90
+        },
+        {
+          "caller": "__init__",
+          "callee": "FakeClock",
+          "lineNumber": 94
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._act_init",
+          "lineNumber": 95
+        },
+        {
+          "caller": "_ros_create_timer",
+          "callee": "FakeTimer",
+          "lineNumber": 105
+        },
+        {
+          "caller": "_ros_create_timer",
+          "callee": "self._timers.append",
+          "lineNumber": 106
+        },
+        {
+          "caller": "_ros_cancel_timer",
+          "callee": "timer.cancel",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_ros_create_metrics_publisher",
+          "callee": "RecordingStringPublisher",
+          "lineNumber": 114
+        },
+        {
+          "caller": "_ros_time_seconds",
+          "callee": "float",
+          "lineNumber": 117
+        },
+        {
+          "caller": "fire_control_timer",
+          "callee": "self._control_timer.fire",
+          "lineNumber": 128
+        },
+        {
+          "caller": "fire_metrics_timer",
+          "callee": "self._metrics_timer.fire",
+          "lineNumber": 132
+        },
+        {
+          "caller": "_spec",
+          "callee": "PolicyInputSpec",
+          "lineNumber": 141
+        },
+        {
+          "caller": "_config",
+          "callee": "DeployConfig.from_mapping",
+          "lineNumber": 161
+        },
+        {
+          "caller": "predict_action_chunk",
+          "callee": "SimpleNamespace",
+          "lineNumber": 171
+        },
+        {
+          "caller": "_inference_service",
+          "callee": "_FakeService",
+          "lineNumber": 173
+        },
+        {
+          "caller": "_resources",
+          "callee": "SimpleNamespace",
+          "lineNumber": 177
+        },
+        {
+          "caller": "node",
+          "callee": "_spec",
+          "lineNumber": 183
+        },
+        {
+          "caller": "node",
+          "callee": "_config",
+          "lineNumber": 184
+        },
+        {
+          "caller": "node",
+          "callee": "_resources",
+          "lineNumber": 185
+        },
+        {
+          "caller": "node",
+          "callee": "_inference_service",
+          "lineNumber": 186
+        },
+        {
+          "caller": "node",
+          "callee": "FakeActDeployNode",
+          "lineNumber": 187
+        },
+        {
+          "caller": "node",
+          "callee": "n.shutdown",
+          "lineNumber": 193
+        },
+        {
+          "caller": "test_atomic_startup_assembles_all_deps",
+          "callee": "node._worker.is_alive",
+          "lineNumber": 204
+        },
+        {
+          "caller": "test_worker_started_only_after_preflight",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 221
+        },
+        {
+          "caller": "test_timers_fire_drives_tick_and_metrics",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 227
+        },
+        {
+          "caller": "test_timers_fire_drives_tick_and_metrics",
+          "callee": "node.fire_control_timer",
+          "lineNumber": 228
+        },
+        {
+          "caller": "test_timers_fire_drives_tick_and_metrics",
+          "callee": "node.fire_metrics_timer",
+          "lineNumber": 229
+        },
+        {
+          "caller": "test_timers_fire_drives_tick_and_metrics",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 230
+        },
+        {
+          "caller": "test_timers_fire_drives_tick_and_metrics",
+          "callee": "len",
+          "lineNumber": 233
+        },
+        {
+          "caller": "test_timers_fire_drives_tick_and_metrics",
+          "callee": "isinstance",
+          "lineNumber": 235
+        },
+        {
+          "caller": "test_timers_fire_drives_tick_and_metrics",
+          "callee": "len",
+          "lineNumber": 235
+        },
+        {
+          "caller": "test_control_tick_invalid_monotonic_clock",
+          "callee": "node.fire_control_timer",
+          "lineNumber": 245
+        },
+        {
+          "caller": "test_control_tick_invalid_monotonic_clock",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 246
+        },
+        {
+          "caller": "test_control_tick_invalid_ros_time",
+          "callee": "float",
+          "lineNumber": 254
+        },
+        {
+          "caller": "test_control_tick_invalid_ros_time",
+          "callee": "node.fire_control_timer",
+          "lineNumber": 255
+        },
+        {
+          "caller": "test_control_tick_invalid_ros_time",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 256
+        },
+        {
+          "caller": "test_control_tick_worker_fatal_latched",
+          "callee": "node._runtime_metrics.record_event",
+          "lineNumber": 261
+        },
+        {
+          "caller": "test_control_tick_worker_fatal_latched",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 262
+        },
+        {
+          "caller": "test_control_tick_worker_fatal_latched",
+          "callee": "node.fire_control_timer",
+          "lineNumber": 263
+        },
+        {
+          "caller": "test_control_tick_worker_fatal_latched",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 264
+        },
+        {
+          "caller": "test_control_tick_worker_unexpectedly_dead",
+          "callee": "node.fire_control_timer",
+          "lineNumber": 274
+        },
+        {
+          "caller": "test_control_tick_worker_unexpectedly_dead",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 275
+        },
+        {
+          "caller": "test_resolve_permit_denies_when_source_none",
+          "callee": "node._resolve_permit",
+          "lineNumber": 286
+        },
+        {
+          "caller": "test_resolve_permit_denies_when_source_none",
+          "callee": "isinstance",
+          "lineNumber": 287
+        },
+        {
+          "caller": "boom",
+          "callee": "RuntimeError",
+          "lineNumber": 294
+        },
+        {
+          "caller": "test_resolve_permit_denies_on_provider_error",
+          "callee": "node._resolve_permit",
+          "lineNumber": 297
+        },
+        {
+          "caller": "test_resolve_permit_denies_on_provider_error",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 300
+        },
+        {
+          "caller": "test_resolve_permit_denies_on_bad_return_type",
+          "callee": "node._resolve_permit",
+          "lineNumber": 305
+        },
+        {
+          "caller": "test_c20_telemetry_payload_is_stable_json",
+          "callee": "node._publish_runtime_metrics",
+          "lineNumber": 316
+        },
+        {
+          "caller": "test_c20_telemetry_payload_is_stable_json",
+          "callee": "json.loads",
+          "lineNumber": 320
+        },
+        {
+          "caller": "test_c20_telemetry_payload_is_stable_json",
+          "callee": "json.dumps",
+          "lineNumber": 332
+        },
+        {
+          "caller": "test_c20_only_writer_of_metrics_topic",
+          "callee": "node._publish_runtime_metrics",
+          "lineNumber": 342
+        },
+        {
+          "caller": "test_c20_only_writer_of_metrics_topic",
+          "callee": "len",
+          "lineNumber": 343
+        },
+        {
+          "caller": "test_shutdown_closes_queues_cancels_timers_returns_true",
+          "callee": "node.shutdown",
+          "lineNumber": 352
+        },
+        {
+          "caller": "test_shutdown_closes_queues_cancels_timers_returns_true",
+          "callee": "node._worker.is_alive",
+          "lineNumber": 357
+        },
+        {
+          "caller": "test_shutdown_closes_queues_cancels_timers_returns_true",
+          "callee": "node._runtime_metrics.snapshot",
+          "lineNumber": 366
+        },
+        {
+          "caller": "test_shutdown_is_idempotent",
+          "callee": "node.shutdown",
+          "lineNumber": 370
+        },
+        {
+          "caller": "test_shutdown_is_idempotent",
+          "callee": "node.shutdown",
+          "lineNumber": 372
+        },
+        {
+          "caller": "test_shutdown_timeout_returns_false",
+          "callee": "_spec",
+          "lineNumber": 376
+        },
+        {
+          "caller": "test_shutdown_timeout_returns_false",
+          "callee": "_config",
+          "lineNumber": 377
+        },
+        {
+          "caller": "test_shutdown_timeout_returns_false",
+          "callee": "FakeActDeployNode",
+          "lineNumber": 378
+        },
+        {
+          "caller": "test_shutdown_timeout_returns_false",
+          "callee": "_resources",
+          "lineNumber": 380
+        },
+        {
+          "caller": "test_shutdown_timeout_returns_false",
+          "callee": "_inference_service",
+          "lineNumber": 381
+        },
+        {
+          "caller": "test_shutdown_timeout_returns_false",
+          "callee": "n.shutdown",
+          "lineNumber": 389
+        },
+        {
+          "caller": "test_shutdown_timeout_returns_false",
+          "callee": "n._runtime_metrics.snapshot",
+          "lineNumber": 392
+        },
+        {
+          "caller": "test_shutdown_timeout_returns_false",
+          "callee": "n._request_queue.close",
+          "lineNumber": 397
+        },
+        {
+          "caller": "test_shutdown_timeout_returns_false",
+          "callee": "n._result_queue.close",
+          "lineNumber": 398
+        },
+        {
+          "caller": "_boom",
+          "callee": "RuntimeError",
+          "lineNumber": 410
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 412
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "_spec",
+          "lineNumber": 414
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "_config",
+          "lineNumber": 415
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "FakeActDeployNode.__new__",
+          "lineNumber": 416
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "FakeNode.__init__",
+          "lineNumber": 417
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "pytest.raises",
+          "lineNumber": 419
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "n._act_init",
+          "lineNumber": 420
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "_resources",
+          "lineNumber": 422
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "_inference_service",
+          "lineNumber": 423
+        },
+        {
+          "caller": "test_atomic_recovery_on_pipeline_build_failure",
+          "callee": "FakeClock",
+          "lineNumber": 425
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 27,
+        "functionCount": 21,
+        "classCount": 6
+      }
+    },
+    {
+      "path": "act/tests/ui/test_startup_preflight.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 322,
+      "nonEmptyLines": 264,
+      "functions": [
+        {
+          "name": "_spec",
+          "startLine": 28,
+          "endLine": 51,
+          "params": [
+            "camera_keys",
+            "state_dim",
+            "action_dim",
+            "chunk_size",
+            "image_layout",
+            "image_dtype",
+            "image_value_range",
+            "image_size"
+          ]
+        },
+        {
+          "name": "_config",
+          "startLine": 54,
+          "endLine": 64,
+          "params": [
+            "state_dim",
+            "action_dim",
+            "chunk_size",
+            "command_output_enabled"
+          ]
+        },
+        {
+          "name": "_loose_spec",
+          "startLine": 67,
+          "endLine": 91,
+          "params": [
+            "camera_keys",
+            "state_dim",
+            "action_dim",
+            "chunk_size",
+            "image_layout",
+            "image_dtype",
+            "image_value_range",
+            "image_size"
+          ]
+        },
+        {
+          "name": "_inference_service",
+          "startLine": 94,
+          "endLine": 95,
+          "params": [
+            "spec"
+          ]
+        },
+        {
+          "name": "_pipeline",
+          "startLine": 98,
+          "endLine": 99,
+          "params": [
+            "spec",
+            "clock"
+          ]
+        },
+        {
+          "name": "_resources",
+          "startLine": 102,
+          "endLine": 103,
+          "params": [
+            "spec"
+          ]
+        },
+        {
+          "name": "_preflight_ok",
+          "startLine": 106,
+          "endLine": 118,
+          "params": [
+            "spec",
+            "config",
+            "clock",
+            "command_output_enabled",
+            "permit_source"
+          ]
+        },
+        {
+          "name": "test_startup_contract_codes_are_stable",
+          "startLine": 126,
+          "endLine": 137,
+          "params": []
+        },
+        {
+          "name": "test_preflight_passes_canonical_set",
+          "startLine": 145,
+          "endLine": 150,
+          "params": []
+        },
+        {
+          "name": "test_spec_identity_mismatch_inference_service",
+          "startLine": 158,
+          "endLine": 175,
+          "params": []
+        },
+        {
+          "name": "test_spec_identity_mismatch_pipeline",
+          "startLine": 178,
+          "endLine": 195,
+          "params": []
+        },
+        {
+          "name": "test_state_dim_mismatch",
+          "startLine": 198,
+          "endLine": 204,
+          "params": []
+        },
+        {
+          "name": "test_action_dim_mismatch",
+          "startLine": 207,
+          "endLine": 213,
+          "params": []
+        },
+        {
+          "name": "test_chunk_size_mismatch",
+          "startLine": 216,
+          "endLine": 222,
+          "params": []
+        },
+        {
+          "name": "test_camera_keys_mismatch",
+          "startLine": 225,
+          "endLine": 231,
+          "params": []
+        },
+        {
+          "name": "test_image_contract_mismatch_layout",
+          "startLine": 234,
+          "endLine": 240,
+          "params": []
+        },
+        {
+          "name": "test_image_contract_mismatch_dtype",
+          "startLine": 243,
+          "endLine": 249,
+          "params": []
+        },
+        {
+          "name": "test_image_contract_mismatch_value_range",
+          "startLine": 252,
+          "endLine": 258,
+          "params": []
+        },
+        {
+          "name": "test_image_contract_mismatch_shapes",
+          "startLine": 261,
+          "endLine": 267,
+          "params": []
+        },
+        {
+          "name": "test_clock_domain_mismatch",
+          "startLine": 270,
+          "endLine": 287,
+          "params": []
+        },
+        {
+          "name": "test_queue_capacity_mismatch",
+          "startLine": 290,
+          "endLine": 299,
+          "params": [
+            "monkeypatch"
+          ]
+        },
+        {
+          "name": "test_permit_source_missing_when_command_enabled",
+          "startLine": 302,
+          "endLine": 311,
+          "params": []
+        },
+        {
+          "name": "test_permit_source_present_when_command_enabled_passes",
+          "startLine": 314,
+          "endLine": 322,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_spec",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "_config",
+          "line": 54,
+          "isDefault": false
+        },
+        {
+          "name": "_loose_spec",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "_inference_service",
+          "line": 94,
+          "isDefault": false
+        },
+        {
+          "name": "_pipeline",
+          "line": 98,
+          "isDefault": false
+        },
+        {
+          "name": "_resources",
+          "line": 102,
+          "isDefault": false
+        },
+        {
+          "name": "_preflight_ok",
+          "line": 106,
+          "isDefault": false
+        },
+        {
+          "name": "test_startup_contract_codes_are_stable",
+          "line": 126,
+          "isDefault": false
+        },
+        {
+          "name": "test_preflight_passes_canonical_set",
+          "line": 145,
+          "isDefault": false
+        },
+        {
+          "name": "test_spec_identity_mismatch_inference_service",
+          "line": 158,
+          "isDefault": false
+        },
+        {
+          "name": "test_spec_identity_mismatch_pipeline",
+          "line": 178,
+          "isDefault": false
+        },
+        {
+          "name": "test_state_dim_mismatch",
+          "line": 198,
+          "isDefault": false
+        },
+        {
+          "name": "test_action_dim_mismatch",
+          "line": 207,
+          "isDefault": false
+        },
+        {
+          "name": "test_chunk_size_mismatch",
+          "line": 216,
+          "isDefault": false
+        },
+        {
+          "name": "test_camera_keys_mismatch",
+          "line": 225,
+          "isDefault": false
+        },
+        {
+          "name": "test_image_contract_mismatch_layout",
+          "line": 234,
+          "isDefault": false
+        },
+        {
+          "name": "test_image_contract_mismatch_dtype",
+          "line": 243,
+          "isDefault": false
+        },
+        {
+          "name": "test_image_contract_mismatch_value_range",
+          "line": 252,
+          "isDefault": false
+        },
+        {
+          "name": "test_image_contract_mismatch_shapes",
+          "line": 261,
+          "isDefault": false
+        },
+        {
+          "name": "test_clock_domain_mismatch",
+          "line": 270,
+          "isDefault": false
+        },
+        {
+          "name": "test_queue_capacity_mismatch",
+          "line": 290,
+          "isDefault": false
+        },
+        {
+          "name": "test_permit_source_missing_when_command_enabled",
+          "line": 302,
+          "isDefault": false
+        },
+        {
+          "name": "test_permit_source_present_when_command_enabled_passes",
+          "line": 314,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_spec",
+          "callee": "tuple",
+          "lineNumber": 39
+        },
+        {
+          "caller": "_spec",
+          "callee": "PolicyInputSpec",
+          "lineNumber": 40
+        },
+        {
+          "caller": "_spec",
+          "callee": "tuple",
+          "lineNumber": 44
+        },
+        {
+          "caller": "_config",
+          "callee": "DeployConfig.from_mapping",
+          "lineNumber": 64
+        },
+        {
+          "caller": "_loose_spec",
+          "callee": "SimpleNamespace",
+          "lineNumber": 80
+        },
+        {
+          "caller": "_loose_spec",
+          "callee": "tuple",
+          "lineNumber": 84
+        },
+        {
+          "caller": "_loose_spec",
+          "callee": "tuple",
+          "lineNumber": 85
+        },
+        {
+          "caller": "_inference_service",
+          "callee": "SimpleNamespace",
+          "lineNumber": 95
+        },
+        {
+          "caller": "_pipeline",
+          "callee": "SimpleNamespace",
+          "lineNumber": 99
+        },
+        {
+          "caller": "_resources",
+          "callee": "SimpleNamespace",
+          "lineNumber": 103
+        },
+        {
+          "caller": "_preflight_ok",
+          "callee": "run_startup_preflight",
+          "lineNumber": 108
+        },
+        {
+          "caller": "_preflight_ok",
+          "callee": "_resources",
+          "lineNumber": 110
+        },
+        {
+          "caller": "_preflight_ok",
+          "callee": "_inference_service",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_preflight_ok",
+          "callee": "_pipeline",
+          "lineNumber": 112
+        },
+        {
+          "caller": "_preflight_ok",
+          "callee": "LatestQueue",
+          "lineNumber": 113
+        },
+        {
+          "caller": "_preflight_ok",
+          "callee": "LatestQueue",
+          "lineNumber": 114
+        },
+        {
+          "caller": "test_preflight_passes_canonical_set",
+          "callee": "_spec",
+          "lineNumber": 147
+        },
+        {
+          "caller": "test_preflight_passes_canonical_set",
+          "callee": "_config",
+          "lineNumber": 148
+        },
+        {
+          "caller": "test_preflight_passes_canonical_set",
+          "callee": "_preflight_ok",
+          "lineNumber": 150
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "_spec",
+          "lineNumber": 160
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "_loose_spec",
+          "lineNumber": 161
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "_config",
+          "lineNumber": 162
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "pytest.raises",
+          "lineNumber": 163
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "run_startup_preflight",
+          "lineNumber": 164
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "_resources",
+          "lineNumber": 166
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "_inference_service",
+          "lineNumber": 167
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "_pipeline",
+          "lineNumber": 168
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "LatestQueue",
+          "lineNumber": 169
+        },
+        {
+          "caller": "test_spec_identity_mismatch_inference_service",
+          "callee": "LatestQueue",
+          "lineNumber": 170
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "_spec",
+          "lineNumber": 180
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "_loose_spec",
+          "lineNumber": 181
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "_config",
+          "lineNumber": 182
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "pytest.raises",
+          "lineNumber": 183
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "run_startup_preflight",
+          "lineNumber": 184
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "_resources",
+          "lineNumber": 186
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "_inference_service",
+          "lineNumber": 187
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "_pipeline",
+          "lineNumber": 188
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "LatestQueue",
+          "lineNumber": 189
+        },
+        {
+          "caller": "test_spec_identity_mismatch_pipeline",
+          "callee": "LatestQueue",
+          "lineNumber": 190
+        },
+        {
+          "caller": "test_state_dim_mismatch",
+          "callee": "_spec",
+          "lineNumber": 200
+        },
+        {
+          "caller": "test_state_dim_mismatch",
+          "callee": "_config",
+          "lineNumber": 201
+        },
+        {
+          "caller": "test_state_dim_mismatch",
+          "callee": "pytest.raises",
+          "lineNumber": 202
+        },
+        {
+          "caller": "test_state_dim_mismatch",
+          "callee": "_preflight_ok",
+          "lineNumber": 203
+        },
+        {
+          "caller": "test_action_dim_mismatch",
+          "callee": "_spec",
+          "lineNumber": 209
+        },
+        {
+          "caller": "test_action_dim_mismatch",
+          "callee": "_config",
+          "lineNumber": 210
+        },
+        {
+          "caller": "test_action_dim_mismatch",
+          "callee": "pytest.raises",
+          "lineNumber": 211
+        },
+        {
+          "caller": "test_action_dim_mismatch",
+          "callee": "_preflight_ok",
+          "lineNumber": 212
+        },
+        {
+          "caller": "test_chunk_size_mismatch",
+          "callee": "_spec",
+          "lineNumber": 218
+        },
+        {
+          "caller": "test_chunk_size_mismatch",
+          "callee": "_config",
+          "lineNumber": 219
+        },
+        {
+          "caller": "test_chunk_size_mismatch",
+          "callee": "pytest.raises",
+          "lineNumber": 220
+        },
+        {
+          "caller": "test_chunk_size_mismatch",
+          "callee": "_preflight_ok",
+          "lineNumber": 221
+        },
+        {
+          "caller": "test_camera_keys_mismatch",
+          "callee": "_loose_spec",
+          "lineNumber": 227
+        },
+        {
+          "caller": "test_camera_keys_mismatch",
+          "callee": "_config",
+          "lineNumber": 228
+        },
+        {
+          "caller": "test_camera_keys_mismatch",
+          "callee": "pytest.raises",
+          "lineNumber": 229
+        },
+        {
+          "caller": "test_camera_keys_mismatch",
+          "callee": "_preflight_ok",
+          "lineNumber": 230
+        },
+        {
+          "caller": "test_image_contract_mismatch_layout",
+          "callee": "_loose_spec",
+          "lineNumber": 236
+        },
+        {
+          "caller": "test_image_contract_mismatch_layout",
+          "callee": "_config",
+          "lineNumber": 237
+        },
+        {
+          "caller": "test_image_contract_mismatch_layout",
+          "callee": "pytest.raises",
+          "lineNumber": 238
+        },
+        {
+          "caller": "test_image_contract_mismatch_layout",
+          "callee": "_preflight_ok",
+          "lineNumber": 239
+        },
+        {
+          "caller": "test_image_contract_mismatch_dtype",
+          "callee": "_loose_spec",
+          "lineNumber": 245
+        },
+        {
+          "caller": "test_image_contract_mismatch_dtype",
+          "callee": "_config",
+          "lineNumber": 246
+        },
+        {
+          "caller": "test_image_contract_mismatch_dtype",
+          "callee": "pytest.raises",
+          "lineNumber": 247
+        },
+        {
+          "caller": "test_image_contract_mismatch_dtype",
+          "callee": "_preflight_ok",
+          "lineNumber": 248
+        },
+        {
+          "caller": "test_image_contract_mismatch_value_range",
+          "callee": "_loose_spec",
+          "lineNumber": 254
+        },
+        {
+          "caller": "test_image_contract_mismatch_value_range",
+          "callee": "_config",
+          "lineNumber": 255
+        },
+        {
+          "caller": "test_image_contract_mismatch_value_range",
+          "callee": "pytest.raises",
+          "lineNumber": 256
+        },
+        {
+          "caller": "test_image_contract_mismatch_value_range",
+          "callee": "_preflight_ok",
+          "lineNumber": 257
+        },
+        {
+          "caller": "test_image_contract_mismatch_shapes",
+          "callee": "_loose_spec",
+          "lineNumber": 263
+        },
+        {
+          "caller": "test_image_contract_mismatch_shapes",
+          "callee": "_config",
+          "lineNumber": 264
+        },
+        {
+          "caller": "test_image_contract_mismatch_shapes",
+          "callee": "pytest.raises",
+          "lineNumber": 265
+        },
+        {
+          "caller": "test_image_contract_mismatch_shapes",
+          "callee": "_preflight_ok",
+          "lineNumber": 266
+        },
+        {
+          "caller": "test_clock_domain_mismatch",
+          "callee": "_spec",
+          "lineNumber": 273
+        },
+        {
+          "caller": "test_clock_domain_mismatch",
+          "callee": "_config",
+          "lineNumber": 274
+        },
+        {
+          "caller": "test_clock_domain_mismatch",
+          "callee": "pytest.raises",
+          "lineNumber": 275
+        },
+        {
+          "caller": "test_clock_domain_mismatch",
+          "callee": "run_startup_preflight",
+          "lineNumber": 276
+        },
+        {
+          "caller": "test_clock_domain_mismatch",
+          "callee": "_resources",
+          "lineNumber": 278
+        },
+        {
+          "caller": "test_clock_domain_mismatch",
+          "callee": "_inference_service",
+          "lineNumber": 279
+        },
+        {
+          "caller": "test_clock_domain_mismatch",
+          "callee": "_pipeline",
+          "lineNumber": 280
+        },
+        {
+          "caller": "test_clock_domain_mismatch",
+          "callee": "LatestQueue",
+          "lineNumber": 281
+        },
+        {
+          "caller": "test_clock_domain_mismatch",
+          "callee": "LatestQueue",
+          "lineNumber": 282
+        },
+        {
+          "caller": "test_queue_capacity_mismatch",
+          "callee": "_spec",
+          "lineNumber": 292
+        },
+        {
+          "caller": "test_queue_capacity_mismatch",
+          "callee": "_config",
+          "lineNumber": 293
+        },
+        {
+          "caller": "test_queue_capacity_mismatch",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 296
+        },
+        {
+          "caller": "test_queue_capacity_mismatch",
+          "callee": "pytest.raises",
+          "lineNumber": 297
+        },
+        {
+          "caller": "test_queue_capacity_mismatch",
+          "callee": "_preflight_ok",
+          "lineNumber": 298
+        },
+        {
+          "caller": "test_permit_source_missing_when_command_enabled",
+          "callee": "_spec",
+          "lineNumber": 304
+        },
+        {
+          "caller": "test_permit_source_missing_when_command_enabled",
+          "callee": "_config",
+          "lineNumber": 305
+        },
+        {
+          "caller": "test_permit_source_missing_when_command_enabled",
+          "callee": "pytest.raises",
+          "lineNumber": 306
+        },
+        {
+          "caller": "test_permit_source_missing_when_command_enabled",
+          "callee": "_preflight_ok",
+          "lineNumber": 307
+        },
+        {
+          "caller": "test_permit_source_present_when_command_enabled_passes",
+          "callee": "_spec",
+          "lineNumber": 316
+        },
+        {
+          "caller": "test_permit_source_present_when_command_enabled_passes",
+          "callee": "_config",
+          "lineNumber": 317
+        },
+        {
+          "caller": "test_permit_source_present_when_command_enabled_passes",
+          "callee": "_preflight_ok",
+          "lineNumber": 319
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 23,
+        "functionCount": 23,
+        "classCount": 0
+      }
+    }
+  ]
+}

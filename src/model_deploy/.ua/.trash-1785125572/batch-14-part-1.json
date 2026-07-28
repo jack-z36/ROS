@@ -1,0 +1,1371 @@
+{
+  "nodes": [
+    {
+      "id": "file:act/tests/config/test_deploy_config.py",
+      "type": "file",
+      "name": "test_deploy_config.py",
+      "filePath": "act/tests/config/test_deploy_config.py",
+      "summary": "DeployConfig 聚合构造与 frozen 不可变性测试，验证非法配置（缺失字段、类型错误）在入口处被拒绝。",
+      "tags": [
+        "test",
+        "validation",
+        "config",
+        "frozen",
+        "deploy-config"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/config/test_runtime_config.py",
+      "type": "file",
+      "name": "test_runtime_config.py",
+      "filePath": "act/tests/config/test_runtime_config.py",
+      "summary": "RuntimeConfig 校验测试：覆盖 control/inference hz 正值约束、chunk_size horizon 关系、fallback_policy 枚举及 mode 合法性。",
+      "tags": [
+        "test",
+        "validation",
+        "runtime-config",
+        "config"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/config/test_safety_config.py",
+      "type": "file",
+      "name": "test_safety_config.py",
+      "filePath": "act/tests/config/test_safety_config.py",
+      "summary": "SafetyConfig 默认值与 deploy 配置集成测试，验证 translation/rotation 步长、gripper 范围、四元数归一化等约束以及 legacy 字段被拒绝。",
+      "tags": [
+        "test",
+        "validation",
+        "safety",
+        "config",
+        "deploy-config"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "使用嵌套 dataclass + frozen=True 模式保证配置不可变，测试覆盖每个字段的边界条件。"
+    },
+    {
+      "id": "file:act/tests/config/test_schema.py",
+      "type": "file",
+      "name": "test_schema.py",
+      "filePath": "act/tests/config/test_schema.py",
+      "summary": "config.schema 模块的综合测试：合法配置解析、维度宽放、runtime 校验、topic 命名空间、typed validator 及禁止 smoothing/bridge 字段的回归守护。",
+      "tags": [
+        "test",
+        "validation",
+        "schema",
+        "config",
+        "regression-guard"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:act/tests/config/test_startup_resources_seams.py",
+      "type": "file",
+      "name": "test_startup_resources_seams.py",
+      "filePath": "act/tests/config/test_startup_resources_seams.py",
+      "summary": "启动期资源加载 seam 测试：默认 deploy.yaml 解析、command_output 关键字开关、observation_age / queue_size 约束、camera 映射 canonical 格式及空 bundle 拒绝。",
+      "tags": [
+        "test",
+        "validation",
+        "startup",
+        "resources",
+        "camera-mapping"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:act/tests/fixtures/l2_06_fake.yaml",
+      "type": "config",
+      "name": "l2_06_fake.yaml",
+      "filePath": "act/tests/fixtures/l2_06_fake.yaml",
+      "summary": "L2_06 集成门测试使用的 fake deploy.yaml fixture，包含 bundle/runtime/image/topics/safety/command_output 六个顶层配置段。",
+      "tags": [
+        "test-fixture",
+        "configuration",
+        "yaml",
+        "l2-gate"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/tests/integration/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/integration/__init__.py",
+      "summary": "integration 测试子包的 Python package marker。",
+      "tags": [
+        "entry-point",
+        "package-init",
+        "test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "file",
+      "name": "test_l2_01_gate.py",
+      "filePath": "act/tests/integration/test_l2_01_gate.py",
+      "summary": "L2_01 集成门测试：验证合法配置可加载、非法维度/bundle 缺失文件/normalizer 维度不匹配在启动期失败，并扫描源码确保无 smoothing 配置泄漏。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "startup-validation",
+        "boundary-scan"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "file",
+      "name": "test_l2_02_gate.py",
+      "filePath": "act/tests/integration/test_l2_02_gate.py",
+      "summary": "L2_02 集成门测试：observation 采集管线 mock 全链路、缺失字段/陈旧 pipeline 拒绝、边界无越权（不触碰 inference/config repo）及 ROS-free 导入验证。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "observation",
+        "boundary-scan"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/config/test_deploy_config.py:TestDeployConfigConstruction",
+      "type": "class",
+      "name": "TestDeployConfigConstruction",
+      "filePath": "act/tests/config/test_deploy_config.py",
+      "lineRange": [
+        40,
+        57
+      ],
+      "summary": "验证 DeployConfig 由合法 raw mapping 构造成功、字段 frozen 不可变、raw 原始字典被完整保留。",
+      "tags": [
+        "test-class",
+        "deploy-config",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_deploy_config.py:TestIllegalConfigRejection",
+      "type": "class",
+      "name": "TestIllegalConfigRejection",
+      "filePath": "act/tests/config/test_deploy_config.py",
+      "lineRange": [
+        60,
+        81
+      ],
+      "summary": "验证缺失 bundle 段、根非 mapping、字段类型错误等非法配置入口在 from_mapping 阶段被拒绝并抛 DeployConfigError。",
+      "tags": [
+        "test-class",
+        "deploy-config",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/config/test_deploy_config.py:TestCompleteConfigTree",
+      "type": "class",
+      "name": "TestCompleteConfigTree",
+      "filePath": "act/tests/config/test_deploy_config.py",
+      "lineRange": [
+        84,
+        93
+      ],
+      "summary": "验证完整配置树包含全部子配置（bundle/runtime/image/topics/safety）。",
+      "tags": [
+        "test-class",
+        "deploy-config",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_runtime_config.py:TestRuntimeHZ",
+      "type": "class",
+      "name": "TestRuntimeHZ",
+      "filePath": "act/tests/config/test_runtime_config.py",
+      "lineRange": [
+        41,
+        61
+      ],
+      "summary": "验证 control_hz/inference_hz 必须为正值，零/负值在构造期被拒绝。",
+      "tags": [
+        "test-class",
+        "runtime-config",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_runtime_config.py:TestRuntimeMode",
+      "type": "class",
+      "name": "TestRuntimeMode",
+      "filePath": "act/tests/config/test_runtime_config.py",
+      "lineRange": [
+        64,
+        72
+      ],
+      "summary": "验证 runtime mode 必须取自合法枚举集合，未知值被拒绝。",
+      "tags": [
+        "test-class",
+        "runtime-config",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_runtime_config.py:TestChunkSize",
+      "type": "class",
+      "name": "TestChunkSize",
+      "filePath": "act/tests/config/test_runtime_config.py",
+      "lineRange": [
+        75,
+        87
+      ],
+      "summary": "验证 execute_horizon ≥ chunk_size、prefetch ≤ execute_horizon 的约束关系。",
+      "tags": [
+        "test-class",
+        "runtime-config",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_runtime_config.py:TestFallbackPolicy",
+      "type": "class",
+      "name": "TestFallbackPolicy",
+      "filePath": "act/tests/config/test_runtime_config.py",
+      "lineRange": [
+        90,
+        98
+      ],
+      "summary": "验证 fallback_policy 必须取自合法枚举，未知策略被拒绝。",
+      "tags": [
+        "test-class",
+        "runtime-config",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_runtime_config.py:TestValidConfig",
+      "type": "class",
+      "name": "TestValidConfig",
+      "filePath": "act/tests/config/test_runtime_config.py",
+      "lineRange": [
+        101,
+        106
+      ],
+      "summary": "正向用例：合法 runtime 配置可成功构造。",
+      "tags": [
+        "test-class",
+        "runtime-config",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_safety_config.py:TestSafetyDefaults",
+      "type": "class",
+      "name": "TestSafetyDefaults",
+      "filePath": "act/tests/config/test_safety_config.py",
+      "lineRange": [
+        15,
+        55
+      ],
+      "summary": "验证 SafetyConfig 默认值：translation/rotation 步长、gripper 默认走 action domain 而非硬件寄存器、四元数/domain metadata 及 frozen 不可变、无 legacy 字段。",
+      "tags": [
+        "test-class",
+        "safety",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/config/test_safety_config.py:TestSafetyInDeployConfig",
+      "type": "class",
+      "name": "TestSafetyInDeployConfig",
+      "filePath": "act/tests/config/test_safety_config.py",
+      "lineRange": [
+        58,
+        172
+      ],
+      "summary": "SafetyConfig 嵌入 DeployConfig 的综合测试：空 safety 走默认值、自定义值解析、translation/rotation 步长为正、gripper min<max、max step 非负、四元数 norm 容差为正、legacy 字段全部被拒绝。",
+      "tags": [
+        "test-class",
+        "safety",
+        "validation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/config/test_schema.py:TestValidConfig",
+      "type": "class",
+      "name": "TestValidConfig",
+      "filePath": "act/tests/config/test_schema.py",
+      "lineRange": [
+        58,
+        84
+      ],
+      "summary": "正向：最小合法配置可解析、raw 原始字典保留、配置 frozen。",
+      "tags": [
+        "test-class",
+        "schema",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/config/test_schema.py:TestInvalidDimensions",
+      "type": "class",
+      "name": "TestInvalidDimensions",
+      "filePath": "act/tests/config/test_schema.py",
+      "lineRange": [
+        91,
+        108
+      ],
+      "summary": "验证 schema 对 state/action dim 的宽放策略（接受任意维度）及 from_mapping 解析。",
+      "tags": [
+        "test-class",
+        "schema",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_schema.py:TestRuntimeValidation",
+      "type": "class",
+      "name": "TestRuntimeValidation",
+      "filePath": "act/tests/config/test_schema.py",
+      "lineRange": [
+        115,
+        152
+      ],
+      "summary": "runtime 字段运行期校验：负 hz、execute_horizon 与 chunk_size 关系、prefetch 越界、非法 fallback、缺失 bundle 均抛错。",
+      "tags": [
+        "test-class",
+        "schema",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/config/test_schema.py:TestPublishesCommandTopics",
+      "type": "class",
+      "name": "TestPublishesCommandTopics",
+      "filePath": "act/tests/config/test_schema.py",
+      "lineRange": [
+        155,
+        164
+      ],
+      "summary": "验证 dry-run 模式不发布、shadow-run 模式发布的命令 topic 行为。",
+      "tags": [
+        "test-class",
+        "schema",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_schema.py:TestNoSmoothingFields",
+      "type": "class",
+      "name": "TestNoSmoothingFields",
+      "filePath": "act/tests/config/test_schema.py",
+      "lineRange": [
+        171,
+        188
+      ],
+      "summary": "回归守护：runtime 配置不含 blend_steps 等 smoothing 字段。",
+      "tags": [
+        "test-class",
+        "schema",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_schema.py:TestNoBridgeMux",
+      "type": "class",
+      "name": "TestNoBridgeMux",
+      "filePath": "act/tests/config/test_schema.py",
+      "lineRange": [
+        191,
+        201
+      ],
+      "summary": "回归守护：deploy 配置与 topics 不含 bridge/mux 字段。",
+      "tags": [
+        "test-class",
+        "schema",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_schema.py:TestTopicsNamespace",
+      "type": "class",
+      "name": "TestTopicsNamespace",
+      "filePath": "act/tests/config/test_schema.py",
+      "lineRange": [
+        204,
+        217
+      ],
+      "summary": "验证默认 namespace 为 /act，observation/command topic 默认位于 act 命名空间下。",
+      "tags": [
+        "test-class",
+        "schema",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_schema.py:TestTypedValidators",
+      "type": "class",
+      "name": "TestTypedValidators",
+      "filePath": "act/tests/config/test_schema.py",
+      "lineRange": [
+        220,
+        237
+      ],
+      "summary": "验证 typed validator 工具：positive_float 拒零、choice 拒未知值、bool 接受字符串。",
+      "tags": [
+        "test-class",
+        "schema",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_startup_resources_seams.py:TestDefaultDeployYaml",
+      "type": "class",
+      "name": "TestDefaultDeployYaml",
+      "filePath": "act/tests/config/test_startup_resources_seams.py",
+      "lineRange": [
+        62,
+        80
+      ],
+      "summary": "验证默认 deploy.yaml 可解析、command_output 默认关闭、canonical images mapping 存在。",
+      "tags": [
+        "test-class",
+        "startup",
+        "resources"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_startup_resources_seams.py:TestCommandOutputKeyword",
+      "type": "class",
+      "name": "TestCommandOutputKeyword",
+      "filePath": "act/tests/config/test_startup_resources_seams.py",
+      "lineRange": [
+        83,
+        98
+      ],
+      "summary": "验证 command_output 仅能由构造关键字启用、YAML 启用被拒绝、YAML 不能自启用。",
+      "tags": [
+        "test-class",
+        "startup",
+        "resources"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_startup_resources_seams.py:TestObservationAge",
+      "type": "class",
+      "name": "TestObservationAge",
+      "filePath": "act/tests/config/test_startup_resources_seams.py",
+      "lineRange": [
+        106,
+        116
+      ],
+      "summary": "验证 observation_age 各字段独立默认值且必须为正。",
+      "tags": [
+        "test-class",
+        "startup",
+        "resources"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_startup_resources_seams.py:TestQueueSize",
+      "type": "class",
+      "name": "TestQueueSize",
+      "filePath": "act/tests/config/test_startup_resources_seams.py",
+      "lineRange": [
+        124,
+        142
+      ],
+      "summary": "验证 inference_requests/pending_chunks 队列大小必须为 1，其他值被拒绝。",
+      "tags": [
+        "test-class",
+        "startup",
+        "resources"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_startup_resources_seams.py:TestCameraMapping",
+      "type": "class",
+      "name": "TestCameraMapping",
+      "filePath": "act/tests/config/test_startup_resources_seams.py",
+      "lineRange": [
+        150,
+        202
+      ],
+      "summary": "验证 camera canonical 映射格式：canonical+legacy 冲突失败、仅 legacy 失败、缺失 canonical key 失败、空 images 失败。",
+      "tags": [
+        "test-class",
+        "startup",
+        "resources"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/config/test_startup_resources_seams.py:TestEmptyBundle",
+      "type": "class",
+      "name": "TestEmptyBundle",
+      "filePath": "act/tests/config/test_startup_resources_seams.py",
+      "lineRange": [
+        210,
+        218
+      ],
+      "summary": "验证 null bundle 可解析但 resource_loader 拒绝空 bundle。",
+      "tags": [
+        "test-class",
+        "startup",
+        "resources"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_02_gate.py:TestFullMockPipeline",
+      "type": "class",
+      "name": "TestFullMockPipeline",
+      "filePath": "act/tests/integration/test_l2_02_gate.py",
+      "lineRange": [
+        64,
+        89
+      ],
+      "summary": "L2_02 全 mock 管线集成：observation 采集→buffer→collector 全链路 mock 验证。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "boundary-scan"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_02_gate.py:TestMissingFieldPipeline",
+      "type": "class",
+      "name": "TestMissingFieldPipeline",
+      "filePath": "act/tests/integration/test_l2_02_gate.py",
+      "lineRange": [
+        97,
+        142
+      ],
+      "summary": "验证 observation 缺失字段或陈旧 pipeline 被正确拒绝。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "boundary-scan"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_02_gate.py:TestBoundaryNoOverreach",
+      "type": "class",
+      "name": "TestBoundaryNoOverreach",
+      "filePath": "act/tests/integration/test_l2_02_gate.py",
+      "lineRange": [
+        150,
+        234
+      ],
+      "summary": "边界扫描：observation 层不触碰 inference 控制与 config repo，确保职责隔离。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "boundary-scan"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_02_gate.py:TestImportWithoutROS",
+      "type": "class",
+      "name": "TestImportWithoutROS",
+      "filePath": "act/tests/integration/test_l2_02_gate.py",
+      "lineRange": [
+        242,
+        257
+      ],
+      "summary": "验证 L2_02 全部模块可在无 ROS 环境下导入。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "boundary-scan"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_02_gate.py:TestDelegatedCoverage",
+      "type": "class",
+      "name": "TestDelegatedCoverage",
+      "filePath": "act/tests/integration/test_l2_02_gate.py",
+      "lineRange": [
+        265,
+        306
+      ],
+      "summary": "委托覆盖检查：image_preprocess/observation_buffer 单元测试存在并全部通过。",
+      "tags": [
+        "test-class",
+        "integration",
+        "l2-gate",
+        "boundary-scan"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_01_gate.py:_make_bundle",
+      "type": "function",
+      "name": "_make_bundle",
+      "filePath": "act/tests/integration/test_l2_01_gate.py",
+      "lineRange": [
+        51,
+        86
+      ],
+      "summary": "构造测试用 bundle 目录结构，支持 state/action dim 与缺失文件参数化。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_01_gate.py:_write_deploy_yaml",
+      "type": "function",
+      "name": "_write_deploy_yaml",
+      "filePath": "act/tests/integration/test_l2_01_gate.py",
+      "lineRange": [
+        89,
+        110
+      ],
+      "summary": "向临时路径写入 deploy.yaml 测试 fixture，支持 overrides 参数化。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_01_gate.py:test_s1_legal_config_loads",
+      "type": "function",
+      "name": "test_s1_legal_config_loads",
+      "filePath": "act/tests/integration/test_l2_01_gate.py",
+      "lineRange": [
+        118,
+        142
+      ],
+      "summary": "L2_01 S1：合法配置完整加载成功。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_01_gate.py:test_s2_invalid_dimension_fails",
+      "type": "function",
+      "name": "test_s2_invalid_dimension_fails",
+      "filePath": "act/tests/integration/test_l2_01_gate.py",
+      "lineRange": [
+        151,
+        157
+      ],
+      "summary": "L2_01 S2：非法 state/action 维度在启动期失败。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_01_gate.py:test_s3_bundle_missing_files_fails",
+      "type": "function",
+      "name": "test_s3_bundle_missing_files_fails",
+      "filePath": "act/tests/integration/test_l2_01_gate.py",
+      "lineRange": [
+        166,
+        178
+      ],
+      "summary": "L2_01 S3：bundle 缺失文件在启动期失败。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_01_gate.py:_scan_for_forbidden",
+      "type": "function",
+      "name": "_scan_for_forbidden",
+      "filePath": "act/tests/integration/test_l2_01_gate.py",
+      "lineRange": [
+        202,
+        220
+      ],
+      "summary": "扫描 L2_01 源码中 forbidden 模式（smoothing 配置泄漏）的工具函数。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_01_gate.py:test_s5_no_smoothing_config_leakage",
+      "type": "function",
+      "name": "test_s5_no_smoothing_config_leakage",
+      "filePath": "act/tests/integration/test_l2_01_gate.py",
+      "lineRange": [
+        220,
+        251
+      ],
+      "summary": "L2_01 S5：源码扫描确认无 smoothing 配置泄漏。",
+      "tags": [
+        "test-function",
+        "integration",
+        "l2-gate"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:act/tests/config/test_deploy_config.py",
+      "target": "class:act/tests/config/test_deploy_config.py:TestDeployConfigConstruction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_deploy_config.py",
+      "target": "class:act/tests/config/test_deploy_config.py:TestIllegalConfigRejection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_deploy_config.py",
+      "target": "class:act/tests/config/test_deploy_config.py:TestCompleteConfigTree",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestRuntimeHZ",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestRuntimeMode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestChunkSize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestFallbackPolicy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestValidConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_safety_config.py",
+      "target": "class:act/tests/config/test_safety_config.py:TestSafetyDefaults",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_safety_config.py",
+      "target": "class:act/tests/config/test_safety_config.py:TestSafetyInDeployConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestValidConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestInvalidDimensions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestRuntimeValidation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestPublishesCommandTopics",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestNoSmoothingFields",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestNoBridgeMux",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestTopicsNamespace",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestTypedValidators",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestDefaultDeployYaml",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestCommandOutputKeyword",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestObservationAge",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestQueueSize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestCameraMapping",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestEmptyBundle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:_make_bundle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:_write_deploy_yaml",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:test_s1_legal_config_loads",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:test_s2_invalid_dimension_fails",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:test_s3_bundle_missing_files_fails",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:_scan_for_forbidden",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:test_s5_no_smoothing_config_leakage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestFullMockPipeline",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestMissingFieldPipeline",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestBoundaryNoOverreach",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestImportWithoutROS",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestDelegatedCoverage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_deploy_config.py",
+      "target": "class:act/tests/config/test_deploy_config.py:TestDeployConfigConstruction",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_deploy_config.py",
+      "target": "class:act/tests/config/test_deploy_config.py:TestIllegalConfigRejection",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_deploy_config.py",
+      "target": "class:act/tests/config/test_deploy_config.py:TestCompleteConfigTree",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestRuntimeHZ",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestRuntimeMode",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestChunkSize",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestFallbackPolicy",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_runtime_config.py",
+      "target": "class:act/tests/config/test_runtime_config.py:TestValidConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_safety_config.py",
+      "target": "class:act/tests/config/test_safety_config.py:TestSafetyDefaults",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_safety_config.py",
+      "target": "class:act/tests/config/test_safety_config.py:TestSafetyInDeployConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestValidConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestInvalidDimensions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestRuntimeValidation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestPublishesCommandTopics",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestNoSmoothingFields",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestNoBridgeMux",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestTopicsNamespace",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_schema.py",
+      "target": "class:act/tests/config/test_schema.py:TestTypedValidators",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestDefaultDeployYaml",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestCommandOutputKeyword",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestObservationAge",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestQueueSize",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestCameraMapping",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_startup_resources_seams.py",
+      "target": "class:act/tests/config/test_startup_resources_seams.py:TestEmptyBundle",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:_make_bundle",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:_write_deploy_yaml",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:test_s1_legal_config_loads",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:test_s2_invalid_dimension_fails",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:test_s3_bundle_missing_files_fails",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:_scan_for_forbidden",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_01_gate.py",
+      "target": "function:act/tests/integration/test_l2_01_gate.py:test_s5_no_smoothing_config_leakage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestFullMockPipeline",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestMissingFieldPipeline",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestBoundaryNoOverreach",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestImportWithoutROS",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_02_gate.py",
+      "target": "class:act/tests/integration/test_l2_02_gate.py:TestDelegatedCoverage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_deploy_config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_runtime_config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_safety_config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_schema.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/config/test_startup_resources_seams.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/__init__.py",
+      "target": "file:act/tests/config/test_startup_resources_seams.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/contract_result.py",
+      "target": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/state_spec.py",
+      "target": "file:act/tests/integration/test_l2_01_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/observation_collector.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/observation_buffer.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/image_preprocess.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/observation_ros_adapter.py",
+      "target": "file:act/tests/integration/test_l2_02_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:act/tests/fixtures/l2_06_fake.yaml",
+      "target": "file:act/tests/integration/test_l2_05_gate.py",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

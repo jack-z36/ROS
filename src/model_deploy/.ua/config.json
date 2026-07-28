@@ -1,0 +1,4 @@
+{
+  "outputLanguage": "zh",
+  "excludePatterns": "pi05/*,third_party/*"
+}

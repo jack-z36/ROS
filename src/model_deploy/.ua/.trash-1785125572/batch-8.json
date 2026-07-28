@@ -1,0 +1,270 @@
+{
+  "nodes": [
+    {
+      "id": "file:act/scripts/l2_02_verify.sh",
+      "type": "file",
+      "name": "l2_02_verify.sh",
+      "filePath": "act/scripts/l2_02_verify.sh",
+      "summary": "L2-02 ObservationSnapshot 统一验收脚本，按 L2 Gate 12 标签逐项运行 pytest 与 ripgrep 边界扫描，分组输出 PASS/FAIL/BLOCKED，并校验 ObservationSnapshot 在 types/service/runtime/ui 各层的契约。",
+      "tags": ["test", "verification", "shell", "ci-cd", "boundary-scan"],
+      "complexity": "complex",
+      "languageNotes": "Bash 验收脚本使用关联数组 (declare -A) 聚合 label 结果，通过 set -o pipefail + 失败计数器以退出码驱动 CI 闸口。"
+    },
+    {
+      "id": "file:act/scripts/l2_03_verify.sh",
+      "type": "file",
+      "name": "l2_03_verify.sh",
+      "filePath": "act/scripts/l2_03_verify.sh",
+      "summary": "L2-03 ACT Inference 统一验收脚本，分批运行 ActInferenceService 的 observation_batch、policy、postprocess 阶段测试，并执行三阶段闭环 Gate 集成测试，强制无 ROS/硬件/safety 越界。",
+      "tags": ["test", "verification", "shell", "ci-cd", "act-inference"],
+      "complexity": "complex",
+      "languageNotes": "提供 _run_pytest 与 _run_pytest_test 双 helper，后者支持 path::class::method 精确选择器，便于按微单粒度验收。"
+    },
+    {
+      "id": "file:act/scripts/l2_05_verify.sh",
+      "type": "file",
+      "name": "l2_05_verify.sh",
+      "filePath": "act/scripts/l2_05_verify.sh",
+      "summary": "L2-05 Action Publisher 验收脚本，通过 --case 子命令切换 local/command-disabled/permit-blocked/topic-payloads/ros-message-bundle/command-enabled-mock/ros-observe 七种场景，运行 G01-G17 标签并在 ROS/硬件缺失时记录预期 BLOCKED。",
+      "tags": ["test", "verification", "shell", "ci-cd", "action-publisher"],
+      "complexity": "complex",
+      "languageNotes": "采用 case 模式分发不同验收子集，外部环境 (ROS/硬件) 永远记 BLOCKED 而非伪造 PASS，体现 fail-safe 验收哲学。"
+    },
+    {
+      "id": "file:act/scripts/l2_06_verify.sh",
+      "type": "file",
+      "name": "l2_06_verify.sh",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "summary": "L2-06 Gate 跨模块集成验收脚本，作为 L2-02→L2-03→L2-06→L2-04→L2-05 tracer bullet 唯一入口，运行 G01-G12 真实 production contract 集成测试与全量回归 baseline，外部 scope (ros-dry-run/real-policy-dry-run) 记 BLOCKED_ENV/BLOCKED_ARTIFACT/BLOCKED_HARDWARE。",
+      "tags": ["test", "verification", "shell", "ci-cd", "integration-gate"],
+      "complexity": "complex",
+      "languageNotes": "通过 rclpy.node 属性探测隔离不完整 ROS 安装对 pytest collection 的污染，保证无 ROS 环境下也能 collect；支持 --scope/--policy/--config 三参 CLI。"
+    },
+    {
+      "id": "function:act/scripts/l2_02_verify.sh:_run_pytest",
+      "type": "function",
+      "name": "_run_pytest",
+      "filePath": "act/scripts/l2_02_verify.sh",
+      "lineRange": [26, 45],
+      "summary": "执行 pytest 测试路径并按 PASS/FAIL 计数；失败时记录关联数组与末尾摘要，输出标准化的 label/desc 验收行。",
+      "tags": ["utility", "pytest-runner", "verification"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_02_verify.sh:_rg_scan",
+      "type": "function",
+      "name": "_rg_scan",
+      "filePath": "act/scripts/l2_02_verify.sh",
+      "lineRange": [47, 67],
+      "summary": "对指定目录运行 ripgrep 模式扫描并过滤 test/FORBIDDEN/verify 等噪声，校验源码边界无越界 token，作为静态边界契约的探针。",
+      "tags": ["utility", "boundary-scan", "ripgrep"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_02_verify.sh:_check_ros",
+      "type": "function",
+      "name": "_check_ros",
+      "filePath": "act/scripts/l2_02_verify.sh",
+      "lineRange": [69, 71],
+      "summary": "探测当前 python3 是否可 import rclpy，作为 ROS 相关 label 是否记 BLOCKED 的环境开关。",
+      "tags": ["utility", "environment-probe", "ros"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_03_verify.sh:_run_pytest",
+      "type": "function",
+      "name": "_run_pytest",
+      "filePath": "act/scripts/l2_03_verify.sh",
+      "lineRange": [26, 47],
+      "summary": "L2-03 版 _run_pytest helper，执行整个 pytest 路径并按 §4.2 失败格式输出 pytest 路径与摘要末行；同样驱动 PASS/FAIL 计数器。",
+      "tags": ["utility", "pytest-runner", "verification"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_03_verify.sh:_run_pytest_test",
+      "type": "function",
+      "name": "_run_pytest_test",
+      "filePath": "act/scripts/l2_03_verify.sh",
+      "lineRange": [49, 69],
+      "summary": "针对 path::class::method 选择器运行单个微单元测试，按 FAILED/ERROR 末行格式化摘要，用于逐微单元验证 ActInferenceService 三阶段契约。",
+      "tags": ["utility", "pytest-runner", "micro-unit"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_05_verify.sh:_run_tests",
+      "type": "function",
+      "name": "_run_tests",
+      "filePath": "act/scripts/l2_05_verify.sh",
+      "lineRange": [42, 63],
+      "summary": "对 GATE_FILE 用 -k k-expr 选择子集运行 pytest，输出 label/desc/file/class/micro-unit 五元失败定位链，覆盖 L2-05 Action Publisher 的 G01-G17 闸门。",
+      "tags": ["utility", "pytest-runner", "gate-verification"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/scripts/l2_05_verify.sh:_emit_blocked",
+      "type": "function",
+      "name": "_emit_blocked",
+      "filePath": "act/scripts/l2_05_verify.sh",
+      "lineRange": [65, 70],
+      "summary": "统一记录 BLOCKED 标签与原因字符串并自增计数器，保证外部环境缺失场景只记 BLOCKED 而不漏项也不伪造 PASS。",
+      "tags": ["utility", "verification", "reporting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_05_verify.sh:_ros_observe",
+      "type": "function",
+      "name": "_ros_observe",
+      "filePath": "act/scripts/l2_05_verify.sh",
+      "lineRange": [72, 81],
+      "summary": "G18 ROS 观察闸口实现：rclpy 不可用记 BLOCKED_ENV，可用但无真实观察目标也记 BLOCKED dry-run，永不向真实图发布命令。",
+      "tags": ["utility", "ros", "dry-run"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_05_verify.sh:_hardware_blocked",
+      "type": "function",
+      "name": "_hardware_blocked",
+      "filePath": "act/scripts/l2_05_verify.sh",
+      "lineRange": [83, 88],
+      "summary": "G19 硬件闸口实现：在缺少人工授权/E-stop/driver readiness/ROS 证据时记 BLOCKED_HARDWARE_EXPECTED，自动验收绝不宣称真机 PASS。",
+      "tags": ["utility", "hardware", "fail-safe"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_06_verify.sh:_run_tests",
+      "type": "function",
+      "name": "_run_tests",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "lineRange": [95, 116],
+      "summary": "对指定 file 用 -k k-expr 选择测试子集运行 pytest，输出 label/desc/file/class/micro-unit 与错误末三行摘要，是 L2-06 Gate G01-G09 各闸门的通用执行器。",
+      "tags": ["utility", "pytest-runner", "gate-verification"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/scripts/l2_06_verify.sh:_run_baseline",
+      "type": "function",
+      "name": "_run_baseline",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "lineRange": [118, 135],
+      "summary": "对 act/tests 全量目录运行 pytest -q 回归，要求 0 FAIL 才 PASS，作为 L2-06 tracer bullet 的基线保障。",
+      "tags": ["utility", "regression", "baseline"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_06_verify.sh:_emit_blocked",
+      "type": "function",
+      "name": "_emit_blocked",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "lineRange": [137, 142],
+      "summary": "L2-06 版 BLOCKED 输出 helper，记录标签与原因并自增 BLOCKED_COUNT，用于外部 scope (ros/bundle/hardware) 缺失场景。",
+      "tags": ["utility", "verification", "reporting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_06_verify.sh:_ros_env_check",
+      "type": "function",
+      "name": "_ros_env_check",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "lineRange": [144, 151],
+      "summary": "G10 ROS 观察闸口：rclpy 不可用记 BLOCKED_ENV，可用但无真实观察目标记 dry-run BLOCKED，命令话题保持静默契约。",
+      "tags": ["utility", "ros", "dry-run"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_06_verify.sh:_real_policy_check",
+      "type": "function",
+      "name": "_real_policy_check",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "lineRange": [153, 156],
+      "summary": "G11 真实 policy 闸口：自动化环境缺少真实 bundle/GPU 时记 BLOCKED_ARTIFACT，本地 fake-policy 已通过 loader fail-fast 契约。",
+      "tags": ["utility", "policy", "artifact-gating"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_06_verify.sh:_hardware_check",
+      "type": "function",
+      "name": "_hardware_check",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "lineRange": [158, 161],
+      "summary": "G12 真机命令闸口：缺人工授权/E-stop/driver/ROS 证据时记 BLOCKED_HARDWARE_EXPECTED，fail-closed 哲学。",
+      "tags": ["utility", "hardware", "fail-closed"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/scripts/l2_06_verify.sh:_run_local_core",
+      "type": "function",
+      "name": "_run_local_core",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "lineRange": [167, 214],
+      "summary": "运行 L2-06 本地核心 G01-G09 全套真实 production contract 测试，覆盖 types/config/seam/channel/worker/scheduling/fallback/lifecycle/full gate 八个层级。",
+      "tags": ["orchestrator", "gate-runner", "integration"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:act/scripts/l2_06_verify.sh:_run_external_local_contract",
+      "type": "function",
+      "name": "_run_external_local_contract",
+      "filePath": "act/scripts/l2_06_verify.sh",
+      "lineRange": [217, 229],
+      "summary": "在外部 scope 运行 G10/G11/G12 的本地契约证明（dry-run 命令计数、loader fail-fast、deny permit fail-closed），证明外部闸门在本地也能 fail-safe。",
+      "tags": ["orchestrator", "contract-proof", "fail-safe"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "function:act/scripts/l2_02_verify.sh:_run_pytest", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "function:act/scripts/l2_02_verify.sh:_rg_scan", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "function:act/scripts/l2_02_verify.sh:_check_ros", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act/scripts/l2_03_verify.sh", "target": "function:act/scripts/l2_03_verify.sh:_run_pytest", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_03_verify.sh", "target": "function:act/scripts/l2_03_verify.sh:_run_pytest_test", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "function:act/scripts/l2_05_verify.sh:_run_tests", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "function:act/scripts/l2_05_verify.sh:_emit_blocked", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "function:act/scripts/l2_05_verify.sh:_ros_observe", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "function:act/scripts/l2_05_verify.sh:_hardware_blocked", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "function:act/scripts/l2_06_verify.sh:_run_tests", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "function:act/scripts/l2_06_verify.sh:_run_baseline", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "function:act/scripts/l2_06_verify.sh:_emit_blocked", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "function:act/scripts/l2_06_verify.sh:_ros_env_check", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "function:act/scripts/l2_06_verify.sh:_real_policy_check", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "function:act/scripts/l2_06_verify.sh:_hardware_check", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "function:act/scripts/l2_06_verify.sh:_run_local_core", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "function:act/scripts/l2_06_verify.sh:_run_external_local_contract", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "function:act/scripts/l2_06_verify.sh:_run_local_core", "target": "function:act/scripts/l2_06_verify.sh:_run_tests", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/scripts/l2_06_verify.sh:_run_external_local_contract", "target": "function:act/scripts/l2_06_verify.sh:_run_tests", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/scripts/l2_06_verify.sh:_ros_env_check", "target": "function:act/scripts/l2_06_verify.sh:_emit_blocked", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/scripts/l2_06_verify.sh:_real_policy_check", "target": "function:act/scripts/l2_06_verify.sh:_emit_blocked", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/scripts/l2_06_verify.sh:_hardware_check", "target": "function:act/scripts/l2_06_verify.sh:_emit_blocked", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/scripts/l2_05_verify.sh:_ros_observe", "target": "function:act/scripts/l2_05_verify.sh:_emit_blocked", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "function:act/scripts/l2_05_verify.sh:_hardware_blocked", "target": "function:act/scripts/l2_05_verify.sh:_emit_blocked", "type": "calls", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "file:act/tests/types/test_observation.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "file:act/tests/service/test_observation_collector.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "file:act/tests/service/test_image_preprocess.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "file:act/tests/runtime/test_observation_buffer.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "file:act/tests/ui/test_observation_ros_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "file:act/tests/integration/test_l2_02_gate.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/scripts/l2_03_verify.sh", "target": "file:act/tests/types/test_action_chunk.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_03_verify.sh", "target": "file:act/tests/service/test_observation_batch.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_03_verify.sh", "target": "file:act/tests/service/test_act_inference.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_03_verify.sh", "target": "file:act/tests/service/test_action_chunk_postprocess.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_03_verify.sh", "target": "file:act/tests/integration/test_l2_03_gate.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "file:act/tests/integration/test_l2_05_gate.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "file:act/tests/integration/test_l2_06_gate.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "file:act/types/action_publish.py", "type": "related", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "file:act/config/schema.py", "type": "related", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "file:act/service/action_output_adapter.py", "type": "related", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "file:act/ui/action_publisher.py", "type": "related", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/scripts/l2_02_verify.sh", "target": "file:act/scripts/l2_03_verify.sh", "type": "related", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_03_verify.sh", "target": "file:act/scripts/l2_05_verify.sh", "type": "related", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_05_verify.sh", "target": "file:act/scripts/l2_06_verify.sh", "type": "related", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/scripts/l2_06_verify.sh", "target": "file:act/scripts/l2_02_verify.sh", "type": "related", "direction": "forward", "weight": 0.5}
+  ]
+}

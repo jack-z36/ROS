@@ -1,0 +1,31 @@
+# model_deploy Conda 环境定义
+#
+# 创建方式（二选一）：
+#
+#   方式 A（推荐，分步控制 torch 索引）:
+#     conda create -n model_deploy python=3.12 -y
+#     conda activate model_deploy
+#     pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+#     pip install -r requirements.txt          # torch 行会被已装版本满足
+#
+#   方式 B（一键，但 torch 走默认 PyPI 索引，不支持 RTX 5080）:
+#     conda env create -f environment.yml      # 不推荐用于 Blackwell GPU
+#
+# 约束：环境名固定 model_deploy（见 DOCS/02_约束/循环工程/behaviors/16_环境依赖配置行为.md）
+# GPU 要求：RTX 5080 (Blackwell sm_120) 需 PyTorch >= 2.7.0 + cu128 wheel
+
+name: model_deploy
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      # torch/torchvision 实际安装用方式 A 的专用命令（cu128 索引）
+      # 这里仅声明版本下界，conda env create 走默认索引时可能装到不支持 Blackwell 的版本
+      - torch>=2.7.0
+      - torchvision>=0.22.0
+      - numpy>=2.0.0,<2.3.0
+      - pyyaml>=6.0
+      - opencv-python>=4.9.0
+      - pytest>=8.0.0

@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "act_system/CMakeLists.txt", "language": "txt", "sizeLines": 10, "fileCategory": "docs"},
+    {"path": "act_system/README.md", "language": "markdown", "sizeLines": 91, "fileCategory": "docs"},
+    {"path": "act_system/package.xml", "language": "xml", "sizeLines": 24, "fileCategory": "config"}
+  ],
+  "batchImportData": {
+    "act_system/CMakeLists.txt": [],
+    "act_system/README.md": [],
+    "act_system/package.xml": []
+  }
+}

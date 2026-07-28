@@ -1,0 +1,15 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "act/scripts/l2_02_verify.sh", "language": "shell", "sizeLines": 223, "fileCategory": "script"},
+    {"path": "act/scripts/l2_03_verify.sh", "language": "shell", "sizeLines": 284, "fileCategory": "script"},
+    {"path": "act/scripts/l2_05_verify.sh", "language": "shell", "sizeLines": 221, "fileCategory": "script"},
+    {"path": "act/scripts/l2_06_verify.sh", "language": "shell", "sizeLines": 295, "fileCategory": "script"}
+  ],
+  "batchImportData": {
+    "act/scripts/l2_02_verify.sh": [],
+    "act/scripts/l2_03_verify.sh": [],
+    "act/scripts/l2_05_verify.sh": [],
+    "act/scripts/l2_06_verify.sh": []
+  }
+}

@@ -1,0 +1,1420 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "name": "model_deploy",
+  "rawDescription": "",
+  "readmeHead": "",
+  "description": "ROS2 多包工作空间，承载 ACT 模型推理部署框架（act/）与硬件集成节点。核心 act/ 是与 ROS 解耦的 PyTorch 推理栈（cu128），act_system 顶层编排 RM65 双臂、Elephant 夹爪、双鱼眼相机与 ACT 部署节点的一键启动；act_interfaces 提供跨包共享的 CommandPermit / HardwareHealth 消息。",
+  "frameworks": [
+    "ROS2",
+    "PyTorch",
+    "rclpy",
+    "ament_python",
+    "ament_cmake",
+    "V4L2"
+  ],
+  "languages": [
+    "python",
+    "cpp",
+    "yaml",
+    "markdown",
+    "shell",
+    "xml",
+    "json",
+    "msg"
+  ],
+  "files": [
+    {
+      "path": ".ua/.understandignore",
+      "language": "unknown",
+      "sizeLines": 56,
+      "fileCategory": "code"
+    },
+    {
+      "path": ".ua/config.json",
+      "language": "json",
+      "sizeLines": 3,
+      "fileCategory": "config"
+    },
+    {
+      "path": "ENVIRONMENT.md",
+      "language": "markdown",
+      "sizeLines": 61,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/config/__init__.py",
+      "language": "python",
+      "sizeLines": 31,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/config/schema.py",
+      "language": "python",
+      "sizeLines": 908,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/config_files/deploy.yaml",
+      "language": "yaml",
+      "sizeLines": 83,
+      "fileCategory": "config"
+    },
+    {
+      "path": "act/repo/__init__.py",
+      "language": "python",
+      "sizeLines": 41,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/repo/act_runtime_resources.py",
+      "language": "python",
+      "sizeLines": 366,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/repo/bundle_reader.py",
+      "language": "python",
+      "sizeLines": 131,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/repo/experiment_config_loader.py",
+      "language": "python",
+      "sizeLines": 63,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/repo/manifest_parser.py",
+      "language": "python",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/repo/normalization.py",
+      "language": "python",
+      "sizeLines": 130,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/repo/normalizer_loader.py",
+      "language": "python",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/runtime/__init__.py",
+      "language": "python",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/runtime/control_loop.py",
+      "language": "python",
+      "sizeLines": 948,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/runtime/inference_channel.py",
+      "language": "python",
+      "sizeLines": 300,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/runtime/inference_worker.py",
+      "language": "python",
+      "sizeLines": 296,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/runtime/observation_buffer.py",
+      "language": "python",
+      "sizeLines": 158,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/runtime/runtime_metrics.py",
+      "language": "python",
+      "sizeLines": 348,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/scripts/l2_02_verify.sh",
+      "language": "shell",
+      "sizeLines": 223,
+      "fileCategory": "script"
+    },
+    {
+      "path": "act/scripts/l2_03_verify.sh",
+      "language": "shell",
+      "sizeLines": 284,
+      "fileCategory": "script"
+    },
+    {
+      "path": "act/scripts/l2_05_verify.sh",
+      "language": "shell",
+      "sizeLines": 221,
+      "fileCategory": "script"
+    },
+    {
+      "path": "act/scripts/l2_06_verify.sh",
+      "language": "shell",
+      "sizeLines": 295,
+      "fileCategory": "script"
+    },
+    {
+      "path": "act/service/__init__.py",
+      "language": "python",
+      "sizeLines": 31,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/service/act_inference.py",
+      "language": "python",
+      "sizeLines": 231,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/service/action_chunk_postprocess.py",
+      "language": "python",
+      "sizeLines": 244,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/service/action_output_adapter.py",
+      "language": "python",
+      "sizeLines": 212,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/service/image_preprocess.py",
+      "language": "python",
+      "sizeLines": 120,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/service/observation_batch.py",
+      "language": "python",
+      "sizeLines": 350,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/service/observation_collector.py",
+      "language": "python",
+      "sizeLines": 239,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/service/safety_guard.py",
+      "language": "python",
+      "sizeLines": 829,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/config/test_command_output_config.py",
+      "language": "python",
+      "sizeLines": 175,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/config/test_contract.py",
+      "language": "python",
+      "sizeLines": 135,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/config/test_contract_check.py",
+      "language": "python",
+      "sizeLines": 199,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/config/test_deploy_config.py",
+      "language": "python",
+      "sizeLines": 93,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/config/test_runtime_config.py",
+      "language": "python",
+      "sizeLines": 106,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/config/test_safety_config.py",
+      "language": "python",
+      "sizeLines": 172,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/config/test_schema.py",
+      "language": "python",
+      "sizeLines": 237,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/config/test_startup_resources_seams.py",
+      "language": "python",
+      "sizeLines": 218,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/fixtures/l2_06_fake.yaml",
+      "language": "yaml",
+      "sizeLines": 60,
+      "fileCategory": "config"
+    },
+    {
+      "path": "act/tests/integration/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/integration/test_l2_01_gate.py",
+      "language": "python",
+      "sizeLines": 251,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/integration/test_l2_02_gate.py",
+      "language": "python",
+      "sizeLines": 306,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/integration/test_l2_03_gate.py",
+      "language": "python",
+      "sizeLines": 809,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/integration/test_l2_04_gate.py",
+      "language": "python",
+      "sizeLines": 651,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/integration/test_l2_05_gate.py",
+      "language": "python",
+      "sizeLines": 811,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/integration/test_l2_06_gate.py",
+      "language": "python",
+      "sizeLines": 1207,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/integration/test_startup_failure.py",
+      "language": "python",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/repo/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/repo/test_act_runtime_resources.py",
+      "language": "python",
+      "sizeLines": 254,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/repo/test_bundle_reader.py",
+      "language": "python",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/repo/test_experiment_config_loader.py",
+      "language": "python",
+      "sizeLines": 67,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/repo/test_manifest_parser.py",
+      "language": "python",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/repo/test_normalization.py",
+      "language": "python",
+      "sizeLines": 65,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/repo/test_normalizer_loader.py",
+      "language": "python",
+      "sizeLines": 63,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/runtime/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/runtime/test_control_loop.py",
+      "language": "python",
+      "sizeLines": 669,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/runtime/test_inference_channel.py",
+      "language": "python",
+      "sizeLines": 318,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/runtime/test_inference_worker.py",
+      "language": "python",
+      "sizeLines": 557,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/runtime/test_observation_buffer.py",
+      "language": "python",
+      "sizeLines": 241,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/runtime/test_runtime_metrics.py",
+      "language": "python",
+      "sizeLines": 206,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/service/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/service/test_act_inference.py",
+      "language": "python",
+      "sizeLines": 597,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/service/test_action_chunk_postprocess.py",
+      "language": "python",
+      "sizeLines": 369,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/service/test_action_output_adapter.py",
+      "language": "python",
+      "sizeLines": 234,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/service/test_image_preprocess.py",
+      "language": "python",
+      "sizeLines": 129,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/service/test_observation_batch.py",
+      "language": "python",
+      "sizeLines": 505,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/service/test_observation_collector.py",
+      "language": "python",
+      "sizeLines": 248,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/service/test_safety_guard.py",
+      "language": "python",
+      "sizeLines": 501,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/service/test_safety_primitives.py",
+      "language": "python",
+      "sizeLines": 545,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/types/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/types/test_action_chunk.py",
+      "language": "python",
+      "sizeLines": 177,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/types/test_action_publish.py",
+      "language": "python",
+      "sizeLines": 551,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/types/test_action_spec.py",
+      "language": "python",
+      "sizeLines": 134,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/types/test_contract_result.py",
+      "language": "python",
+      "sizeLines": 96,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/types/test_observation.py",
+      "language": "python",
+      "sizeLines": 172,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/types/test_safety_result.py",
+      "language": "python",
+      "sizeLines": 305,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/types/test_state_spec.py",
+      "language": "python",
+      "sizeLines": 135,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/ui/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/ui/test_act_deploy_main.py",
+      "language": "python",
+      "sizeLines": 225,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/ui/test_act_deploy_node.py",
+      "language": "python",
+      "sizeLines": 429,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/ui/test_action_publisher.py",
+      "language": "python",
+      "sizeLines": 475,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/ui/test_action_publisher_messages.py",
+      "language": "python",
+      "sizeLines": 313,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/ui/test_observation_pipeline.py",
+      "language": "python",
+      "sizeLines": 266,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/ui/test_observation_ros_adapter.py",
+      "language": "python",
+      "sizeLines": 389,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/tests/ui/test_startup_preflight.py",
+      "language": "python",
+      "sizeLines": 322,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/types/__init__.py",
+      "language": "python",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/types/action_chunk.py",
+      "language": "python",
+      "sizeLines": 56,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/types/action_publish.py",
+      "language": "python",
+      "sizeLines": 477,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/types/action_spec.py",
+      "language": "python",
+      "sizeLines": 107,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/types/contract_result.py",
+      "language": "python",
+      "sizeLines": 54,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/types/observation.py",
+      "language": "python",
+      "sizeLines": 185,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/types/safety_result.py",
+      "language": "python",
+      "sizeLines": 174,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/types/state_spec.py",
+      "language": "python",
+      "sizeLines": 132,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/ui/__init__.py",
+      "language": "python",
+      "sizeLines": 31,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/ui/act_deploy_node.py",
+      "language": "python",
+      "sizeLines": 796,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/ui/action_publisher.py",
+      "language": "python",
+      "sizeLines": 814,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/ui/observation_pipeline.py",
+      "language": "python",
+      "sizeLines": 146,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act/ui/observation_ros_adapter.py",
+      "language": "python",
+      "sizeLines": 452,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act_interfaces/CMakeLists.txt",
+      "language": "txt",
+      "sizeLines": 20,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "act_interfaces/msg/CommandPermit.msg",
+      "language": "msg",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act_interfaces/msg/GripperHealth.msg",
+      "language": "msg",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act_interfaces/msg/HardwareHealth.msg",
+      "language": "msg",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act_interfaces/package.xml",
+      "language": "xml",
+      "sizeLines": 22,
+      "fileCategory": "config"
+    },
+    {
+      "path": "act_system/CMakeLists.txt",
+      "language": "txt",
+      "sizeLines": 10,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "act_system/README.md",
+      "language": "markdown",
+      "sizeLines": 91,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "act_system/launch/act_system.launch.py",
+      "language": "python",
+      "sizeLines": 211,
+      "fileCategory": "code"
+    },
+    {
+      "path": "act_system/package.xml",
+      "language": "xml",
+      "sizeLines": 24,
+      "fileCategory": "config"
+    },
+    {
+      "path": "act_system/scripts/start_act_system.sh",
+      "language": "shell",
+      "sizeLines": 209,
+      "fileCategory": "script"
+    },
+    {
+      "path": "dual_fisheye_camera/README.md",
+      "language": "markdown",
+      "sizeLines": 136,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "language": "yaml",
+      "sizeLines": 39,
+      "fileCategory": "config"
+    },
+    {
+      "path": "dual_fisheye_camera/dual_fisheye_camera/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "language": "python",
+      "sizeLines": 169,
+      "fileCategory": "code"
+    },
+    {
+      "path": "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "language": "python",
+      "sizeLines": 160,
+      "fileCategory": "code"
+    },
+    {
+      "path": "dual_fisheye_camera/package.xml",
+      "language": "xml",
+      "sizeLines": 30,
+      "fileCategory": "config"
+    },
+    {
+      "path": "dual_fisheye_camera/resource/dual_fisheye_camera",
+      "language": "unknown",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "dual_fisheye_camera/setup.cfg",
+      "language": "config",
+      "sizeLines": 5,
+      "fileCategory": "config"
+    },
+    {
+      "path": "dual_fisheye_camera/setup.py",
+      "language": "python",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/config/99-elephant-gripper.rules",
+      "language": "rules",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/config/elephant_gripper.yaml",
+      "language": "yaml",
+      "sizeLines": 45,
+      "fileCategory": "config"
+    },
+    {
+      "path": "elephant_gripper/conftest.py",
+      "language": "python",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/config/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/config/schema.py",
+      "language": "python",
+      "sizeLines": 119,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/repo/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "language": "python",
+      "sizeLines": 149,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/runtime/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "language": "python",
+      "sizeLines": 141,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "language": "python",
+      "sizeLines": 142,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "language": "python",
+      "sizeLines": 324,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "language": "python",
+      "sizeLines": 168,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "language": "python",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/mapping.py",
+      "language": "python",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "language": "python",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/types/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/types/command_permit.py",
+      "language": "python",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "language": "python",
+      "sizeLines": 132,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/ui/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "language": "python",
+      "sizeLines": 230,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper_architecture.md",
+      "language": "markdown",
+      "sizeLines": 70,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "elephant_gripper/launch/elephant_gripper.launch.py",
+      "language": "python",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/package.xml",
+      "language": "xml",
+      "sizeLines": 30,
+      "fileCategory": "config"
+    },
+    {
+      "path": "elephant_gripper/resource/elephant_gripper",
+      "language": "unknown",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/setup.cfg",
+      "language": "config",
+      "sizeLines": 4,
+      "fileCategory": "config"
+    },
+    {
+      "path": "elephant_gripper/setup.py",
+      "language": "python",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/tests/repo/test_config_loader.py",
+      "language": "python",
+      "sizeLines": 95,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/tests/runtime/test_serial_link.py",
+      "language": "python",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "language": "python",
+      "sizeLines": 149,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/tests/service/test_frame_codec.py",
+      "language": "python",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/tests/service/test_health_aggregator.py",
+      "language": "python",
+      "sizeLines": 79,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/tests/service/test_mapping.py",
+      "language": "python",
+      "sizeLines": 45,
+      "fileCategory": "code"
+    },
+    {
+      "path": "elephant_gripper/tests/service/test_permit_gate.py",
+      "language": "python",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "environment.yml",
+      "language": "yaml",
+      "sizeLines": 31,
+      "fileCategory": "config"
+    },
+    {
+      "path": "gripper_ctrl.py",
+      "language": "python",
+      "sizeLines": 95,
+      "fileCategory": "code"
+    },
+    {
+      "path": "requirements.txt",
+      "language": "txt",
+      "sizeLines": 27,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "rm65_dual_arm/CMakeLists.txt",
+      "language": "txt",
+      "sizeLines": 98,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "rm65_dual_arm/README.md",
+      "language": "markdown",
+      "sizeLines": 147,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "language": "yaml",
+      "sizeLines": 44,
+      "fileCategory": "config"
+    },
+    {
+      "path": "rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp",
+      "language": "cpp",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp",
+      "language": "cpp",
+      "sizeLines": 68,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp",
+      "language": "cpp",
+      "sizeLines": 111,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp",
+      "language": "cpp",
+      "sizeLines": 126,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp",
+      "language": "cpp",
+      "sizeLines": 144,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/include/rm65_dual_arm/target_validator.hpp",
+      "language": "cpp",
+      "sizeLines": 54,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/launch/rm65_dual_arm.launch.py",
+      "language": "python",
+      "sizeLines": 63,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/lib/SDK_VENDOR_README.txt",
+      "language": "txt",
+      "sizeLines": 49,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "rm65_dual_arm/lib/install_libs.sh",
+      "language": "shell",
+      "sizeLines": 32,
+      "fileCategory": "script"
+    },
+    {
+      "path": "rm65_dual_arm/package.xml",
+      "language": "xml",
+      "sizeLines": 26,
+      "fileCategory": "config"
+    },
+    {
+      "path": "rm65_dual_arm/src/delta_guard.cpp",
+      "language": "cpp",
+      "sizeLines": 123,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/src/permit_guard.cpp",
+      "language": "cpp",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/src/pose_conversion.cpp",
+      "language": "cpp",
+      "sizeLines": 164,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/src/rm65_arm.cpp",
+      "language": "cpp",
+      "sizeLines": 258,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "language": "cpp",
+      "sizeLines": 388,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/src/target_validator.cpp",
+      "language": "cpp",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/tests/test_delta_guard.cpp",
+      "language": "cpp",
+      "sizeLines": 231,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/tests/test_permit_guard.cpp",
+      "language": "cpp",
+      "sizeLines": 133,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/tests/test_pose_conversion.cpp",
+      "language": "cpp",
+      "sizeLines": 229,
+      "fileCategory": "code"
+    },
+    {
+      "path": "rm65_dual_arm/tests/test_target_validator.cpp",
+      "language": "cpp",
+      "sizeLines": 137,
+      "fileCategory": "code"
+    }
+  ],
+  "totalFiles": 182,
+  "filteredByIgnore": 701,
+  "estimatedComplexity": "large",
+  "stats": {
+    "filesScanned": 182,
+    "byCategory": {
+      "code": 152,
+      "config": 14,
+      "docs": 10,
+      "script": 6
+    },
+    "byLanguage": {
+      "unknown": 3,
+      "json": 1,
+      "markdown": 5,
+      "python": 129,
+      "yaml": 6,
+      "shell": 6,
+      "txt": 5,
+      "msg": 3,
+      "xml": 5,
+      "config": 2,
+      "rules": 1,
+      "cpp": 16
+    }
+  },
+  "importMap": {
+    ".ua/.understandignore": [],
+    ".ua/config.json": [],
+    "ENVIRONMENT.md": [],
+    "__init__.py": [],
+    "act/__init__.py": [],
+    "act/config/__init__.py": [
+      "act/config/schema.py"
+    ],
+    "act/config/schema.py": [],
+    "act/config_files/deploy.yaml": [],
+    "act/repo/__init__.py": [
+      "act/repo/act_runtime_resources.py",
+      "act/repo/bundle_reader.py",
+      "act/repo/experiment_config_loader.py",
+      "act/repo/manifest_parser.py",
+      "act/repo/normalization.py",
+      "act/repo/normalizer_loader.py"
+    ],
+    "act/repo/act_runtime_resources.py": [],
+    "act/repo/bundle_reader.py": [],
+    "act/repo/experiment_config_loader.py": [],
+    "act/repo/manifest_parser.py": [],
+    "act/repo/normalization.py": [],
+    "act/repo/normalizer_loader.py": [],
+    "act/runtime/__init__.py": [],
+    "act/runtime/control_loop.py": [],
+    "act/runtime/inference_channel.py": [],
+    "act/runtime/inference_worker.py": [],
+    "act/runtime/observation_buffer.py": [],
+    "act/runtime/runtime_metrics.py": [],
+    "act/scripts/l2_02_verify.sh": [],
+    "act/scripts/l2_03_verify.sh": [],
+    "act/scripts/l2_05_verify.sh": [],
+    "act/scripts/l2_06_verify.sh": [],
+    "act/service/__init__.py": [],
+    "act/service/act_inference.py": [],
+    "act/service/action_chunk_postprocess.py": [],
+    "act/service/action_output_adapter.py": [],
+    "act/service/image_preprocess.py": [],
+    "act/service/observation_batch.py": [],
+    "act/service/observation_collector.py": [],
+    "act/service/safety_guard.py": [],
+    "act/tests/__init__.py": [],
+    "act/tests/config/test_command_output_config.py": [],
+    "act/tests/config/test_contract.py": [],
+    "act/tests/config/test_contract_check.py": [],
+    "act/tests/config/test_deploy_config.py": [],
+    "act/tests/config/test_runtime_config.py": [],
+    "act/tests/config/test_safety_config.py": [],
+    "act/tests/config/test_schema.py": [],
+    "act/tests/config/test_startup_resources_seams.py": [],
+    "act/tests/fixtures/l2_06_fake.yaml": [],
+    "act/tests/integration/__init__.py": [],
+    "act/tests/integration/test_l2_01_gate.py": [],
+    "act/tests/integration/test_l2_02_gate.py": [],
+    "act/tests/integration/test_l2_03_gate.py": [],
+    "act/tests/integration/test_l2_04_gate.py": [],
+    "act/tests/integration/test_l2_05_gate.py": [],
+    "act/tests/integration/test_l2_06_gate.py": [
+      "act/tests/types/__init__.py"
+    ],
+    "act/tests/integration/test_startup_failure.py": [],
+    "act/tests/repo/__init__.py": [],
+    "act/tests/repo/test_act_runtime_resources.py": [],
+    "act/tests/repo/test_bundle_reader.py": [],
+    "act/tests/repo/test_experiment_config_loader.py": [],
+    "act/tests/repo/test_manifest_parser.py": [],
+    "act/tests/repo/test_normalization.py": [],
+    "act/tests/repo/test_normalizer_loader.py": [],
+    "act/tests/runtime/__init__.py": [],
+    "act/tests/runtime/test_control_loop.py": [],
+    "act/tests/runtime/test_inference_channel.py": [],
+    "act/tests/runtime/test_inference_worker.py": [],
+    "act/tests/runtime/test_observation_buffer.py": [],
+    "act/tests/runtime/test_runtime_metrics.py": [],
+    "act/tests/service/__init__.py": [],
+    "act/tests/service/test_act_inference.py": [],
+    "act/tests/service/test_action_chunk_postprocess.py": [],
+    "act/tests/service/test_action_output_adapter.py": [],
+    "act/tests/service/test_image_preprocess.py": [],
+    "act/tests/service/test_observation_batch.py": [],
+    "act/tests/service/test_observation_collector.py": [],
+    "act/tests/service/test_safety_guard.py": [],
+    "act/tests/service/test_safety_primitives.py": [],
+    "act/tests/types/__init__.py": [],
+    "act/tests/types/test_action_chunk.py": [],
+    "act/tests/types/test_action_publish.py": [],
+    "act/tests/types/test_action_spec.py": [],
+    "act/tests/types/test_contract_result.py": [],
+    "act/tests/types/test_observation.py": [],
+    "act/tests/types/test_safety_result.py": [],
+    "act/tests/types/test_state_spec.py": [],
+    "act/tests/ui/__init__.py": [],
+    "act/tests/ui/test_act_deploy_main.py": [
+      "act/tests/types/__init__.py"
+    ],
+    "act/tests/ui/test_act_deploy_node.py": [
+      "act/tests/types/__init__.py"
+    ],
+    "act/tests/ui/test_action_publisher.py": [],
+    "act/tests/ui/test_action_publisher_messages.py": [],
+    "act/tests/ui/test_observation_pipeline.py": [],
+    "act/tests/ui/test_observation_ros_adapter.py": [],
+    "act/tests/ui/test_startup_preflight.py": [
+      "act/tests/types/__init__.py"
+    ],
+    "act/types/__init__.py": [
+      "act/types/action_publish.py",
+      "act/types/action_spec.py",
+      "act/types/contract_result.py",
+      "act/types/observation.py",
+      "act/types/safety_result.py",
+      "act/types/state_spec.py"
+    ],
+    "act/types/action_chunk.py": [],
+    "act/types/action_publish.py": [
+      "act/types/safety_result.py"
+    ],
+    "act/types/action_spec.py": [],
+    "act/types/contract_result.py": [],
+    "act/types/observation.py": [],
+    "act/types/safety_result.py": [
+      "act/types/action_spec.py"
+    ],
+    "act/types/state_spec.py": [],
+    "act/ui/__init__.py": [],
+    "act/ui/act_deploy_node.py": [
+      "act/ui/action_publisher.py",
+      "act/ui/observation_pipeline.py"
+    ],
+    "act/ui/action_publisher.py": [],
+    "act/ui/observation_pipeline.py": [],
+    "act/ui/observation_ros_adapter.py": [],
+    "act_interfaces/CMakeLists.txt": [],
+    "act_interfaces/msg/CommandPermit.msg": [],
+    "act_interfaces/msg/GripperHealth.msg": [],
+    "act_interfaces/msg/HardwareHealth.msg": [],
+    "act_interfaces/package.xml": [],
+    "act_system/CMakeLists.txt": [],
+    "act_system/README.md": [],
+    "act_system/launch/act_system.launch.py": [],
+    "act_system/package.xml": [],
+    "act_system/scripts/start_act_system.sh": [],
+    "dual_fisheye_camera/README.md": [],
+    "dual_fisheye_camera/config/dual_fisheye_camera.yaml": [],
+    "dual_fisheye_camera/dual_fisheye_camera/__init__.py": [],
+    "dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py": [],
+    "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py": [],
+    "dual_fisheye_camera/package.xml": [],
+    "dual_fisheye_camera/resource/dual_fisheye_camera": [],
+    "dual_fisheye_camera/setup.cfg": [],
+    "dual_fisheye_camera/setup.py": [],
+    "elephant_gripper/config/99-elephant-gripper.rules": [],
+    "elephant_gripper/config/elephant_gripper.yaml": [],
+    "elephant_gripper/conftest.py": [],
+    "elephant_gripper/elephant_gripper/__init__.py": [],
+    "elephant_gripper/elephant_gripper/config/__init__.py": [],
+    "elephant_gripper/elephant_gripper/config/schema.py": [
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/repo/__init__.py": [],
+    "elephant_gripper/elephant_gripper/repo/config_loader.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/runtime/__init__.py": [],
+    "elephant_gripper/elephant_gripper/runtime/fake_serial.py": [
+      "elephant_gripper/elephant_gripper/service/__init__.py"
+    ],
+    "elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "elephant_gripper/elephant_gripper/types/command_permit.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/runtime/serial_link.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/service/__init__.py",
+      "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "elephant_gripper/elephant_gripper/service/mapping.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/service/__init__.py": [],
+    "elephant_gripper/elephant_gripper/service/frame_codec.py": [],
+    "elephant_gripper/elephant_gripper/service/health_aggregator.py": [
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/service/mapping.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper/service/permit_gate.py": [
+      "elephant_gripper/elephant_gripper/types/command_permit.py"
+    ],
+    "elephant_gripper/elephant_gripper/types/__init__.py": [],
+    "elephant_gripper/elephant_gripper/types/command_permit.py": [],
+    "elephant_gripper/elephant_gripper/types/gripper_types.py": [],
+    "elephant_gripper/elephant_gripper/ui/__init__.py": [],
+    "elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "elephant_gripper/elephant_gripper/types/command_permit.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/elephant_gripper_architecture.md": [],
+    "elephant_gripper/launch/elephant_gripper.launch.py": [],
+    "elephant_gripper/package.xml": [],
+    "elephant_gripper/resource/elephant_gripper": [],
+    "elephant_gripper/setup.cfg": [],
+    "elephant_gripper/setup.py": [],
+    "elephant_gripper/tests/repo/test_config_loader.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/tests/runtime/test_serial_link.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/tests/runtime/test_supervisor.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "elephant_gripper/elephant_gripper/types/command_permit.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/tests/service/test_frame_codec.py": [
+      "elephant_gripper/elephant_gripper/service/__init__.py"
+    ],
+    "elephant_gripper/tests/service/test_health_aggregator.py": [
+      "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "elephant_gripper/elephant_gripper/types/gripper_types.py"
+    ],
+    "elephant_gripper/tests/service/test_mapping.py": [
+      "elephant_gripper/elephant_gripper/config/schema.py",
+      "elephant_gripper/elephant_gripper/service/mapping.py"
+    ],
+    "elephant_gripper/tests/service/test_permit_gate.py": [
+      "elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "elephant_gripper/elephant_gripper/types/command_permit.py"
+    ],
+    "environment.yml": [],
+    "gripper_ctrl.py": [],
+    "requirements.txt": [],
+    "rm65_dual_arm/CMakeLists.txt": [],
+    "rm65_dual_arm/README.md": [],
+    "rm65_dual_arm/config/rm65_dual_arm.yaml": [],
+    "rm65_dual_arm/include/rm65_dual_arm/delta_guard.hpp": [],
+    "rm65_dual_arm/include/rm65_dual_arm/permit_guard.hpp": [],
+    "rm65_dual_arm/include/rm65_dual_arm/pose_conversion.hpp": [],
+    "rm65_dual_arm/include/rm65_dual_arm/rm65_arm.hpp": [],
+    "rm65_dual_arm/include/rm65_dual_arm/rm65_dual_arm_node.hpp": [],
+    "rm65_dual_arm/include/rm65_dual_arm/target_validator.hpp": [],
+    "rm65_dual_arm/launch/rm65_dual_arm.launch.py": [],
+    "rm65_dual_arm/lib/SDK_VENDOR_README.txt": [],
+    "rm65_dual_arm/lib/install_libs.sh": [],
+    "rm65_dual_arm/package.xml": [],
+    "rm65_dual_arm/src/delta_guard.cpp": [],
+    "rm65_dual_arm/src/permit_guard.cpp": [],
+    "rm65_dual_arm/src/pose_conversion.cpp": [],
+    "rm65_dual_arm/src/rm65_arm.cpp": [],
+    "rm65_dual_arm/src/rm65_dual_arm_node.cpp": [],
+    "rm65_dual_arm/src/target_validator.cpp": [],
+    "rm65_dual_arm/tests/test_delta_guard.cpp": [],
+    "rm65_dual_arm/tests/test_permit_guard.cpp": [],
+    "rm65_dual_arm/tests/test_pose_conversion.cpp": [],
+    "rm65_dual_arm/tests/test_target_validator.cpp": []
+  }
+}

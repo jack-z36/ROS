@@ -1,0 +1,1135 @@
+{
+  "nodes": [
+    {
+      "id": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "file",
+      "name": "test_l2_06_gate.py",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "summary": "L2-06 关卡式集成测试，将 act/ 全栈（config→repo→runtime→service→types→ui）装配进 FakeClock/FakeNode/StubService 替身，分 G01-G12 十二个 TestClass 覆盖类型契约、配置、seam、信道、worker、调度、回退、生命周期、全链路 tracer、ROS 空运行与命令默认拒绝等行为。",
+      "tags": [
+        "test",
+        "integration",
+        "l2-gate",
+        "ros-stub",
+        "composition-root"
+      ],
+      "complexity": "complex",
+      "languageNotes": "通过 FakeClock/NullClock/RecordingPublisher/FakePolicy/StubService/DenySafetyPort/FailingPublisher/FakeNode 八个替身类构造完全离线的控制环；test_no_forbidden_imports_in_l2_06_sources 用 ast 解析校验 l2_06 源码无禁用 import。"
+    },
+    {
+      "id": "file:act/tests/types/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/types/__init__.py",
+      "summary": "tests/types 子包的空标记包文件，仅占位以使 model_deploy.act.tests.types 成为合法 Python package，不导出任何符号。",
+      "tags": [
+        "entry-point",
+        "package-init",
+        "marker"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "file",
+      "name": "test_act_deploy_main.py",
+      "filePath": "act/tests/ui/test_act_deploy_main.py",
+      "summary": "针对 act_deploy_node 模块的 main() 入口与 build_arg_parser CLI 进行单元/边界测试，使用 patched_main + FakeRclpy + FakeDeployNode 替身验证返回码、命令输出标志传递、构造异常与键盘中断处理，并断言模块加载阶段不导入 ROS。",
+      "tags": [
+        "test",
+        "entry-point",
+        "cli-parser",
+        "ros-stub",
+        "return-code"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "patched_main 通过闭包捕获 monkeypatch，将真实 main 依赖的 run_startup_preflight / load_act_runtime_resources / ActDeployNode 替换为替身；test_main_does_not_import_ros_at_module_load 用强制 reload 验证延迟导入语义。"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_06_gate.py:build_composition",
+      "type": "function",
+      "name": "build_composition",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        316,
+        403
+      ],
+      "summary": "测试夹具工厂：装配 _load_config + _build_resources + FakeClock/FakeNode + build_observation_pipeline + SafetyGuard + LatestQueue 信道 + RuntimeMetrics + InferenceWorker + ActionPublisher + ControlLoop，返回 SimpleNamespace 形式的 composition，是 G03-G09 多数测试的共享入口。",
+      "tags": [
+        "test-fixture",
+        "composition-root",
+        "factory"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_06_gate.py:feed_observation",
+      "type": "function",
+      "name": "feed_observation",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        406,
+        423
+      ],
+      "summary": "测试辅助：用 _make_snapshot 构造观察值并依次调用 collector 的 update_image/update_tcp_pose/update_gripper_state 与 buffer.set_observation，驱动 composition 进入可推理状态。",
+      "tags": [
+        "test-fixture",
+        "observation",
+        "helper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/integration/test_l2_06_gate.py:_safe_result",
+      "type": "function",
+      "name": "_safe_result",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        1198,
+        1207
+      ],
+      "summary": "构造一个默认通过的 SafetyResult 用于测试夹具，封装 SafetyFinding 与通过状态以便在多 outcome 测试中复用。",
+      "tags": [
+        "test-fixture",
+        "helper",
+        "safety"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:FakeClock",
+      "type": "class",
+      "name": "FakeClock",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        122,
+        136
+      ],
+      "summary": "可调时钟替身，提供 __call__ 读取当前值、advance 前进、set 设定，替代真实 ROS Clock 用于确定性调度测试。",
+      "tags": [
+        "test-double",
+        "clock",
+        "stub"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:NullClock",
+      "type": "class",
+      "name": "NullClock",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        139,
+        143
+      ],
+      "summary": "始终返回无效值（None）的时钟替身，用于触发 worker/控制环中时钟域无效的致命错误路径。",
+      "tags": [
+        "test-double",
+        "clock",
+        "negative"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:RecordingPublisher",
+      "type": "class",
+      "name": "RecordingPublisher",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        146,
+        152
+      ],
+      "summary": "记录 publish 调用的发布器替身，将每条消息追加到内部 list，用于断言 ActionPublisher 实际发布的轨迹。",
+      "tags": [
+        "test-double",
+        "publisher",
+        "recorder"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:FakeNode",
+      "type": "class",
+      "name": "FakeNode",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        155,
+        166
+      ],
+      "summary": "ROS Node 替身，实现 create_publisher 返回 RecordingPublisher 并记录创建日志，让测试在不启动 rclpy 的情况下走通 publisher 装配。",
+      "tags": [
+        "test-double",
+        "ros-node",
+        "stub"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:FailingPublisher",
+      "type": "class",
+      "name": "FailingPublisher",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        169,
+        173
+      ],
+      "summary": "publish 必抛 RuntimeError 的发布器替身，用于覆盖 ActionPublisher 发布失败与部分失败（partial）的 outcome 路径。",
+      "tags": [
+        "test-double",
+        "publisher",
+        "negative"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:FakePolicy",
+      "type": "class",
+      "name": "FakePolicy",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        176,
+        202
+      ],
+      "summary": "策略替身：predict_action_chunk 用 torch.zeros/torch.tensor 返回固定的 ActionChunk，避免加载真实 ACT 权重即可驱动 worker/调度测试。",
+      "tags": [
+        "test-double",
+        "policy",
+        "stub"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:StubService",
+      "type": "class",
+      "name": "StubService",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        205,
+        217
+      ],
+      "summary": "ActInferenceService 替身，predict_action_chunk 返回 FakePolicy 风格的固定 chunk 或抛 ValueError，用于 worker 串行成功与错误恢复测试。",
+      "tags": [
+        "test-double",
+        "inference-service",
+        "stub"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:DenySafetyPort",
+      "type": "class",
+      "name": "DenySafetyPort",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        220,
+        241
+      ],
+      "summary": "SafetyGuard 安全端口替身，filter_action 始终返回拒绝的 SafetyResult + SafetyFinding，用于验证控制环在安全拒绝时切换到 rejected outcome。",
+      "tags": [
+        "test-double",
+        "safety",
+        "negative"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG01Types",
+      "type": "class",
+      "name": "TestG01Types",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        431,
+        490
+      ],
+      "summary": "G01 类型契约测试：ActionChunk 字段校验、PolicyInputSpec 维度拒绝、以及用 ast/正则扫描 l2_06 源码确保无禁用 token 与禁用 import。",
+      "tags": [
+        "test",
+        "types",
+        "static-analysis"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG02Config",
+      "type": "class",
+      "name": "TestG02Config",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        498,
+        543
+      ],
+      "summary": "G02 配置测试：command_output 默认关闭、YAML 无法静默启用命令输出、build_arg_parser 仅暴露两个 flag、canonical 资源/spec 同一性与空 bundle fail-fast。",
+      "tags": [
+        "test",
+        "config",
+        "fail-fast"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG03Seam",
+      "type": "class",
+      "name": "TestG03Seam",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        551,
+        637
+      ],
+      "summary": "G03 seam 测试：观察管道 dry-run（ROS 缺失记录 env blocked）、collector 到 snapshot 链路、Service predict 返回 chunk、安全过滤通过观察引用、publisher observed/published provenance 开关。",
+      "tags": [
+        "test",
+        "seam",
+        "observation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG04ChannelMetrics",
+      "type": "class",
+      "name": "TestG04ChannelMetrics",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        645,
+        716
+      ],
+      "summary": "G04 信道与指标测试：InferenceRequest 校验、InferenceResult success/error 互斥（XOR）、LatestQueue 容量为一的语义、RuntimeMetrics snapshot 不可变性。",
+      "tags": [
+        "test",
+        "channel",
+        "metrics"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG05Worker",
+      "type": "class",
+      "name": "TestG05Worker",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        724,
+        781
+      ],
+      "summary": "G05 推理 worker 测试：串行成功路径、错误恢复、以及 NullClock 导致的时钟域致命故障锁存，全部以 StubService + 真实 InferenceWorker 线程驱动。",
+      "tags": [
+        "test",
+        "worker",
+        "error-recovery"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG06Scheduling",
+      "type": "class",
+      "name": "TestG06Scheduling",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        789,
+        862
+      ],
+      "summary": "G06 调度测试：通过 ControlLoop.tick 驱动，验证相关性与活跃 chunk、horizon 处的预取、result id 不匹配时锁存故障。",
+      "tags": [
+        "test",
+        "scheduling",
+        "control-loop"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG07FallbackOutput",
+      "type": "class",
+      "name": "TestG07FallbackOutput",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        870,
+        999
+      ],
+      "summary": "G07 回退 outcome 测试：observed/published/blocked/rejected/failed/partial 六种发布结果以及观察缺失时的 deferred 行为，覆盖控制环全部 outcome 分支。",
+      "tags": [
+        "test",
+        "outcome",
+        "fallback"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG08Lifecycle",
+      "type": "class",
+      "name": "TestG08Lifecycle",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        1007,
+        1066
+      ],
+      "summary": "G08 生命周期测试：preflight 在 canonical spec 上通过、spec identity 不匹配拒绝、permit_source 缺失拒绝、deny permit fail-closed、shutdown 收敛。",
+      "tags": [
+        "test",
+        "lifecycle",
+        "preflight"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG09FullGate",
+      "type": "class",
+      "name": "TestG09FullGate",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        1074,
+        1114
+      ],
+      "summary": "G09 全链路关卡：用 build_composition + 完整 tracer 跑多 tick 并推进 FakeClock，验证发布、shutdown 与指标 snapshot 一致。",
+      "tags": [
+        "test",
+        "full-gate",
+        "tracer"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG10RosDryRun",
+      "type": "class",
+      "name": "TestG10RosDryRun",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        1123,
+        1150
+      ],
+      "summary": "G10 ROS 空运行测试：当 ROS 不可用时 dry-run 命令计数为零，并在 env 中记录 ROS_UNAVAILABLE 阻塞状态。",
+      "tags": [
+        "test",
+        "ros",
+        "dry-run"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG11RealPolicyDryRun",
+      "type": "class",
+      "name": "TestG11RealPolicyDryRun",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        1159,
+        1166
+      ],
+      "summary": "G11 真实策略 dry-run 测试：断言真实 bundle 加载器在未满足条件时被门控（gated），不会自动激活真实推理。",
+      "tags": [
+        "test",
+        "policy",
+        "dry-run"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/integration/test_l2_06_gate.py:TestG12RealCommand",
+      "type": "class",
+      "name": "TestG12RealCommand",
+      "filePath": "act/tests/integration/test_l2_06_gate.py",
+      "lineRange": [
+        1175,
+        1195
+      ],
+      "summary": "G12 命令门控测试：默认 deny 永不自动启用命令输出，且 CLI parser 不提供 YAML 命令开关，验证 fail-closed 安全姿态。",
+      "tags": [
+        "test",
+        "command",
+        "fail-closed"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_main.py:patched_main",
+      "type": "function",
+      "name": "patched_main",
+      "filePath": "act/tests/ui/test_act_deploy_main.py",
+      "lineRange": [
+        69,
+        90
+      ],
+      "summary": "pytest fixture：用 monkeypatch 将 main 的真实依赖（run_startup_preflight、load_act_runtime_resources、ActDeployNode、FakeRclpy）替换为替身并返回 argv，使每个 main 入口测试在受控环境下运行。",
+      "tags": [
+        "test-fixture",
+        "monkeypatch",
+        "main-entry"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_main.py:test_main_command_output_flag_passed_to_loader",
+      "type": "function",
+      "name": "test_main_command_output_flag_passed_to_loader",
+      "filePath": "act/tests/ui/test_act_deploy_main.py",
+      "lineRange": [
+        114,
+        124
+      ],
+      "summary": "断言 --command-output flag 经 build_arg_parser 解析后正确传递到 load_act_runtime_resources 的 command_output_enabled 参数。",
+      "tags": [
+        "test",
+        "cli-flag",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_main.py:test_main_construction_error_returns_one",
+      "type": "function",
+      "name": "test_main_construction_error_returns_one",
+      "filePath": "act/tests/ui/test_act_deploy_main.py",
+      "lineRange": [
+        125,
+        134
+      ],
+      "summary": "断言 main 在构造阶段抛错时捕获并返回退出码 1，验证错误处理边界。",
+      "tags": [
+        "test",
+        "error-handling",
+        "return-code"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_main.py:test_main_does_not_import_ros_at_module_load",
+      "type": "function",
+      "name": "test_main_does_not_import_ros_at_module_load",
+      "filePath": "act/tests/ui/test_act_deploy_main.py",
+      "lineRange": [
+        149,
+        154
+      ],
+      "summary": "强制 reload act_deploy_node 模块并断言 rclpy 仍未被导入，验证 ROS 延迟导入契约。",
+      "tags": [
+        "test",
+        "lazy-import",
+        "ros"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/tests/ui/test_act_deploy_main.py:_spec",
+      "type": "function",
+      "name": "_spec",
+      "filePath": "act/tests/ui/test_act_deploy_main.py",
+      "lineRange": [
+        21,
+        35
+      ],
+      "summary": "构造 canonical PolicyInputSpec 工厂，供 main/parser 测试在需要 spec 上下文时复用。",
+      "tags": [
+        "test-fixture",
+        "spec",
+        "factory"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/ui/test_act_deploy_main.py:FakeRclpy",
+      "type": "class",
+      "name": "FakeRclpy",
+      "filePath": "act/tests/ui/test_act_deploy_main.py",
+      "lineRange": [
+        25,
+        41
+      ],
+      "summary": "rclpy 替身：提供 init/spin/shutdown/ok 方法记录调用，使 main 测试在不启动真实 ROS 的情况下走完生命周期。",
+      "tags": [
+        "test-double",
+        "rclpy",
+        "stub"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/ui/test_act_deploy_main.py:FakeDeployNode",
+      "type": "class",
+      "name": "FakeDeployNode",
+      "filePath": "act/tests/ui/test_act_deploy_main.py",
+      "lineRange": [
+        44,
+        59
+      ],
+      "summary": "ActDeployNode 构造期替身，仅提供 shutdown/destroy_node 方法，专用于 main 入口的构造-only 测试。",
+      "tags": [
+        "test-double",
+        "deploy-node",
+        "stub"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/tests/types/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "function:act/tests/integration/test_l2_06_gate.py:build_composition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "function:act/tests/integration/test_l2_06_gate.py:feed_observation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "function:act/tests/integration/test_l2_06_gate.py:_safe_result",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:FakeClock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:NullClock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:RecordingPublisher",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:FakeNode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:FailingPublisher",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:FakePolicy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:StubService",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:DenySafetyPort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG01Types",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG02Config",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG03Seam",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG04ChannelMetrics",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG05Worker",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG06Scheduling",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG07FallbackOutput",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG08Lifecycle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG09FullGate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG10RosDryRun",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG11RealPolicyDryRun",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:TestG12RealCommand",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "function:act/tests/integration/test_l2_06_gate.py:build_composition",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "function:act/tests/integration/test_l2_06_gate.py:feed_observation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:FakeClock",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:FakePolicy",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "class:act/tests/integration/test_l2_06_gate.py:StubService",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "function:act/tests/ui/test_act_deploy_main.py:_spec",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "function:act/tests/ui/test_act_deploy_main.py:patched_main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "function:act/tests/ui/test_act_deploy_main.py:test_main_command_output_flag_passed_to_loader",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "function:act/tests/ui/test_act_deploy_main.py:test_main_construction_error_returns_one",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "function:act/tests/ui/test_act_deploy_main.py:test_main_does_not_import_ros_at_module_load",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "class:act/tests/ui/test_act_deploy_main.py:FakeRclpy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "class:act/tests/ui/test_act_deploy_main.py:FakeDeployNode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "function:act/tests/ui/test_act_deploy_main.py:patched_main",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "class:act/tests/ui/test_act_deploy_main.py:FakeRclpy",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "class:act/tests/ui/test_act_deploy_main.py:FakeDeployNode",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/ui/act_deploy_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/service/act_inference.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/service/safety_guard.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/runtime/control_loop.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/runtime/inference_channel.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/runtime/inference_worker.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/runtime/runtime_metrics.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/ui/action_publisher.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/ui/observation_pipeline.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/config/schema.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/action_chunk.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/action_publish.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/action_spec.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/observation.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/integration/test_l2_06_gate.py",
+      "target": "file:act/types/safety_result.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/ui/act_deploy_node.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/config/schema.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/repo/act_runtime_resources.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/tests/ui/test_act_deploy_main.py",
+      "target": "file:act/service/act_inference.py",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/act_deploy_node.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/config/schema.py",
+      "target": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/act_runtime_resources.py",
+      "target": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "file:act/tests/ui/test_act_deploy_main.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/control_loop.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_channel.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/inference_worker.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/runtime/runtime_metrics.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/action_publisher.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/ui/observation_pipeline.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_chunk.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_publish.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/action_spec.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/observation.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/types/safety_result.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:act/repo/normalization.py",
+      "target": "file:act/tests/integration/test_l2_06_gate.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

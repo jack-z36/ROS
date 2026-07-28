@@ -1,0 +1,1611 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 7,
+  "filesSkipped": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 7,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 7,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "act/types/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 52,
+      "nonEmptyLines": 51,
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "act/types/action_publish.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 477,
+      "nonEmptyLines": 410,
+      "functions": [
+        {
+          "name": "_is_numpy_array",
+          "startLine": 32,
+          "endLine": 42,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "_as_float_tuple",
+          "startLine": 45,
+          "endLine": 69,
+          "params": [
+            "name",
+            "value",
+            "length"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "CommandPermit",
+          "startLine": 78,
+          "endLine": 103,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "allowed",
+            "reason_code"
+          ]
+        },
+        {
+          "name": "ActionPublishRequest",
+          "startLine": 112,
+          "endLine": 156,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "action_id",
+            "safety_result",
+            "command_permit",
+            "ros_time_s",
+            "monotonic_s"
+          ]
+        },
+        {
+          "name": "ArmPoseTarget",
+          "startLine": 165,
+          "endLine": 188,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "frame_id",
+            "position_xyz",
+            "quaternion_xyzw"
+          ]
+        },
+        {
+          "name": "TopicPayloadBundle",
+          "startLine": 197,
+          "endLine": 241,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "POLICY_ACTION_DIM",
+            "policy_action",
+            "left_arm",
+            "right_arm",
+            "left_gripper",
+            "right_gripper"
+          ]
+        },
+        {
+          "name": "PublishOutcome",
+          "startLine": 249,
+          "endLine": 257,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "ActionPublishResult",
+          "startLine": 288,
+          "endLine": 466,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "action_id",
+            "safety_status",
+            "command_output_enabled",
+            "command_permitted",
+            "outcome",
+            "policy_action_published",
+            "command_publish_count",
+            "gripper_skipped",
+            "command_plan_completed",
+            "status_published",
+            "reason_code",
+            "failure_stage",
+            "failed_topic",
+            "driver_accepted",
+            "hardware_reached"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_is_numpy_array",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "_as_float_tuple",
+          "line": 45,
+          "isDefault": false
+        },
+        {
+          "name": "CommandPermit",
+          "line": 77,
+          "isDefault": false
+        },
+        {
+          "name": "ActionPublishRequest",
+          "line": 111,
+          "isDefault": false
+        },
+        {
+          "name": "ArmPoseTarget",
+          "line": 164,
+          "isDefault": false
+        },
+        {
+          "name": "TopicPayloadBundle",
+          "line": 196,
+          "isDefault": false
+        },
+        {
+          "name": "PublishOutcome",
+          "line": 249,
+          "isDefault": false
+        },
+        {
+          "name": "ActionPublishResult",
+          "line": 287,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_is_numpy_array",
+          "callee": "isinstance",
+          "lineNumber": 42
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "_is_numpy_array",
+          "lineNumber": 51
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "ValueError",
+          "lineNumber": 52
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "isinstance",
+          "lineNumber": 55
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "isinstance",
+          "lineNumber": 55
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "TypeError",
+          "lineNumber": 56
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "type",
+          "lineNumber": 57
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "len",
+          "lineNumber": 59
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "ValueError",
+          "lineNumber": 60
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "len",
+          "lineNumber": 60
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "enumerate",
+          "lineNumber": 62
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "isinstance",
+          "lineNumber": 63
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "isinstance",
+          "lineNumber": 63
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "TypeError",
+          "lineNumber": 64
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "type",
+          "lineNumber": 64
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "float",
+          "lineNumber": 65
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "math.isfinite",
+          "lineNumber": 66
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "ValueError",
+          "lineNumber": 67
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "out.append",
+          "lineNumber": 68
+        },
+        {
+          "caller": "_as_float_tuple",
+          "callee": "tuple",
+          "lineNumber": 69
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 90
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 91
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 92
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 96
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 100
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 101
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 129
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 130
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 133
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 134
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 136
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 138
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 139
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 141
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "getattr",
+          "lineNumber": 144
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 145
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 145
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 146
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 147
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "math.isfinite",
+          "lineNumber": 149
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 150
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 154
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 177
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "self.frame_id.strip",
+          "lineNumber": 177
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 178
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "object.__setattr__",
+          "lineNumber": 179
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_as_float_tuple",
+          "lineNumber": 182
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "object.__setattr__",
+          "lineNumber": 184
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_as_float_tuple",
+          "lineNumber": 187
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_as_float_tuple",
+          "lineNumber": 214
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "object.__setattr__",
+          "lineNumber": 219
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 220
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 221
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 223
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 225
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 226
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 228
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "getattr",
+          "lineNumber": 231
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 232
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 232
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 233
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 234
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "float",
+          "lineNumber": 236
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 238
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "object.__setattr__",
+          "lineNumber": 241
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 323
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 324
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 325
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 326
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 328
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 337
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "getattr",
+          "lineNumber": 337
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 338
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 340
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "getattr",
+          "lineNumber": 340
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 342
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 343
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 345
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 348
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 348
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 349
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 350
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 353
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 358
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 359
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 360
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "enumerate",
+          "lineNumber": 362
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 363
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 364
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 366
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "object.__setattr__",
+          "lineNumber": 368
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "tuple",
+          "lineNumber": 368
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 371
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 373
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 376
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 381
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 387
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 398
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "sorted",
+          "lineNumber": 400
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 408
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 409
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 416
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 421
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 430
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 435
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 441
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 445
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 446
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 452
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 458
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 462
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 463
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 8,
+        "functionCount": 2,
+        "classCount": 6
+      }
+    },
+    {
+      "path": "act/types/action_spec.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 107,
+      "nonEmptyLines": 80,
+      "functions": [
+        {
+          "name": "ensure_action_vector",
+          "startLine": 69,
+          "endLine": 86,
+          "params": [
+            "flat"
+          ]
+        },
+        {
+          "name": "split_action",
+          "startLine": 89,
+          "endLine": 107,
+          "params": [
+            "flat"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ActionSpec",
+          "startLine": 37,
+          "endLine": 61,
+          "methods": [
+            "as_vector"
+          ],
+          "properties": [
+            "left_tcp_action",
+            "right_tcp_action",
+            "left_gripper",
+            "right_gripper"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ActionSpec",
+          "line": 36,
+          "isDefault": false
+        },
+        {
+          "name": "ensure_action_vector",
+          "line": 69,
+          "isDefault": false
+        },
+        {
+          "name": "split_action",
+          "line": 89,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "as_vector",
+          "callee": "np.concatenate",
+          "lineNumber": 54
+        },
+        {
+          "caller": "as_vector",
+          "callee": "np.asarray(self.left_tcp_action, dtype=np.float32).ravel",
+          "lineNumber": 56
+        },
+        {
+          "caller": "as_vector",
+          "callee": "np.asarray",
+          "lineNumber": 56
+        },
+        {
+          "caller": "as_vector",
+          "callee": "np.asarray(self.right_tcp_action, dtype=np.float32).ravel",
+          "lineNumber": 57
+        },
+        {
+          "caller": "as_vector",
+          "callee": "np.asarray",
+          "lineNumber": 57
+        },
+        {
+          "caller": "as_vector",
+          "callee": "np.asarray",
+          "lineNumber": 58
+        },
+        {
+          "caller": "as_vector",
+          "callee": "np.asarray",
+          "lineNumber": 59
+        },
+        {
+          "caller": "ensure_action_vector",
+          "callee": "np.asarray(flat, dtype=np.float32).ravel",
+          "lineNumber": 81
+        },
+        {
+          "caller": "ensure_action_vector",
+          "callee": "np.asarray",
+          "lineNumber": 81
+        },
+        {
+          "caller": "ensure_action_vector",
+          "callee": "ValueError",
+          "lineNumber": 83
+        },
+        {
+          "caller": "split_action",
+          "callee": "ensure_action_vector",
+          "lineNumber": 101
+        },
+        {
+          "caller": "split_action",
+          "callee": "ActionSpec",
+          "lineNumber": 102
+        },
+        {
+          "caller": "split_action",
+          "callee": "arr[0:7].copy",
+          "lineNumber": 103
+        },
+        {
+          "caller": "split_action",
+          "callee": "arr[7:14].copy",
+          "lineNumber": 104
+        },
+        {
+          "caller": "split_action",
+          "callee": "float",
+          "lineNumber": 105
+        },
+        {
+          "caller": "split_action",
+          "callee": "float",
+          "lineNumber": 106
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "act/types/contract_result.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 54,
+      "nonEmptyLines": 41,
+      "classes": [
+        {
+          "name": "BundleContractResult",
+          "startLine": 14,
+          "endLine": 32,
+          "methods": [
+            "is_pass"
+          ],
+          "properties": [
+            "passed",
+            "reason",
+            "missing_files",
+            "schema_version"
+          ]
+        },
+        {
+          "name": "NormalizerContractResult",
+          "startLine": 36,
+          "endLine": 54,
+          "methods": [
+            "is_pass"
+          ],
+          "properties": [
+            "passed",
+            "reason",
+            "expected_dim",
+            "actual_dim"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "BundleContractResult",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "NormalizerContractResult",
+          "line": 35,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "act/types/observation.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 185,
+      "nonEmptyLines": 146,
+      "functions": [
+        {
+          "name": "_owned_array",
+          "startLine": 19,
+          "endLine": 30,
+          "params": [
+            "value"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ObservationState",
+          "startLine": 46,
+          "endLine": 65,
+          "methods": [],
+          "properties": [
+            "left_tcp_position",
+            "left_tcp_orientation",
+            "left_gripper_width",
+            "right_tcp_position",
+            "right_tcp_orientation",
+            "right_gripper_width"
+          ]
+        },
+        {
+          "name": "ObservationSnapshot",
+          "startLine": 74,
+          "endLine": 159,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "images",
+            "state",
+            "encoded_state",
+            "captured_at_s"
+          ]
+        },
+        {
+          "name": "ObservationFreshnessResult",
+          "startLine": 168,
+          "endLine": 185,
+          "methods": [],
+          "properties": [
+            "missing_fields",
+            "stale_fields",
+            "field_ages_s",
+            "ready"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_owned_array",
+          "line": 19,
+          "isDefault": false
+        },
+        {
+          "name": "ObservationState",
+          "line": 45,
+          "isDefault": false
+        },
+        {
+          "name": "ObservationSnapshot",
+          "line": 73,
+          "isDefault": false
+        },
+        {
+          "name": "ObservationFreshnessResult",
+          "line": 167,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_owned_array",
+          "callee": "np.asarray",
+          "lineNumber": 25
+        },
+        {
+          "caller": "_owned_array",
+          "callee": "TypeError",
+          "lineNumber": 27
+        },
+        {
+          "caller": "_owned_array",
+          "callee": "type",
+          "lineNumber": 28
+        },
+        {
+          "caller": "_owned_array",
+          "callee": "np.array",
+          "lineNumber": 30
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_owned_array",
+          "lineNumber": 110
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 112
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "np.isfinite(encoded).all",
+          "lineNumber": 116
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "np.isfinite",
+          "lineNumber": 116
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 117
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 120
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 121
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 122
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "self.images.items",
+          "lineNumber": 125
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_owned_array",
+          "lineNumber": 126
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "np.isfinite(img).all",
+          "lineNumber": 127
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "np.isfinite",
+          "lineNumber": 127
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 128
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_owned_array",
+          "lineNumber": 134
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_owned_array",
+          "lineNumber": 135
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_owned_array",
+          "lineNumber": 136
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_owned_array",
+          "lineNumber": 137
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "state_arrays.items",
+          "lineNumber": 139
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "np.isfinite(arr).all",
+          "lineNumber": 140
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "np.isfinite",
+          "lineNumber": 140
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 141
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ObservationState",
+          "lineNumber": 142
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "float",
+          "lineNumber": 145
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "float",
+          "lineNumber": 148
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "float",
+          "lineNumber": 152
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "np.isfinite",
+          "lineNumber": 153
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 154
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "object.__setattr__",
+          "lineNumber": 156
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "object.__setattr__",
+          "lineNumber": 157
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "object.__setattr__",
+          "lineNumber": 158
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "object.__setattr__",
+          "lineNumber": 159
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 4,
+        "functionCount": 1,
+        "classCount": 3
+      }
+    },
+    {
+      "path": "act/types/safety_result.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 174,
+      "nonEmptyLines": 137,
+      "functions": [
+        {
+          "name": "_is_numpy_array",
+          "startLine": 63,
+          "endLine": 75,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "_assert_serializable_snapshot",
+          "startLine": 78,
+          "endLine": 84,
+          "params": [
+            "name",
+            "value"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "SafetyStatus",
+          "startLine": 26,
+          "endLine": 31,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "SafetyCode",
+          "startLine": 39,
+          "endLine": 53,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "SafetyFinding",
+          "startLine": 88,
+          "endLine": 121,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "code",
+            "side",
+            "before",
+            "after",
+            "detail"
+          ]
+        },
+        {
+          "name": "SafetyResult",
+          "startLine": 130,
+          "endLine": 174,
+          "methods": [
+            "__post_init__"
+          ],
+          "properties": [
+            "status",
+            "action",
+            "findings"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SafetyStatus",
+          "line": 26,
+          "isDefault": false
+        },
+        {
+          "name": "SafetyCode",
+          "line": 39,
+          "isDefault": false
+        },
+        {
+          "name": "_is_numpy_array",
+          "line": 63,
+          "isDefault": false
+        },
+        {
+          "name": "_assert_serializable_snapshot",
+          "line": 78,
+          "isDefault": false
+        },
+        {
+          "name": "SafetyFinding",
+          "line": 87,
+          "isDefault": false
+        },
+        {
+          "name": "SafetyResult",
+          "line": 129,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_is_numpy_array",
+          "callee": "isinstance",
+          "lineNumber": 75
+        },
+        {
+          "caller": "_assert_serializable_snapshot",
+          "callee": "_is_numpy_array",
+          "lineNumber": 80
+        },
+        {
+          "caller": "_assert_serializable_snapshot",
+          "callee": "ValueError",
+          "lineNumber": 81
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 108
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 109
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 110
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 113
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 116
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 117
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 118
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_assert_serializable_snapshot",
+          "lineNumber": 120
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "_assert_serializable_snapshot",
+          "lineNumber": 121
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 145
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 146
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 147
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 149
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 150
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 151
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "enumerate",
+          "lineNumber": 153
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 154
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 155
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 157
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 161
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "ValueError",
+          "lineNumber": 167
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "isinstance",
+          "lineNumber": 170
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "TypeError",
+          "lineNumber": 171
+        },
+        {
+          "caller": "__post_init__",
+          "callee": "type",
+          "lineNumber": 173
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 6,
+        "functionCount": 2,
+        "classCount": 4
+      }
+    },
+    {
+      "path": "act/types/state_spec.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 132,
+      "nonEmptyLines": 100,
+      "functions": [
+        {
+          "name": "ensure_state_vector",
+          "startLine": 75,
+          "endLine": 92,
+          "params": [
+            "flat"
+          ]
+        },
+        {
+          "name": "encode_state",
+          "startLine": 95,
+          "endLine": 132,
+          "params": [
+            "left_tcp_pose",
+            "right_tcp_pose",
+            "left_gripper_width",
+            "right_gripper_width"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "StateSpec",
+          "startLine": 53,
+          "endLine": 67,
+          "methods": [
+            "total_dim"
+          ],
+          "properties": [
+            "segment_names",
+            "segment_dims",
+            "segment_offsets"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "StateSpec",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "ensure_state_vector",
+          "line": 75,
+          "isDefault": false
+        },
+        {
+          "name": "encode_state",
+          "line": 95,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ensure_state_vector",
+          "callee": "np.asarray(flat, dtype=np.float32).ravel",
+          "lineNumber": 87
+        },
+        {
+          "caller": "ensure_state_vector",
+          "callee": "np.asarray",
+          "lineNumber": 87
+        },
+        {
+          "caller": "ensure_state_vector",
+          "callee": "ValueError",
+          "lineNumber": 89
+        },
+        {
+          "caller": "encode_state",
+          "callee": "np.asarray(left_tcp_pose, dtype=np.float32).ravel",
+          "lineNumber": 115
+        },
+        {
+          "caller": "encode_state",
+          "callee": "np.asarray",
+          "lineNumber": 115
+        },
+        {
+          "caller": "encode_state",
+          "callee": "np.asarray(right_tcp_pose, dtype=np.float32).ravel",
+          "lineNumber": 116
+        },
+        {
+          "caller": "encode_state",
+          "callee": "np.asarray",
+          "lineNumber": 116
+        },
+        {
+          "caller": "encode_state",
+          "callee": "np.asarray([left_gripper_width], dtype=np.float32).ravel",
+          "lineNumber": 117
+        },
+        {
+          "caller": "encode_state",
+          "callee": "np.asarray",
+          "lineNumber": 117
+        },
+        {
+          "caller": "encode_state",
+          "callee": "np.asarray([right_gripper_width], dtype=np.float32).ravel",
+          "lineNumber": 118
+        },
+        {
+          "caller": "encode_state",
+          "callee": "np.asarray",
+          "lineNumber": 118
+        },
+        {
+          "caller": "encode_state",
+          "callee": "ValueError",
+          "lineNumber": 121
+        },
+        {
+          "caller": "encode_state",
+          "callee": "ValueError",
+          "lineNumber": 126
+        },
+        {
+          "caller": "encode_state",
+          "callee": "np.concatenate",
+          "lineNumber": 131
+        },
+        {
+          "caller": "encode_state",
+          "callee": "ensure_state_vector",
+          "lineNumber": 132
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 1
+      }
+    }
+  ]
+}
