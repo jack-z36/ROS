@@ -87,7 +87,13 @@ def _executable_exists(pkg, executable):
     return os.path.isfile(os.path.join(prefix, 'lib', pkg, executable))
 
 
-def _include_hardware_launch(pkg, launch_file, label, required_executables):
+def _include_hardware_launch(
+    pkg,
+    launch_file,
+    label,
+    required_executables,
+    launch_arguments=None,
+):
     """构造一个硬件包的 include；可执行文件缺失时跳过并告警。
 
     目的：单个组件未就绪（如 RM65 厂商 SDK 未拷入导致节点未编译）时，
@@ -112,7 +118,8 @@ def _include_hardware_launch(pkg, launch_file, label, required_executables):
                 os.path.join(
                     get_package_share_directory(pkg), 'launch', launch_file
                 )
-            )
+            ),
+            launch_arguments=(launch_arguments or {}).items(),
         )
     ]
 
@@ -134,6 +141,15 @@ def _make_hardware_includes(context):
             ('dual_fisheye_camera', 'camera_health_node'),
             ('v4l2_camera', 'v4l2_camera_node'),
         ],
+        launch_arguments={
+            # 上游硬件适配 ACT 的 observation topic 契约；ACT 配置保持不变。
+            'left_image_topic': (
+                '/act/observation/image/left_gripper_fisheye'
+            ),
+            'right_image_topic': (
+                '/act/observation/image/right_gripper_fisheye'
+            ),
+        },
     )
     return actions
 

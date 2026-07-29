@@ -7,4 +7,12 @@ find_package(ament_cmake REQUIRED)
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(PROGRAMS scripts/start_act_system.sh DESTINATION lib/${PROJECT_NAME})
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(
+    test_act_camera_topic_contract
+    test/test_act_camera_topic_contract.py
+  )
+endif()
+
 ament_package()

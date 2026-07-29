@@ -17,6 +17,8 @@ set -euo pipefail
 # 硬件节点与 colcon 构建使用系统 Python（见 src/model_deploy/ENVIRONMENT.md）；
 # 前置 /usr/bin 避免 conda base 的 python3 干扰 rclpy/消息绑定。
 export PATH="/usr/bin:${PATH}"
+# 大图(921KB/帧)走共享内存，避免默认 UDP 分片在 BEST_EFFORT 下成簇丢帧（相机 30Hz 前提）
+export FASTDDS_BUILTIN_TRANSPORTS="${FASTDDS_BUILTIN_TRANSPORTS:-LARGE_DATA?max_msg_size=1MB&sockets_size=8MB&non_blocking=true}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # scripts/ -> act_system/ -> model_deploy/ -> src/ -> workspace 根
@@ -171,7 +173,8 @@ if ! kill -0 "${LAUNCH_PID}" >/dev/null 2>&1; then
 fi
 
 # --- 组件核对：按节点名逐组件报告 OK/FAIL -----------------------------------
-NODE_LIST="$(ros2 node list 2>/dev/null || true)"
+# 不依赖 ros2 daemon 缓存；daemon 被显式停止后也必须发现当前运行图。
+NODE_LIST="$(ros2 node list --no-daemon --spin-time 5 2>/dev/null || true)"
 
 check_component() {
   local label="$1"

@@ -34,7 +34,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def _load_yaml_params(context):
     """加载包内默认 config yaml 作为参数文件（可被 launch 参数覆盖）。"""
-    params_file = LaunchConfiguration('params_file').perform(context)
+    params_file = LaunchConfiguration('camera_params_file').perform(context)
     if not params_file or not os.path.exists(params_file):
         # 未显式提供或路径不存在时，回退到包内默认 yaml
         share = get_package_share_directory('dual_fisheye_camera')
@@ -70,6 +70,12 @@ def _make_camera_pair(context, side: str):
         # launch 参数未覆盖时，回退到 yaml 里的设备路径（否则空路径会
         # 直接覆盖 yaml，导致 "Cannot open device"）
         video_device = _yaml_default_param(params_file, f'{side}_video_device')
+    if not video_device:
+        # 兜底后仍为空：几乎总是参数文件被串到了别的包（如同名 params_file
+        # 被 rm65 抢占）。宁可启动即报错，也不要空路径静默挂起数小时无人察觉。
+        raise RuntimeError(
+            f'{side}_video_device 为空：params_file={params_file} 可能不是本包配置'
+        )
     frame_rate = LaunchConfiguration('frame_rate').perform(context)
     frame_id = LaunchConfiguration(f'{side}_frame_id').perform(context)
     image_topic = LaunchConfiguration(f'{side}_image_topic').perform(context)
@@ -112,6 +118,8 @@ def _make_camera_pair(context, side: str):
 def _launch_setup(context):
     params_file = _load_yaml_params(context)
     health_topic = LaunchConfiguration('health_topic').perform(context)
+    left_image_topic = LaunchConfiguration('left_image_topic').perform(context)
+    right_image_topic = LaunchConfiguration('right_image_topic').perform(context)
 
     # 左右两路采集
     left_set_parm, left_node = _make_camera_pair(context, 'left')
@@ -125,7 +133,13 @@ def _launch_setup(context):
         output='screen',
         parameters=[
             params_file,
-            {'health_topic': health_topic},
+            {
+                'health_topic': health_topic,
+                # 与两路相机使用同一组 launch 参数，确保系统级 topic
+                # 覆盖后 health 不会继续监听 standalone 默认话题。
+                'left_image_topic': left_image_topic,
+                'right_image_topic': right_image_topic,
+            },
         ],
     )
 
@@ -153,7 +167,7 @@ def generate_launch_description() -> LaunchDescription:
     """生成 launch 描述。所有参数均有默认值，可被命令行 ``key:=value`` 覆盖。"""
     return LaunchDescription([
         # 参数文件（默认指向包内 config）
-        DeclareLaunchArgument('params_file', default_value=str(_default_params_file())),
+        DeclareLaunchArgument('camera_params_file', default_value=str(_default_params_file())),
 
         # 左设备 / 右设备（默认值来自 yaml；此处占位，生产请用 by-path/by-id）
         DeclareLaunchArgument('left_video_device', default_value=''),
