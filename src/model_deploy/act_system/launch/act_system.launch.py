@@ -153,9 +153,13 @@ def _make_act_node_process(context):
 
     ws_root = _find_workspace_root()
     src_dir = os.path.join(ws_root, 'src')
-    pythonpath = src_dir
+    # lerobot 以源码形式 vendor 在 third_party，真实推理（lerobot_policy 翻译官）
+    # 需要能 import lerobot，所以一并前置到 PYTHONPATH。
+    lerobot_src = os.path.join(
+        src_dir, 'model_deploy', 'third_party', 'lerobot', 'src')
+    pythonpath = src_dir + os.pathsep + lerobot_src
     if os.environ.get('PYTHONPATH'):
-        pythonpath = src_dir + os.pathsep + os.environ['PYTHONPATH']
+        pythonpath = pythonpath + os.pathsep + os.environ['PYTHONPATH']
 
     return [
         ExecuteProcess(

@@ -614,9 +614,9 @@ class _ActDeployRclpyPrimitives(_ActDeployComposition):
     # -- rclpy-backed ROS primitives ----------------------------------------
 
     def _ros_create_timer(self, period_s: float, callback: Callable[[], None]):
-        from rclpy.duration import Duration
-
-        return self.create_timer(Duration(seconds=period_s), callback)
+        # rclpy's create_timer takes the period as float seconds; passing a
+        # Duration raises TypeError at startup (period must be a number).
+        return self.create_timer(float(period_s), callback)
 
     def _ros_cancel_timer(self, timer: object) -> None:
         timer.cancel()
@@ -739,6 +739,7 @@ def main(argv: Optional[list] = None) -> int:
     from model_deploy.act.config import load_deploy_config
     from model_deploy.act.repo import load_act_runtime_resources
     from model_deploy.act.service.act_inference import ActInferenceService
+    from model_deploy.act.service.lerobot_policy import make_lerobot_policy_loader
 
     node: Optional[ActDeployNode] = None
     rc = 1
@@ -749,7 +750,9 @@ def main(argv: Optional[list] = None) -> int:
         config = load_deploy_config(
             args.config, command_output_enabled=args.enable_command_output
         )
-        resources = load_act_runtime_resources(config)
+        resources = load_act_runtime_resources(
+            config, load_policy=make_lerobot_policy_loader(config)
+        )
         inference_service = ActInferenceService(
             config,
             resources.state_normalizer,

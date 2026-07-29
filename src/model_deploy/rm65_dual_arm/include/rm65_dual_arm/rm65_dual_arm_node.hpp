@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // RM65 双臂主节点。单节点承载：
-//   - 发布 /arm/left_tcp_pose、/arm/right_tcp_pose（PoseStamped，frame_id 各自 base）
+//   - 发布 /arm/left_tcp_pose、/arm/right_tcp_pose（Pose，无 header；ACT 大脑按 Pose
+//     订阅，坐标系约定为各自 left/right_arm_base；历史上曾为 PoseStamped）
 //   - 发布 /hardware/rm65/health（HardwareHealth）
 //   - 订阅 /act/command/arm/left_target、/right_target（PoseStamped）
 //   - 订阅 /act/command/permit（CommandPermit）
@@ -26,6 +27,7 @@
 
 #include "act_interfaces/msg/command_permit.hpp"
 #include "act_interfaces/msg/hardware_health.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/set_bool.hpp"
@@ -110,9 +112,9 @@ private:
   // 许可守卫
   PermitGuard permit_guard_;
 
-  // 发布者
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr left_pose_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr right_pose_pub_;
+  // 发布者（TCP pose 发裸 Pose；命令订阅方向仍是 PoseStamped，见下方订阅者）
+  rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr left_pose_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr right_pose_pub_;
   rclcpp::Publisher<act_interfaces::msg::HardwareHealth>::SharedPtr health_pub_;
 
   // 订阅者

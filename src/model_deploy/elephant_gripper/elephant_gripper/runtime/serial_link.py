@@ -321,4 +321,12 @@ class GripperSerialLink:
     def _log(self, level: str, message: str) -> None:
         if self._logger is None:
             return
-        getattr(self._logger, level, self._logger.info)(message)
+        # rclpy loggers cache the severity per call site, so each severity must
+        # be dispatched from its own source line (a shared getattr(...)(message)
+        # line raises "Logger severity cannot be changed between calls").
+        if level == "error":
+            self._logger.error(message)
+        elif level == "warn":
+            self._logger.warn(message)
+        else:
+            self._logger.info(message)

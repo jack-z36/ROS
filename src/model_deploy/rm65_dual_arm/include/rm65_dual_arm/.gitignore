@@ -4,6 +4,7 @@ rm_define.h
 rm_interface.h
 rm_interface_global.h
 rm_service.h
+rm_version.h
 rm_base.h
 rm_base_global.h
 rm_service_global.h

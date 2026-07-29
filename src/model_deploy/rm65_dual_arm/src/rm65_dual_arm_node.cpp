@@ -26,8 +26,9 @@ double monotonic_now_sec()
 
 double ros_now_sec(const rclcpp::Node & node)
 {
-  const auto t = node.now();
-  return static_cast<double>(t.sec) + static_cast<double>(t.nanosec) * 1e-9;
+  // rclcpp::Time 没有 sec/nanosec 成员（那是消息 builtin_interfaces/Time 的字段），
+  // 用 seconds() 直接拿双精度秒。
+  return node.now().seconds();
 }
 
 // 把 PoseStamped 的 pose 转成 RmPose（含 euler），供 rm_movel 使用。
@@ -56,10 +57,10 @@ Rm65DualArmNode::Rm65DualArmNode(const rclcpp::NodeOptions & options)
   right_arm_ = std::make_unique<Rm65Arm>(
     Rm65Arm::Side::Right, config_.right_ip, config_.right_port, config_.right_frame_id);
 
-  // 发布者
-  left_pose_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>(
+  // 发布者（TCP pose 发裸 Pose，匹配 ACT 大脑的订阅类型）
+  left_pose_pub_ = create_publisher<geometry_msgs::msg::Pose>(
     config_.left_tcp_pose_topic, 10);
-  right_pose_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>(
+  right_pose_pub_ = create_publisher<geometry_msgs::msg::Pose>(
     config_.right_tcp_pose_topic, 10);
   health_pub_ = create_publisher<act_interfaces::msg::HardwareHealth>(
     config_.health_topic, 10);
@@ -304,10 +305,9 @@ std::string Rm65DualArmNode::handle_target(Rm65Arm::Side side,
 
 void Rm65DualArmNode::on_pose_timer()
 {
-  // 更新两侧状态并发布 TCP pose
-  auto publish_pose = [this](Rm65Arm * arm,
-                             rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub,
-                             const std::string & frame_id) {
+  // 更新两侧状态并发布 TCP pose（裸 Pose，无 header；坐标系约定见头文件注释）
+  auto publish_pose = [](Rm65Arm * arm,
+                         rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pub) {
       if (!arm) {
         return;
       }
@@ -315,18 +315,16 @@ void Rm65DualArmNode::on_pose_timer()
       if (!snap.has_pose) {
         return;  // 无合法 pose 不发布（契约：不发布伪造 pose）
       }
-      geometry_msgs::msg::PoseStamped msg;
-      msg.header.stamp = now();
-      msg.header.frame_id = frame_id;
+      geometry_msgs::msg::Pose msg;
       std::string reason;
-      if (!rm_pose_to_ros_pose(snap.pose, msg.pose, reason)) {
+      if (!rm_pose_to_ros_pose(snap.pose, msg, reason)) {
         // 转换失败说明 pose 非法，跳过本次发布
         return;
       }
       pub->publish(msg);
     };
-  publish_pose(left_arm_.get(), left_pose_pub_, config_.left_frame_id);
-  publish_pose(right_arm_.get(), right_pose_pub_, config_.right_frame_id);
+  publish_pose(left_arm_.get(), left_pose_pub_);
+  publish_pose(right_arm_.get(), right_pose_pub_);
 }
 
 void Rm65DualArmNode::on_health_timer()

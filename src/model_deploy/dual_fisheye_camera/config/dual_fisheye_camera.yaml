@@ -8,15 +8,15 @@
 #   - 时间戳优先 V4L2 buffer timestamp；QoS 用 sensor_data (BEST_EFFORT)。
 #
 # 默认值对齐阶段一 gopro_camera.yaml（640x480 @30Hz, YUYV, rgb8）。
-# 生产环境的真实 by-path 路径以部署机器实际 USB 拓扑为准；下述路径来自
-# config/all_sensor_nodes.yaml 中 gopro.left/right 结构，仅作占位示例，
-# 上线前必须按真机重新核对。
+# by-path 路径已按真机核对（2026-07-28，拔插法确认左右）：
+#   右 = usb-0:5 口（拔掉左相机后剩余的一台），左 = usb-0:1 口。
+# 注意：by-path 绑定的是 USB 物理口位，相机必须始终插回同一 USB 口。
 
 dual_fisheye_camera:
   ros__parameters:
     # ---- 左右设备（强制稳定路径） ----
-    left_video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.4.4:1.0-video-index0"
-    right_video_device: "/dev/v4l/by-path/pci-0000:00:0d.0-usb-0:3.4.4.3:1.0-video-index0"
+    left_video_device: "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:1:1.0-video-index0"
+    right_video_device: "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:5:1.0-video-index0"
 
     # ---- frame_id / 图像参数（对齐阶段一） ----
     left_frame_id: "left_fisheye"

@@ -10,8 +10,8 @@ RM65 双臂 ROS 2 节点（C++ SDK，**单节点承载双臂所有功能**）。
 
 | 方向 | topic | 类型 | 说明 |
 |---|---|---|---|
-| 发布 | `/arm/left_tcp_pose` | `geometry_msgs/msg/PoseStamped` | frame_id=`left_arm_base` |
-| 发布 | `/arm/right_tcp_pose` | `geometry_msgs/msg/PoseStamped` | frame_id=`right_arm_base` |
+| 发布 | `/arm/left_tcp_pose` | `geometry_msgs/msg/Pose` | 无 header；坐标系约定 `left_arm_base`（ACT 大脑按 Pose 订阅） |
+| 发布 | `/arm/right_tcp_pose` | `geometry_msgs/msg/Pose` | 无 header；坐标系约定 `right_arm_base`（ACT 大脑按 Pose 订阅） |
 | 发布 | `/hardware/rm65/health` | `act_interfaces/msg/HardwareHealth` | 左右臂连接/急停/错误码 |
 | 订阅 | `/act/command/arm/left_target` | `geometry_msgs/msg/PoseStamped` | frame_id 必须 `left_arm_base` |
 | 订阅 | `/act/command/arm/right_target` | `geometry_msgs/msg/PoseStamped` | frame_id 必须 `right_arm_base` |
@@ -19,6 +19,8 @@ RM65 双臂 ROS 2 节点（C++ SDK，**单节点承载双臂所有功能**）。
 | service | `/hardware/rm65/emergency_stop` | `std_srvs/srv/SetBool` | `true` 停两臂，`false` 恢复 |
 
 launch 默认把 `/arm/{left,right}_tcp_pose` remap 到 `/act/observation/arm/{left,right}_tcp_pose`，让 ACT 零配置订阅。
+
+注意两个方向类型不同：发布 TCP pose 是裸 `Pose`（大脑不读 header）；订阅命令目标仍是 `PoseStamped`（需要 frame_id/时间戳做安全校验）。
 
 ---
 
@@ -53,11 +55,10 @@ launch 默认把 `/arm/{left,right}_tcp_pose` remap 到 `/act/observation/arm/{l
 
 睿尔曼 C/C++ SDK 以 vendor 方式集成。官方 SDK 不提供 find_package/pkg-config。
 
-1. 从官方 RM_API2 / ros2_rm_robot 的 `rm_driver/lib/` 拷入库文件到本包 `lib/`：
-   - `libRM_Service.so` → `libRM_Service.so.1.0.0`（soname 软链）
-   - `libRM_Service.so.1` / `.so.1.0` / `.so.1.0.0`
-2. 从官方 SDK 拷入头文件到 `include/rm65_dual_arm/`：
-   - `rm_define.h` / `rm_interface.h` / `rm_interface_global.h` / `rm_service.h`
+1. 从官方 RM_API2 仓库 `C++/linux/linux_x86_c++_v1.1.6/` 拷入库文件到本包 `lib/`：
+   - `libapi_cpp.so`（旧版叫 libRM_Service.so，导出接口不变）
+2. 从官方 SDK `C++/include/` 拷入头文件到 `include/rm65_dual_arm/`：
+   - `rm_define.h` / `rm_interface.h` / `rm_interface_global.h` / `rm_service.h` / `rm_version.h`
 3. 装库到系统路径：`sudo bash src/model_deploy/rm65_dual_arm/lib/install_libs.sh`
 
 详见 `lib/SDK_VENDOR_README.txt`。`.so` 与 vendor 头文件不提交（见 `.gitignore`）。

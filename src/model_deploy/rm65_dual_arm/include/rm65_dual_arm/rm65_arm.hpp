@@ -14,7 +14,7 @@
 //       id>0 成功 / -1 连接失败 / NULL 达到最大连接数 5
 //   - rm_delete_robot_arm(rm_robot_handle*) -> int
 //   - rm_get_current_arm_state(handle, rm_current_arm_state_t*) -> int
-//       结构体含 pose(rm_pose_t) / joint[ARM_DOF] / arm_err(uint) / sys_err(uint)
+//       结构体含 pose(rm_pose_t) / joint[ARM_DOF] / err(rm_err_t: err_len+err[24])
 //   - rm_movel(handle, rm_pose_t, v, r, trajectory_connect, block) -> int
 //       v 速度百分比 1..100，block 默认 0（非阻塞）
 //   - rm_set_arm_emergency_stop(handle, bool state) -> int

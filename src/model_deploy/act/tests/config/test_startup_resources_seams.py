@@ -63,7 +63,8 @@ class TestDefaultDeployYaml:
     def test_default_yaml_parses(self) -> None:
         cfg = load_deploy_config(DEPLOY_YAML)
         assert isinstance(cfg, DeployConfig)
-        assert cfg.bundle.bundle_dir is None
+        # 真实部署配置：bundle_dir 指向导出的 deploy_bundle（不再是 null 占位）
+        assert cfg.bundle.bundle_dir is not None
         assert cfg.runtime.max_observation_age_sec > 0
         assert cfg.runtime.max_inference_requests == 1
         assert cfg.runtime.max_pending_chunks == 1

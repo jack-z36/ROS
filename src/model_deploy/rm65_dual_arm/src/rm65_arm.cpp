@@ -174,10 +174,21 @@ const ArmSnapshot & Rm65Arm::update_state()
     // -1/-2 通常意味着链路问题，这里不主动断连（重连由主节点监控层决定）
     return snapshot_;
   }
-  // arm_err / sys_err（uint16 文档，取非 0 记录）
-  const uint32_t arm_err = state.arm_err;
-  const uint32_t sys_err = state.sys_err;
-  snapshot_.controller_err = static_cast<int32_t>(arm_err != 0 ? arm_err : sys_err);
+  // 控制器错误：RM_API2 v1.1.x 的状态结构体用 rm_err_t（err_len + err[]）
+  // 上报错误码列表（旧版是 arm_err/sys_err 两个字段），取第一个非 0 错误记录。
+  int32_t controller_err = 0;
+  const uint8_t err_len = state.err.err_len;
+  const uint8_t err_count =
+    err_len > sizeof(state.err.err) / sizeof(state.err.err[0])
+      ? static_cast<uint8_t>(sizeof(state.err.err) / sizeof(state.err.err[0]))
+      : err_len;
+  for (uint8_t i = 0; i < err_count; ++i) {
+    if (state.err.err[i] != 0) {
+      controller_err = static_cast<int32_t>(state.err.err[i]);
+      break;
+    }
+  }
+  snapshot_.controller_err = controller_err;
   RmPose pose;
   if (fill_pose_from_state(state, pose)) {
     snapshot_.pose = pose;

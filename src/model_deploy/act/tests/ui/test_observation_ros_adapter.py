@@ -252,7 +252,9 @@ class TestHandleImage:
         adapter.handle_image("left", MockImageMsg(224, 224, "rgb8"))
 
         img = adapter._collector._images["left"]
-        assert img.shape == (3, 224, 224)  # CHW
+        # 尺寸跟随配置的 image_size（真实部署为 640），不硬编码
+        size = config.image.image_size
+        assert img.shape == (3, size, size)  # CHW
         assert img.dtype == np.float32
         assert img.min() >= 0.0
         assert img.max() <= 1.0
@@ -330,9 +332,10 @@ class TestTryPublishObservation:
         snap = adapter._buffer.latest_observation(max_age_s=30.0)
         assert snap is not None
         assert snap.encoded_state.shape == (16,)
-        # CHW images in the snapshot
-        assert snap.images["left"].shape == (3, 224, 224)
-        assert snap.images["right"].shape == (3, 224, 224)
+        # CHW images in the snapshot（尺寸跟随配置的 image_size）
+        size = config.image.image_size
+        assert snap.images["left"].shape == (3, size, size)
+        assert snap.images["right"].shape == (3, size, size)
 
     def test_try_publish_missing_records(self) -> None:
         adapter = _new_adapter()

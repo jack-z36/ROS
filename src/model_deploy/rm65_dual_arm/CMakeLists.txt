@@ -17,7 +17,8 @@ find_package(act_interfaces REQUIRED)
 
 # ---------------------------------------------------------------------------
 # 睿尔曼 C/C++ SDK 以 vendor 方式集成：头文件在 include/rm65_dual_arm/，
-# libRM_Service.so 在 lib/。官方 SDK 不提供 find_package / pkg-config，
+# libapi_cpp.so 在 lib/（RM_API2 v1.1.6，旧版叫 libRM_Service.so）。
+# 官方 SDK 不提供 find_package / pkg-config，
 # 只能手动 include_directories + link_directories + target_link_libraries。
 # 运行前需先 `sudo bash lib/install_libs.sh` 把 .so 装到系统库路径。
 # ---------------------------------------------------------------------------
@@ -25,7 +26,7 @@ find_package(act_interfaces REQUIRED)
 include_directories(include)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
-# 节点可执行文件依赖厂商 SDK 头文件（rm_service.h 等）与 libRM_Service.so。
+# 节点可执行文件依赖厂商 SDK 头文件（rm_service.h 等）与 libapi_cpp.so。
 # 这些文件不随仓库提交（按 lib/SDK_VENDOR_README.txt 由开发者从官方 SDK 拷入）。
 # 当 SDK 头文件缺失时，跳过节点构建，但纯逻辑测试（pose_conversion /
 # target_validator / delta_guard / permit_guard）仍可编译验证。
@@ -49,7 +50,7 @@ if(RM65_SDK_AVAILABLE)
     src/permit_guard.cpp
     src/rm65_arm.cpp
   )
-  target_link_libraries(rm65_dual_arm_node RM_Service)
+  target_link_libraries(rm65_dual_arm_node api_cpp)
   ament_target_dependencies(rm65_dual_arm_node
     rclcpp
     geometry_msgs
@@ -61,7 +62,7 @@ if(RM65_SDK_AVAILABLE)
   install(TARGETS rm65_dual_arm_node DESTINATION lib/${PROJECT_NAME})
   # 安装 SDK 库随包可被运行时找到
   install(DIRECTORY lib/ DESTINATION lib/${PROJECT_NAME}
-          FILES_MATCHING PATTERN "libRM_Service.so*")
+          FILES_MATCHING PATTERN "libapi_cpp.so*")
 endif()
 
 # launch/config 无论 SDK 是否就绪都安装（便于离线检查与文档引用）

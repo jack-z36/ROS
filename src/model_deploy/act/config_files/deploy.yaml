@@ -5,13 +5,13 @@
 # Action-smoothing fields and legacy bridge/mux sections are intentionally absent.
 
 bundle:
-  bundle_dir: null  # must be set at runtime
+  bundle_dir: /home/hit/模型权重/UMI_ACT/act_pretrained_model_20260702_13_010000/deploy_bundle
 
 runtime:
   mode: dry-run
   control_hz: 30.0
   inference_hz: 10.0
-  chunk_size: 30
+  chunk_size: 100
   execute_horizon: 10
   prefetch_steps: 5
   state_dim: 16
@@ -29,7 +29,7 @@ runtime:
   task: bimanual manipulation
 
 image:
-  image_size: 224
+  image_size: 640
   resize_mode: resize_pad
   transport: raw
 

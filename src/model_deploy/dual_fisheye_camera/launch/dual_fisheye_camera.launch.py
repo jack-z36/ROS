@@ -16,6 +16,8 @@
 
 import os
 
+import yaml
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
@@ -40,6 +42,21 @@ def _load_yaml_params(context):
     return params_file
 
 
+def _yaml_default_param(params_file, key):
+    """从参数 yaml 读 dual_fisheye_camera.ros__parameters 下的默认值。
+
+    v4l2_camera_node 的节点名/命名空间与 yaml 顶层键不匹配，yaml 里的
+    left/right_video_device 不会自动生效，必须在 launch 层显式读出。
+    """
+    with open(params_file, 'r', encoding='utf-8') as fh:
+        data = yaml.safe_load(fh) or {}
+    return (
+        data.get('dual_fisheye_camera', {})
+        .get('ros__parameters', {})
+        .get(key, '')
+    )
+
+
 def _make_camera_pair(context, side: str):
     """构造一侧的 v4l2-ctl 设帧率进程 + v4l2_camera_node，含启动门控。
 
@@ -47,13 +64,17 @@ def _make_camera_pair(context, side: str):
     camera_node 应在 set_frame_rate 退出后启动（调用方负责 RegisterEventHandler）。
     """
     # 预解析参数（多实例安全）
+    params_file = _load_yaml_params(context)
     video_device = LaunchConfiguration(f'{side}_video_device').perform(context)
+    if not video_device:
+        # launch 参数未覆盖时，回退到 yaml 里的设备路径（否则空路径会
+        # 直接覆盖 yaml，导致 "Cannot open device"）
+        video_device = _yaml_default_param(params_file, f'{side}_video_device')
     frame_rate = LaunchConfiguration('frame_rate').perform(context)
     frame_id = LaunchConfiguration(f'{side}_frame_id').perform(context)
     image_topic = LaunchConfiguration(f'{side}_image_topic').perform(context)
     namespace = LaunchConfiguration(f'{side}_namespace').perform(context)
     node_name = LaunchConfiguration(f'{side}_node_name').perform(context)
-    params_file = _load_yaml_params(context)
 
     # 1) 先用 v4l2-ctl 设帧率（jazzy v4l2_camera 不暴露 publish_rate，
     #    单靠 yaml 的 time_per_frame 不可靠，故沿用阶段一做法显式设一次）
