@@ -18,6 +18,9 @@ else
   DEFAULT_CONFIG_KIND="smoke test"
 fi
 DATA_CLEAN_SOURCE="${WORKSPACE_DIR}/src/data_clean"
+LEROBOT_PYTHON="${DATA_CLEAN_LEROBOT_PYTHON:-/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python}"
+WEB_HOST="${DATA_CLEAN_WEB_HOST:-127.0.0.1}"
+WEB_PORT="${DATA_CLEAN_WEB_PORT:-0}"
 # mcap / mcap-ros2-support are installed into the data-clean conda env from the
 # official wheels. Do NOT prepend the in-tree 3rdparty copy under VTLA_octopus:
 # that checkout is incomplete (missing mcap/_chunk_builder.py) and would shadow
@@ -58,6 +61,11 @@ Environment overrides:
   DATA_CLEAN_CONFIG       Default config file path.
   DATA_CLEAN_CONDA_ENV    Conda environment directory.
   DATA_CLEAN_PYTHON       Python executable path.
+  DATA_CLEAN_LEROBOT_PYTHON
+                          Official LeRobot 0.5.2 exporter Python. Defaults to
+                          /home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python.
+  DATA_CLEAN_WEB_HOST     Web bind host. Defaults to 127.0.0.1.
+  DATA_CLEAN_WEB_PORT     Web bind port. Defaults to 0 (automatic).
   DATA_CLEAN_FORGE_SOURCE Forge source checkout. Defaults to /home/hit/forge.
   DATA_CLEAN_FORGE_VENV   Forge virtualenv. Defaults to DATA_CLEAN_FORGE_SOURCE/.venv.
 
@@ -100,6 +108,7 @@ fi
 
 export DATA_CLEAN_FORGE_SOURCE="${FORGE_SOURCE}"
 export DATA_CLEAN_FORGE_VENV="${FORGE_VENV}"
+export DATA_CLEAN_LEROBOT_PYTHON="${LEROBOT_PYTHON}"
 
 PYTHONPATH_ENTRIES=("${DATA_CLEAN_SOURCE}")
 if [[ -d "${FORGE_SOURCE}/forge" ]]; then
@@ -168,14 +177,29 @@ if ! has_arg "--config" "${ARGS[@]}"; then
 fi
 
 if [[ "$#" -eq 0 ]]; then
+  if [[ ! -x "${LEROBOT_PYTHON}" ]]; then
+    echo "Official LeRobot exporter Python not found or not executable: ${LEROBOT_PYTHON}" >&2
+    echo "Set DATA_CLEAN_LEROBOT_PYTHON to the pinned LeRobot 0.5.2 environment." >&2
+    exit 1
+  fi
+  if ! "${LEROBOT_PYTHON}" -c \
+    "from service.lerobot_official_exporter import assert_official_exporter_runtime; assert_official_exporter_runtime()" \
+    >/dev/null; then
+    echo "Official LeRobot exporter preflight failed; refusing to start production Web mode." >&2
+    exit 1
+  fi
   if [[ "${DATA_CLEAN_RAW_JSON:-0}" != "1" ]]; then
     echo "Data clean web UI"
     echo "Workspace: ${WORKSPACE_DIR}"
     echo "Python: ${PYTHON_BIN}"
+    echo "LeRobot exporter Python: ${LEROBOT_PYTHON}"
     echo "Default config: ${DEFAULT_CONFIG} (${DEFAULT_CONFIG_KIND})"
     echo
   fi
-  exec "${PYTHON_BIN}" -m ui.web_launcher --config "${DEFAULT_CONFIG}"
+  exec "${PYTHON_BIN}" -m ui.web_launcher \
+    --config "${DEFAULT_CONFIG}" \
+    --host "${WEB_HOST}" \
+    --port "${WEB_PORT}"
 fi
 
 if [[ "${DATA_CLEAN_RAW_JSON:-0}" != "1" ]]; then

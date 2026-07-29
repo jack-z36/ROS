@@ -20,8 +20,11 @@ raw MCAP
   -> [场景一] cleaned MCAP
   -> [场景二] MCAP_A
   -> [场景三] aligned MCAP
-  -> [临时桥接] 04_forge_bridge/forge_ready.mcap
-  -> [Forge Python fallback] 05_lerobot_v3_bimanual/
+  -> [标准 bridge] 04_forge_bridge/forge_ready.mcap
+  -> [官方 LeRobot 0.5.2 writer] LeRobot v3 dataset
+  -> [官方兼容门禁] loader / parquet / video / stats / ACT batch
+  -> [非阻断业务评估] Forge inspect / quality
+  -> [事务发布] dataset + sidecar
 ```
 
 当前已验证样例产物位于：
@@ -35,7 +38,7 @@ asset/阶段二：数据清洗/dev/full_flow_random_bimanual/
 - `5` 个 raw MCAP 聚合为 `5 episodes / 773 frames`，Forge quality 总分 `8.39/10`，`flagged=0`。
 - 用户选择外部父目录后，已成功发布 `/home/hit/下载/lerobot/20260601_15`，包含 `1 episode / 273 frames`。
 
-正式长期目标仍是 MCAP-centric canonical dataset。阶段二输出左右 arm-base 下的绝对 TCP 目标位姿；训练侧 LeRobot 框架按训练策略负责转换为差分或相对表示。当前 LeRobot v3 仍是临时双臂格式桥接路径。
+阶段二输出左右 arm-base 下的绝对 TCP 目标位姿；训练侧 LeRobot 框架按训练策略负责转换为差分或相对表示。正常 Web 新任务的最终训练格式固定由官方 LeRobot `0.5.2 / v3.0` 写出。
 
 ## 2. 分层原则
 
@@ -104,7 +107,7 @@ data_clean_calibrated.yaml
 - 缺陷文件按 `web_file_management.rejected_mcap_dir` 自动移动到中文原因目录，job run 目录写出 `precheck_report.json`。
 - 批次正常收尾时，成功进入最终 dataset 的 raw MCAP 移动到 `web_file_management.completed_mcap_dir`，单文件清洗失败的 raw MCAP 移动到缺陷目录，输入目录只保留未处理数据。
 - 创建任务前做中间产物空间估算：`keep_all` 按全批累计估算；`production_cleanup` 按并发 worker 峰值中间产物、聚合前必须暂存的 bridge/dataset 产物和 `safety_gb` 估算，并按空间收紧实际 worker。
-- 默认 `production_cleanup` 策略会在成功阶段删除 cleaned/MCAP_A/aligned/forge_ready 等大型上游中间 MCAP，只保留最终 LeRobot dataset、摘要和必要报告。
+- 默认 `production_cleanup` 策略会在发布事务提交后删除 cleaned/MCAP_A/aligned/forge_ready 等大型上游中间 MCAP，只保留最终 LeRobot dataset、摘要和必要报告。
 
 ## 4. 场景一：raw MCAP -> cleaned MCAP
 
@@ -246,9 +249,9 @@ mean, std, min, max
 
 `scene3_full_flow_check` 默认使用 formal pose source：`/left_arm_base_tcp_pose` 与 `/right_arm_base_tcp_pose`。未完成标定时，可显式使用 `pose_source_profile=format-only` 消费旧 common pose 做结构烟测。
 
-## 7. 临时 Forge bridge：aligned MCAP -> LeRobot v3
+## 7. 标准 bridge 与官方 LeRobot v3 导出
 
-临时 Forge bridge 不修改正式 aligned MCAP，而是写出单独目录：
+标准 bridge 不修改正式 aligned MCAP，而是写出单独目录：
 
 ```text
 04_forge_bridge/
@@ -262,24 +265,22 @@ mean, std, min, max
 
 | 模块                                   | 职责                                                                                                                            |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `service/forge_bridge.py`            | 消费 aligned MCAP，按 LeRobot feature 白名单拼接 state 和固定 `t+1 action`，写出 Forge-ready MCAP 与 sidecar；默认布局仍为 32 维 state 和 16 维 action。 |
-| `runtime/forge_bridge_check.py`      | bridge dev check，支持 `format-only` 与 `formal`。                                                                          |
-| `runtime/forge_bridge_to_lerobot.py` | Forge Python fallback，显式把 topic config 传给 `MCAPReader`；支持单 bridge 转换和多 bridge 聚合写出一个 LeRobot v3 dataset。 |
-| `service/lerobot_timestamp_rebase.py` | LeRobot v3 产物后处理：`write_dataset` 写出后，按 episode 把 `timestamp` 相对化（每 episode 第一帧 = 0.0，满足 LeRobot v3 训练要求）；只改 `data/chunk-*/file-*.parquet` 的 `timestamp` 列，不动 video/info/stats/episodes meta，不改 forge 源码。 |
+| `service/forge_bridge.py` | 消费 aligned MCAP，按固定生产契约拼接 16 维 state 与 16 维 `t+1 action`，写出标准 bridge MCAP。 |
+| `repo/bridge_mcap_reader.py` | 按 timestamp 流式解码 bridge，每次只保留一帧的 state/action/双目图像。 |
+| `service/lerobot_official_exporter.py` | 独立进程调用官方 `LeRobotDataset.create/add_frame/save_episode/finalize`，按 Web 文件顺序一文件一 episode。 |
+| `service/lerobot_official_validator.py` | 用训练侧官方 loader 阻断检查 metadata、parquet dtype、索引、双目 H.264、stats 和 ACT delta-timestamp batch。 |
+| `runtime/official_lerobot_export.py` | JSON 请求/响应适配与固定环境预检；生产路径不回退 Forge writer。 |
+| `service/lerobot_act_acceptance.py` | CI/版本验收：真实 loader batch 经过 ACT processor 后执行一次前向与反向；不在每个生产任务中运行。 |
 
 ### 7.1 LeRobot 临时 step 语义
 
-`observation.state` 默认 32 维；普通 Web 配置中心可在现有 aligned MCAP 字段白名单内调整非必选段落启用状态和排序：
+`observation.state` 固定 16 维：
 
 ```text
 [0:7]   left_tcp_pose_t
 [7:14]  right_tcp_pose_t
 [14]    left_gripper_width_t
 [15]    right_gripper_width_t
-[16:20] tactile_left_gripper_1_t
-[20:24] tactile_left_gripper_2_t
-[24:28] tactile_right_gripper_1_t
-[28:32] tactile_right_gripper_2_t
 ```
 
 `action` 默认 16 维，固定使用下一帧 `t+1` 的绝对目标；左右 TCP pose 必选，夹爪段落可配置：
@@ -293,18 +294,14 @@ mean, std, min, max
 
 最后一帧因没有 `t+1` action，会在 bridge 阶段丢弃。
 
-Forge writer 写入的 `timestamp` 是 MCAP 绝对 Unix 时间戳（`log_time/1e9`）。LeRobot v3 训练要求每个 episode 第一帧 `timestamp = 0.0`，因此 `convert_forge_bridges_to_lerobot` 在 `write_dataset` 之后会调用 `service/lerobot_timestamp_rebase.py`：按 episode 减去本 episode 第一帧时间戳，原地重写 `data/chunk-*/file-*.parquet`，保留真实帧间隔并保证幂等。该后处理不改 forge 生成逻辑，不动 video、`info.json`、`stats.json` 和 episodes meta。
-
-实际导出的 shape、offset、单位和语义会写入 `forge_bridge_schema.json`、`forge_bridge_report.json` 和每个 Web job 的 `config_snapshot.yaml`。
-
-训练前技术体检读取同一份 LeRobot feature contract。它不再固定要求 `observation.state=32` 或 `action=16`；只要最终 dataset 的实际 shape 与当前 contract 一致，维度变化不会被视为格式阻断。动作贴边/饱和维度标签同样按当前 action schema 的 offset 和 component 生成。
+时间戳不再做 parquet 后处理。官方 writer 自动按 `frame_index / 15` 生成 episode 内时间戳，并统一写出 episode metadata、stats、data/video 索引与 parquet dtype。
 
 ### 7.2 format-only 与 formal
 
 - `format-only`：允许旧 common pose 做结构烟测，报告固定 `training_eligible=false`。
 - `formal`：要求 arm-base pose source 与标定就绪；缺字段、非有限值、夹爪超出 `[0,1]`、pose 绝对值超过默认 `10m` 等会阻止导出。
 
-当前已验证样例是 `format-only`，Forge quality 分数只能证明格式和基础数据可检查，不能证明正式可训练。
+Forge quality 分数只表示业务质量，不证明格式可训练；只有官方兼容门禁通过才能发布。
 
 ## 8. UI 与开发者检验
 
@@ -317,12 +314,12 @@ Forge writer 写入的 `timestamp` 是 MCAP 绝对 Unix 时间戳（`log_time/1e
 - 正常用户语义是“批次 LeRobot v3 数据集构建”：用户勾选的多个 raw MCAP 最终聚合为一个 LeRobot v3 dataset。
 - 输出父目录默认使用 `asset/阶段二：数据清洗/prod/exports/lerobot/`，但正常网页允许用户自由选择任意本机目录；preview/create 不做路径限制，也不显示路径风险提示。该行为是 `DOCS/阶段二：数据清洗/约束文件/文件存放规范.md` 中仅针对最终 LeRobot dataset 的受控例外。
 - 最终 dataset 写入 `<output_parent>/<dataset_name>/`，sidecar 和中间产物写入 `asset/阶段二：数据清洗/dev/debug/web_jobs/<dataset_name>_data_clean_sidecar/`。
-- 当前调度真实主链路：场景一 cleaned MCAP、场景二 MCAP_A、场景三 aligned MCAP、临时 Forge bridge、多 bridge 聚合 LeRobot v3、Forge inspect/quality。
+- 当前调度真实主链路：场景一 cleaned MCAP、场景二 MCAP_A、场景三 aligned MCAP、标准 bridge、官方 LeRobot 聚合与阻断门禁、Forge 非阻断业务质量评估。
 - 结果页提供三个视图：评测报告分数可视化、从最终 LeRobot v3 `observation.state` 读取的左右 TCP 3D 轨迹、逐文件状态；轨迹 API 为 `GET /api/jobs/{job_id}/trajectory`。
 - 3D 轨迹使用固定右手坐标系工程视角，显示局部原点固定在画布左下角；局部原点取当前视图 `bounds.min`，不是物理坐标 `(0, 0, 0)`，原始坐标值不会被改写。单个 episode 按原始时间戳播放，全部 episode 仅做静态总览。普通 Web 使用左右 `arm_base` 数据，必须分屏或明确标注不同物理坐标系，不能暗示双手位于同一世界坐标；`format-only/common_frame` 叠加仅用于开发 smoke。
 - 普通网页固定使用左右 arm-base pose 的生产链路，不向普通用户暴露 `format-only/formal`；开发 smoke 仍可显式使用 `format-only`。
 - 单个 MCAP 失败不会阻止其他成功 bridge episodes 进入最终 dataset；至少一个 MCAP 成功时批次可发布为 `partial_failed`。
-- 用户主动取消时，Runtime staging、最终 dataset 和 sidecar 均回滚；历史删除只删除网页摘要，不删除真实产物。
+- 用户主动取消会持久化，在当前安全边界停止；有效 checkpoint 和未发布 staging 保留，重启后不会自动恢复。历史删除只删除任务记录，不删除真实产物。
 - 独立配置中心展示左右夹爪标定状态、`camera_from_tcp.translation_mm`、`work_frames`、场景二 pose/tactile 滤波生产默认参数和 LeRobot v3 feature 段落。夹爪配置由 gripper-only GoPro 向导自动生成；人工平移输入明确标注 `mm`，机械臂 base 旋转使用 Euler `rad`。Parser 在进入 Runtime 前统一换算为位置 `m`，最终 cleaned MCAP 的 arm-base TCP 位置也保持 `m`。
 - 每个 job 必须写出可复现 snapshot；生产配置缺失或 RealMan SDK 不可用时禁止启动。
 
@@ -333,19 +330,21 @@ Web UI 的批次处理模型：
   -> 每个文件独立执行 scene1 / scene2 / scene3 / bridge
   -> 单文件失败只记录错误，不中断其他文件
   -> 聚合所有成功 bridge episode
-  -> 写入一个标准 LeRobot v3 dataset
-  -> 运行 Forge inspect / quality
-  -> 发布 dataset 与 sidecar
+  -> 官方 LeRobot 0.5.2 写入一个 v3 dataset
+  -> 官方兼容门禁
+  -> Forge inspect / quality
+  -> 同文件系统事务发布 dataset 与 sidecar
 ```
 
 关键行为：
 
-- 多批次可以并行运行，所有批次共享全局 worker 预算，默认最多 `6` 个文件处理 worker。
+- SQLite 持久 worker 一次领取一个 job；job 内文件共享 worker 预算，最终视频聚合始终单 job 执行。
 - 页面轮询任务状态；刷新或关闭浏览器不会取消任务。
-- Runtime 先写 `src/data_clean/runs/web_jobs/outputs/staging/<job_id>/`，发布成功后再移动到最终目录。
-- 用户取消任务或批次级异常时回滚本批次发布产物；普通单文件失败时保留成功 episode。
+- `data_clean.sqlite3` 是 job、文件、checkpoint、事件和发布事务的唯一权威；终态 JSON 只是 sidecar 快照。
+- 每阶段采用 attempt 临时目录、产物 manifest 校验、原子 rename、checkpoint 提交；owner lease 与 heartbeat 支持服务重启恢复。
+- 最终 dataset staging 与目标位于同一输出文件系统；overwrite 发布使用 `prepared -> old_backed_up -> new_installed -> committed` 事务恢复。
 - Forge 低分或 flags 只形成质量警告，不阻止 dataset 发布。
-- 历史摘要持久化在 `src/data_clean/runs/web_jobs/jobs/*.json`；删除历史摘要不删除真实 dataset。
+- 官方兼容失败阻止发布；失败 staging/bridge 进入 job 诊断目录并保留 7 天。
 
 Web JSON API：
 
@@ -373,7 +372,8 @@ Web JSON API：
 | `POST`   | `/api/jobs`                          | 创建批次数据集构建任务。                        |
 | `GET`    | `/api/jobs/{job_id}`                 | 获取任务、阶段和逐文件状态。                    |
 | `GET`    | `/api/jobs/{job_id}/trajectory`      | 读取或生成轨迹摘要。                            |
-| `POST`   | `/api/jobs/{job_id}/cancel`          | 取消批次并回滚。                                |
+| `POST`   | `/api/jobs/{job_id}/cancel`          | 持久取消，在安全边界停止且不自动恢复。          |
+| `POST`   | `/api/jobs/{job_id}/resume`          | 从仍有效的 checkpoint 手动恢复 failed job。     |
 | `POST`   | `/api/jobs/{job_id}/retry-failed`    | 以失败 MCAP 创建新任务草稿。                    |
 | `POST`   | `/api/jobs/{job_id}/open-visualizer` | 按需启动 Forge Web Viewer。                     |
 | `DELETE` | `/api/history/{job_id}`              | 只删除网页历史摘要。                            |
@@ -385,6 +385,7 @@ Web JSON API：
 | `reports/forge_inspect.json`          | Forge inspect 原始报告。                                              |
 | `reports/forge_quality.json`          | Forge quality 原始报告。                                              |
 | `reports/forge_quality_flagged.json`  | flagged episode 列表。                                                |
+| `reports/official_compatibility.json` | 官方 loader、dtype、索引、视频、stats 与 ACT batch 阻断门禁报告。     |
 | `reports/quality_visual_summary.json` | 评测页总分、维度分、训练前技术体检、逐 episode 分数和 flags 缓存。   |
 | `reports/training_readiness_summary.json` | PI0.5 / VLA 训练前技术体检摘要；包含 LeRobot feature contract fingerprint，契约变化后自动重算。 |
 | `reports/trajectory_summary.json`     | 轨迹页 episode、时间戳、左右 TCP pose、bounds 和坐标系 profile 缓存。 |
@@ -408,7 +409,7 @@ projection_hint             # right-handed + local_bounds_min
 - 场景一：位姿配置、位姿转换、夹爪提取、夹爪配置、输出契约、smoke test。
 - 场景二：异常检测、数据补全、pose filter、tactile filter、MCAP_A writer。
 - 场景三：MCAP_A 输入、step timeline、字段对齐、alignment report、aligned MCAP 写出、full flow。
-- 临时 bridge：Forge bridge 按 LeRobot feature contract 生成 state/action，默认 32 维 state 与 16 维 action。
+- 标准 bridge：按生产契约生成 16 维 state 与 16 维 action。
 
 Service 场景最终验收仍应由用户本人运行 dev menu 后确认；自动化测试只能证明局部实现正确。
 
@@ -456,16 +457,14 @@ asset/阶段二：数据清洗/dev/debug/web_jobs/<dataset_name>_data_clean_side
 - `PyYAML`
 - `pyarrow`
 - ROS2 CDR 解码所需的本地 Python 环境
-- 外部 Forge 环境，用于 LeRobot v3 inspect/convert/quality
+- 固定 LeRobot 0.5.2 环境，用于官方 v3 写出与格式门禁
+- 外部 Forge 环境，仅用于 inspect/quality
 
 `start_data_clean.sh` 会把以下目录加入 `PYTHONPATH`：
 
 - `src/data_clean`
 - `/home/hit/forge`（可用 `DATA_CLEAN_FORGE_SOURCE` 覆盖）
-- `src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap`
-- `src/VTLA_octopus-master/octopus/3rdparty/mcap/python/mcap-ros2-support`
-
-Forge venv 的 `site-packages` 不应全局前置到 `PYTHONPATH`，否则可能覆盖 data-clean 环境中的 OpenCV。`runtime/forge_bridge_to_lerobot.py` 会在 LeRobot 写出阶段把 `DATA_CLEAN_FORGE_VENV` 的依赖路径追加到 `sys.path` 末尾，仅用于补齐 Forge/视频编码依赖。
+Forge venv 的 `site-packages` 不应全局前置到 `PYTHONPATH`，否则可能覆盖 data-clean 环境中的 OpenCV。官方 LeRobot writer 在独立进程和固定环境中运行。
 
 ## 11. 与上下游的关系
 
@@ -476,13 +475,13 @@ Forge venv 的 `site-packages` 不应全局前置到 `PYTHONPATH`，否则可能
 
 下游：
 
-- 当前临时下游是 Forge/LeRobot v3，用于格式烟测和基础质量检查。
+- 当前生产下游是官方 LeRobot 0.5.2 / v3.0 dataset。
 - 正式下游仍是阶段三模型训练，需要 canonical dataset 和正式 action 语义。
 
 边界：
 
 - `data_clean` 不启动 Octopus，不负责实时采集。
 - `data_clean` 不修改原始 MCAP；所有处理写入独立产物目录。
-- 临时 Forge bridge 不替代正式 canonical dataset。
+- Forge writer 只保留为非生产对照工具。
 - `format-only` 只用于开发 smoke，不是普通网页模式。
 - 修改清洗算法、topic 契约、配置项、运行入口或导出语义时，必须同步更新本文件和阶段二顶层文档。

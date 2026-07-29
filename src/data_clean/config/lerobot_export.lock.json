@@ -1,0 +1,26 @@
+{
+  "python": "3.12",
+  "source_fingerprint": "5bd894ae71a009dad2fc6c2d468e284f0b23f75e20a0bda9ff49d6af15e12174",
+  "packages": {
+    "lerobot": "0.5.2",
+    "torch": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "torchcodec": "0.11.1",
+    "datasets": "4.8.5",
+    "numpy": "2.2.6",
+    "pyarrow": "25.0.0",
+    "av": "15.1.0",
+    "opencv-python-headless": "4.13.0.92",
+    "mcap": "1.3.1",
+    "mcap-ros2-support": "0.5.7",
+    "pillow": "12.2.0",
+    "huggingface-hub": "1.24.0",
+    "imageio": "2.37.0",
+    "imageio-ffmpeg": "0.6.0",
+    "diffusers": "0.35.2",
+    "deepdiff": "8.6.1",
+    "pynput": "1.8.1",
+    "pyserial": "3.5",
+    "rerun-sdk": "0.26.2"
+  }
+}

@@ -44,3 +44,30 @@
 ./start_data_clean.sh --cli        # 命令行模式
 ./start_data_clean.sh --dev        # 开发者验证菜单
 ```
+
+## 官方 LeRobot 0.5.2 导出环境
+
+Web 生产任务不使用 Forge writer。最终 dataset 由独立 Python 3.12 环境中的仓库内
+`src/model_deploy/third_party/lerobot` `0.5.2` 写出：
+
+- 默认路径：`/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export`
+- 依赖锁：`config/lerobot_export.lock.json`
+- 创建/验收：`runtime/create_lerobot_export_env.sh`
+- 覆盖变量：`DATA_CLEAN_LEROBOT_PYTHON`
+
+`start_data_clean.sh` 启动 Web 前会检查 Python、LeRobot 版本、核心依赖版本和仓库源码
+指纹；不一致时拒绝启动生产 Web。官方导出进程使用 JSON 请求/响应边界，Forge 只在
+导出后执行 inspect/quality 业务质量评估。
+
+## user systemd
+
+仓库提供 `systemd/data-clean-web.service`。安装并启动：
+
+```bash
+src/data_clean/systemd/install_user_service.sh
+journalctl --user -u data-clean-web.service -f
+```
+
+该单元使用 `Restart=on-failure`、SIGTERM 优雅停止和 journald。Web 同时在
+`<run_root>/runtime_sessions/` 记录 PID、boot ID、退出状态、内存与磁盘采样。
+服务固定监听 `http://127.0.0.1:36959/`；直接运行脚本时仍默认自动选择空闲端口。
