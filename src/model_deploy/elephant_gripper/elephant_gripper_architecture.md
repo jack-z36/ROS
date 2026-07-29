@@ -7,13 +7,17 @@ ROS 2（Jazzy，ament_python）节点，通过两路 USB-485（自定义 Modbus 
 
 | 方向 | 名称 | 类型 |
 |------|------|------|
-| 发布 | `/gripper/left_state` | `std_msgs/Float64`（归一化 [0,1]，0=闭合 1=张开） |
-| 发布 | `/gripper/right_state` | `std_msgs/Float64` |
+| 发布 | `/gripper/left_state` | `geometry_msgs/Pose`（宽度∈[0,1] 在 `position.x`，0=闭合 1=张开） |
+| 发布 | `/gripper/right_state` | `geometry_msgs/Pose` |
 | 发布 | `/hardware/gripper/health` | `act_interfaces/HardwareHealth` |
 | 订阅 | `/act/command/gripper/left_target` | `std_msgs/Float64` |
 | 订阅 | `/act/command/gripper/right_target` | `std_msgs/Float64` |
 | 订阅 | `/act/command/permit` | `act_interfaces/CommandPermit` |
 | 服务 | `/hardware/gripper/emergency_stop` | `std_srvs/srv/SetBool`（true=触发锁存，false=解除） |
+
+> 发布 TCP state 用裸 `Pose`（宽度承载在 `position.x`）以匹配 ACT 大脑 `decode_gripper_width` 的
+> Pose 订阅分支；launch 默认把 `/gripper/*_state` remap 到 `/act/observation/gripper/*_state`，
+> ACT 侧零配置订阅。命令订阅方向（`/act/command/gripper/*_target`）仍是 `Float64`，不受影响。
 
 **安全默认拒绝**：仅当人工许可有效（`allowed` 且未过期 `permit_timeout_s`）且未急停时，才执行新的夹爪目标；
 否则丢弃新命令、保持上次位置，遥测继续发布。
@@ -63,8 +67,6 @@ FE FE | len(0x08) | gripper_id(0x0E) | func | reg_hi reg_lo | data_hi data_lo | 
 
 ## 未验证 / 待真机确认
 
-- topic 命名 `/gripper/*_state`（本任务规范）与旧 `ACT部署契约.md` 的
-  `/act/observation/gripper/*_state` 不一致，需与 `ActVlaDeployNode` 订阅对齐（必要时 launch remap）。
 - 左右 `ID_PATH`、`ttyACM` vs `ttyUSB`、急停后夹爪保持/掉电行为、串口等待/超时调优、
   width↔angle 标定系数，均待真机验证。
 - 启动自检（查询固件/状态防左右接反）为后续增强项，当前依赖 udev 稳定符号链接 + 配置显式 left/right_port。

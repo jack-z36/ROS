@@ -16,6 +16,7 @@ import rclpy
 from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
+from geometry_msgs.msg import Pose
 from rclpy.node import Node
 from std_msgs.msg import Float64
 from std_srvs.srv import SetBool
@@ -32,6 +33,20 @@ from ..types.gripper_types import GripperCommand, GripperSide
 
 _PACKAGE = "elephant_gripper"
 _CONFIG_FILE = "elephant_gripper.yaml"
+
+
+def _width_to_pose(width: float) -> Pose:
+    """把归一化夹爪宽度 [0,1] 打包成 geometry_msgs/Pose。
+
+    宽度承载在 ``position.x``，以命中 ACT 大脑 ``decode_gripper_width`` 的
+    Pose 分支（见 act/ui/observation_ros_adapter.py L76-79）。其余 position
+    字段留零，``orientation.w = 1.0`` 保证是合法单位四元数。ACT 冻结期采用
+    Pose 作为夹爪标量的占位契约，故此处只写 position.x。
+    """
+    msg = Pose()
+    msg.position.x = float(width)
+    msg.orientation.w = 1.0
+    return msg
 
 
 class ElephantGripperNode(Node):
@@ -71,8 +86,10 @@ class ElephantGripperNode(Node):
         self._health_group = MutuallyExclusiveCallbackGroup()
 
         # Publishers.
-        self._left_state_pub = self.create_publisher(Float64, "/gripper/left_state", 10)
-        self._right_state_pub = self.create_publisher(Float64, "/gripper/right_state", 10)
+        # TCP state 发裸 Pose（宽度在 position.x），匹配 ACT 大脑的订阅类型；
+        # 命令订阅方向仍用 Float64，见下方 subscribers。
+        self._left_state_pub = self.create_publisher(Pose, "/gripper/left_state", 10)
+        self._right_state_pub = self.create_publisher(Pose, "/gripper/right_state", 10)
         self._health_pub = self.create_publisher(
             GripperHealthMsg, "/hardware/gripper/health", 10
         )
@@ -175,9 +192,9 @@ class ElephantGripperNode(Node):
         left = self._supervisor.latest_state(GripperSide.LEFT)
         right = self._supervisor.latest_state(GripperSide.RIGHT)
         if left.valid:
-            self._left_state_pub.publish(Float64(data=float(left.width)))
+            self._left_state_pub.publish(_width_to_pose(left.width))
         if right.valid:
-            self._right_state_pub.publish(Float64(data=float(right.width)))
+            self._right_state_pub.publish(_width_to_pose(right.width))
 
     def _publish_health(self) -> None:
         health = self._supervisor.aggregate_health()
