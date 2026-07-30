@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=UMI 无本体数据采集系统
+Comment=HIT · 武汉华威科 · 一键启动传感器与 Octopus
+Exec=/home/hit/ROS/start_act.sh
+Icon=umi-launcher
+Terminal=false
+Categories=Science;Education;
+StartupNotify=true

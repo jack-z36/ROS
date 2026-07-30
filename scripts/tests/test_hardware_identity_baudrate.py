@@ -40,6 +40,46 @@ class HardwareIdentityBaudrateTest(unittest.TestCase):
         baudrate_index = command.index("--baudrate")
         self.assertEqual(command[baudrate_index + 1], "921600")
 
+    def test_hwk_query_uses_ros_python_in_conda_shell(self):
+        completed = subprocess.CompletedProcess(
+            [], 0, "result: OK\nvalue: test-uid\n", ""
+        )
+        with mock.patch.object(
+            self.identity_scan, "run", return_value=completed
+        ) as run:
+            self.identity_scan.query_hwk_info(
+                "/dev/ttyUSB0", "uid", addr=0, package_id=29, baudrate=921600
+            )
+
+        command = run.call_args.args[0]
+        expected = self.identity_scan.ROS_PYTHON_EXECUTABLE
+        if not Path(expected).is_file():
+            expected = self.identity_scan.sys.executable
+        self.assertEqual(command[0], expected)
+
+    def test_hwk_query_retries_after_initial_timeout(self):
+        timeout = subprocess.CompletedProcess(
+            [], 1, "result: timeout/no matching ACK\n", ""
+        )
+        success = subprocess.CompletedProcess(
+            [], 0, "result: OK\nvalue: recovered-uid\n", ""
+        )
+        with (
+            mock.patch.object(
+                self.identity_scan, "run", side_effect=[timeout, success]
+            ) as run,
+            mock.patch.object(self.identity_scan.time, "sleep") as sleep,
+        ):
+            value = self.identity_scan.query_hwk_info(
+                "/dev/ttyUSB0", "uid", addr=1, package_id=29, baudrate=921600
+            )
+
+        self.assertEqual(value, "recovered-uid")
+        self.assertEqual(run.call_count, 2)
+        sleep.assert_called_once_with(
+            self.identity_scan.HWK_QUERY_RETRY_DELAY_SEC
+        )
+
     def test_identity_validator_forwards_pressure_baudrate(self):
         completed = subprocess.CompletedProcess([], 0, "", "")
         with mock.patch.object(self.sensor_status, "run", return_value=completed) as run:

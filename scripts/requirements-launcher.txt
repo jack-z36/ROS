@@ -1,0 +1,6 @@
+# act_launcher.py (GUI 一键启动器) 运行依赖
+# 使用方式：/usr/bin/python3 -m pip install --user -r scripts/requirements-launcher.txt
+# 说明：customtkinter 依赖 darkdetect（packaging 已由系统 python3-packaging 满足）。
+customtkinter>=5.2.0
+Pillow>=10.0.0
+PyYAML>=6.0

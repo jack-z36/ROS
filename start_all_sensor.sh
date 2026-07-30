@@ -7,7 +7,6 @@ set -euo pipefail
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROS_SETUP="${ROS_SETUP:-/opt/ros/jazzy/setup.bash}"
 WORKSPACE_SETUP="${WORKSPACE_SETUP:-${WORKSPACE_DIR}/install/setup.bash}"
-CONFIG_FILE="${1:-${ALL_SENSOR_CONFIG:-${WORKSPACE_DIR}/config/all_sensor_nodes.yaml}}"
 STATUS_SCRIPT="${WORKSPACE_DIR}/scripts/all_sensor_status.py"
 AUTO_BUILD="${AUTO_BUILD:-1}"
 BUILD_PACKAGES="${BUILD_PACKAGES:-}"
@@ -17,7 +16,35 @@ STOP_ON_FAILURE="${STOP_ON_FAILURE:-1}"
 LOG_DIR="${WORKSPACE_DIR}/log/start_all_sensor"
 HARDWARE_IDENTITY_MAP="${HARDWARE_IDENTITY_MAP:-${WORKSPACE_DIR}/config/hardware_identity_map.yaml}"
 HARDWARE_IDENTITY_RESOLVED_FILE="${HARDWARE_IDENTITY_RESOLVED_FILE:-${LOG_DIR}/hardware_identity_resolved.yaml}"
+OCTOPUS_QT_ROOT="${OCTOPUS_QT_ROOT:-${HOME}/Qt/6.11.0/gcc_64}"
+OCTOPUS_FFMPEG_ROOT="${OCTOPUS_FFMPEG_ROOT:-${WORKSPACE_DIR}/src/data_collection/VTLA_octopus-master/.deps/ffmpeg8/usr}"
+ROS_PYTHON_EXECUTABLE="${ROS_PYTHON_EXECUTABLE:-/usr/bin/python3}"
 CLEANING_UP=0
+
+# 解析命令行参数
+SMOKE_TEST=0
+POSITIONAL_ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --smoke-test)
+      SMOKE_TEST=1
+      shift
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [[ "${SMOKE_TEST}" == "1" ]]; then
+  CONFIG_FILE="${WORKSPACE_DIR}/config/all_sensor_nodes_smoke_test.yaml"
+  echo "=== 冒烟测试模式：使用禁用全部传感器的配置 ==="
+  echo "配置文件: ${CONFIG_FILE}"
+  echo
+else
+  CONFIG_FILE="${POSITIONAL_ARGS[0]:-${ALL_SENSOR_CONFIG:-${WORKSPACE_DIR}/config/all_sensor_nodes.yaml}}"
+fi
 
 source_setup_file() {
   local setup_file="$1"
@@ -30,7 +57,11 @@ source_setup_file() {
 }
 
 build_workspace() {
-  local build_cmd=(colcon build)
+  local build_cmd=(
+    colcon build
+    --cmake-args
+    "-DPython3_EXECUTABLE=${ROS_PYTHON_EXECUTABLE}"
+  )
 
   if [[ -n "${BUILD_PACKAGES}" ]]; then
     # shellcheck disable=SC2206
@@ -46,6 +77,34 @@ build_workspace() {
   fi
   (
     cd "${WORKSPACE_DIR}"
+
+    # ROS Jazzy on Ubuntu 24.04 uses system Python 3.12.  An active Conda
+    # environment may otherwise make rosidl compile Python 3.13 bindings,
+    # which cannot be loaded by rclpy at runtime.
+    if [[ ! -x "${ROS_PYTHON_EXECUTABLE}" ]]; then
+      echo "ROS Python executable not found: ${ROS_PYTHON_EXECUTABLE}" >&2
+      exit 1
+    fi
+
+    # Octopus uses a locally installed Qt and may use the workspace-local
+    # FFmpeg bundle.  Export their build paths here so a clean CMake cache
+    # behaves the same as start_octopus.sh at runtime.
+    if [[ -d "${OCTOPUS_QT_ROOT}" ]]; then
+      export Qt6_DIR="${Qt6_DIR:-${OCTOPUS_QT_ROOT}/lib/cmake/Qt6}"
+      export CMAKE_PREFIX_PATH="${OCTOPUS_QT_ROOT}:${CMAKE_PREFIX_PATH:-}"
+      export PATH="${OCTOPUS_QT_ROOT}/bin:${PATH}"
+      export LD_LIBRARY_PATH="${OCTOPUS_QT_ROOT}/lib:${LD_LIBRARY_PATH:-}"
+    fi
+
+    if [[ -d "${OCTOPUS_FFMPEG_ROOT}" ]]; then
+      export FFMPEG_ROOT="${OCTOPUS_FFMPEG_ROOT}"
+      export FFMPEG_PATH="${FFMPEG_PATH:-${OCTOPUS_FFMPEG_ROOT}}"
+      export CMAKE_PREFIX_PATH="${OCTOPUS_FFMPEG_ROOT}:${CMAKE_PREFIX_PATH:-}"
+      export PKG_CONFIG_PATH="${OCTOPUS_FFMPEG_ROOT}/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH:-}"
+      export LD_LIBRARY_PATH="${OCTOPUS_FFMPEG_ROOT}/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
+      export LIBRARY_PATH="${OCTOPUS_FFMPEG_ROOT}/lib/x86_64-linux-gnu:${LIBRARY_PATH:-}"
+    fi
+
     "${build_cmd[@]}"
   )
 }
@@ -99,14 +158,19 @@ mkdir -p "${LOG_DIR}"
 rm -f "${HARDWARE_IDENTITY_RESOLVED_FILE}"
 
 IDENTITY_ARGS=()
-if [[ -f "${HARDWARE_IDENTITY_MAP}" ]]; then
+if [[ "${SMOKE_TEST}" == "1" ]]; then
+  echo "冒烟测试模式：跳过硬件身份映射校验"
+  echo
+elif [[ -f "${HARDWARE_IDENTITY_MAP}" ]]; then
   IDENTITY_ARGS=(
     --identity-map "${HARDWARE_IDENTITY_MAP}"
     --write-identity-resolved "${HARDWARE_IDENTITY_RESOLVED_FILE}"
   )
 fi
 
-python3 "${STATUS_SCRIPT}" preflight --config "${CONFIG_FILE}" "${IDENTITY_ARGS[@]}"
+"${ROS_PYTHON_EXECUTABLE}" "${STATUS_SCRIPT}" preflight \
+  --config "${CONFIG_FILE}" \
+  "${IDENTITY_ARGS[@]}"
 
 LOG_FILE="${LOG_DIR}/$(date +%Y%m%d_%H%M%S).log"
 echo
@@ -146,6 +210,22 @@ trap cleanup INT TERM
 sleep "${STARTUP_WAIT}"
 
 if ! kill -0 "${LAUNCH_PID}" >/dev/null 2>&1; then
+  if [[ "${SMOKE_TEST}" == "1" ]]; then
+    wait "${LAUNCH_PID}" 2>/dev/null
+    LAUNCH_EXIT=$?
+    if [[ "${LAUNCH_EXIT}" -eq 0 ]]; then
+      echo
+      echo "=== 冒烟测试通过 ==="
+      echo "launch 正常完成（无传感器节点需要运行）。"
+      echo "脚本流程验证成功。"
+      exit 0
+    else
+      echo
+      echo "FAIL 冒烟测试：launch 异常退出 (exit code: ${LAUNCH_EXIT})。最近日志:"
+      tail -n 80 "${LOG_FILE}" || true
+      exit "${LAUNCH_EXIT}"
+    fi
+  fi
   echo
   echo "FAIL 总 launch 已提前退出。最近日志:"
   tail -n 80 "${LOG_FILE}" || true
@@ -154,7 +234,7 @@ if ! kill -0 "${LAUNCH_PID}" >/dev/null 2>&1; then
 fi
 
 set +e
-python3 "${STATUS_SCRIPT}" postlaunch \
+"${ROS_PYTHON_EXECUTABLE}" "${STATUS_SCRIPT}" postlaunch \
   --config "${CONFIG_FILE}" \
   --identity-resolved "${HARDWARE_IDENTITY_RESOLVED_FILE}"
 STATUS=$?

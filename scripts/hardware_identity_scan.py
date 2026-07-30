@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from collections import defaultdict
 from glob import glob
 from pathlib import Path
@@ -20,6 +21,9 @@ VIDEO_GLOBS = ("/dev/video*",)
 HWK_DEFAULT_BAUDRATE = 460800
 HWK_DEFAULT_ADDR = 6
 HWK_DEFAULT_PACKAGE_ID = 29
+HWK_QUERY_ATTEMPTS = 2
+HWK_QUERY_RETRY_DELAY_SEC = 0.1
+ROS_PYTHON_EXECUTABLE = os.environ.get("ROS_PYTHON_EXECUTABLE", "/usr/bin/python3")
 HWK_PROTOCOL_KEYS = {
     "HWK_CHIP_UID",
     "HWK_DEVICE_ADDR",
@@ -101,29 +105,35 @@ def query_hwk_info(
     addr=HWK_DEFAULT_ADDR,
     package_id=HWK_DEFAULT_PACKAGE_ID,
     baudrate=HWK_DEFAULT_BAUDRATE,
+    attempts=HWK_QUERY_ATTEMPTS,
 ):
-    proc = run(
-        [
-            sys.executable,
-            str(HWK_QUERY_SCRIPT),
-            "--port",
-            device,
-            "--baudrate",
-            str(baudrate),
-            "--addr",
-            str(addr),
-            "--package-id",
-            str(package_id),
-            "--cmd",
-            cmd,
-            "--timeout",
-            "0.8",
-        ],
-        timeout=3,
-    )
-    if proc.returncode != 0:
-        return None
-    return parse_key_value_output(proc.stdout).get("value")
+    query_command = [
+        ROS_PYTHON_EXECUTABLE
+        if Path(ROS_PYTHON_EXECUTABLE).is_file()
+        else sys.executable,
+        str(HWK_QUERY_SCRIPT),
+        "--port",
+        device,
+        "--baudrate",
+        str(baudrate),
+        "--addr",
+        str(addr),
+        "--package-id",
+        str(package_id),
+        "--cmd",
+        cmd,
+        "--timeout",
+        "0.8",
+    ]
+    for attempt in range(max(1, attempts)):
+        proc = run(query_command, timeout=3)
+        if proc.returncode == 0:
+            value = parse_key_value_output(proc.stdout).get("value")
+            if value:
+                return value
+        if attempt + 1 < attempts:
+            time.sleep(HWK_QUERY_RETRY_DELAY_SEC)
+    return None
 
 
 def enrich_hwk_protocol_identity(device, match, baudrate=HWK_DEFAULT_BAUDRATE):

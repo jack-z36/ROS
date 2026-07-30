@@ -7,14 +7,29 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/3rdparty/cmake-modules)
 
-set(ZSTD_BUILD_STATIC ON)
-set(ZSTD_BUILD_SHARED OFF)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_subdirectory(3rdparty/glm EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/json EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/spdlog EXCLUDE_FROM_ALL)
-add_subdirectory(3rdparty/zstd/build/cmake EXCLUDE_FROM_ALL)
+
+# zstd: only use the bundled CMake project when it is complete and is not a
+# symlink.  This repository snapshot can omit build/cmake because its parent
+# .gitignore matches "*build*"; a self-referential replacement would otherwise
+# make add_subdirectory() recurse through build/cmake indefinitely.
+set(ZSTD_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/zstd/build/cmake")
+if(EXISTS "${ZSTD_CMAKE_DIR}/CMakeLists.txt"
+   AND EXISTS "${ZSTD_CMAKE_DIR}/lib/CMakeLists.txt"
+   AND NOT IS_SYMLINK "${ZSTD_CMAKE_DIR}")
+  message(STATUS "Using bundled zstd from ${ZSTD_CMAKE_DIR}")
+  set(ZSTD_BUILD_STATIC ON)
+  set(ZSTD_BUILD_SHARED OFF)
+  add_subdirectory("${ZSTD_CMAKE_DIR}" 3rdparty/zstd EXCLUDE_FROM_ALL)
+else()
+  find_package(zstd CONFIG REQUIRED)
+  add_library(libzstd ALIAS zstd::libzstd_static)
+  message(STATUS "Using system zstd: zstd::libzstd_static")
+endif()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)

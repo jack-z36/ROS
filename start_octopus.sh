@@ -11,6 +11,7 @@ MCAP_OUTPUT_DIR="${MCAP_OUTPUT_DIR:-${WORKSPACE_DIR}/mcap}"
 OCTOPUS_EXECUTABLE="${OCTOPUS_EXECUTABLE:-${WORKSPACE_DIR}/install/octopus/lib/octopus/octopus}"
 QT_ROOT="${QT_ROOT:-${HOME}/Qt/6.11.0/gcc_64}"
 FFMPEG_ROOT="${FFMPEG_ROOT:-${WORKSPACE_DIR}/src/data_collection/VTLA_octopus-master/.deps/ffmpeg8/usr}"
+ROS_PYTHON_EXECUTABLE="${ROS_PYTHON_EXECUTABLE:-/usr/bin/python3}"
 
 source_setup_file() {
   local setup_file="$1"
@@ -61,7 +62,7 @@ else
 fi
 
 if [[ "${CONFIGURE_SCANNER}" == "1" ]]; then
-  python3 "${WORKSPACE_DIR}/scripts/configure_octopus_scanner.py" \
+  "${ROS_PYTHON_EXECUTABLE}" "${WORKSPACE_DIR}/scripts/configure_octopus_scanner.py" \
     --config "${SCANNER_CONFIG}" \
     --recording-path "${MCAP_OUTPUT_DIR}"
 fi

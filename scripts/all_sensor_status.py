@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import copy
+import ipaddress
+import json
 import os
 import shutil
 import socket
@@ -318,6 +320,61 @@ def resolve_local_ip(local_ip, server_ip):
     return local_ip
 
 
+def baton_direct_route(server_ip):
+    proc = run(["ip", "-j", "route", "get", str(server_ip)], timeout=2)
+    if proc.returncode != 0:
+        return False, None, None, "没有到设备的网络路由"
+
+    try:
+        routes = json.loads(proc.stdout)
+        route = routes[0]
+    except (IndexError, TypeError, ValueError, json.JSONDecodeError):
+        return False, None, None, "无法解析到设备的网络路由"
+
+    device = route.get("dev")
+    source = route.get("prefsrc") or route.get("src")
+    gateway = route.get("gateway")
+    if not device or not source:
+        return False, device, source, "路由缺少网卡或本机源 IP"
+    if gateway:
+        return (
+            False,
+            device,
+            source,
+            f"路由经由网关 {gateway}，不是 Baton USB 直连网卡",
+        )
+
+    addr_proc = run(["ip", "-j", "address", "show", "dev", str(device)], timeout=2)
+    try:
+        interfaces = json.loads(addr_proc.stdout)
+        address_entries = interfaces[0].get("addr_info", [])
+        source_address = ipaddress.ip_address(str(source))
+        server_address = ipaddress.ip_address(str(server_ip))
+        for entry in address_entries:
+            if entry.get("family") != "inet" or entry.get("local") != str(source):
+                continue
+            network = ipaddress.ip_network(
+                f"{source}/{entry['prefixlen']}", strict=False
+            )
+            if source_address in network and server_address in network:
+                return True, device, source, ""
+    except (
+        IndexError,
+        KeyError,
+        TypeError,
+        ValueError,
+        json.JSONDecodeError,
+    ):
+        pass
+
+    return (
+        False,
+        device,
+        source,
+        f"设备 IP {server_ip} 不在网卡 {device} 的本地直连网段",
+    )
+
+
 def has_local_ip(output, local_ip):
     return bool(local_ip and local_ip in output)
 
@@ -381,6 +438,26 @@ def preflight(config, config_path, identity_map=None, write_identity_resolved=No
             local_ip = checks.get("local_ip")
             server_ip = checks.get("server_ip")
             resolved_local_ip = resolve_local_ip(local_ip, server_ip)
+            direct_ok, route_device, route_source, route_reason = baton_direct_route(
+                server_ip
+            )
+            if not direct_ok:
+                hard_failures += 1
+                print(
+                    f"FAIL {sensor['label']}: 未通过 Baton USB 网卡直连 "
+                    f"server_ip={server_ip}"
+                )
+                print(
+                    f"     当前路由: dev={route_device or 'unknown'}, "
+                    f"local_ip={route_source or resolved_local_ip or 'unknown'}"
+                )
+                print(f"     原因: {route_reason}")
+                print(
+                    "     建议: 给 Baton 重新上电/插拔 USB，确认系统出现 usb0 或 enx... "
+                    "网卡；若开启 Clash/TUN，请绕过该 Baton 网段。"
+                )
+                continue
+
             local_ok = has_local_ip(ip_info, resolved_local_ip)
             ping_ok = ping_server(server_ip)
             required_ports = sensor.get("preflight", {}).get(
