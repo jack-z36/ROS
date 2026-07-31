@@ -89,18 +89,33 @@ class RuntimeConfig:
     max_inference_requests: int = 1
     max_pending_chunks: int = 1
     fallback_policy: str = "hold_last_action"
-    max_delta_per_step: float = 0.03
+    max_delta_per_step: float = 0.01
     warmup_steps: int = 2
     compile_model: bool = True
     compile_mode: str = "reduce-overhead"
     publish_metrics_hz: float = 1.0
     task: str = "bimanual manipulation"
+    # Optional physical-response motion contract for real-run.  Keep the
+    # schema default conservative; a deployment config must opt out explicitly.
+    response_motion_check_enabled: bool = True
+    response_timeout_sec: float = 0.5
+    hold_window_sec: float = 0.2
+    epsilon_move_translation_m: float = 0.001
+    epsilon_move_rotation_rad: float = 0.01
+    epsilon_move_gripper: float = 0.01
+    epsilon_hold_translation_m: float = 0.001
+    epsilon_hold_rotation_rad: float = 0.01
+    epsilon_hold_gripper: float = 0.01
 
     @property
     def publishes_command_topics(self) -> bool:
-        return self.mode in {"shadow-run", "safe-run"}
+        return self.mode == "real-run"
 
     def __post_init__(self) -> None:
+        if self.mode not in {"dry-run", "real-run"}:
+            raise DeployConfigError(
+                "runtime.mode must be one of: dry-run, real-run."
+            )
         if self.control_hz <= 0.0:
             raise DeployConfigError("runtime.control_hz must be positive.")
         if self.inference_hz <= 0.0:
@@ -134,6 +149,26 @@ class RuntimeConfig:
             raise DeployConfigError(
                 "runtime.fallback_policy must be one of: "
                 "hold_last_action, continue_old_chunk, safe_stop."
+            )
+        response_values = (
+            self.response_timeout_sec,
+            self.hold_window_sec,
+            self.epsilon_move_translation_m,
+            self.epsilon_move_rotation_rad,
+            self.epsilon_move_gripper,
+            self.epsilon_hold_translation_m,
+            self.epsilon_hold_rotation_rad,
+            self.epsilon_hold_gripper,
+        )
+        if any(not math.isfinite(float(v)) or float(v) < 0.0 for v in response_values):
+            raise DeployConfigError("runtime response thresholds must be finite and non-negative")
+        if self.response_timeout_sec <= 0.0 or self.hold_window_sec <= 0.0:
+            raise DeployConfigError(
+                "runtime.response_timeout_sec and runtime.hold_window_sec must be positive"
+            )
+        if not isinstance(self.response_motion_check_enabled, bool):
+            raise DeployConfigError(
+                "runtime.response_motion_check_enabled must be bool"
             )
 
 
@@ -224,8 +259,8 @@ class SafetyConfig:
     bridge/mux fields are intentionally absent.
     """
 
-    max_translation_step_m: float = 0.03
-    max_rotation_step_rad: float = 0.1
+    max_translation_step_m: float = 0.01
+    max_rotation_step_rad: float = 0.05
     gripper_min: float = 0.0
     gripper_max: float = 1.0
     max_gripper_step: float = 0.2
@@ -284,12 +319,9 @@ class CommandOutputConfig:
     """
 
     command_output_enabled: bool = False
-    pose_frame_id: str = "base"
-    gripper_input_min: float = 0.0
-    gripper_input_max: float = 1.0
-    gripper_output_min: float = 0.0
-    gripper_output_max: float = 100.0
-    gripper_deadband: float = 1.0
+    left_pose_frame_id: str = "left_arm_base"
+    right_pose_frame_id: str = "right_arm_base"
+    gripper_deadband: float = 0.01
     gripper_min_publish_interval_s: float = 0.05
     qos_depth: int = 10
 
@@ -299,35 +331,21 @@ class CommandOutputConfig:
                 f"CommandOutputConfig.command_output_enabled must be bool, "
                 f"got {type(self.command_output_enabled)!r}"
             )
-        if not isinstance(self.pose_frame_id, str) or self.pose_frame_id.strip() == "":
+        if self.left_pose_frame_id != "left_arm_base":
             raise DeployConfigError(
-                "command_output.pose_frame_id must be a non-empty string"
+                "command_output.left_pose_frame_id must be 'left_arm_base'"
             )
-        # First version freezes the normalized gripper input domain to 0.0..1.0.
-        if self.gripper_input_min != 0.0 or self.gripper_input_max != 1.0:
+        if self.right_pose_frame_id != "right_arm_base":
             raise DeployConfigError(
-                "command_output.gripper_input_min/max must be exactly 0.0/1.0 "
-                "in this version"
-            )
-        if not (self.gripper_input_min < self.gripper_input_max):
-            raise DeployConfigError(
-                "command_output.gripper_input_min must be < gripper_input_max"
-            )
-        if not (math.isfinite(self.gripper_output_min) and math.isfinite(self.gripper_output_max)):
-            raise DeployConfigError("command_output.gripper output range must be finite")
-        if not (self.gripper_output_min < self.gripper_output_max):
-            raise DeployConfigError(
-                "command_output.gripper_output_min must be < gripper_output_max"
+                "command_output.right_pose_frame_id must be 'right_arm_base'"
             )
         if not math.isfinite(self.gripper_deadband) or self.gripper_deadband < 0.0:
             raise DeployConfigError(
                 "command_output.gripper_deadband must be finite and >= 0"
             )
-        output_span = self.gripper_output_max - self.gripper_output_min
-        if self.gripper_deadband > output_span:
+        if self.gripper_deadband > 1.0:
             raise DeployConfigError(
-                "command_output.gripper_deadband must not exceed the output span "
-                f"({output_span})"
+                "command_output.gripper_deadband must not exceed normalized span 1.0"
             )
         if not math.isfinite(self.gripper_min_publish_interval_s) or (
             self.gripper_min_publish_interval_s < 0.0
@@ -357,6 +375,39 @@ class DeployConfig:
     safety: SafetyConfig
     command_output: CommandOutputConfig = field(default_factory=CommandOutputConfig)
     raw: Mapping[str, Any] = field(default_factory=dict, repr=False)
+
+    def __post_init__(self) -> None:
+        enabled = self.command_output.command_output_enabled
+        if self.runtime.mode == "real-run" and not enabled:
+            raise DeployConfigError(
+                "runtime.mode=real-run requires the startup-only "
+                "--enable-command-output confirmation"
+            )
+        if self.runtime.mode == "dry-run" and enabled:
+            raise DeployConfigError(
+                "--enable-command-output requires runtime.mode=real-run; "
+                "dry-run can never publish hardware commands"
+            )
+        if self.safety.max_translation_step_m > 0.01:
+            raise DeployConfigError(
+                "safety.max_translation_step_m must be <= RM65 driver limit 0.01"
+            )
+        if self.runtime.max_delta_per_step > 0.01:
+            raise DeployConfigError(
+                "runtime.max_delta_per_step must be <= RM65 driver limit 0.01"
+            )
+        if self.safety.max_rotation_step_rad > 0.05:
+            raise DeployConfigError(
+                "safety.max_rotation_step_rad must be <= RM65 driver limit 0.05"
+            )
+        if (
+            self.safety.gripper_min != 0.0
+            or self.safety.gripper_max != 1.0
+            or self.safety.gripper_domain != "normalized_0_1"
+        ):
+            raise DeployConfigError(
+                "ACT and elephant_gripper command domain must be normalized [0,1]"
+            )
 
     @classmethod
     def from_mapping(
@@ -409,7 +460,7 @@ def _deploy_from_mapping(
             bundle_dir=_path_or_none(bundle_raw, "bundle_dir", base_dir=base_dir),
         ),
         runtime=RuntimeConfig(
-            mode=_choice(runtime_raw, "mode", {"dry-run", "shadow-run", "safe-run"}, default="dry-run"),
+            mode=_choice(runtime_raw, "mode", {"dry-run", "real-run"}, default="dry-run"),
             device=_str(runtime_raw, "device", default="cuda:0"),
             inference_hz=_positive_float(runtime_raw, "inference_hz", default=10.0),
             control_hz=_positive_float(runtime_raw, "control_hz", default=30.0),
@@ -428,12 +479,23 @@ def _deploy_from_mapping(
                 {"hold_last_action", "continue_old_chunk", "safe_stop"},
                 default="hold_last_action",
             ),
-            max_delta_per_step=_positive_float(runtime_raw, "max_delta_per_step", default=0.03),
+            max_delta_per_step=_positive_float(runtime_raw, "max_delta_per_step", default=0.01),
             warmup_steps=_non_negative_int(runtime_raw, "warmup_steps", default=2),
             compile_model=_bool(runtime_raw, "compile_model", default=True),
             compile_mode=_str(runtime_raw, "compile_mode", default="reduce-overhead"),
             publish_metrics_hz=_positive_float(runtime_raw, "publish_metrics_hz", default=1.0),
             task=_str(runtime_raw, "task", default="bimanual manipulation"),
+            response_motion_check_enabled=_bool(
+                runtime_raw, "response_motion_check_enabled", default=True
+            ),
+            response_timeout_sec=_positive_float(runtime_raw, "response_timeout_sec", default=0.5),
+            hold_window_sec=_positive_float(runtime_raw, "hold_window_sec", default=0.2),
+            epsilon_move_translation_m=_non_negative_float(runtime_raw, "epsilon_move_translation_m", default=0.001),
+            epsilon_move_rotation_rad=_non_negative_float(runtime_raw, "epsilon_move_rotation_rad", default=0.01),
+            epsilon_move_gripper=_non_negative_float(runtime_raw, "epsilon_move_gripper", default=0.01),
+            epsilon_hold_translation_m=_non_negative_float(runtime_raw, "epsilon_hold_translation_m", default=0.001),
+            epsilon_hold_rotation_rad=_non_negative_float(runtime_raw, "epsilon_hold_rotation_rad", default=0.01),
+            epsilon_hold_gripper=_non_negative_float(runtime_raw, "epsilon_hold_gripper", default=0.01),
         ),
         image=ImageConfig(
             image_size=_positive_int(image_raw, "image_size", default=224),
@@ -492,10 +554,10 @@ def _safety_from_mapping(safety_raw: Mapping[str, Any]) -> SafetyConfig:
 
     return SafetyConfig(
         max_translation_step_m=_positive_float(
-            safety_raw, "max_translation_step_m", default=0.03
+            safety_raw, "max_translation_step_m", default=0.01
         ),
         max_rotation_step_rad=_positive_float(
-            safety_raw, "max_rotation_step_rad", default=0.1
+            safety_raw, "max_rotation_step_rad", default=0.05
         ),
         gripper_min=_float(safety_raw, "gripper_min", default=0.0),
         gripper_max=_float(safety_raw, "gripper_max", default=1.0),
@@ -533,15 +595,35 @@ def _command_output_from_mapping(
             "startup-only decision set explicitly by the CLI caller "
             "(--enable-command-output)."
         )
+    removed_keys = sorted(
+        key
+        for key in (
+            "pose_frame_id",
+            "gripper_input_min",
+            "gripper_input_max",
+            "gripper_output_min",
+            "gripper_output_max",
+        )
+        if key in command_output_raw
+    )
+    if removed_keys:
+        raise DeployConfigError(
+            "command_output uses removed keys "
+            f"{removed_keys}; use left_pose_frame_id/right_pose_frame_id and "
+            "normalized [0,1] gripper commands"
+        )
 
     return CommandOutputConfig(
         command_output_enabled=command_output_enabled,
-        pose_frame_id=_str(command_output_raw, "pose_frame_id", default="base"),
-        gripper_input_min=_float(command_output_raw, "gripper_input_min", default=0.0),
-        gripper_input_max=_float(command_output_raw, "gripper_input_max", default=1.0),
-        gripper_output_min=_float(command_output_raw, "gripper_output_min", default=0.0),
-        gripper_output_max=_float(command_output_raw, "gripper_output_max", default=100.0),
-        gripper_deadband=_non_negative_float(command_output_raw, "gripper_deadband", default=1.0),
+        left_pose_frame_id=_str(
+            command_output_raw, "left_pose_frame_id", default="left_arm_base"
+        ),
+        right_pose_frame_id=_str(
+            command_output_raw, "right_pose_frame_id", default="right_arm_base"
+        ),
+        gripper_deadband=_non_negative_float(
+            command_output_raw, "gripper_deadband", default=0.01
+        ),
         gripper_min_publish_interval_s=_non_negative_float(
             command_output_raw, "gripper_min_publish_interval_s", default=0.05
         ),

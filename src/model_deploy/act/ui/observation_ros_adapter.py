@@ -43,11 +43,13 @@ _ROS_AVAILABLE: bool = False
 try:
     import rclpy  # noqa: F401
     from geometry_msgs.msg import Pose  # noqa: F401
+    from rclpy.qos import qos_profile_sensor_data  # noqa: F401
     from sensor_msgs.msg import CompressedImage, Image  # noqa: F401
 
     _ROS_AVAILABLE = True
 except ImportError:  # pragma: no cover
     Pose = None  # type: ignore[assignment]
+    qos_profile_sensor_data = None  # type: ignore[assignment]
     Image = None  # type: ignore[assignment]
     CompressedImage = None  # type: ignore[assignment]
 
@@ -206,6 +208,11 @@ class ObservationRosAdapter:
         created: list = []
         try:
             # Image topics (raw or compressed, per config.image.transport).
+            # 相机发布端（v4l2_camera 用 use_sensor_data_qos=true）是 BEST_EFFORT。
+            # 若订阅侧用 RELIABLE（裸整数 10 的默认），DDS request-offer 不兼容，
+            # 会建立连接但静默丢弃每一帧 → observation 永远缺数据。故图像订阅必须
+            # 用 sensor_data（BEST_EFFORT, KEEP_LAST 5）匹配发布端（与
+            # camera_health_node 的做法一致）。位姿/夹爪发布端是 RELIABLE，保持 10。
             msg_type = (
                 CompressedImage if getattr(self._config.image, "transport", "raw") == "compressed"
                 else Image
@@ -215,7 +222,7 @@ class ObservationRosAdapter:
                     msg_type,
                     topic,
                     lambda msg, key=cam_key: self.handle_image(key, msg),
-                    10,
+                    qos_profile_sensor_data,
                 )
                 created.append(sub)
 

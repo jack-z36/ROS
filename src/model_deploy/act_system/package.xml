@@ -17,6 +17,8 @@
   <exec_depend>dual_fisheye_camera</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>act_interfaces</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
 
   <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>python3-pytest</test_depend>

@@ -34,6 +34,11 @@ LOG_DIR="${WORKSPACE_DIR}/log/act_system"
 REQUIRED_PACKAGES=(act_interfaces rm65_dual_arm elephant_gripper dual_fisheye_camera act_system)
 CLEANING_UP=0
 
+if [[ "${ENABLE_COMMAND_OUTPUT}" != "0" && "${ENABLE_COMMAND_OUTPUT}" != "1" ]]; then
+  echo "FAIL ENABLE_COMMAND_OUTPUT 只接受 0 或 1，当前值: ${ENABLE_COMMAND_OUTPUT}" >&2
+  exit 1
+fi
+
 source_setup_file() {
   local setup_file="$1"
   # ROS/ament setup 文件会读取可选的未定义变量

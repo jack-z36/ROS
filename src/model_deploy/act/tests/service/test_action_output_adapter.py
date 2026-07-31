@@ -70,7 +70,7 @@ def test_pass_returns_complete_c4():
     assert isinstance(bundle.policy_action, tuple)
     assert len(bundle.policy_action) == 16
     assert bundle.left_gripper == 0.0
-    assert bundle.right_gripper == 100.0
+    assert bundle.right_gripper == 1.0
     assert isinstance(bundle.left_arm, ArmPoseTarget)
     assert isinstance(bundle.right_arm, ArmPoseTarget)
 
@@ -80,8 +80,8 @@ def test_adjusted_returns_complete_c4():
     bundle = build_topic_payloads(result, _default_config())
 
     assert len(bundle.policy_action) == 16
-    assert bundle.left_gripper == 50.0
-    assert bundle.right_gripper == 50.0
+    assert bundle.left_gripper == 0.5
+    assert bundle.right_gripper == 0.5
 
 
 def test_rejected_result_raises():
@@ -130,15 +130,15 @@ def test_wrong_vector_shape_raises():
 
 
 # ---------------------------------------------------------------------------
-# G05 — gripper mapping 0/0.5/1 -> 0/50/100; 50/100 input fails (no clip)
+# G05 — normalized gripper width is preserved; out-of-domain input fails
 # ---------------------------------------------------------------------------
 
 
 def test_gripper_mapping_endpoints():
     cfg = _default_config()
     assert map_gripper_command(0.0, cfg) == 0.0
-    assert map_gripper_command(0.5, cfg) == 50.0
-    assert map_gripper_command(1.0, cfg) == 100.0
+    assert map_gripper_command(0.5, cfg) == 0.5
+    assert map_gripper_command(1.0, cfg) == 1.0
 
 
 def test_gripper_out_of_domain_fails():
@@ -153,32 +153,19 @@ def test_gripper_non_finite_fails():
         map_gripper_command(math.inf, _default_config())
 
 
-def test_gripper_custom_range_generalizes():
-    cfg = CommandOutputConfig(
-        gripper_input_min=0.0,
-        gripper_input_max=1.0,
-        gripper_output_min=10.0,
-        gripper_output_max=90.0,
-    )
-    assert map_gripper_command(0.0, cfg) == 10.0
-    assert map_gripper_command(0.5, cfg) == 50.0
-    assert map_gripper_command(1.0, cfg) == 90.0
-
-
 # ---------------------------------------------------------------------------
-# G06 — left/right TCP split, single frame, xyzw/metric unchanged
+# G06 — left/right TCP split, per-arm frames, xyzw/metric unchanged
 # ---------------------------------------------------------------------------
 
 
-def test_tcp_split_and_single_frame():
+def test_tcp_split_and_per_arm_frames():
     result = _make_result(SafetyStatus.PASS, _make_spec(left_gripper=0.25, right_gripper=0.75))
     cfg = _default_config()
     bundle = build_topic_payloads(result, cfg)
 
-    assert bundle.left_arm.frame_id == cfg.pose_frame_id
-    assert bundle.right_arm.frame_id == cfg.pose_frame_id
-    # single shared frame
-    assert bundle.left_arm.frame_id == bundle.right_arm.frame_id
+    assert bundle.left_arm.frame_id == cfg.left_pose_frame_id
+    assert bundle.right_arm.frame_id == cfg.right_pose_frame_id
+    assert bundle.left_arm.frame_id != bundle.right_arm.frame_id
     # values preserved exactly (xyzw + metric xyz unchanged; source is float32)
     left32 = np.array(LEFT_TCP, dtype=np.float32).tolist()
     right32 = np.array(RIGHT_TCP, dtype=np.float32).tolist()

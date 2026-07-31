@@ -280,22 +280,20 @@ class TestQuatCandidate:
 
 
 class TestReferenceOrder:
-    def test_previous_preferred_over_observation(self) -> None:
-        """REFERENCE-ORDER: previous wins when both present."""
+    def test_observation_is_physical_baseline(self) -> None:
+        """A stale previous target cannot override measured state."""
         guard = SafetyGuard(_default_config(max_translation_step_m=0.03))
         previous = _action(left_xyz=(0.0, 0.0, 0.0))
         snap = _snapshot(left_xyz=(1.0, 0.0, 0.0))
-        # 0.10 m from previous origin → ADJUSTED to 0.03; if obs used, ~0.9 m step
         candidate = _action(left_xyz=(0.10, 0.0, 0.0))
         result = guard.filter_action(
             _vector(candidate),
             previous_safe_action=previous,
             latest_observation=snap,
         )
-        assert result.status is SafetyStatus.ADJUSTED
-        assert result.action is not None
-        left_xyz = np.asarray(result.action.left_tcp_action[:3], dtype=np.float64)
-        np.testing.assert_allclose(left_xyz, [0.03, 0.0, 0.0], atol=1e-5)
+        assert result.status is SafetyStatus.REJECTED
+        assert result.action is None
+        assert any(f.code is SafetyCode.REFERENCE_INCONSISTENT for f in result.findings)
 
 
 class TestReferenceBootstrap:
@@ -648,4 +646,3 @@ class TestPublicPortFreeze:
             "_metrics",
         ):
             assert not hasattr(guard, attr), f"unexpected state field {attr!r}"
-

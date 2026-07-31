@@ -23,5 +23,13 @@ pyyaml>=6.0
 # 图像预处理（可选：act/service/image_preprocess.py 有 numpy 回退，但装上体验更好）
 opencv-python>=4.9.0
 
+# 内部 Web 服务（debug/monitoring UI）
+fastapi>=0.104.0
+uvicorn>=0.24.0
+# uvicorn 的 WebSocket 协议实现。基础版 uvicorn 不含 ws 库，缺它则所有 /ws/* 端点
+# 返回 404（web_launcher 的 observation/metrics/action 实时推送全部失效）。
+websockets>=12.0
+requests>=2.31.0
+
 # 测试
 pytest>=8.0.0

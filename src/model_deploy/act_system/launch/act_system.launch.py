@@ -67,12 +67,9 @@ def _find_workspace_root():
         current = parent
 
 
-# act_deploy_node.py 模块顶层只 `import rclpy` 却引用 `rclpy.node.Node`，而
-# `import rclpy` 不会自动导入 node 子模块；这里先预导入 rclpy.node 再调用
-# 生产入口 main()（不改动 act/ 包本身）。
+# 通过一个很小的 bootstrap 调用生产入口，并原样透传 launch 参数。
 _ACT_BOOTSTRAP = (
     'import sys\n'
-    'import rclpy.node  # noqa: F401  预导入，避免模块顶层 AttributeError\n'
     'from model_deploy.act.ui.act_deploy_node import main\n'
     'sys.exit(main(sys.argv[1:]))\n'
 )

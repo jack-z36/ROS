@@ -97,9 +97,8 @@ class MockMessageFactory(_MessageFactory):
 
 
 def _valid_c4() -> TopicPayloadBundle:
-    frame = "base_link"
     pose = ArmPoseTarget(
-        frame_id=frame,
+        frame_id="left_arm_base",
         position_xyz=(0.1, 0.2, 0.3),
         quaternion_xyzw=(0.0, 0.0, 0.0, 1.0),
     )
@@ -108,12 +107,12 @@ def _valid_c4() -> TopicPayloadBundle:
         policy_action=policy,
         left_arm=pose,
         right_arm=ArmPoseTarget(
-            frame_id=frame,
+            frame_id="right_arm_base",
             position_xyz=(0.4, 0.5, 0.6),
             quaternion_xyzw=(0.0, 0.0, 0.7071068, 0.7071068),
         ),
-        left_gripper=10.0,
-        right_gripper=90.0,
+        left_gripper=0.1,
+        right_gripper=0.9,
     )
 
 
@@ -176,7 +175,7 @@ class TestBuildRosMessagesG07:
         # left arm
         la = bundle.left_arm_msg
         assert isinstance(la, MockPoseStamped)
-        assert la.header.frame_id == "base_link"
+        assert la.header.frame_id == "left_arm_base"
         assert la.header.stamp.sec == 12
         assert la.header.stamp.nanosec == 250_000_000
         assert (la.pose.position.x, la.pose.position.y, la.pose.position.z) == (
@@ -191,9 +190,9 @@ class TestBuildRosMessagesG07:
             la.pose.orientation.w,
         ) == (0.0, 0.0, 0.0, 1.0)
 
-        # right arm uses its own pose; same frame, same stamp
+        # Right arm uses its own base frame and the same timestamp.
         ra = bundle.right_arm_msg
-        assert ra.header.frame_id == "base_link"
+        assert ra.header.frame_id == "right_arm_base"
         assert ra.header.stamp.sec == 12
         assert ra.header.stamp.nanosec == 250_000_000
         assert (ra.pose.position.x, ra.pose.position.y, ra.pose.position.z) == (
@@ -213,15 +212,16 @@ class TestBuildRosMessagesG07:
         bundle = build_ros_messages(c4, 1.5, MockMessageFactory())
         assert isinstance(bundle.left_gripper_msg, MockFloat64)
         assert isinstance(bundle.right_gripper_msg, MockFloat64)
-        # 0..100 domain preserved exactly.
-        assert bundle.left_gripper_msg.data == 10.0
-        assert bundle.right_gripper_msg.data == 90.0
+        assert bundle.left_gripper_msg.data == 0.1
+        assert bundle.right_gripper_msg.data == 0.9
 
     def test_default_factory_works_without_ros(self) -> None:
         """Even without injecting a factory, build succeeds in pure Python."""
         bundle = build_ros_messages(_valid_c4(), 1.5)
         assert isinstance(bundle, _RosMessageBundle)
-        assert bundle.policy_action_msg.data == [float(i) for i in range(16)]
+        assert list(bundle.policy_action_msg.data) == [
+            float(i) for i in range(16)
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -264,7 +264,7 @@ class TestBuildRosMessagesFailureG08:
 
     def test_gripper_out_of_range_raises(self) -> None:
         c4 = _valid_c4()
-        object.__setattr__(c4, "left_gripper", 150.0)
+        object.__setattr__(c4, "left_gripper", 1.5)
         with pytest.raises(ValueError):
             build_ros_messages(c4, 1.5, MockMessageFactory())
 
@@ -310,4 +310,4 @@ class TestBuildRosMessagesFailureG08:
         bundle = build_ros_messages(_valid_c4(), 1.5, SpyFactory())
         # Building completed and no publish call was made by B2.
         assert spy["publish"] == 0
-        assert bundle.right_gripper_msg.data == 90.0
+        assert bundle.right_gripper_msg.data == 0.9

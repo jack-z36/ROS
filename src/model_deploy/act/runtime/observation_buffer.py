@@ -73,6 +73,7 @@ class ObservationBuffer:
     def __init__(
         self,
         monotonic_clock: Callable[[], float] | None = None,
+        on_observation: Callable[[object], None] | None = None,
     ) -> None:
         self._latest_observation: ObservationSnapshot | None = None
         self._lock: threading.Lock = threading.Lock()
@@ -83,6 +84,9 @@ class ObservationBuffer:
         self._monotonic_clock: Callable[[], float] = (
             monotonic_clock or _default_monotonic_clock()
         )
+        # Optional side-channel callback invoked after each set_observation.
+        # Used by DebugObserver for Web UI data collection.
+        self._on_observation: Callable[[object], None] | None = on_observation
 
     # ------------------------------------------------------------------
     # Write
@@ -98,6 +102,12 @@ class ObservationBuffer:
             self._metrics.updated_at_s = self._monotonic_clock()
             # Clear last_error on success
             self._metrics.last_error = None
+        # Fire side-channel callback outside the lock to avoid blocking.
+        if self._on_observation is not None:
+            try:
+                self._on_observation(observation)
+            except Exception:
+                pass  # Callback failure must never affect the main pipeline.
 
     # ------------------------------------------------------------------
     # Read
@@ -132,6 +142,16 @@ class ObservationBuffer:
     # ------------------------------------------------------------------
     # Diagnostics
     # ------------------------------------------------------------------
+
+    def set_on_observation_callback(
+        self, callback: Callable[[object], None] | None
+    ) -> None:
+        """Attach (or replace) the side-channel observation callback.
+
+        Used to wire a DebugObserver after the pipeline has been built.
+        """
+        with self._lock:
+            self._on_observation = callback
 
     def record_missing_fields(self, fields: List[str]) -> None:
         """Record the latest missing-fields diagnostic list."""

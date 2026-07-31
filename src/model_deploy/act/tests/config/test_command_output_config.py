@@ -25,12 +25,9 @@ class TestCommandOutputConfigDefaults:
     def test_default_off(self) -> None:
         cfg = CommandOutputConfig()
         assert cfg.command_output_enabled is False
-        assert cfg.pose_frame_id == "base"
-        assert cfg.gripper_input_min == 0.0
-        assert cfg.gripper_input_max == 1.0
-        assert cfg.gripper_output_min == 0.0
-        assert cfg.gripper_output_max == 100.0
-        assert cfg.gripper_deadband == 1.0
+        assert cfg.left_pose_frame_id == "left_arm_base"
+        assert cfg.right_pose_frame_id == "right_arm_base"
+        assert cfg.gripper_deadband == 0.01
         assert cfg.gripper_min_publish_interval_s == 0.05
         assert cfg.qos_depth == 10
 
@@ -43,7 +40,7 @@ class TestCommandOutputConfigDefaults:
 
         cfg = CommandOutputConfig()
         with pytest.raises(FrozenInstanceError):
-            cfg.pose_frame_id = "other"  # type: ignore[misc]
+            cfg.left_pose_frame_id = "other"  # type: ignore[misc]
 
 
 # ---------------------------------------------------------------------------
@@ -69,12 +66,9 @@ def _valid_raw() -> dict:
         "topics": {"namespace": "/act"},
         "safety": {},
         "command_output": {
-            "pose_frame_id": "base",
-            "gripper_input_min": 0.0,
-            "gripper_input_max": 1.0,
-            "gripper_output_min": 0.0,
-            "gripper_output_max": 100.0,
-            "gripper_deadband": 1.0,
+            "left_pose_frame_id": "left_arm_base",
+            "right_pose_frame_id": "right_arm_base",
+            "gripper_deadband": 0.01,
             "gripper_min_publish_interval_s": 0.05,
             "qos_depth": 10,
         },
@@ -88,8 +82,10 @@ class TestDeployConfigCommandOutput:
         assert cfg.command_output.command_output_enabled is False
 
     def test_explicit_on_from_caller(self) -> None:
+        raw = _valid_raw()
+        raw["runtime"]["mode"] = "real-run"
         cfg = DeployConfig.from_mapping(
-            _valid_raw(), base_dir=Path("/tmp"), command_output_enabled=True
+            raw, base_dir=Path("/tmp"), command_output_enabled=True
         )
         assert cfg.command_output.command_output_enabled is True
 
@@ -111,7 +107,8 @@ class TestDeployConfigCommandOutput:
         del raw["command_output"]
         cfg = DeployConfig.from_mapping(raw, base_dir=Path("/tmp"))
         assert cfg.command_output.command_output_enabled is False
-        assert cfg.command_output.pose_frame_id == "base"
+        assert cfg.command_output.left_pose_frame_id == "left_arm_base"
+        assert cfg.command_output.right_pose_frame_id == "right_arm_base"
 
     def test_yaml_cannot_turn_on_command(self) -> None:
         # Even if a YAML author tried `command_output_enabled: true`, it is not
@@ -133,29 +130,33 @@ class TestCommandOutputValidation:
         raw["command_output"].update(overrides)
         return raw
 
-    def test_empty_pose_frame_rejected(self) -> None:
-        with pytest.raises(DeployConfigError, match="pose_frame_id"):
-            DeployConfig.from_mapping(self._raw(pose_frame_id="  "), base_dir=Path("/tmp"))
-
-    def test_gripper_input_domain_not_0_1_rejected(self) -> None:
-        with pytest.raises(DeployConfigError, match="gripper_input"):
+    def test_wrong_left_pose_frame_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="left_pose_frame_id"):
             DeployConfig.from_mapping(
-                self._raw(gripper_input_min=0.1, gripper_input_max=1.0),
-                base_dir=Path("/tmp"),
-            )
-
-    def test_gripper_output_min_ge_max_rejected(self) -> None:
-        with pytest.raises(DeployConfigError, match="gripper_output"):
-            DeployConfig.from_mapping(
-                self._raw(gripper_output_min=100.0, gripper_output_max=100.0),
-                base_dir=Path("/tmp"),
+                self._raw(left_pose_frame_id="base"), base_dir=Path("/tmp")
             )
 
     def test_deadband_exceeds_span_rejected(self) -> None:
         with pytest.raises(DeployConfigError, match="gripper_deadband"):
             DeployConfig.from_mapping(
-                self._raw(gripper_output_max=10.0, gripper_deadband=50.0),
+                self._raw(gripper_deadband=1.1),
                 base_dir=Path("/tmp"),
+            )
+
+    @pytest.mark.parametrize(
+        "legacy_key",
+        (
+            "pose_frame_id",
+            "gripper_input_min",
+            "gripper_input_max",
+            "gripper_output_min",
+            "gripper_output_max",
+        ),
+    )
+    def test_removed_mapping_keys_rejected(self, legacy_key: str) -> None:
+        with pytest.raises(DeployConfigError, match="removed keys"):
+            DeployConfig.from_mapping(
+                self._raw(**{legacy_key: 0.0}), base_dir=Path("/tmp")
             )
 
     def test_negative_deadband_rejected(self) -> None:

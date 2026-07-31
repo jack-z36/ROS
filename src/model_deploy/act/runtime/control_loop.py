@@ -59,6 +59,10 @@ from model_deploy.act.runtime.inference_channel import (
     LatestQueue,
 )
 from model_deploy.act.runtime.runtime_metrics import RuntimeMetrics
+from model_deploy.act.runtime.action_response_verifier import (
+    ActionResponseVerifier,
+    ResponseState,
+)
 from model_deploy.act.types.action_chunk import ActionChunk
 from model_deploy.act.types.action_spec import ActionSpec, split_action
 from model_deploy.act.types.action_publish import (
@@ -247,6 +251,7 @@ class ControlLoopConfig:
     continue_to_chunk_size: bool = False
     fallback_policy: str = "hold_last_action"
     prefetch_steps: int = 1
+    response_verification_enabled: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -353,6 +358,9 @@ class ControlLoop:
         safety_port: SafetyPort,
         publish_port: PublishPort,
         observation_port: ObservationPort,
+        on_inference_result: Optional[Callable] = None,
+        on_safety_result: Optional[Callable] = None,
+        response_verifier: Optional[ActionResponseVerifier] = None,
     ) -> None:
         if not isinstance(config, ControlLoopConfig):
             raise TypeError("config must be a ControlLoopConfig")
@@ -368,6 +376,11 @@ class ControlLoop:
         self._safety_port = safety_port
         self._publish_port = publish_port
         self._observation_port = observation_port
+        self._response_verifier = response_verifier
+        if response_verifier is not None and not isinstance(
+            response_verifier, ActionResponseVerifier
+        ):
+            raise TypeError("response_verifier must be ActionResponseVerifier or None")
 
         # --- cross-tick chunk state ---
         self._active_chunk: Optional[ActionChunk] = None
@@ -392,6 +405,12 @@ class ControlLoop:
         self._pending_fallback_reason: Optional[FallbackReason] = None
         self._deferred_delivered: bool = False
         self._tick_status: str = "NORMAL"
+
+        # --- debug callbacks ---
+        self._on_inference_result = on_inference_result
+        self._on_safety_result = on_safety_result
+        self._debug_step_counter: int = 0
+        self._current_debug_step_id: Optional[int] = None
 
         # --- shutdown ---
         self._shutdown_requested: bool = False
@@ -422,6 +441,40 @@ class ControlLoop:
             self._finalize_runtime_status()
             return None
 
+        # A real command is issued only when the preceding command has either
+        # demonstrated progress or completed its hold window.  This keeps the
+        # response window meaningful and prevents a stalled actuator from
+        # being hidden by a stream of newer targets.
+        latest_observation = self._observation_port()
+        if (
+            self._response_verifier is not None
+            and command_permit.allowed
+            and latest_observation is None
+        ):
+            # An allowed real command without a physical baseline is a
+            # contract violation.  Do not fall back to the previous target.
+            self._latch_runtime_fault("RESPONSE_BASELINE_MISSING")
+            self._tick_status = "RUNTIME_FAULT"
+            self._finalize_runtime_status()
+            return None
+        if self._response_verifier is not None:
+            response = self._response_verifier.observe(latest_observation, monotonic_s)
+            if response.state is ResponseState.FAULT:
+                self._metrics.record_event(
+                    "last_response_detail", value=response.detail
+                )
+                self._latch_runtime_fault(response.reason_code or "RESPONSE_FAULT")
+                self._tick_status = "RUNTIME_FAULT"
+                self._finalize_runtime_status()
+                return None
+            if response.state is ResponseState.WAITING:
+                self._metrics.record_event(
+                    "last_error", value=response.reason_code or "RESPONSE_WAITING"
+                )
+                self._tick_status = "RESPONSE_WAITING"
+                self._finalize_runtime_status()
+                return None
+
         # 1. correlate latest result (may activate pending / mark fallback)
         self._collect_chunk_result(monotonic_s, command_permit, ros_time_s)
         # 2. prefetch / submit a new inference request if needed
@@ -437,6 +490,15 @@ class ControlLoop:
             result = self._run_fallback(reason, command_permit, ros_time_s, monotonic_s)
             self._finalize_runtime_status()
             return result
+
+        # --- debug: 阶段 1 推理结果回调 ---
+        try:
+            if self._on_inference_result is not None:
+                self._debug_step_counter += 1
+                step_id = self._on_inference_result(list(vector.tolist()))
+                self._current_debug_step_id = step_id
+        except Exception:
+            pass
 
         # Candidate selection: deep copy so safety / hold cannot mutate state.
         selection = select_candidate(
@@ -457,15 +519,43 @@ class ControlLoop:
         )
 
         # 4. safety — exactly one call per candidate (B7)
+        # Read one coherent physical baseline for this candidate.  The safety
+        # guard must compare against this observation, not against an older
+        # command that may never have reached the robot.
         safety_result = self._safety_port.filter_action(
             selection.candidate_action,
-            previous_safe_action=selection.previous_safe_action,
-            latest_observation=self._observation_port(),
+            previous_safe_action=(
+                selection.previous_safe_action
+                if (command_permit.allowed and self._config.command_output_enabled)
+                else None
+            ),
+            latest_observation=latest_observation,
         )
         self._metrics.record_event(
             "last_safety_findings",
             value=tuple(f.code.value for f in safety_result.findings),
         )
+
+        # --- debug: 阶段 2 安全过滤回调 ---
+        try:
+            if self._on_safety_result is not None and self._current_debug_step_id is not None:
+                _verdict = safety_result.status.value
+                _filtered = (
+                    list(safety_result.action.as_vector().tolist())
+                    if safety_result.action is not None
+                    else []
+                )
+                _details = {
+                    "findings": [
+                        {"code": f.code.value, "side": f.side, "detail": f.detail}
+                        for f in safety_result.findings
+                    ]
+                } if safety_result.findings else None
+                self._on_safety_result(
+                    self._current_debug_step_id, _verdict, _filtered, _details
+                )
+        except Exception:
+            pass
 
         if safety_result.status == SafetyStatus.REJECTED or safety_result.action is None:
             # Do NOT also emit a fallback in the same tick (per task rule).
@@ -479,12 +569,23 @@ class ControlLoop:
         result = self._call_publish(safety_result, command_permit, ros_time_s, monotonic_s)
         # 6. reduce outcome + latches (C17/C19/C23/C24/C25)
         self._reduce_publish_outcome(result, safety_result, monotonic_s)
-        if result.outcome in (
-            PublishOutcome.PUBLISHED,
-            PublishOutcome.OBSERVED,
-            PublishOutcome.BLOCKED,
-        ) and safety_result.action is not None:
+        # Only a real, complete command publication may become the next
+        # inter-command reference.  OBSERVED (dry-run) and BLOCKED (permit
+        # denied) are not hardware execution and must not advance the
+        # reference chain.
+        if (
+            result.outcome is PublishOutcome.PUBLISHED
+            and result.command_permitted
+            and result.command_publish_count > 0
+            and safety_result.action is not None
+        ):
             self._store_safe_action(safety_result.action, refresh_source=True)
+            self._record_physical_command(
+                action_id=result.action_id,
+                action=safety_result.action,
+                baseline=latest_observation,
+                issued_at_s=monotonic_s,
+            )
         self._set_tick_status_for_outcome(result.outcome)
         self._finalize_runtime_status()
         return result
@@ -748,6 +849,13 @@ class ControlLoop:
         """Build the publish request, call the port once, echo-check (C19)."""
         self._action_seq += 1
         action_id = f"act-{self._action_seq}"
+        # Propagate debug step_id to the publisher for the phase-3 callback.
+        try:
+            publisher_obj = getattr(self._publish_port, "__self__", None)
+            if publisher_obj is not None and self._current_debug_step_id is not None:
+                publisher_obj._current_step_id = self._current_debug_step_id
+        except Exception:
+            pass
         request = ActionPublishRequest(
             action_id=action_id,
             safety_result=safety_result,
@@ -806,7 +914,11 @@ class ControlLoop:
             )
             safety_result = self._safety_port.filter_action(
                 hold_selection.candidate_action,
-                previous_safe_action=hold_selection.previous_safe_action,
+                previous_safe_action=(
+                    hold_selection.previous_safe_action
+                    if (command_permit.allowed and self._config.command_output_enabled)
+                    else None
+                ),
                 latest_observation=self._observation_port(),
             )
             if safety_result.status == SafetyStatus.REJECTED or safety_result.action is None:
@@ -816,13 +928,20 @@ class ControlLoop:
                 safety_result, command_permit, ros_time_s, monotonic_s
             )
             self._reduce_publish_outcome(result, safety_result, monotonic_s)
-            if result.outcome in (
-                PublishOutcome.PUBLISHED,
-                PublishOutcome.OBSERVED,
-                PublishOutcome.BLOCKED,
-            ) and safety_result.action is not None:
+            if (
+                result.outcome is PublishOutcome.PUBLISHED
+                and result.command_permitted
+                and result.command_publish_count > 0
+                and safety_result.action is not None
+            ):
                 # Hold keeps the ORIGINAL source age (do not refresh).
                 self._store_safe_action(safety_result.action, refresh_source=False)
+                self._record_physical_command(
+                    action_id=result.action_id,
+                    action=safety_result.action,
+                    baseline=self._observation_port(),
+                    issued_at_s=monotonic_s,
+                )
             self._set_tick_status_for_outcome(result.outcome)
             return result
 
@@ -888,6 +1007,27 @@ class ControlLoop:
         """Invariant violation -> runtime fault latch (C24, sticky)."""
         self._metrics.record_event("runtime_fault_latched", value=True)
         self._metrics.record_event("last_error", value=reason)
+
+    def _record_physical_command(
+        self,
+        *,
+        action_id: str,
+        action: ActionSpec,
+        baseline: Optional[ObservationSnapshot],
+        issued_at_s: float,
+    ) -> None:
+        """Start a physical response window after a complete real publish."""
+        if self._response_verifier is None:
+            return
+        if baseline is None:
+            self._latch_runtime_fault("RESPONSE_BASELINE_MISSING")
+            return
+        try:
+            self._response_verifier.on_published(
+                action_id, action, baseline, issued_at_s
+            )
+        except Exception as exc:  # defensive boundary around the verifier
+            self._latch_runtime_fault(f"RESPONSE_TRACKING_ERROR:{exc}")
 
     # ------------------------------------------------------------------
     # Safe-action bookkeeping

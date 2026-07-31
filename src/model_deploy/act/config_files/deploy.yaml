@@ -5,7 +5,7 @@
 # Action-smoothing fields and legacy bridge/mux sections are intentionally absent.
 
 bundle:
-  bundle_dir: /home/hit/模型权重/UMI_ACT/act_pretrained_model_20260702_13_010000/deploy_bundle
+  bundle_dir: /home/hit/模型权重/UMI_ACT/act_07_29/first_10min/deploy_bundle
 
 runtime:
   mode: dry-run
@@ -21,12 +21,26 @@ runtime:
   max_inference_requests: 1
   max_pending_chunks: 1
   fallback_policy: hold_last_action
-  max_delta_per_step: 0.03
+  max_delta_per_step: 0.01
   warmup_steps: 2
   compile_model: true
   compile_mode: reduce-overhead
   publish_metrics_hz: 1.0
   task: bimanual manipulation
+  # ACT trajectory samples may deliberately oscillate around the preceding
+  # target.  Do not turn a non-monotonic physical response into an E-stop.
+  # With this disabled, only loss of fresh observation data remains a
+  # response-verification fault; action and hardware safety gates stay active.
+  response_motion_check_enabled: false
+  # A missing response still latches the emergency-stop path after 2 s.
+  response_timeout_sec: 2.0
+  hold_window_sec: 0.2
+  epsilon_move_translation_m: 0.001
+  epsilon_move_rotation_rad: 0.01
+  epsilon_move_gripper: 0.01
+  epsilon_hold_translation_m: 0.001
+  epsilon_hold_rotation_rad: 0.01
+  epsilon_hold_gripper: 0.01
 
 image:
   image_size: 640
@@ -57,14 +71,18 @@ topics:
 
 safety:
   # ActionDomain-aligned thresholds (meters / radians / gripper 0~1).
+  # Leave headroom below the independent RM65 hardware delta gate (1 cm /
+  # 0.05 rad).  The ACT reference and the driver's latest TCP sample are
+  # asynchronous, so using the exact hardware limit can be rejected after a
+  # normal telemetry update even though this layer clipped the action.
   # Legacy keys max_tcp_delta_per_step, hand_min/max, quaternion_check are rejected.
-  max_translation_step_m: 0.03
-  max_rotation_step_rad: 0.1
+  max_translation_step_m: 0.008
+  max_rotation_step_rad: 0.04
   gripper_min: 0.0
   gripper_max: 1.0
   max_gripper_step: 0.2
   quaternion_norm_tolerance: 0.001
-  pose_frame: base
+  pose_frame: per_arm_base
   quaternion_order: xyzw
   gripper_domain: normalized_0_1
 
@@ -73,11 +91,8 @@ safety:
 # decision supplied by the CLI caller (--enable-command-output) and must never
 # be persisted here, so an old config cannot silently turn on real commands.
 command_output:
-  pose_frame_id: base
-  gripper_input_min: 0.0
-  gripper_input_max: 1.0
-  gripper_output_min: 0.0
-  gripper_output_max: 100.0
-  gripper_deadband: 1.0
+  left_pose_frame_id: left_arm_base
+  right_pose_frame_id: right_arm_base
+  gripper_deadband: 0.01
   gripper_min_publish_interval_s: 0.05
   qos_depth: 10

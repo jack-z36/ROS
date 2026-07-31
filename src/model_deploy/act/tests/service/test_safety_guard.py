@@ -294,25 +294,37 @@ class TestRejectedPath:
 
 
 class TestReferenceAndStateless:
-    def test_previous_preferred_over_observation(self):
-        """When both refs present, projection uses previous (not observation)."""
+    def test_observation_is_physical_baseline(self):
+        """A stale previous target cannot override the measured baseline."""
         guard = SafetyGuard(_default_config(max_translation_step_m=0.03))
-        # previous at origin; observation far away at x=1.0
+        # Previous at origin; observation far away at x=1.0.  The two
+        # 3cm safety envelopes do not intersect, so fail closed instead of
+        # accumulating from the previous target.
         previous = _action(left_xyz=(0.0, 0.0, 0.0))
         snap = _snapshot(left_xyz=(1.0, 0.0, 0.0))
-        # candidate 0.10 m from origin → ADJUSTED to 0.03 from previous
-        # if observation were used, displacement from obs would be ~0.9 → different
         candidate = _action(left_xyz=(0.10, 0.0, 0.0))
         result = guard.filter_action(
             _vector_from_action(candidate),
             previous_safe_action=previous,
             latest_observation=snap,
         )
-        assert result.status is SafetyStatus.ADJUSTED
+        assert result.status is SafetyStatus.REJECTED
+        assert result.action is None
+        assert any(f.code is SafetyCode.REFERENCE_INCONSISTENT for f in result.findings)
+
+    def test_stalled_robot_does_not_accumulate_targets(self):
+        """Repeated calls stay within the measured 1cm envelope."""
+        guard = SafetyGuard(_default_config(max_translation_step_m=0.01))
+        previous = _action(left_xyz=(0.01, 0.0, 0.0))
+        snap = _snapshot(left_xyz=(0.0, 0.0, 0.0))
+        candidate = _action(left_xyz=(0.20, 0.0, 0.0))
+        result = guard.filter_action(
+            _vector_from_action(candidate),
+            previous_safe_action=previous,
+            latest_observation=snap,
+        )
         assert result.action is not None
-        left_xyz = np.asarray(result.action.left_tcp_action[:3], dtype=np.float64)
-        # projected from previous origin → ~0.03 on +x
-        np.testing.assert_allclose(left_xyz, [0.03, 0.0, 0.0], atol=1e-5)
+        assert float(np.linalg.norm(result.action.left_tcp_action[:3] - snap.state.left_tcp_position)) <= 0.01 + 1e-6
 
     def test_consecutive_calls_do_not_remember_previous(self):
         """Guard has no cross-tick memory of previous_safe_action."""
@@ -498,4 +510,3 @@ class TestPublicPortContract:
         )
         for attr in forbidden:
             assert not hasattr(guard, attr), f"unexpected state field {attr!r}"
-

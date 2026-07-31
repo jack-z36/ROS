@@ -88,7 +88,7 @@ def _rejected_safety_result() -> SafetyResult:
 def _config(enabled: bool = False) -> CommandOutputConfig:
     return CommandOutputConfig(
         command_output_enabled=enabled,
-        gripper_deadband=1.0,
+        gripper_deadband=0.01,
         gripper_min_publish_interval_s=0.05,
     )
 
@@ -270,8 +270,8 @@ class TestGripperAntiFlutterG13:
         res = pub.publish(_request(CommandPermit(allowed=True), monotonic_s=1.0))
         assert res.outcome == PublishOutcome.PUBLISHED
         assert res.command_publish_count == 4
-        assert pub._gripper_last_target["left"] == 50.0  # 0.5 -> 50
-        assert pub._gripper_last_target["right"] == 50.0
+        assert pub._gripper_last_target["left"] == 0.5
+        assert pub._gripper_last_target["right"] == 0.5
         assert pub._gripper_last_time["left"] == 1.0
 
     def test_deadband_skip_is_not_a_failure(self) -> None:
@@ -284,22 +284,22 @@ class TestGripperAntiFlutterG13:
         assert res.outcome == PublishOutcome.PUBLISHED
         assert res.command_plan_completed is True
         # Cache NOT updated for skipped sides.
-        assert pub._gripper_last_target["left"] == 50.0
+        assert pub._gripper_last_target["left"] == 0.5
 
     def test_gripper_republish_after_deadband_updates_cache(self) -> None:
         pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
         pub.publish(_request(CommandPermit(allowed=True), monotonic_s=1.0))
-        # left gripper 1.0 -> output 100; right stays 0.5.
+        # Normalized targets are published without a second unit mapping.
         sr = _pass_safety_result(left_gripper=1.0, right_gripper=0.5)
         res = pub.publish(
             _request(CommandPermit(allowed=True), safety_result=sr, monotonic_s=10.0)
         )
         assert res.gripper_skipped == ("right",)
         assert res.command_publish_count == 3  # arms + left gripper
-        assert pub._gripper_last_target["left"] == 100.0
+        assert pub._gripper_last_target["left"] == 1.0
         assert pub._gripper_last_time["left"] == 10.0
         # right side cache untouched (skipped).
-        assert pub._gripper_last_target["right"] == 50.0
+        assert pub._gripper_last_target["right"] == 0.5
 
     def test_failed_gripper_does_not_update_cache(self) -> None:
         pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
@@ -312,7 +312,7 @@ class TestGripperAntiFlutterG13:
         )
         assert res.outcome == PublishOutcome.PARTIAL
         # failed left gripper keeps old cache value.
-        assert pub._gripper_last_target["left"] == 50.0
+        assert pub._gripper_last_target["left"] == 0.5
 
 
 # ---------------------------------------------------------------------------

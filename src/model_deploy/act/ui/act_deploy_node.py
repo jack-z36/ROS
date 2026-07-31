@@ -34,6 +34,7 @@ Design notes on the ROS primitive seam:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import math
 import threading
@@ -46,10 +47,12 @@ from typing import Callable, Optional
 # constructed when it is absent.
 try:  # pragma: no cover - depends on the deployment environment
     import rclpy  # type: ignore
+    from rclpy.node import Node as RclpyNode  # type: ignore
 
     _RCLPY_AVAILABLE = True
 except ImportError:  # pragma: no cover - ROS optional at import time
     rclpy = None  # type: ignore[assignment]
+    RclpyNode = object  # type: ignore[assignment,misc]
     _RCLPY_AVAILABLE = False
 
 from model_deploy.act.config.schema import DeployConfig
@@ -58,9 +61,11 @@ from model_deploy.act.repo.act_runtime_resources import (
     PolicyInputSpec,
 )
 from model_deploy.act.runtime.control_loop import ControlLoop, ControlLoopConfig
+from model_deploy.act.runtime.action_response_verifier import ActionResponseVerifier
 from model_deploy.act.runtime.inference_channel import LatestQueue
 from model_deploy.act.runtime.inference_worker import InferenceWorker
 from model_deploy.act.runtime.runtime_metrics import RuntimeMetrics
+from model_deploy.act.runtime.action_debug_recorder import ActionDebugRecorder
 from model_deploy.act.service.safety_guard import SafetyGuard
 from model_deploy.act.types.action_publish import CommandPermit
 
@@ -263,6 +268,12 @@ class _ActDeployComposition:
         """Return ``(publisher, msg_cls)`` for the telemetry topic (abstract)."""
         raise NotImplementedError
 
+    def _ros_create_command_permit_provider(
+        self, config: DeployConfig, monotonic_clock: Callable[[], float]
+    ):
+        """Return the production ROS permit provider, or ``None`` in fake nodes."""
+        return None
+
     def _ros_time_seconds(self) -> float:
         """Current ROS time in seconds (abstract)."""
         raise NotImplementedError
@@ -299,6 +310,7 @@ class _ActDeployComposition:
         self._resources = resources
         self._inference_service = inference_service
         self._permit_source = permit_source
+        self._permit_provider = None
         self._monotonic_clock = monotonic_clock
 
         # lifecycle / handle state — established before any risky step.
@@ -311,6 +323,8 @@ class _ActDeployComposition:
         self._worker = None
         self._action_publisher = None
         self._control_loop = None
+        self._response_verifier = None
+        self._action_recorder = None
         self._metrics_publisher = None
         self._metrics_msg_cls = None
         self._control_timer = None
@@ -319,6 +333,7 @@ class _ActDeployComposition:
         self._started = False
         self._shutdown = False
         self._shutdown_succeeded: Optional[bool] = None
+        self._real_output_faulted = False
 
         try:
             # 1. observation pipeline (creates subscriptions last, after RAM checks)
@@ -343,6 +358,16 @@ class _ActDeployComposition:
                 clock=self._monotonic_clock,
             )
 
+            # Production owns the real permit topology.  Tests may inject a
+            # deterministic source; dry-run fakes keep the fail-closed default.
+            if self._permit_source is None:
+                self._permit_provider = self._ros_create_command_permit_provider(
+                    config, self._monotonic_clock
+                )
+                if self._permit_provider is not None:
+                    self._permit_provider.run_startup_preflight()
+                    self._permit_source = self._permit_provider.resolve
+
             # 3. canonical contract cross-check (pure RAM)
             run_startup_preflight(
                 config=config,
@@ -357,8 +382,10 @@ class _ActDeployComposition:
             )
 
             # 4. L2-05 publisher + C20 metrics writer + A4 ControlLoop
+            self._action_recorder = ActionDebugRecorder()
             self._action_publisher = ActionPublisher(
-                self, config.command_output, config.topics
+                self, config.command_output, config.topics,
+                on_publish_result=self._action_recorder.record_publish_result,
             )
             self._metrics_publisher, self._metrics_msg_cls = (
                 self._ros_create_metrics_publisher(
@@ -368,6 +395,21 @@ class _ActDeployComposition:
 
             observation_provider = lambda: self._observation_pipeline.buffer.latest_observation(
                 config.runtime.max_observation_age_sec
+            )
+            self._response_verifier = (
+                ActionResponseVerifier(
+                    motion_check_enabled=config.runtime.response_motion_check_enabled,
+                    response_timeout_s=config.runtime.response_timeout_sec,
+                    hold_window_s=config.runtime.hold_window_sec,
+                    epsilon_move_translation_m=config.runtime.epsilon_move_translation_m,
+                    epsilon_move_rotation_rad=config.runtime.epsilon_move_rotation_rad,
+                    epsilon_move_gripper=config.runtime.epsilon_move_gripper,
+                    epsilon_hold_translation_m=config.runtime.epsilon_hold_translation_m,
+                    epsilon_hold_rotation_rad=config.runtime.epsilon_hold_rotation_rad,
+                    epsilon_hold_gripper=config.runtime.epsilon_hold_gripper,
+                )
+                if config.runtime.mode == "real-run"
+                else None
             )
             self._control_loop = ControlLoop(
                 config=ControlLoopConfig(
@@ -379,6 +421,7 @@ class _ActDeployComposition:
                     continue_to_chunk_size=False,
                     fallback_policy=config.runtime.fallback_policy,
                     prefetch_steps=config.runtime.prefetch_steps,
+                    response_verification_enabled=(config.runtime.mode == "real-run"),
                 ),
                 request_queue=self._request_queue,
                 result_queue=self._result_queue,
@@ -386,6 +429,9 @@ class _ActDeployComposition:
                 safety_port=self._safety_guard,
                 publish_port=self._action_publisher.publish,
                 observation_port=observation_provider,
+                on_inference_result=self._action_recorder.record_inference_result,
+                on_safety_result=self._action_recorder.record_safety_result,
+                response_verifier=self._response_verifier,
             )
 
             # 5. start daemon worker
@@ -400,6 +446,8 @@ class _ActDeployComposition:
                 1.0 / max(config.runtime.publish_metrics_hz, 1e-6),
                 self._publish_runtime_metrics,
             )
+            if self._permit_provider is not None:
+                self._permit_provider.start()
             self._started = True
         except BaseException:
             # Bounded, idempotent recovery of any partial construction, then
@@ -445,6 +493,7 @@ class _ActDeployComposition:
             # Worker already reported a fatal reason -> latch RUNTIME_FAULT.
             if snap.worker_fatal_reason is not None:
                 self._runtime_metrics.record_event("status", value="RUNTIME_FAULT")
+                self._revoke_real_output(snap.worker_fatal_reason)
                 return
 
             # Worker unexpectedly died (started but no longer alive).
@@ -453,6 +502,7 @@ class _ActDeployComposition:
                     "worker_fatal_reason", value="WORKER_TERMINATED"
                 )
                 self._runtime_metrics.record_event("status", value="RUNTIME_FAULT")
+                self._revoke_real_output("WORKER_TERMINATED")
                 return
 
             # Double-clock sampling — both must be finite and non-negative.
@@ -460,15 +510,50 @@ class _ActDeployComposition:
             if not _is_valid_clock(monotonic_s):
                 self._runtime_metrics.record_event("worker_fatal_reason", value="CLOCK_INVALID")
                 self._runtime_metrics.record_event("status", value="RUNTIME_FAULT")
+                self._revoke_real_output("CLOCK_INVALID")
                 return
             ros_time_s = self._ros_time_seconds()
             if not _is_valid_clock(ros_time_s):
                 self._runtime_metrics.record_event("worker_fatal_reason", value="CLOCK_INVALID")
                 self._runtime_metrics.record_event("status", value="RUNTIME_FAULT")
+                self._revoke_real_output("CLOCK_INVALID")
                 return
+
+            observation_ready = (
+                self._observation_pipeline.buffer.latest_observation(
+                    self._config.runtime.max_observation_age_sec
+                )
+                is not None
+            )
+            if self._permit_provider is not None:
+                if (
+                    not observation_ready
+                    and self._permit_provider.has_been_allowed
+                ):
+                    self._revoke_real_output("OBSERVATION_NOT_READY")
+                    return
+                self._permit_provider.update_runtime_ready(
+                    observation_ready,
+                    "RUNTIME_READY" if observation_ready else "OBSERVATION_NOT_READY",
+                )
 
             permit = self._resolve_permit()
             self._control_loop.tick(monotonic_s, ros_time_s, permit)
+            after = self._runtime_metrics.snapshot()
+            if after.runtime_fault_latched or after.output_fault_latched:
+                self._revoke_real_output(
+                    after.last_error
+                    or after.last_publish_reason_code
+                    or "RUNTIME_FAULT"
+                )
+
+    def _revoke_real_output(self, reason_code: str) -> None:
+        """Latch a real-output fault once and request the hardware E-stop."""
+        if self._real_output_faulted:
+            return
+        self._real_output_faulted = True
+        if self._permit_provider is not None:
+            self._permit_provider.latch_fault(reason_code, emergency_stop=True)
 
     # -- C20 runtime metrics writer -----------------------------------------
 
@@ -481,6 +566,27 @@ class _ActDeployComposition:
             payload = {
                 "schema_version": 1,
                 "l2_id": "l2-06-control-loop",
+                "mode": self._config.runtime.mode,
+                "permit_state": (
+                    self._permit_provider.state
+                    if self._permit_provider is not None
+                    else "DISABLED"
+                ),
+                "permit_reason_code": (
+                    self._permit_provider.reason_code
+                    if self._permit_provider is not None
+                    else "COMMAND_OUTPUT_DISABLED"
+                ),
+                "response_state": (
+                    self._response_verifier.state.value
+                    if self._response_verifier is not None
+                    else "DISABLED"
+                ),
+                "response_reason_code": (
+                    self._response_verifier.reason_code
+                    if self._response_verifier is not None
+                    else "COMMAND_OUTPUT_DISABLED"
+                ),
                 "runtime_status": snap.runtime_status,
                 "tick_count": snap.tick_count,
                 "request_submitted_count": snap.request_submitted_count,
@@ -512,6 +618,7 @@ class _ActDeployComposition:
                 "last_publish_reason_code": snap.last_publish_reason_code,
                 "last_publish_failure_stage": snap.last_publish_failure_stage,
                 "last_publish_failed_topic": snap.last_publish_failed_topic,
+                "last_response_detail": snap.last_response_detail,
                 "last_error": snap.last_error,
                 "last_inference_latency_s": snap.last_inference_latency_s,
                 "updated_at_s": snap.updated_at_s,
@@ -542,6 +649,18 @@ class _ActDeployComposition:
             if self._shutdown:
                 return bool(self._shutdown_succeeded)
             self._shutdown = True
+
+            # Stop the internal web server (daemon thread) before other teardown
+            web_server = getattr(self, "_web_server", None)
+            if web_server is not None:
+                web_server.should_exit = True
+
+            # Revoke driver permits before stopping timers or worker activity.
+            if self._permit_provider is not None:
+                try:
+                    self._permit_provider.shutdown()
+                except Exception:  # pragma: no cover - diagnostic only
+                    pass
 
             # 1. converge the control loop (close its queues, latch SHUTDOWN).
             if self._control_loop is not None:
@@ -630,6 +749,17 @@ class _ActDeployRclpyPrimitives(_ActDeployComposition):
         factory = getattr(self, _PUBLISHER_FACTORY_METHOD)
         return factory(String, topic, qos), String
 
+    def _ros_create_command_permit_provider(
+        self, config: DeployConfig, monotonic_clock: Callable[[], float]
+    ):
+        from .command_permit_provider import RosCommandPermitProvider
+
+        return RosCommandPermitProvider(
+            node=self,
+            config=config,
+            monotonic_clock=monotonic_clock,
+        )
+
     def _ros_time_seconds(self) -> float:
         return float(self.get_clock().now().nanoseconds) / 1e9
 
@@ -639,7 +769,7 @@ class _ActDeployRclpyPrimitives(_ActDeployComposition):
 
 if _RCLPY_AVAILABLE:
 
-    class ActDeployNode(rclpy.node.Node, _ActDeployRclpyPrimitives):  # type: ignore[misc]
+    class ActDeployNode(RclpyNode, _ActDeployRclpyPrimitives):  # type: ignore[misc]
         """Production L2-06 composition root: a real ROS 2 node.
 
         Constructed by :func:`main` AFTER ``rclpy.init()``.  ``super().__init__``
@@ -656,7 +786,7 @@ if _RCLPY_AVAILABLE:
             monotonic_clock: Callable[[], float] = time.monotonic,
             node_name: str = "act_deploy_node",
         ) -> None:
-            rclpy.node.Node.__init__(self, node_name)  # type: ignore[attr-defined]
+            RclpyNode.__init__(self, node_name)
             self._act_init(
                 config=config,
                 resources=resources,
@@ -664,6 +794,135 @@ if _RCLPY_AVAILABLE:
                 permit_source=permit_source,
                 monotonic_clock=monotonic_clock,
             )
+            # Start internal web thread for debug/monitoring (after full init)
+            self._web_server = None
+            self._start_internal_web_server()
+
+        def _start_internal_web_server(self):
+            """Start a FastAPI server in a daemon thread on port 8081 (localhost only)."""
+            try:
+                from fastapi import FastAPI, WebSocket
+                from fastapi.responses import StreamingResponse
+                import uvicorn
+                import threading
+
+                from .runtime_bridge import RuntimeBridge
+                from model_deploy.act.runtime.debug_observer import DebugObserver
+
+                app = FastAPI()
+                bridge = RuntimeBridge(self)
+                debug_observer = DebugObserver()
+                self._debug_observer = debug_observer
+
+                # Wire DebugObserver to the ObservationBuffer callback
+                buffer = getattr(
+                    getattr(self, "_observation_pipeline", None), "buffer", None
+                )
+                if buffer is not None:
+                    buffer.set_on_observation_callback(debug_observer.on_observation)
+
+                @app.get("/internal/metrics")
+                async def get_metrics():
+                    return bridge.get_metrics()
+
+                @app.get("/internal/status")
+                async def get_status():
+                    return bridge.get_status()
+
+                @app.get("/internal/stream/image/{side}")
+                async def stream_image(side: str):
+                    """MJPEG 图像流端点。"""
+                    if side not in ("left", "right"):
+                        from fastapi import HTTPException
+                        raise HTTPException(400, "side must be 'left' or 'right'")
+
+                    def generate():
+                        while True:
+                            jpeg = debug_observer.get_latest_jpeg(side)
+                            if jpeg:
+                                yield (
+                                    b"--frame\r\n"
+                                    b"Content-Type: image/jpeg\r\n\r\n"
+                                    + jpeg
+                                    + b"\r\n"
+                                )
+                            time.sleep(0.1)  # 10 FPS
+
+                    return StreamingResponse(
+                        generate(),
+                        media_type="multipart/x-mixed-replace; boundary=frame",
+                    )
+
+                @app.websocket("/internal/ws/observation")
+                async def ws_observation(websocket: WebSocket):
+                    """Observation 数值 WebSocket。"""
+                    await websocket.accept()
+                    try:
+                        while True:
+                            state = debug_observer.get_latest_state()
+                            if state:
+                                await websocket.send_json(state)
+                            await asyncio.sleep(0.1)  # 10 Hz
+                    except Exception:
+                        pass
+
+                @app.get("/internal/observer/stats")
+                async def observer_stats():
+                    """DebugObserver 统计信息。"""
+                    return debug_observer.get_stats()
+
+                @app.get("/internal/observer/state")
+                async def observer_state():
+                    """当前 observation 状态数值（供外层轮询）。"""
+                    state = debug_observer.get_latest_state()
+                    return state if state else {}
+
+                # --- Action 数据流端点 ---
+                action_recorder = self._action_recorder
+
+                @app.get("/internal/api/action/latest")
+                async def action_latest():
+                    return action_recorder.get_latest() or {}
+
+                @app.get("/internal/api/action/history")
+                async def action_history(n: int = 50, offset: int = 0):
+                    return action_recorder.get_history(n=n)
+
+                @app.get("/internal/api/action/record/{step_id}")
+                async def action_record(step_id: int):
+                    return action_recorder.get_record(step_id) or {"error": "not found"}
+
+                @app.get("/internal/api/action/stats")
+                async def action_stats():
+                    return action_recorder.get_stats()
+
+                @app.websocket("/internal/ws/action")
+                async def ws_action(websocket: WebSocket):
+                    await websocket.accept()
+                    try:
+                        last_step = 0
+                        while True:
+                            latest = action_recorder.get_latest()
+                            if latest and latest["step_id"] > last_step:
+                                await websocket.send_json(latest)
+                                last_step = latest["step_id"]
+                            await asyncio.sleep(0.1)
+                    except Exception:
+                        pass
+
+                self._web_server = uvicorn.Server(uvicorn.Config(
+                    app, host="127.0.0.1", port=8081, log_level="warning"
+                ))
+
+                thread = threading.Thread(
+                    target=self._web_server.run,
+                    daemon=True,
+                    name="internal-web-server",
+                )
+                thread.start()
+            except Exception as e:
+                # Web server is optional — don't crash the node if it fails
+                self.get_logger().warn(f"Failed to start internal web server: {e}")
 
 else:
 
@@ -712,6 +971,11 @@ def build_arg_parser():
         help="Startup-only master switch for real command output. Never read "
         "from YAML; must be set explicitly by the operator.",
     )
+    parser.add_argument(
+        "--bundle-dir",
+        default=None,
+        help="Override bundle.bundle_dir from deploy.yaml with this path.",
+    )
     return parser
 
 
@@ -750,6 +1014,12 @@ def main(argv: Optional[list] = None) -> int:
         config = load_deploy_config(
             args.config, command_output_enabled=args.enable_command_output
         )
+        if args.bundle_dir:
+            # Override the bundle_dir from config with CLI argument.
+            # BundleConfig is a frozen dataclass, so bypass __setattr__ guard.
+            from pathlib import Path as _Path
+            new_dir = _Path(args.bundle_dir).expanduser().resolve()
+            object.__setattr__(config.bundle, "bundle_dir", new_dir)
         resources = load_act_runtime_resources(
             config, load_policy=make_lerobot_policy_loader(config)
         )
@@ -761,17 +1031,12 @@ def main(argv: Optional[list] = None) -> int:
             resources.policy_input_spec,
         )
 
-        # Fail-closed permit source.  A verified permit topology is supplied by
-        # the deployment (hardware/E-stop); until then every tick denies command
-        # output (DRY_RUN_ZERO_COMMAND).  This never fail-opens.
-        permit_source = _deny_command_permit
-
         rclpy.init()
         node = ActDeployNode(
             config=config,
             resources=resources,
             inference_service=inference_service,
-            permit_source=permit_source,
+            permit_source=None,
             monotonic_clock=time.monotonic,
         )
         rclpy.spin(node)

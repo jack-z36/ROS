@@ -10,11 +10,11 @@
 rm65_dual_arm_node:
   ros__parameters:
     left_arm:
-      ip: "192.168.1.18"          # 必填，真机替换
+      ip: "192.168.2.19"          # 必填，真机替换
       port: 8080
       frame_id: "left_arm_base"
     right_arm:
-      ip: "192.168.1.19"          # 必填，与左臂不同
+      ip: "192.168.1.18"          # 必填，与左臂不同
       port: 8080
       frame_id: "right_arm_base"
 

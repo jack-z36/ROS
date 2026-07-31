@@ -1,9 +1,8 @@
 """Production lerobot ACT policy loader + deployment adapter (L2-03).
 
-Bridges the deployment 16D physical contract to the trained lerobot ACT
-model contract.  The trained model (UMI_ACT, lerobot v0.5.x export) differs
-from the deployment pipeline in four ways, all of which are absorbed HERE so
-the rest of the pipeline keeps its frozen 16D physical contract:
+Bridges the deployment 16D physical contract to lerobot ACT model contracts.
+Both the current no-tactile 16D model and the legacy 32D model are supported,
+while the rest of the pipeline keeps its frozen 16D physical contract:
 
 1. Batch keys      deploy uses ROS-topic-style keys
                    (``/act/observation/arm_state``,
@@ -11,11 +10,10 @@ the rest of the pipeline keeps its frozen 16D physical contract:
                    lerobot keys (``observation.state``,
                    ``observation.images.left``).
 2. State dim       deploy state is 16D physical
-                   ``[L_tcp7, R_tcp7, L_grip, R_grip]``; the model expects
-                   32D — same first 16 plus 16 tactile statistics.  The robot
-                   has no tactile sensors, so the tactile block is filled
-                   with the training MEAN (=> exactly 0 after MEAN_STD
-                   normalization).
+                   ``[L_tcp7, R_tcp7, L_grip, R_grip]``.  A 16D model receives
+                   it unchanged.  A legacy 32D model receives the same first
+                   16 values plus 16 tactile values filled with the training
+                   MEAN (=> exactly 0 after MEAN_STD normalization).
 3. Normalization   the deployed bundle normalizers are identity passthrough;
                    the real MEAN_STD normalize / unnormalize (training
                    statistics from the exported preprocessor safetensors,
@@ -27,6 +25,10 @@ the rest of the pipeline keeps its frozen 16D physical contract:
                    reorders every chunk (verified against the exported
                    normalization statistics: gripper 0..1 range sits at
                    indices 7 and 15 in the training order).
+5. Quaternion norm ACT predicts quaternion components independently.  After
+                   action unnormalization and reordering, each left/right
+                   ``xyzw`` quaternion is validated and normalized to unit
+                   length before it enters the strict deployment contract.
 
 Additionally the wrapper resizes incoming square images (deploy image_size)
 to the model's expected (H, W) (e.g. 480x640) with bilinear interpolation
@@ -49,12 +51,14 @@ if TYPE_CHECKING:
 
 # MEAN_STD epsilon used by the lerobot exported preprocessor.
 NORMALIZATION_EPS: float = 1e-8
+QUATERNION_NORM_EPS: float = 1e-8
 
-# Dimensional contract: deploy pipeline is 16D physical, the trained model
-# consumes/produces 32D state and 16D action (training order).
+# Dimensional contract: deploy is always 16D physical.  MODEL_STATE_DIM is the
+# legacy tactile-model dimension retained for compatibility and public tests.
 MODEL_STATE_DIM: int = 32
 DEPLOY_STATE_DIM: int = 16
 DEPLOY_ACTION_DIM: int = 16
+SUPPORTED_MODEL_STATE_DIMS: Tuple[int, ...] = (DEPLOY_STATE_DIM, MODEL_STATE_DIM)
 
 # Training action order [L_tcp7, L_grip, R_tcp7, R_grip] -> deploy order
 # [L_tcp7, R_tcp7, L_grip, R_grip].  Verified against the exported
@@ -62,6 +66,7 @@ DEPLOY_ACTION_DIM: int = 16
 TRAIN_TO_DEPLOY_ACTION_INDEX: Tuple[int, ...] = (
     0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 7, 15,
 )
+DEPLOY_QUATERNION_SLICES: Tuple[slice, ...] = (slice(3, 7), slice(10, 14))
 
 # The exported preprocessor safetensors carrying the MEAN_STD statistics
 # (the step number in the filename varies per export).
@@ -88,6 +93,44 @@ def reorder_train_action_to_deploy(actions: torch.Tensor) -> torch.Tensor:
     index = torch.as_tensor(
         TRAIN_TO_DEPLOY_ACTION_INDEX, dtype=torch.long, device=actions.device)
     return actions.index_select(-1, index)
+
+
+def normalize_deploy_action_quaternions(
+    actions: torch.Tensor,
+) -> torch.Tensor:
+    """Normalize each arm quaternion in a deploy-order action tensor.
+
+    The input may contain any number of leading batch/chunk dimensions, but
+    its last dimension must follow the deployment 16D layout.  Left and right
+    ``xyzw`` quaternions are normalized independently for every action row.
+    Position and gripper fields are preserved exactly.
+
+    Invalid model output is not repaired: non-finite values and quaternions
+    with near-zero norm raise ``ValueError`` because they do not encode a
+    recoverable physical orientation.
+    """
+    if actions.shape[-1] != DEPLOY_ACTION_DIM:
+        raise ValueError(
+            f"actions last dim must be {DEPLOY_ACTION_DIM}, got {actions.shape}")
+    if not torch.is_floating_point(actions):
+        raise TypeError(
+            f"actions must be floating point, got dtype={actions.dtype}")
+    if not torch.isfinite(actions).all():
+        raise ValueError("actions contain NaN or Inf values")
+
+    normalized = actions.clone()
+    for quat_slice in DEPLOY_QUATERNION_SLICES:
+        quaternion = actions[..., quat_slice]
+        norm = torch.linalg.vector_norm(
+            quaternion, ord=2, dim=-1, keepdim=True)
+        if not torch.isfinite(norm).all():
+            raise ValueError("action quaternion norm is NaN or Inf")
+        if torch.any(norm <= QUATERNION_NORM_EPS):
+            raise ValueError(
+                "action quaternion norm must be greater than "
+                f"{QUATERNION_NORM_EPS}")
+        normalized[..., quat_slice] = quaternion / norm
+    return normalized
 
 
 def expand_state_to_model_dim(
@@ -138,9 +181,9 @@ class LerobotActPolicyWrapper:
 
         Args:
             policy:       Loaded ``lerobot`` ACTPolicy (eval mode, on device).
-            stats:        MEAN_STD statistics tensors keyed lerobot-style
-                          (``observation.state.mean`` (32,), ``action.std``
-                          (16,), ``observation.images.<cam>.mean`` (3,1,1), …).
+            stats:        MEAN_STD statistics tensors keyed lerobot-style.
+                          ``observation.state.mean`` may be 16D (current
+                          no-tactile model) or 32D (legacy tactile model).
             state_key:    Deploy batch key holding the ``(1, 16)`` state.
             image_prefix: Deploy batch key prefix for camera images.
             camera_keys:  Logical camera names (``("left", "right")``).
@@ -157,13 +200,23 @@ class LerobotActPolicyWrapper:
 
         state_mean = as_dev(stats["observation.state.mean"])
         state_std = as_dev(stats["observation.state.std"])
-        if state_mean.shape != (MODEL_STATE_DIM,):
+        if state_mean.ndim != 1 or state_mean.shape[0] not in SUPPORTED_MODEL_STATE_DIMS:
             raise LerobotBundleError(
-                f"observation.state.mean must be ({MODEL_STATE_DIM},), got "
+                "observation.state.mean must be a vector with supported length "
+                f"{SUPPORTED_MODEL_STATE_DIMS}, got "
                 f"{tuple(state_mean.shape)}")
+        if state_std.shape != state_mean.shape:
+            raise LerobotBundleError(
+                "observation.state.std shape must match state mean, got "
+                f"{tuple(state_std.shape)} != {tuple(state_mean.shape)}")
+        self._model_state_dim = int(state_mean.shape[0])
         self._state_mean = state_mean
         self._state_std = state_std
-        self._tactile_fill = state_mean[DEPLOY_STATE_DIM:].clone()
+        self._tactile_fill = (
+            state_mean[DEPLOY_STATE_DIM:].clone()
+            if self._model_state_dim == MODEL_STATE_DIM
+            else None
+        )
 
         action_mean = as_dev(stats["action.mean"])
         action_std = as_dev(stats["action.std"])
@@ -186,9 +239,10 @@ class LerobotActPolicyWrapper:
     def predict_action_chunk(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
         """Deploy batch -> physical action chunk in deploy order.
 
-        Steps: key translation, 16->32 state expansion, MEAN_STD normalize,
-        image resize + MEAN_STD, model forward, action unnormalize,
-        train->deploy action reorder.
+        Steps: key translation, optional legacy 16->32 state expansion,
+        MEAN_STD normalize, image resize + MEAN_STD, model forward,
+        action unnormalize, train->deploy action reorder, per-arm quaternion
+        normalization.
 
         Args:
             batch: ``{state_key: (1, 16) physical, <image_prefix><cam>:
@@ -198,8 +252,16 @@ class LerobotActPolicyWrapper:
             ``(1, chunk_size, 16)`` float32 physical actions, deploy order.
         """
         state16 = batch[self._state_key]
-        state32 = expand_state_to_model_dim(state16, self._tactile_fill)
-        state_norm = (state32 - self._state_mean) / (
+        if state16.ndim != 2 or state16.shape[1] != DEPLOY_STATE_DIM:
+            raise ValueError(
+                f"deployment state must have shape (B, {DEPLOY_STATE_DIM}), got "
+                f"{tuple(state16.shape)}")
+        model_state = (
+            expand_state_to_model_dim(state16, self._tactile_fill)
+            if self._tactile_fill is not None
+            else state16
+        )
+        state_norm = (model_state - self._state_mean) / (
             self._state_std + NORMALIZATION_EPS)
 
         model_batch = {"observation.state": state_norm}
@@ -216,7 +278,8 @@ class LerobotActPolicyWrapper:
         normalized_actions = self._policy.predict_action_chunk(model_batch)
 
         physical = normalized_actions * self._action_std + self._action_mean
-        return reorder_train_action_to_deploy(physical).to(torch.float32)
+        deploy_actions = reorder_train_action_to_deploy(physical).to(torch.float32)
+        return normalize_deploy_action_quaternions(deploy_actions)
 
 
 def _load_normalization_stats(pretrained_dir: Path) -> Dict[str, torch.Tensor]:

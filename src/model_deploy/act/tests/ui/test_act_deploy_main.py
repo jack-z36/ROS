@@ -84,7 +84,12 @@ def _spec():
 def _config(command_output_enabled=False):
     raw = {
         "bundle": {"bundle_dir": "/nonexistent/bundle"},
-        "runtime": {"state_dim": 16, "action_dim": 16, "chunk_size": 30},
+        "runtime": {
+            "mode": "real-run" if command_output_enabled else "dry-run",
+            "state_dim": 16,
+            "action_dim": 16,
+            "chunk_size": 30,
+        },
         "image": {"image_size": 224},
     }
     return DeployConfig.from_mapping(

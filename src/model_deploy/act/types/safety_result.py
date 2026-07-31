@@ -51,6 +51,7 @@ class SafetyCode(str, Enum):
     GRIPPER_RANGE_LIMITED = "GRIPPER_RANGE_LIMITED"
     GRIPPER_STEP_LIMITED = "GRIPPER_STEP_LIMITED"
     INVARIANT_VIOLATION = "INVARIANT_VIOLATION"
+    REFERENCE_INCONSISTENT = "REFERENCE_INCONSISTENT"
 
 
 # ---------------------------------------------------------------------------

@@ -40,8 +40,21 @@ FAIL ACT 部署节点（缺少节点: /act_deploy_node）
 | 双鱼眼相机 | `dual_fisheye_camera/launch/dual_fisheye_camera.launch.py` | `/dual_fisheye_{left,right}/{left,right}_fisheye_camera`、`/camera_health_node` |
 | ACT 部署节点 | `ExecuteProcess: python3 -m model_deploy.act.ui.act_deploy_node` | `/act_deploy_node` |
 
-人工安全保障节点（manual_safety_controller）按当前决策**不纳入本包启动**；
-RM65 节点收不到 CommandPermit 时保持 fail-closed，不执行运动。
+`/act_deploy_node` 自己发布 20 Hz `/act/command/permit` 心跳；RM65 或夹爪
+收不到新鲜许可时保持 fail-closed，不执行运动。
+
+## 运行模式
+
+ACT 只接受两种模式：
+
+| `runtime.mode` | 启动开关 | 行为 |
+|---|---|---|
+| `dry-run` | `ENABLE_COMMAND_OUTPUT=0` | 真实观测、真实模型和完整安全检查；只发布 policy/status/metrics，不发布四路硬件命令 |
+| `real-run` | `ENABLE_COMMAND_OUTPUT=1` | 安全检查和 permit 均通过后，连续发布双臂与双夹爪目标 |
+
+模式与启动开关不一致时，ACT 在加载模型前直接拒绝启动。`real-run` 还会在
+启动阶段有界等待双驱动健康、permit/四路命令订阅者和双急停服务；任一缺失
+都会 fail-fast。
 
 ## 参数
 
@@ -53,7 +66,7 @@ RM65 节点收不到 CommandPermit 时保持 fail-closed，不执行运动。
 | `AUTO_BUILD` | `1` | 缺包时自动编译；`0` 只报错并提示手动命令 |
 | `STARTUP_WAIT` | `15` | launch 后等待秒数再核对组件 |
 | `ACT_CONFIG` | 空（用 launch 默认值） | ACT deploy.yaml 路径 |
-| `ENABLE_COMMAND_OUTPUT` | `0` | `1` 时给 ACT 节点追加 `--enable-command-output` |
+| `ENABLE_COMMAND_OUTPUT` | `0` | 只接受 `0/1`；`1` 仅能与配置 `mode: real-run` 搭配 |
 
 launch 参数（也可直接 `ros2 launch act_system act_system.launch.py` 使用）：
 
@@ -66,7 +79,9 @@ launch 参数（也可直接 `ros2 launch act_system act_system.launch.py` 使�
 
 - 机械臂、夹爪、相机驱动已按实际部署条件连接/配置。
 - ACT 节点真正推理成功需要先在 deploy.yaml 里把 `bundle.bundle_dir`
-  配成真实模型 bundle 路径（默认是 `null`，节点会启动失败并被核对表报告为 FAIL）。
+  配成真实模型 bundle 路径。
+- `real-run` 前确认物理急停可用；双臂 frame 必须为
+  `left_arm_base/right_arm_base`，夹爪目标域必须为 normalized `[0,1]`。
 
 ## 故障排查
 
@@ -82,19 +97,9 @@ launch 参数（也可直接 `ros2 launch act_system act_system.launch.py` 使�
   `-DPython3_EXECUTABLE` 钉死系统 Python；若仍遇到，删除
   `build/act_interfaces` 与 `install/act_interfaces` 后重跑脚本即可。
 
-## 测试命令与结果
+## 验证边界
 
-- `bash -n scripts/start_act_system.sh` — 语法检查通过
-- `colcon build --packages-select act_system` — 构建通过，launch/scripts 正确安装
-- 实际执行一键脚本（无硬件环境）— 自动重编 act_interfaces、launch 拉起、
-  按时打印组件核对表；夹爪与相机节点正常启动（OK，串口/视频设备缺失告警
-  属无硬件预期）；RM65 因 SDK 未拷入被跳过并告警；ACT 节点因
-  `bundle.bundle_dir=null` 退出（`DeployConfigError`，预期），均被核对表
-  正确报为 FAIL；Ctrl+C 干净退出
-
-## 未验证项
-
-- 无真机（RM65/夹爪/相机未连接）与无模型 bundle 环境下，硬件连接与 ACT 推理
-  未做真机验证；本包只验证"启动编排 + 失败被正确报告到终端"。
-- `ENABLE_COMMAND_OUTPUT=1` 的真实命令输出链路未在真机验证，首次真机启用时
-  务必确认急停就绪。
+`dry-run` 可用于验证真实观测、模型推理、SafetyGuard、status 和 metrics，
+且四路硬件 command 必须为零。ROS `publish` 成功不等于真机动作成功；
+`real-run` 最终验收仍以 TCP/夹爪实测反馈变化、驱动 health 无 fault、急停能
+立即撤销 permit 为准。

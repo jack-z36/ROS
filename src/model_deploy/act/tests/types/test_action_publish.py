@@ -222,11 +222,11 @@ class TestTopicPayloadBundle:
             policy_action=tuple(float(i) for i in range(16)),
             left_arm=_arm(),
             right_arm=_arm(),
-            left_gripper=50.0,
-            right_gripper=50.0,
+            left_gripper=0.5,
+            right_gripper=0.5,
         )
         assert len(b.policy_action) == 16
-        assert b.left_gripper == 50.0
+        assert b.left_gripper == 0.5
 
     def test_wrong_policy_length_rejected(self) -> None:
         with pytest.raises(ValueError):
@@ -244,7 +244,7 @@ class TestTopicPayloadBundle:
                 policy_action=tuple(float(i) for i in range(16)),
                 left_arm=_arm(),
                 right_arm=_arm(),
-                left_gripper=120.0,
+                left_gripper=1.2,
                 right_gripper=0.0,
             )
 

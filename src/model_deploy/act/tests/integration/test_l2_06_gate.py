@@ -153,10 +153,11 @@ class RecordingPublisher:
 
 
 class FakeNode:
-    """仅支持 create_publisher 的 dry-run 节点替身。"""
+    """支持 publisher/subscription 的 dry-run 节点替身。"""
 
     def __init__(self) -> None:
         self.created: list[tuple[str, RecordingPublisher]] = []
+        self.subscriptions: list[Any] = []
 
     def create_publisher(
         self, msg_type: type, topic: str, qos: Any
@@ -164,6 +165,19 @@ class FakeNode:
         pub = RecordingPublisher(topic)
         self.created.append((topic, pub))
         return pub
+
+    def create_subscription(
+        self, msg_type: type, topic: str, callback: Any, qos: Any
+    ) -> Any:
+        handle = SimpleNamespace(
+            msg_type=msg_type, topic=topic, callback=callback, qos=qos
+        )
+        self.subscriptions.append(handle)
+        return handle
+
+    def destroy_subscription(self, handle: Any) -> None:
+        if handle in self.subscriptions:
+            self.subscriptions.remove(handle)
 
 
 class FailingPublisher(RecordingPublisher):
@@ -248,6 +262,9 @@ class DenySafetyPort:
 
 def _load_config(command_output_enabled: bool = False) -> DeployConfig:
     raw = yaml.safe_load(_FIXTURE.read_text(encoding="utf-8"))
+    raw["runtime"]["mode"] = (
+        "real-run" if command_output_enabled else "dry-run"
+    )
     return DeployConfig.from_mapping(
         raw,
         base_dir=_FIXTURE.parent,

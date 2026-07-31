@@ -83,10 +83,12 @@ class TestRecordEvent:
         m.record_event("status", value="EXECUTING")
         m.record_event("active_cursor", value=3)
         m.record_event("active_chunk_size", value=10)
+        m.record_event("last_response_detail", value="left_gripper")
         snap = m.snapshot()
         assert snap.runtime_status == "EXECUTING"
         assert snap.active_cursor == 3
         assert snap.active_chunk_size == 10
+        assert snap.last_response_detail == "left_gripper"
 
     def test_latency_non_negative(self) -> None:
         m = _make_metrics()

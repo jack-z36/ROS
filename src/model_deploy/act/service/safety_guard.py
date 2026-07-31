@@ -630,14 +630,57 @@ class SafetyGuard:
         """
         try:
             candidate_spec = self._validate_candidate_action(candidate)
-            reference = select_comparison_reference(
-                previous_safe_action,
-                latest_observation,
-                quaternion_norm_tolerance=self._config.quaternion_norm_tolerance,
-            )
-            safe_action, findings = self._project_bimanual_action(
-                candidate_spec, reference
-            )
+            # A measured observation is the physical baseline.  The previous
+            # command is only a continuity constraint; it must never replace
+            # the robot's actual pose.  The old implementation preferred the
+            # previous command whenever both values were present, which let a
+            # stalled robot accumulate a chain of targets away from reality.
+            if latest_observation is not None:
+                measured_reference = select_comparison_reference(
+                    None,
+                    latest_observation,
+                    quaternion_norm_tolerance=self._config.quaternion_norm_tolerance,
+                )
+                safe_action, findings = self._project_bimanual_action(
+                    candidate_spec, measured_reference
+                )
+
+                if previous_safe_action is not None:
+                    previous_reference = select_comparison_reference(
+                        previous_safe_action,
+                        None,
+                        quaternion_norm_tolerance=self._config.quaternion_norm_tolerance,
+                    )
+                    # Apply the inter-command limit after the measured-state
+                    # limit, then verify that the result is still inside the
+                    # measured-state envelope.  If the two envelopes do not
+                    # intersect, fail closed instead of silently producing a
+                    # target that violates one of them.
+                    safe_action, continuity_findings = self._project_bimanual_action(
+                        safe_action, previous_reference
+                    )
+                    findings = list(findings) + list(continuity_findings)
+                    if not self._action_within_reference_limits(
+                        safe_action, measured_reference
+                    ):
+                        raise SafetyContractError(
+                            SafetyCode.REFERENCE_INCONSISTENT,
+                            "measured-state and previous-command safety envelopes "
+                            "do not intersect",
+                        )
+                    findings = tuple(findings)
+            else:
+                # Preserve the pure bootstrap seam for callers that only have
+                # a previous command, but production real-run calls are
+                # required to provide a fresh observation before publishing.
+                reference = select_comparison_reference(
+                    previous_safe_action,
+                    None,
+                    quaternion_norm_tolerance=self._config.quaternion_norm_tolerance,
+                )
+                safe_action, findings = self._project_bimanual_action(
+                    candidate_spec, reference
+                )
         except SafetyContractError as exc:
             return SafetyResult(
                 status=SafetyStatus.REJECTED,
@@ -664,6 +707,39 @@ class SafetyGuard:
             action=safe_action,
             findings=(),
         )
+
+    def _action_within_reference_limits(
+        self, action: ActionSpec, reference: _ComparisonReference
+    ) -> bool:
+        """Return whether *action* is inside the configured measured envelope.
+
+        This is deliberately a check rather than another projection.  It is
+        used after applying the previous-command continuity projection so a
+        stale previous target cannot push the final target back outside the
+        current measured-state bound.
+        """
+        cfg = self._config
+        for target, ref in (
+            (action.left_tcp_action, reference.left_tcp_action),
+            (action.right_tcp_action, reference.right_tcp_action),
+        ):
+            target_xyz = np.asarray(target[:3], dtype=np.float64)
+            ref_xyz = np.asarray(ref[:3], dtype=np.float64)
+            if float(np.linalg.norm(target_xyz - ref_xyz)) > cfg.max_translation_step_m + 1e-8:
+                return False
+            if (
+                _rotation_angle_rad(
+                    np.asarray(ref[3:7], dtype=np.float64),
+                    np.asarray(target[3:7], dtype=np.float64),
+                )
+                > cfg.max_rotation_step_rad + 1e-8
+            ):
+                return False
+        if abs(float(action.left_gripper) - reference.left_gripper) > cfg.max_gripper_step + 1e-8:
+            return False
+        if abs(float(action.right_gripper) - reference.right_gripper) > cfg.max_gripper_step + 1e-8:
+            return False
+        return True
 
     # ------------------------------------------------------------------
     # B2 _validate_candidate_action

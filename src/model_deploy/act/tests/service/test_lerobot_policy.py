@@ -15,10 +15,12 @@ from model_deploy.act.service.lerobot_policy import (
     DEPLOY_STATE_DIM,
     MODEL_STATE_DIM,
     NORMALIZATION_EPS,
+    QUATERNION_NORM_EPS,
     TRAIN_TO_DEPLOY_ACTION_INDEX,
     LerobotActPolicyWrapper,
     expand_state_to_model_dim,
     make_lerobot_policy_loader,
+    normalize_deploy_action_quaternions,
     reorder_train_action_to_deploy,
 )
 
@@ -50,6 +52,61 @@ def test_reorder_index_is_a_permutation():
 def test_reorder_rejects_wrong_last_dim():
     with pytest.raises(ValueError):
         reorder_train_action_to_deploy(torch.zeros(1, 15))
+
+
+def test_normalize_deploy_action_quaternions_per_arm_and_step():
+    actions = torch.zeros(1, 2, DEPLOY_ACTION_DIM)
+    actions[..., 0:3] = torch.tensor([0.1, 0.2, 0.3])
+    actions[..., 7:10] = torch.tensor([0.4, 0.5, 0.6])
+    actions[..., 14:16] = torch.tensor([0.7, 0.8])
+    actions[0, 0, 3:7] = torch.tensor([0.0, 0.0, 0.0, 2.0])
+    actions[0, 0, 10:14] = torch.tensor([0.0, 3.0, 0.0, 4.0])
+    actions[0, 1, 3:7] = torch.tensor([1.0, 1.0, 1.0, 1.0])
+    actions[0, 1, 10:14] = torch.tensor([2.0, 0.0, 0.0, 0.0])
+
+    out = normalize_deploy_action_quaternions(actions)
+
+    assert torch.allclose(
+        torch.linalg.vector_norm(out[..., 3:7], dim=-1),
+        torch.ones(1, 2),
+        atol=1e-6,
+    )
+    assert torch.allclose(
+        torch.linalg.vector_norm(out[..., 10:14], dim=-1),
+        torch.ones(1, 2),
+        atol=1e-6,
+    )
+    assert torch.equal(out[..., 0:3], actions[..., 0:3])
+    assert torch.equal(out[..., 7:10], actions[..., 7:10])
+    assert torch.equal(out[..., 14:16], actions[..., 14:16])
+    assert torch.equal(actions[0, 0, 3:7], torch.tensor([0.0, 0.0, 0.0, 2.0]))
+
+
+@pytest.mark.parametrize("bad_value", [0.0, QUATERNION_NORM_EPS])
+def test_normalize_deploy_action_quaternions_rejects_near_zero_norm(bad_value):
+    actions = torch.ones(1, 1, DEPLOY_ACTION_DIM)
+    actions[..., 3:7] = 0.0
+    actions[..., 3] = bad_value
+
+    with pytest.raises(ValueError, match="quaternion norm"):
+        normalize_deploy_action_quaternions(actions)
+
+
+@pytest.mark.parametrize("bad_value", [float("nan"), float("inf")])
+def test_normalize_deploy_action_quaternions_rejects_non_finite(bad_value):
+    actions = torch.ones(1, 1, DEPLOY_ACTION_DIM)
+    actions[..., 10] = bad_value
+
+    with pytest.raises(ValueError, match="NaN or Inf"):
+        normalize_deploy_action_quaternions(actions)
+
+
+def test_normalize_deploy_action_quaternions_rejects_overflowed_norm():
+    actions = torch.ones(1, 1, DEPLOY_ACTION_DIM)
+    actions[..., 3:7] = torch.finfo(torch.float32).max
+
+    with pytest.raises(ValueError, match="norm is NaN or Inf"):
+        normalize_deploy_action_quaternions(actions)
 
 
 def test_expand_state_appends_tactile_fill():
@@ -85,11 +142,11 @@ class _FakePolicy(torch.nn.Module):
         return self.chunk
 
 
-def _stats():
+def _stats(state_dim: int = MODEL_STATE_DIM):
     stats = {
         "observation.state.mean": torch.arange(
-            MODEL_STATE_DIM, dtype=torch.float32),
-        "observation.state.std": torch.full((MODEL_STATE_DIM,), 2.0),
+            state_dim, dtype=torch.float32),
+        "observation.state.std": torch.full((state_dim,), 2.0),
         "action.mean": torch.full((DEPLOY_ACTION_DIM,), 1.0),
         "action.std": torch.full((DEPLOY_ACTION_DIM,), 3.0),
     }
@@ -99,11 +156,11 @@ def _stats():
     return stats
 
 
-def _wrapper(chunk):
+def _wrapper(chunk, state_dim: int = MODEL_STATE_DIM):
     policy = _FakePolicy(chunk)
     wrapper = LerobotActPolicyWrapper(
         policy,
-        _stats(),
+        _stats(state_dim),
         state_key=STATE_KEY,
         image_prefix=IMAGE_PREFIX,
         camera_keys=CAMERAS,
@@ -130,6 +187,19 @@ def test_wrapper_translates_keys_and_expands_state():
         "observation.images.right",
     }
     assert seen["observation.state"].shape == (1, MODEL_STATE_DIM)
+
+
+def test_wrapper_keeps_state_16d_for_no_tactile_model():
+    chunk = torch.zeros(1, 5, DEPLOY_ACTION_DIM)
+    wrapper, policy = _wrapper(chunk, state_dim=DEPLOY_STATE_DIM)
+    wrapper.predict_action_chunk(_deploy_batch())
+    state_norm = policy.seen_batch["observation.state"]
+    assert state_norm.shape == (1, DEPLOY_STATE_DIM)
+    stats = _stats(DEPLOY_STATE_DIM)
+    expected = (
+        torch.zeros(DEPLOY_STATE_DIM) - stats["observation.state.mean"]
+    ) / (stats["observation.state.std"] + NORMALIZATION_EPS)
+    assert torch.allclose(state_norm[0], expected, atol=1e-6)
 
 
 def test_wrapper_state_normalization_and_tactile_zero():
@@ -177,14 +247,33 @@ def test_wrapper_unnormalizes_and_reorders_actions():
     # unnormalize: x * std + mean = x * 3 + 1; then train->deploy reorder
     np.testing.assert_allclose(out[0, 0, 14].item(), 7.0, rtol=1e-5)   # 2*3+1
     np.testing.assert_allclose(out[0, 0, 15].item(), -2.0, rtol=1e-5)  # -1*3+1
-    # all other slots: 0*3+1 = 1
+    # Position slots remain physical 1.0; each [1,1,1,1] quaternion becomes
+    # [0.5,0.5,0.5,0.5] independently.
     assert torch.allclose(
-        out[0, 0, :14], torch.full((14,), 1.0), atol=1e-5)
+        out[0, 0, [0, 1, 2, 7, 8, 9]], torch.ones(6), atol=1e-5)
+    assert torch.allclose(
+        out[0, 0, 3:7], torch.full((4,), 0.5), atol=1e-5)
+    assert torch.allclose(
+        out[0, 0, 10:14], torch.full((4,), 0.5), atol=1e-5)
 
 
 def test_wrapper_rejects_bad_stats_shape():
     stats = _stats()
-    stats["observation.state.mean"] = torch.zeros(16)  # must be 32
+    stats["observation.state.mean"] = torch.zeros(15)
+    with pytest.raises(Exception):
+        LerobotActPolicyWrapper(
+            _FakePolicy(torch.zeros(1, 1, DEPLOY_ACTION_DIM)),
+            stats,
+            state_key=STATE_KEY,
+            image_prefix=IMAGE_PREFIX,
+            camera_keys=CAMERAS,
+            image_hw=MODEL_HW,
+        )
+
+
+def test_wrapper_rejects_mismatched_state_mean_std_shapes():
+    stats = _stats(DEPLOY_STATE_DIM)
+    stats["observation.state.std"] = torch.ones(MODEL_STATE_DIM)
     with pytest.raises(Exception):
         LerobotActPolicyWrapper(
             _FakePolicy(torch.zeros(1, 1, DEPLOY_ACTION_DIM)),

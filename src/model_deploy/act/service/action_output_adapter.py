@@ -6,7 +6,7 @@ Pure RAM conversion from a PASS / ADJUSTED ``SafetyResult`` into a complete C4
 - B1 ``build_topic_payloads`` — orchestration (C9 -> C10 x2 -> C11 x2 -> C4).
 - C9 ``require_publishable_action`` — re-validate the publishable contract.
 - C10 ``build_arm_pose_target`` — one TCP7 + frame -> frozen C3.
-- C11 ``map_gripper_command`` — one gripper [0,1] -> 0..100 output domain.
+- C11 ``map_gripper_command`` — validate and preserve normalized [0,1] width.
 
 No ROS import, no mutable cross-call state, no TF, no publish. The output is
 transport-neutral RAM; deploy_043 / deploy_044 consume it downstream.
@@ -128,19 +128,7 @@ def build_arm_pose_target(tcp7: Sequence[float], pose_frame_id: str) -> ArmPoseT
 
 
 def map_gripper_command(value: float, config: CommandOutputConfig) -> float:
-    """Map one gripper value from the input domain to the output domain.
-
-    Linearly maps ``[gripper_input_min, gripper_input_max]`` to
-    ``[gripper_output_min, gripper_output_max]``:
-
-        out = out_min + (value - in_min) / (in_max - in_min) * (out_max - out_min)
-
-    Default C7 config maps ``0 -> 0``, ``0.5 -> 50``, ``1 -> 100``.
-
-    Raises ``ActionPublishContractError`` (never clips) when the value is out of
-    the input domain, non-finite, or the configured range is invalid. Compat
-    with already-scaled 50/100 inputs is deliberately rejected.
-    """
+    """Validate and preserve one normalized gripper-width command."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ActionPublishContractError(
             f"map_gripper_command: value must be a float, got {type(value).__name__}"
@@ -149,25 +137,11 @@ def map_gripper_command(value: float, config: CommandOutputConfig) -> float:
         raise ActionPublishContractError(
             f"map_gripper_command: value must be finite, got {value!r}"
         )
-    in_min = float(config.gripper_input_min)
-    in_max = float(config.gripper_input_max)
-    out_min = float(config.gripper_output_min)
-    out_max = float(config.gripper_output_max)
-    if not (math.isfinite(in_min) and math.isfinite(in_max) and in_min < in_max):
+    if value < 0.0 or value > 1.0:
         raise ActionPublishContractError(
-            "map_gripper_command: invalid gripper input range in config"
+            f"map_gripper_command: value {value!r} out of normalized [0,1] domain"
         )
-    if not (math.isfinite(out_min) and math.isfinite(out_max) and out_min < out_max):
-        raise ActionPublishContractError(
-            "map_gripper_command: invalid gripper output range in config"
-        )
-    if value < in_min or value > in_max:
-        raise ActionPublishContractError(
-            f"map_gripper_command: value {value!r} out of input domain "
-            f"[{in_min}, {in_max}]; refusing to clip"
-        )
-    ratio = (value - in_min) / (in_max - in_min)
-    return out_min + ratio * (out_max - out_min)
+    return float(value)
 
 
 # ---------------------------------------------------------------------------
@@ -181,15 +155,19 @@ def build_topic_payloads(
 ) -> TopicPayloadBundle:
     """Convert a publishable ``SafetyResult`` into a complete C4 payload bundle.
 
-    Order: C9 -> 16D tuple -> C10 x2 with ``config.pose_frame_id`` -> C11 x2
+    Order: C9 -> 16D tuple -> C10 x2 with per-arm frames -> C11 x2
     -> construct C4 exactly once. Any sub-step exception propagates, so a
     partial C4 is never returned.
     """
     action = require_publishable_action(safety_result)
     policy_vector: tuple[float, ...] = tuple(float(x) for x in action.as_vector())
 
-    left_arm = build_arm_pose_target(action.left_tcp_action, config.pose_frame_id)
-    right_arm = build_arm_pose_target(action.right_tcp_action, config.pose_frame_id)
+    left_arm = build_arm_pose_target(
+        action.left_tcp_action, config.left_pose_frame_id
+    )
+    right_arm = build_arm_pose_target(
+        action.right_tcp_action, config.right_pose_frame_id
+    )
 
     left_gripper = map_gripper_command(float(action.left_gripper), config)
     right_gripper = map_gripper_command(float(action.right_gripper), config)

@@ -60,6 +60,16 @@ class TestRuntimeHZ:
         assert cfg.runtime.control_hz == 60.0
         assert cfg.runtime.inference_hz == 20.0
 
+    def test_default_delta_matches_rm65_driver_limit(self) -> None:
+        cfg = DeployConfig.from_mapping(_raw(), base_dir=Path("/tmp"))
+        assert cfg.runtime.max_delta_per_step == 0.01
+
+    def test_delta_wider_than_rm65_driver_rejected(self) -> None:
+        with pytest.raises(DeployConfigError, match="max_delta_per_step"):
+            DeployConfig.from_mapping(
+                _raw(max_delta_per_step=0.011), base_dir=Path("/tmp")
+            )
+
 
 class TestRuntimeMode:
     def test_invalid_mode_rejected(self) -> None:
@@ -67,9 +77,25 @@ class TestRuntimeMode:
             DeployConfig.from_mapping(_raw(mode="unsafe"), base_dir=Path("/tmp"))
 
     def test_valid_modes_accepted(self) -> None:
-        for mode in ("dry-run", "shadow-run", "safe-run"):
-            cfg = DeployConfig.from_mapping(_raw(mode=mode), base_dir=Path("/tmp"))
+        for mode, enabled in (("dry-run", False), ("real-run", True)):
+            cfg = DeployConfig.from_mapping(
+                _raw(mode=mode),
+                base_dir=Path("/tmp"),
+                command_output_enabled=enabled,
+            )
             assert cfg.runtime.mode == mode
+
+    def test_real_run_requires_explicit_command_confirmation(self) -> None:
+        with pytest.raises(DeployConfigError, match="requires.*enable-command-output"):
+            DeployConfig.from_mapping(_raw(mode="real-run"), base_dir=Path("/tmp"))
+
+    def test_dry_run_rejects_command_confirmation(self) -> None:
+        with pytest.raises(DeployConfigError, match="dry-run"):
+            DeployConfig.from_mapping(
+                _raw(mode="dry-run"),
+                base_dir=Path("/tmp"),
+                command_output_enabled=True,
+            )
 
 
 class TestChunkSize:
