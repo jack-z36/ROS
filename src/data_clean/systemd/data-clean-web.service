@@ -10,6 +10,7 @@ Environment=DATA_CLEAN_WEB_NO_BROWSER=1
 Environment=DATA_CLEAN_WEB_HOST=127.0.0.1
 Environment=DATA_CLEAN_WEB_PORT=36959
 Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONNOUSERSITE=1
 Environment=DATA_CLEAN_LEROBOT_PYTHON=%h/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python
 Restart=on-failure
 RestartSec=3s

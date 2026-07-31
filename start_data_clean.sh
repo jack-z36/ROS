@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+# Keep user-level packages out of the pinned data-clean and LeRobot runtimes.
+export PYTHONNOUSERSITE=1
+
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV:-${WORKSPACE_DIR}/src/data_clean/.conda-envs/data-clean}"
 PYTHON_BIN="${DATA_CLEAN_PYTHON:-${CONDA_ENV_DIR}/bin/python}"

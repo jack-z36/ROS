@@ -110,6 +110,8 @@ def _exporter_environment() -> dict[str, str]:
     existing = os.environ.get("PYTHONPATH", "")
     return {
         **os.environ,
+        # Prevent ~/.local packages from shadowing the pinned exporter env.
+        "PYTHONNOUSERSITE": "1",
         "PYTHONPATH": os.pathsep.join(
             value
             for value in (str(data_clean_source), str(lerobot_source), existing)

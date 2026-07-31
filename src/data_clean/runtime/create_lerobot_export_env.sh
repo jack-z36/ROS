@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+# The exporter lock is authoritative; never allow ~/.local packages to shadow
+# packages installed in the dedicated environment during setup or preflight.
+export PYTHONNOUSERSITE=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKTREE_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 DATA_CLEAN_SOURCE="${WORKTREE_DIR}/src/data_clean"
