@@ -2,9 +2,8 @@
 <package format="3">
   <name>act_interfaces</name>
   <version>0.1.0</version>
-  <description>Custom ROS 2 interfaces shared across the model_deploy stack:
-    human command permit (CommandPermit) and hardware health (HardwareHealth).</description>
-  <maintainer email="maintainer@example.com">model_deploy Maintainer</maintainer>
+  <description>Custom ROS 2 interfaces for ACT model-deploy hardware nodes (command permit, hardware health).</description>
+  <maintainer email="maintainer@example.com">ACT Model Deploy Maintainer</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

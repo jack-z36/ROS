@@ -66,8 +66,8 @@ class TestValidConfig:
         assert cfg.runtime.action_dim == 16
         assert cfg.topics.namespace == "/act"
         assert cfg.image.image_size == 224
-        assert cfg.safety.max_translation_step_m == 0.01
-        assert cfg.safety.max_rotation_step_rad == 0.05
+        assert cfg.safety.max_translation_step_m == 0.03
+        assert cfg.safety.max_rotation_step_rad == 0.1
         assert cfg.safety.gripper_min == 0.0
         assert cfg.safety.gripper_max == 1.0
         assert cfg.safety.quaternion_norm_tolerance == 1e-3
@@ -157,12 +157,10 @@ class TestPublishesCommandTopics:
         cfg = DeployConfig.from_mapping(_valid_raw(), base_dir=Path("/tmp"))
         assert cfg.runtime.publishes_command_topics is False
 
-    def test_real_run_publishes(self) -> None:
+    def test_shadow_run_publishes(self) -> None:
         raw = _valid_raw()
-        raw["runtime"]["mode"] = "real-run"
-        cfg = DeployConfig.from_mapping(
-            raw, base_dir=Path("/tmp"), command_output_enabled=True
-        )
+        raw["runtime"]["mode"] = "shadow-run"
+        cfg = DeployConfig.from_mapping(raw, base_dir=Path("/tmp"))
         assert cfg.runtime.publishes_command_topics is True
 
 

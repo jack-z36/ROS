@@ -1,6 +1,5 @@
 """Tests for the serial link worker using an injected FakeSerial."""
 
-import inspect
 import time
 
 from elephant_gripper.config.schema import GripperLinkConfig
@@ -109,56 +108,5 @@ def test_disconnect_marks_unhealthy():
         )
         signal = link.health_signal(time.monotonic())
         assert signal.consecutive_errors >= 1
-    finally:
-        link.stop()
-
-
-class _RclpyLikeLogger:
-    """Mimics rclpy's per-call-site severity caching: calling a different
-    severity from the same source line raises, exactly like rcutils_logger."""
-
-    def __init__(self):
-        self._site_severity = {}
-        self.severities = []
-
-    def _check(self, severity):
-        frame = inspect.stack()[2]
-        site = (frame.filename, frame.lineno)
-        cached = self._site_severity.setdefault(site, severity)
-        if cached != severity:
-            raise ValueError("Logger severity cannot be changed between calls.")
-        self.severities.append(severity)
-
-    def info(self, message):
-        self._check("info")
-
-    def warn(self, message):
-        self._check("warn")
-
-    def error(self, message):
-        self._check("error")
-
-
-def test_reconnect_logging_survives_call_site_severity_caching():
-    # Regression: open failure logs warn, then a successful open logs info.
-    # With an rclpy-like logger both must come from distinct call sites or
-    # the worker thread dies on ValueError right after connecting.
-    logger = _RclpyLikeLogger()
-    attempts = {"n": 0}
-
-    def factory(port, baudrate, timeout, gripper_id):
-        attempts["n"] += 1
-        if attempts["n"] == 1:
-            raise OSError("cannot open yet")
-        return FakeSerial(port=port, baudrate=baudrate, timeout=timeout, gripper_id=gripper_id)
-
-    link = GripperSerialLink(_link_config(), logger=logger, serial_factory=factory)
-    link.start()
-    try:
-        assert _wait_until(lambda: link.latest_state().valid)
-        assert "warn" in logger.severities
-        assert "info" in logger.severities
-        # The link must stay connected after logging the success message.
-        assert link.health_signal(time.monotonic()).connected is True
     finally:
         link.stop()

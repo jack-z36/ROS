@@ -9,8 +9,7 @@
 #     fail-fast (绝不猜测路径)；测试通过显式注入 canonical fake
 #     ActRuntimeResources 来驱动整条 tracer，而不是调用生产 loader。
 #   - image_size 取小值 (32) 仅为本地快速验证，与 [0,1] CHW 契约一致。
-#   - image_shape 可选，设置后覆盖 image_size 的方形默认值；此处注释示例。
-#   - 不出现 enabled / command_output_enabled；本 fixture 固定 dry-run：
+#   - 不出现 enabled / command_output_enabled / mode=shadow-run|safe-run：
 #     命令输出主开关只来自 CLI (--enable-command-output)，永不从 YAML 读取。
 # ============================================================================
 
@@ -35,7 +34,6 @@ runtime:
 
 image:
   image_size: 32
-  # image_shape: [24, 32]  # optional non-square override [height, width]
 
 topics:
   namespace: /act

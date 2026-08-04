@@ -153,11 +153,10 @@ class RecordingPublisher:
 
 
 class FakeNode:
-    """支持 publisher/subscription 的 dry-run 节点替身。"""
+    """仅支持 create_publisher 的 dry-run 节点替身。"""
 
     def __init__(self) -> None:
         self.created: list[tuple[str, RecordingPublisher]] = []
-        self.subscriptions: list[Any] = []
 
     def create_publisher(
         self, msg_type: type, topic: str, qos: Any
@@ -165,19 +164,6 @@ class FakeNode:
         pub = RecordingPublisher(topic)
         self.created.append((topic, pub))
         return pub
-
-    def create_subscription(
-        self, msg_type: type, topic: str, callback: Any, qos: Any
-    ) -> Any:
-        handle = SimpleNamespace(
-            msg_type=msg_type, topic=topic, callback=callback, qos=qos
-        )
-        self.subscriptions.append(handle)
-        return handle
-
-    def destroy_subscription(self, handle: Any) -> None:
-        if handle in self.subscriptions:
-            self.subscriptions.remove(handle)
 
 
 class FailingPublisher(RecordingPublisher):
@@ -262,9 +248,6 @@ class DenySafetyPort:
 
 def _load_config(command_output_enabled: bool = False) -> DeployConfig:
     raw = yaml.safe_load(_FIXTURE.read_text(encoding="utf-8"))
-    raw["runtime"]["mode"] = (
-        "real-run" if command_output_enabled else "dry-run"
-    )
     return DeployConfig.from_mapping(
         raw,
         base_dir=_FIXTURE.parent,
@@ -273,13 +256,13 @@ def _load_config(command_output_enabled: bool = False) -> DeployConfig:
 
 
 def _build_spec(cfg: DeployConfig) -> PolicyInputSpec:
-    h, w = cfg.image.resolved_image_hw
+    s = cfg.image.image_size
     return PolicyInputSpec(
         state_key="observation.state",
         state_dim=cfg.runtime.state_dim,
         image_prefix="observation.images.",
         camera_keys=("left", "right"),
-        image_shapes=((3, h, w), (3, h, w)),
+        image_shapes=((3, s, s), (3, s, s)),
         image_layout="CHW",
         image_dtype="float32",
         image_value_range=(0.0, 1.0),
@@ -308,9 +291,8 @@ def _build_resources(cfg: DeployConfig, spec: PolicyInputSpec) -> ActRuntimeReso
     )
 
 
-def _make_snapshot(img_hw: tuple[int, int], captured_at_s: float = 0.0) -> ObservationSnapshot:
-    h, w = img_hw
-    img = np.full((3, h, w), 0.5, dtype=np.float32)
+def _make_snapshot(img_size: int, captured_at_s: float = 0.0) -> ObservationSnapshot:
+    img = np.full((3, img_size, img_size), 0.5, dtype=np.float32)
     state = ObservationState(
         left_tcp_position=np.array([0.1, 0.2, 0.3], dtype=np.float32),
         left_tcp_orientation=np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32),
@@ -423,8 +405,8 @@ def build_composition(
 
 def feed_observation(comp: SimpleNamespace, clock: FakeClock) -> ObservationSnapshot:
     """经 L2-02 collector -> buffer 注入一帧观测（dry-run 无 ROS 回调）。"""
-    img_hw = comp.cfg.image.resolved_image_hw
-    snap = _make_snapshot(img_hw, captured_at_s=clock())
+    img_size = comp.cfg.image.image_size
+    snap = _make_snapshot(img_size, captured_at_s=clock())
     comp.pipeline.collector.update_image("left", snap.images["left"])
     comp.pipeline.collector.update_image("right", snap.images["right"])
     comp.pipeline.collector.update_tcp_pose(
@@ -581,14 +563,14 @@ class TestG03Seam:
 
     def test_service_predict_returns_chunk(self) -> None:
         comp = build_composition()
-        snap = _make_snapshot(comp.cfg.image.resolved_image_hw)
+        snap = _make_snapshot(comp.cfg.image.image_size)
         chunk = comp.inference_service.predict_action_chunk(snap)
         assert isinstance(chunk, ActionChunk)
         assert chunk.actions.shape == (comp.cfg.runtime.chunk_size, 16)
 
     def test_safety_filter_pass_via_observation_reference(self) -> None:
         comp = build_composition()
-        snap = _make_snapshot(comp.cfg.image.resolved_image_hw)
+        snap = _make_snapshot(comp.cfg.image.image_size)
         # 以 observation 为比较基准 -> PASS/ADJUSTED，且 action 非 None
         result = comp.safety_guard.filter_action(
             ActionSpec(
@@ -612,7 +594,7 @@ class TestG03Seam:
                 left_gripper=0.5,
                 right_gripper=0.5,
             ),
-            latest_observation=_make_snapshot(comp.cfg.image.resolved_image_hw),
+            latest_observation=_make_snapshot(comp.cfg.image.image_size),
         )
         req = ActionPublishRequest(
             action_id="a1",
@@ -640,7 +622,7 @@ class TestG03Seam:
                 left_gripper=0.5,
                 right_gripper=0.5,
             ),
-            latest_observation=_make_snapshot(comp.cfg.image.resolved_image_hw),
+            latest_observation=_make_snapshot(comp.cfg.image.image_size),
         )
         req = ActionPublishRequest(
             action_id="a1",
@@ -814,7 +796,7 @@ class TestG06Scheduling:
         metrics = RuntimeMetrics(clock)
         safety = SafetyGuard(cfg.safety)
         publisher = ActionPublisher(FakeNode(), cfg.command_output, cfg.topics)
-        snap = _make_snapshot(cfg.image.resolved_image_hw)
+        snap = _make_snapshot(cfg.image.image_size)
         loop = ControlLoop(
             config=ControlLoopConfig(
                 chunk_size=cfg.runtime.chunk_size,
@@ -919,7 +901,7 @@ class TestG07FallbackOutput:
     def test_outcome_observed(self) -> None:
         cfg = _load_config(command_output_enabled=False)
         pub = ActionPublisher(FakeNode(), cfg.command_output, cfg.topics)
-        snap = _make_snapshot(cfg.image.resolved_image_hw)
+        snap = _make_snapshot(cfg.image.image_size)
         loop, rq, rsq, metrics, _ = self._make_loop(
             safety_port=SafetyGuard(cfg.safety), publisher=pub, snapshot=snap
         )
@@ -930,7 +912,7 @@ class TestG07FallbackOutput:
     def test_outcome_published(self) -> None:
         cfg = _load_config(command_output_enabled=True)
         pub = ActionPublisher(FakeNode(), cfg.command_output, cfg.topics)
-        snap = _make_snapshot(cfg.image.resolved_image_hw)
+        snap = _make_snapshot(cfg.image.image_size)
         loop, rq, rsq, metrics, _ = self._make_loop(
             safety_port=SafetyGuard(cfg.safety), publisher=pub, snapshot=snap
         )
@@ -941,7 +923,7 @@ class TestG07FallbackOutput:
     def test_outcome_blocked(self) -> None:
         cfg = _load_config(command_output_enabled=True)
         pub = ActionPublisher(FakeNode(), cfg.command_output, cfg.topics)
-        snap = _make_snapshot(cfg.image.resolved_image_hw)
+        snap = _make_snapshot(cfg.image.image_size)
         loop, rq, rsq, metrics, _ = self._make_loop(
             safety_port=SafetyGuard(cfg.safety), publisher=pub, snapshot=snap
         )
@@ -958,7 +940,7 @@ class TestG07FallbackOutput:
     def test_outcome_rejected(self) -> None:
         cfg = _load_config(command_output_enabled=True)
         pub = ActionPublisher(FakeNode(), cfg.command_output, cfg.topics)
-        snap = _make_snapshot(cfg.image.resolved_image_hw)
+        snap = _make_snapshot(cfg.image.image_size)
         loop, rq, rsq, metrics, _ = self._make_loop(
             safety_port=DenySafetyPort(), publisher=pub, snapshot=snap
         )
@@ -970,7 +952,7 @@ class TestG07FallbackOutput:
         cfg = _load_config(command_output_enabled=True)
         pub = ActionPublisher(FakeNode(), cfg.command_output, cfg.topics)
         pub._publishers["policy_action"] = FailingPublisher("/act/policy_action")
-        snap = _make_snapshot(cfg.image.resolved_image_hw)
+        snap = _make_snapshot(cfg.image.image_size)
         loop, rq, rsq, metrics, _ = self._make_loop(
             safety_port=SafetyGuard(cfg.safety), publisher=pub, snapshot=snap
         )
@@ -983,7 +965,7 @@ class TestG07FallbackOutput:
         cfg = _load_config(command_output_enabled=True)
         pub = ActionPublisher(FakeNode(), cfg.command_output, cfg.topics)
         pub._publishers["right_arm"] = FailingPublisher("/act/command/arm/right_target")
-        snap = _make_snapshot(cfg.image.resolved_image_hw)
+        snap = _make_snapshot(cfg.image.image_size)
         loop, rq, rsq, metrics, _ = self._make_loop(
             safety_port=SafetyGuard(cfg.safety), publisher=pub, snapshot=snap
         )
@@ -1148,7 +1130,7 @@ class TestG10RosDryRun:
                 right_tcp_action=np.array([0.4, 0.5, 0.6, 0.0, 0.0, 0.0, 1.0], dtype=np.float32),
                 left_gripper=0.5, right_gripper=0.5,
             ),
-            latest_observation=_make_snapshot(comp.cfg.image.resolved_image_hw),
+            latest_observation=_make_snapshot(comp.cfg.image.image_size),
         )
         req = ActionPublishRequest(
             action_id="dry", safety_result=safety,

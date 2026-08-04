@@ -55,7 +55,6 @@ def _config(*, state_dim=16, action_dim=16, chunk_size=30, command_output_enable
     raw = {
         "bundle": {"bundle_dir": "/nonexistent/bundle"},
         "runtime": {
-            "mode": "real-run" if command_output_enabled else "dry-run",
             "state_dim": state_dim,
             "action_dim": action_dim,
             "chunk_size": chunk_size,

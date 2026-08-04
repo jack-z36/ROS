@@ -61,23 +61,11 @@ class FakeNode:
 
     def __init__(self) -> None:
         self.created_publishers: list = []
-        self.created_subscriptions: list = []
 
     def create_publisher(self, msg_type, topic, qos):
         pub = RecordingStringPublisher()
         self.created_publishers.append((topic, pub))
         return pub
-
-    def create_subscription(self, msg_type, topic, callback, qos):
-        handle = SimpleNamespace(
-            msg_type=msg_type, topic=topic, callback=callback, qos=qos
-        )
-        self.created_subscriptions.append(handle)
-        return handle
-
-    def destroy_subscription(self, handle):
-        if handle in self.created_subscriptions:
-            self.created_subscriptions.remove(handle)
 
 
 class FakeClock:

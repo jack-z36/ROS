@@ -30,7 +30,7 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from model_deploy.act.config.schema import CommandOutputConfig, TopicsConfig
 from model_deploy.act.service.action_output_adapter import (
@@ -286,12 +286,12 @@ def _build_arm_msg(arm: Any, ros_time_s: float, factory: _MessageFactory) -> Any
 
 
 # ---------------------------------------------------------------------------
-# C14 — normalized gripper width -> Float64
+# C14 — gripper 0..100 -> Float64
 # ---------------------------------------------------------------------------
 
 
 def _build_gripper_msg(gripper: Any, factory: _MessageFactory) -> Any:
-    """C14: normalized [0,1] gripper width -> ``Float64``.
+    """C14: 0..100 gripper scalar -> ``Float64``.
 
     Raises on non-finite or out-of-range input. Does not read/write any
     external resource.
@@ -301,8 +301,8 @@ def _build_gripper_msg(gripper: Any, factory: _MessageFactory) -> Any:
     f = float(gripper)
     if not math.isfinite(f):
         raise ValueError(f"gripper must be finite, got {gripper!r}")
-    if not (0.0 <= f <= 1.0):
-        raise ValueError(f"gripper must be in [0,1], got {f!r}")
+    if not (0.0 <= f <= 100.0):
+        raise ValueError(f"gripper must be in 0..100, got {f!r}")
     msg = factory.float64()
     msg.data = f
     return msg
@@ -431,7 +431,6 @@ class ActionPublisher:
         command_output_config: CommandOutputConfig,
         topics_config: TopicsConfig,
         msg_factory: Optional[_MessageFactory] = None,
-        on_publish_result: Optional[Callable] = None,
     ) -> None:
         if not isinstance(command_output_config, CommandOutputConfig):
             raise TypeError(
@@ -462,8 +461,6 @@ class ActionPublisher:
         }
         self._last_result: Optional[ActionPublishResult] = None
         self._available = False
-        self._on_publish_result = on_publish_result
-        self._current_step_id: Optional[int] = None  # set by ControlLoop before publish
 
         # Create exactly six publishers; no subscription / timer / metrics.
         cmd = topics_config.command
@@ -504,21 +501,6 @@ class ActionPublisher:
     def _record_last_result(self, result: ActionPublishResult) -> None:
         """C21: replace the last result reference exactly once per B3 call."""
         self._last_result = result
-
-    def _fire_publish_callback(self, request: ActionPublishRequest, result: ActionPublishResult) -> None:
-        """Fire the on_publish_result debug callback (best-effort)."""
-        try:
-            if self._on_publish_result is not None:
-                step_id = self._current_step_id
-                if step_id is not None:
-                    _cmd_values = (
-                        list(request.safety_result.action.as_vector().tolist())
-                        if request.safety_result.action is not None
-                        else []
-                    )
-                    self._on_publish_result(step_id, result.outcome.value, _cmd_values)
-        except Exception:
-            pass
 
     # -- C19 result assembly ------------------------------------------------
 
@@ -642,8 +624,6 @@ class ActionPublisher:
             failed_topic=failed_topic,
         )
         self._record_last_result(final)
-        # Fire debug callback on all return paths via _finalize
-        self._fire_publish_callback(request, final)
         return final
 
     # -- B3 orchestration ---------------------------------------------------
@@ -806,7 +786,7 @@ class ActionPublisher:
         else:
             reason_code = None
 
-        result = self._finalize(
+        return self._finalize(
             request,
             policy_published=policy_published,
             command_count=command_count,
@@ -817,8 +797,6 @@ class ActionPublisher:
             failure_stage=failure_stage,
             failed_topic=failed_topic,
         )
-
-        return result
 
 
 __all__ = [

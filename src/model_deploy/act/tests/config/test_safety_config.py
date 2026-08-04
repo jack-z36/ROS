@@ -15,9 +15,9 @@ from model_deploy.act.config.schema import DeployConfig, DeployConfigError, Safe
 class TestSafetyDefaults:
     def test_default_translation_and_rotation(self) -> None:
         s = SafetyConfig()
-        assert s.max_translation_step_m == 0.01
+        assert s.max_translation_step_m == 0.03
         assert s.max_translation_step_m > 0
-        assert s.max_rotation_step_rad == 0.05
+        assert s.max_rotation_step_rad == 0.1
         assert s.max_rotation_step_rad > 0
 
     def test_default_gripper_is_action_domain_not_hardware_register(self) -> None:
@@ -76,8 +76,8 @@ class TestSafetyInDeployConfig:
 
     def test_empty_safety_uses_action_domain_defaults(self) -> None:
         cfg = DeployConfig.from_mapping(self._raw(), base_dir=Path("/tmp"))
-        assert cfg.safety.max_translation_step_m == 0.01
-        assert cfg.safety.max_rotation_step_rad == 0.05
+        assert cfg.safety.max_translation_step_m == 0.03
+        assert cfg.safety.max_rotation_step_rad == 0.1
         assert cfg.safety.gripper_min == 0.0
         assert cfg.safety.gripper_max == 1.0
         assert cfg.safety.max_gripper_step == 0.2
@@ -86,10 +86,10 @@ class TestSafetyInDeployConfig:
     def test_custom_values_parsed(self) -> None:
         cfg = DeployConfig.from_mapping(
             self._raw(
-                max_translation_step_m=0.005,
-                max_rotation_step_rad=0.02,
-                gripper_min=0.0,
-                gripper_max=1.0,
+                max_translation_step_m=0.05,
+                max_rotation_step_rad=0.2,
+                gripper_min=0.1,
+                gripper_max=0.9,
                 max_gripper_step=0.05,
                 quaternion_norm_tolerance=1e-4,
                 pose_frame="tcp",
@@ -97,10 +97,10 @@ class TestSafetyInDeployConfig:
             ),
             base_dir=Path("/tmp"),
         )
-        assert cfg.safety.max_translation_step_m == 0.005
-        assert cfg.safety.max_rotation_step_rad == 0.02
-        assert cfg.safety.gripper_min == 0.0
-        assert cfg.safety.gripper_max == 1.0
+        assert cfg.safety.max_translation_step_m == 0.05
+        assert cfg.safety.max_rotation_step_rad == 0.2
+        assert cfg.safety.gripper_min == 0.1
+        assert cfg.safety.gripper_max == 0.9
         assert cfg.safety.max_gripper_step == 0.05
         assert cfg.safety.quaternion_norm_tolerance == 1e-4
         assert cfg.safety.pose_frame == "tcp"

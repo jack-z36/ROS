@@ -8,7 +8,7 @@ contracts through their *public* entry points and asserts the closed loop:
 - G03  config     explicit CLI-enabled -> C7 strictly True, audit-visible.
 - G04  service/B1 PASS and ADJUSTED both build a complete C4; no ``.accepted`` read.
 - G05  service/B1 REJECTED/shape/NaN/gripper-domain -> B1 raises, no partial C4.
-- G06  service/B1 known 16D -> [0:7]/[7:14]/[14]/[15] split + per-arm frames + [0,1].
+- G06  service/B1 known 16D -> [0:7]/[7:14]/[14]/[15] split + single frame + 0..100.
 - G07  ui/B2      valid C4 + ros_time -> five messages, no status field.
 - G08  ui/B2      builder failure -> no partial C8, no publish.
 - G09  ui/B3      CLI=False, permit any -> policy/status=1, command=0, OBSERVED.
@@ -199,7 +199,7 @@ def _rejected_safety() -> SafetyResult:
 def _config(enabled: bool = False) -> CommandOutputConfig:
     return CommandOutputConfig(
         command_output_enabled=enabled,
-        gripper_deadband=0.01,
+        gripper_deadband=1.0,
         gripper_min_publish_interval_s=0.05,
     )
 
@@ -386,7 +386,7 @@ class TestG03ConfigEnabled:
         cfg = DeployConfig.from_mapping(
             {
                 "bundle": {"bundle_dir": "/tmp/b"},
-                "runtime": {"mode": "real-run"},
+                "runtime": {"mode": "dry-run"},
                 "topics": {"namespace": "/act"},
                 "safety": {},
             },
@@ -405,14 +405,14 @@ class TestG04B1Safe:
     def test_pass_builds_complete_c4(self) -> None:
         bundle = build_topic_payloads(_safety(SafetyStatus.PASS), _config())
         assert len(bundle.policy_action) == 16
-        assert bundle.left_gripper == 0.5 and bundle.right_gripper == 0.5
+        assert bundle.left_gripper == 50.0 and bundle.right_gripper == 50.0
 
     def test_adjusted_builds_complete_c4(self) -> None:
         bundle = build_topic_payloads(
             _safety(SafetyStatus.ADJUSTED, left_gripper=0.0, right_gripper=1.0), _config()
         )
         assert len(bundle.policy_action) == 16
-        assert bundle.left_gripper == 0.0 and bundle.right_gripper == 1.0
+        assert bundle.left_gripper == 0.0 and bundle.right_gripper == 100.0
 
     def test_b1_does_not_read_accepted(self) -> None:
         # The adapter must gate on SafetyStatus, never on a non-existent
@@ -480,20 +480,19 @@ class TestG06B1Split:
             tuple(pa[7:14]), np.array([0.4, 0.5, 0.6, 0.0, 0.0, 0.0, 1.0], dtype=np.float32)
         )
         # [14]/[15] carry the *normalized* gripper (0..1 input domain) inside the
-        # Policy vector and C4 gripper fields both retain normalized values.
+        # policy vector; the 0..100 mapped values live in the C4 gripper fields.
         np.testing.assert_allclose(pa[14], 0.5)
         np.testing.assert_allclose(pa[15], 0.5)
-        assert bundle.left_gripper == 0.5 and bundle.right_gripper == 0.5
+        assert bundle.left_gripper == 50.0 and bundle.right_gripper == 50.0
         # single shared frame for both arms
-        assert bundle.left_arm.frame_id == _config().left_pose_frame_id
-        assert bundle.right_arm.frame_id == _config().right_pose_frame_id
+        assert bundle.left_arm.frame_id == bundle.right_arm.frame_id == _config().pose_frame_id
 
     def test_gripper_0_50_100_mapping(self) -> None:
         bundle = build_topic_payloads(
             _safety(left_gripper=0.0, right_gripper=1.0), _config()
         )
         assert bundle.left_gripper == 0.0
-        assert bundle.right_gripper == 1.0
+        assert bundle.right_gripper == 100.0
 
 
 # ===================================================================
@@ -509,13 +508,12 @@ class TestG07B2Messages:
         policy_data = list(msgs.policy_action_msg.data)
         assert len(policy_data) == 16
         assert all(math.isfinite(v) for v in policy_data)
-        assert msgs.left_arm_msg.header.frame_id == _config().left_pose_frame_id
-        assert msgs.right_arm_msg.header.frame_id == _config().right_pose_frame_id
+        assert msgs.left_arm_msg.header.frame_id == _config().pose_frame_id
         # stamp = 2.5s -> sec 2, nanosec 500_000_000
         assert msgs.left_arm_msg.header.stamp.sec == 2
         assert msgs.left_arm_msg.header.stamp.nanosec == 500_000_000
-        assert float(msgs.left_gripper_msg.data) == 0.5
-        assert float(msgs.right_gripper_msg.data) == 0.5
+        assert float(msgs.left_gripper_msg.data) == 50.0
+        assert float(msgs.right_gripper_msg.data) == 50.0
         # B2 must NOT carry a status field
         assert not hasattr(msgs, "status")
 
@@ -543,7 +541,7 @@ class TestG08B2Failure:
         # would raise must never be called by build_ros_messages.
         bundle = build_topic_payloads(_safety(), _config())
         msgs = build_ros_messages(bundle, ros_time_s=1.0, msg_factory=_SpyFactory())  # type: ignore[arg-type]
-        assert msgs.right_gripper_msg.data == 0.5
+        assert msgs.right_gripper_msg.data == 50.0
 
     def test_no_partial_bundle_on_late_failure(self) -> None:
         # When the last builder raises, no partial _RosMessageBundle escapes.
@@ -665,8 +663,8 @@ class TestG14GripperState:
         pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
         res = pub.publish(_request(CommandPermit(allowed=True), monotonic_s=1.0))
         assert res.outcome == PublishOutcome.PUBLISHED
-        assert pub._gripper_last_target["left"] == 0.5
-        assert pub._gripper_last_target["right"] == 0.5
+        assert pub._gripper_last_target["left"] == 50.0
+        assert pub._gripper_last_target["right"] == 50.0
 
     def test_deadband_skip_is_not_failure(self) -> None:
         pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
@@ -675,7 +673,7 @@ class TestG14GripperState:
         assert set(res.gripper_skipped) == {"left", "right"}
         assert res.command_publish_count == 2  # arms only
         # cache untouched for skipped sides
-        assert pub._gripper_last_target["left"] == 0.5
+        assert pub._gripper_last_target["left"] == 50.0
 
     def test_failed_gripper_does_not_update_cache(self) -> None:
         pub = ActionPublisher(FakeNode(), _config(True), TopicsConfig())
@@ -689,8 +687,8 @@ class TestG14GripperState:
             )
         )
         assert res.outcome == PublishOutcome.PARTIAL
-        # Failed left gripper keeps old normalized cache (0.5, not 1.0).
-        assert pub._gripper_last_target["left"] == 0.5
+        # failed left gripper keeps old cache (50.0, not 100.0)
+        assert pub._gripper_last_target["left"] == 50.0
 
 
 # ===================================================================

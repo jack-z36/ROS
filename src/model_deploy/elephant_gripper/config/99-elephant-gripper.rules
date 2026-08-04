@@ -1,17 +1,21 @@
 # udev rules for the dual Elephant myGripper-F100 USB-485 adapters.
 #
-# 真机上的两个适配器是 1a86 "USB Single Serial"（枚举为 ttyACM*），且各自
-# 带唯一出厂序列号，因此改用 ATTRS{serial} 绑定左右（比 ID_PATH 更稳：
-# 换 USB 口也不会认错）。左右归属于 2026-07-28 用拔插法在真机确认：
-#   左 = 5AF5008554，右 = 5AF5010881。
+# The two adapters are very likely both CH340 (1a86:7523) and cannot be told
+# apart by VID/PID, so we pin each side to a physical USB topology path
+# (ID_PATH). Discover the real values on the target machine with, e.g.:
 #
-# Install and reload with:
+#   udevadm info -a -n /dev/ttyACM0 | grep -i ID_PATH
+#   udevadm info -a -n /dev/ttyACM1 | grep -i ID_PATH
+#
+# then edit the ENV{ID_PATH}== values below to match the port each gripper is
+# plugged into. Install and reload with:
 #
 #   sudo cp 99-elephant-gripper.rules /etc/udev/rules.d/
 #   sudo udevadm control --reload-rules && sudo udevadm trigger
 #
 # This template is NOT applied automatically by the build; apply it manually on
-# real hardware.
+# real hardware. If the kernel enumerates the adapters as ttyUSB* instead of
+# ttyACM*, adjust KERNEL== accordingly.
 
-SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="1a86", ATTRS{serial}=="5AF5008554", SYMLINK+="elephant_gripper_left", MODE="0660", GROUP="dialout"
-SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="1a86", ATTRS{serial}=="5AF5010881", SYMLINK+="elephant_gripper_right", MODE="0660", GROUP="dialout"
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ENV{ID_PATH}=="REPLACE_WITH_LEFT_ID_PATH", SYMLINK+="elephant_gripper_left", MODE="0660", GROUP="dialout"
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ENV{ID_PATH}=="REPLACE_WITH_RIGHT_ID_PATH", SYMLINK+="elephant_gripper_right", MODE="0660", GROUP="dialout"

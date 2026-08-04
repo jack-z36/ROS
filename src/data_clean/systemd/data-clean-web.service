@@ -1,0 +1,24 @@
+[Unit]
+Description=Data Clean persistent Web worker
+After=local-fs.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/ROS/worktrees/gripper-control-node
+ExecStart=%h/ROS/worktrees/gripper-control-node/start_data_clean.sh
+Environment=DATA_CLEAN_WEB_NO_BROWSER=1
+Environment=DATA_CLEAN_WEB_HOST=127.0.0.1
+Environment=DATA_CLEAN_WEB_PORT=36959
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONNOUSERSITE=1
+Environment=DATA_CLEAN_LEROBOT_PYTHON=%h/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python
+Restart=on-failure
+RestartSec=3s
+KillSignal=SIGTERM
+KillMode=control-group
+TimeoutStopSec=45s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

@@ -33,13 +33,13 @@ def _load_config():
 
 def _make_spec(config, camera_keys=None):
     camera_keys = tuple(camera_keys) if camera_keys is not None else config.topics.observation.camera_keys
-    img_h, img_w = config.image.resolved_image_hw
+    image_size = config.image.image_size
     return PolicyInputSpec(
         state_key=config.topics.observation.arm_state,
         state_dim=16,
         image_prefix=config.topics.namespace + "/observation/image/",
         camera_keys=camera_keys,
-        image_shapes=tuple((3, img_h, img_w) for _ in camera_keys),
+        image_shapes=tuple((3, image_size, image_size) for _ in camera_keys),
         image_layout="CHW",
         image_dtype="float32",
         image_value_range=(0.0, 1.0),

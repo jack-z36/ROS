@@ -178,4 +178,4 @@ web_file_management:
   artifact_retention: production_cleanup
   failed_artifact_policy: failed_stage_input
   space_estimate_multiplier: 4.0
-  space_safety_gb: 20
+  space_safety_gb: 20.0

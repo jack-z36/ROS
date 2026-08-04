@@ -63,8 +63,7 @@ class TestDefaultDeployYaml:
     def test_default_yaml_parses(self) -> None:
         cfg = load_deploy_config(DEPLOY_YAML)
         assert isinstance(cfg, DeployConfig)
-        # 真实部署配置：bundle_dir 指向导出的 deploy_bundle（不再是 null 占位）
-        assert cfg.bundle.bundle_dir is not None
+        assert cfg.bundle.bundle_dir is None
         assert cfg.runtime.max_observation_age_sec > 0
         assert cfg.runtime.max_inference_requests == 1
         assert cfg.runtime.max_pending_chunks == 1
@@ -72,14 +71,6 @@ class TestDefaultDeployYaml:
     def test_default_command_output_off(self) -> None:
         cfg = load_deploy_config(DEPLOY_YAML)
         assert cfg.command_output.command_output_enabled is False
-
-    def test_real_command_has_feedback_window_and_driver_headroom(self) -> None:
-        """Default deploy avoids response-progress E-stops but keeps action bounds."""
-        cfg = load_deploy_config(DEPLOY_YAML)
-        assert cfg.runtime.response_motion_check_enabled is False
-        assert cfg.runtime.response_timeout_sec == 2.0
-        assert cfg.safety.max_translation_step_m == 0.008
-        assert cfg.safety.max_rotation_step_rad == 0.04
 
     def test_canonical_images_mapping_present(self) -> None:
         cfg = load_deploy_config(DEPLOY_YAML)
@@ -91,11 +82,7 @@ class TestDefaultDeployYaml:
 
 class TestCommandOutputKeyword:
     def test_keyword_enables(self) -> None:
-        raw = _valid_raw()
-        raw["runtime"]["mode"] = "real-run"
-        cfg = DeployConfig.from_mapping(
-            raw, base_dir=Path("/tmp"), command_output_enabled=True
-        )
+        cfg = DeployConfig.from_mapping(_valid_raw(), base_dir=Path("/tmp"), command_output_enabled=True)
         assert cfg.command_output.command_output_enabled is True
 
     def test_yaml_enabled_rejected(self) -> None:

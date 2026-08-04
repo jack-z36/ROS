@@ -69,7 +69,6 @@ class RuntimeMetricsSnapshot:
     last_publish_reason_code: Optional[str] = None
     last_publish_failure_stage: Optional[str] = None
     last_publish_failed_topic: Optional[str] = None
-    last_response_detail: Optional[str] = None
     last_error: Optional[str] = None
     last_inference_latency_s: float = 0.0
     updated_at_s: float = 0.0
@@ -114,7 +113,6 @@ def _new_state(clock: Callable[[], float]) -> dict:
         "last_publish_reason_code": None,
         "last_publish_failure_stage": None,
         "last_publish_failed_topic": None,
-        "last_response_detail": None,
         "last_error": None,
         "last_inference_latency_s": 0.0,
         "updated_at_s": clock(),
@@ -233,9 +231,6 @@ def _ev_last_publish_failure_stage(s, v): s["last_publish_failure_stage"] = v
 def _ev_last_publish_failed_topic(s, v): s["last_publish_failed_topic"] = v
 
 
-def _ev_last_response_detail(s, v): s["last_response_detail"] = v
-
-
 def _ev_output_fault_latched(s, v): s["output_fault_latched"] = bool(v)
 
 
@@ -274,7 +269,6 @@ _EVENT_HANDLERS = {
     "last_publish_reason_code": _ev_last_publish_reason_code,
     "last_publish_failure_stage": _ev_last_publish_failure_stage,
     "last_publish_failed_topic": _ev_last_publish_failed_topic,
-    "last_response_detail": _ev_last_response_detail,
     "output_fault_latched": _ev_output_fault_latched,
     "runtime_fault_latched": _ev_runtime_fault_latched,
 }
@@ -348,7 +342,6 @@ class RuntimeMetrics:
                 last_publish_reason_code=s["last_publish_reason_code"],
                 last_publish_failure_stage=s["last_publish_failure_stage"],
                 last_publish_failed_topic=s["last_publish_failed_topic"],
-                last_response_detail=s["last_response_detail"],
                 last_error=s["last_error"],
                 last_inference_latency_s=s["last_inference_latency_s"],
                 updated_at_s=s["updated_at_s"],

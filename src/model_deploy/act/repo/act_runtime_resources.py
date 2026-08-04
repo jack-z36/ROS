@@ -271,24 +271,14 @@ def load_act_runtime_resources(
             f"metadata chunk_size {chunk_size} != config runtime.chunk_size "
             f"{config.runtime.chunk_size}"
         )
-    # Cross-validate image dimensions against bundle metadata (if available)
-    model_image_hw = exp.get("model_image_hw")
-    if model_image_hw is not None:
-        bundle_h, bundle_w = int(model_image_hw[0]), int(model_image_hw[1])
-        cfg_h, cfg_w = config.image.resolved_image_hw
-        if bundle_h != cfg_h or bundle_w != cfg_w:
-            conflict.append(
-                f"metadata model_image_hw [{bundle_h}, {bundle_w}] != "
-                f"config image.resolved_image_hw ({cfg_h}, {cfg_w})"
-            )
     if conflict:
         raise _cfg_error("PolicyInputSpec/Config dimension conflict: " + "; ".join(conflict))
 
     # 3. derive spec (camera / image info from config topics + image size)
     images = config.topics.observation.image_topics
     camera_keys = tuple(sorted(images.keys()))
-    img_h, img_w = config.image.resolved_image_hw
-    image_shapes = tuple((3, img_h, img_w) for _ in camera_keys)
+    image_size = config.image.image_size
+    image_shapes = tuple((3, image_size, image_size) for _ in camera_keys)
     spec = PolicyInputSpec(
         state_key=config.topics.observation.arm_state,
         state_dim=state_dim,

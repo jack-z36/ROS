@@ -198,7 +198,7 @@ class TopicPayloadBundle:
     """Full command payload bundle produced by B1 (C4).
 
     The complete, non-partially-returnable output: a 16D policy action, both
-    arm pose targets, and both gripper widths in the normalized [0,1] domain.
+    arm pose targets, and both gripper scalars in the 0..100 output domain.
     No ROS message or status field is carried here.
     """
 
@@ -234,9 +234,9 @@ class TopicPayloadBundle:
                     f"TopicPayloadBundle.{name} must be a float, got {type(v)!r}"
                 )
             f = float(v)
-            if not (0.0 <= f <= 1.0):
+            if not (0.0 <= f <= 100.0):
                 raise ValueError(
-                    f"TopicPayloadBundle.{name} must be in [0,1], got {f!r}"
+                    f"TopicPayloadBundle.{name} must be in 0..100, got {f!r}"
                 )
             object.__setattr__(self, name, f)
 
