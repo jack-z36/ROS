@@ -12,9 +12,10 @@ from typing import Any
 from schemas.lerobot_export import LeRobotExportRequest
 
 
-DEFAULT_LEROBOT_PYTHON = Path(
-    "/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python"
+DEFAULT_ENV_ROOT = Path(
+    os.environ.get("DATA_CLEAN_ENV_ROOT", "/home/hit/.conda-envs")
 )
+DEFAULT_LEROBOT_PYTHON = DEFAULT_ENV_ROOT / "lerobot-export/bin/python"
 LEROBOT_PYTHON_ENV = "DATA_CLEAN_LEROBOT_PYTHON"
 
 

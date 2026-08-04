@@ -97,7 +97,8 @@ case "${CURRENT_BRANCH}" in
     ;;
 esac
 
-CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV:-${REPO_ROOT}/src/data_clean/.conda-envs/data-clean}"
+ENV_ROOT="${DATA_CLEAN_ENV_ROOT:-/home/hit/.conda-envs}"
+CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV:-${ENV_ROOT}/data-clean}"
 PYTHON_BIN="${DATA_CLEAN_PYTHON:-${CONDA_ENV_DIR}/bin/python}"
 
 [[ -x "${PYTHON_BIN}" ]] || fail "Data clean Python not found or not executable: ${PYTHON_BIN}"

@@ -130,7 +130,7 @@ def test_official_exporter_writes_two_ordered_episodes(
     _write_bridge(bridges[1], frame_count=5, seed=20)
     monkeypatch.setenv(
         "DATA_CLEAN_LEROBOT_PYTHON",
-        "/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python",
+        "/home/hit/.conda-envs/lerobot-export/bin/python",
     )
     request = LeRobotExportRequest(
         job_id="fixture-job",
@@ -151,7 +151,7 @@ def test_official_exporter_writes_two_ordered_episodes(
     act_report_path = tmp_path / "act_acceptance.json"
     act_process = subprocess.run(
         [
-            "/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python",
+            "/home/hit/.conda-envs/lerobot-export/bin/python",
             "-m",
             "service.lerobot_act_acceptance",
             "--root",
@@ -191,7 +191,7 @@ def test_official_exporter_writes_two_ordered_episodes(
     stats_path.write_text(json.dumps(broken_stats), encoding="utf-8")
     negative_gate = subprocess.run(
         [
-            "/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python",
+            "/home/hit/.conda-envs/lerobot-export/bin/python",
             "-c",
             (
                 "import json,sys;"
