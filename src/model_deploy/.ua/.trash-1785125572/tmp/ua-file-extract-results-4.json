@@ -1,0 +1,1622 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 7,
+  "filesSkipped": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 7,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 7,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "elephant_gripper/elephant_gripper/runtime/fake_serial.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 141,
+      "nonEmptyLines": 116,
+      "functions": [
+        {
+          "name": "make_fake_serial_factory",
+          "startLine": 121,
+          "endLine": 137,
+          "params": [
+            "initial_angle",
+            "initial_clamp"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "FakeSerial",
+          "startLine": 21,
+          "endLine": 118,
+          "methods": [
+            "__init__",
+            "write",
+            "read",
+            "reset_input_buffer",
+            "reset_output_buffer",
+            "flush",
+            "close",
+            "_respond",
+            "set_reported_angle",
+            "set_reported_clamp"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "FakeSerial",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "make_fake_serial_factory",
+          "line": 121,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "OSError",
+          "lineNumber": 36
+        },
+        {
+          "caller": "__init__",
+          "callee": "threading.Lock",
+          "lineNumber": 42
+        },
+        {
+          "caller": "__init__",
+          "callee": "max",
+          "lineNumber": 43
+        },
+        {
+          "caller": "__init__",
+          "callee": "min",
+          "lineNumber": 43
+        },
+        {
+          "caller": "__init__",
+          "callee": "bytearray",
+          "lineNumber": 46
+        },
+        {
+          "caller": "write",
+          "callee": "self._pending.extend",
+          "lineNumber": 56
+        },
+        {
+          "caller": "write",
+          "callee": "self._respond",
+          "lineNumber": 56
+        },
+        {
+          "caller": "write",
+          "callee": "bytes",
+          "lineNumber": 56
+        },
+        {
+          "caller": "write",
+          "callee": "len",
+          "lineNumber": 57
+        },
+        {
+          "caller": "read",
+          "callee": "bytes",
+          "lineNumber": 61
+        },
+        {
+          "caller": "reset_input_buffer",
+          "callee": "self._pending.clear",
+          "lineNumber": 67
+        },
+        {
+          "caller": "_respond",
+          "callee": "fc.parse_response",
+          "lineNumber": 80
+        },
+        {
+          "caller": "_respond",
+          "callee": "bool",
+          "lineNumber": 89
+        },
+        {
+          "caller": "_respond",
+          "callee": "fc.build_frame",
+          "lineNumber": 94
+        },
+        {
+          "caller": "_respond",
+          "callee": "max",
+          "lineNumber": 97
+        },
+        {
+          "caller": "_respond",
+          "callee": "min",
+          "lineNumber": 97
+        },
+        {
+          "caller": "_respond",
+          "callee": "fc.build_frame",
+          "lineNumber": 98
+        },
+        {
+          "caller": "_respond",
+          "callee": "fc.build_frame",
+          "lineNumber": 101
+        },
+        {
+          "caller": "_respond",
+          "callee": "fc.build_frame",
+          "lineNumber": 102
+        },
+        {
+          "caller": "_respond",
+          "callee": "fc.build_frame",
+          "lineNumber": 106
+        },
+        {
+          "caller": "_respond",
+          "callee": "fc.build_frame",
+          "lineNumber": 108
+        },
+        {
+          "caller": "set_reported_angle",
+          "callee": "max",
+          "lineNumber": 114
+        },
+        {
+          "caller": "set_reported_angle",
+          "callee": "min",
+          "lineNumber": 114
+        },
+        {
+          "caller": "factory",
+          "callee": "FakeSerial",
+          "lineNumber": 128
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/runtime/gripper_supervisor.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 142,
+      "nonEmptyLines": 120,
+      "classes": [
+        {
+          "name": "GripperSupervisor",
+          "startLine": 31,
+          "endLine": 142,
+          "methods": [
+            "__init__",
+            "start",
+            "shutdown",
+            "apply_permit",
+            "_current_permit",
+            "permit_allows_now",
+            "route_command",
+            "latest_state",
+            "aggregate_health",
+            "estop_all",
+            "clear_estop",
+            "estop_latched"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "GripperSupervisor",
+          "line": 31,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "threading.Lock",
+          "lineNumber": 42
+        },
+        {
+          "caller": "__init__",
+          "callee": "CommandPermit.denied",
+          "lineNumber": 43
+        },
+        {
+          "caller": "__init__",
+          "callee": "GripperSerialLink",
+          "lineNumber": 47
+        },
+        {
+          "caller": "__init__",
+          "callee": "GripperSerialLink",
+          "lineNumber": 54
+        },
+        {
+          "caller": "start",
+          "callee": "self._links.values",
+          "lineNumber": 65
+        },
+        {
+          "caller": "start",
+          "callee": "link.start",
+          "lineNumber": 66
+        },
+        {
+          "caller": "start",
+          "callee": "self.estop_all",
+          "lineNumber": 68
+        },
+        {
+          "caller": "shutdown",
+          "callee": "self._links.values",
+          "lineNumber": 71
+        },
+        {
+          "caller": "shutdown",
+          "callee": "link.stop",
+          "lineNumber": 72
+        },
+        {
+          "caller": "permit_allows_now",
+          "callee": "time.monotonic",
+          "lineNumber": 84
+        },
+        {
+          "caller": "permit_allows_now",
+          "callee": "evaluate_permit",
+          "lineNumber": 85
+        },
+        {
+          "caller": "permit_allows_now",
+          "callee": "self._current_permit",
+          "lineNumber": 85
+        },
+        {
+          "caller": "route_command",
+          "callee": "self.permit_allows_now",
+          "lineNumber": 98
+        },
+        {
+          "caller": "route_command",
+          "callee": "self._links.get",
+          "lineNumber": 100
+        },
+        {
+          "caller": "route_command",
+          "callee": "link.submit_command",
+          "lineNumber": 103
+        },
+        {
+          "caller": "latest_state",
+          "callee": "self._links[side].latest_state",
+          "lineNumber": 108
+        },
+        {
+          "caller": "aggregate_health",
+          "callee": "time.monotonic",
+          "lineNumber": 111
+        },
+        {
+          "caller": "aggregate_health",
+          "callee": "max",
+          "lineNumber": 112
+        },
+        {
+          "caller": "aggregate_health",
+          "callee": "max",
+          "lineNumber": 112
+        },
+        {
+          "caller": "aggregate_health",
+          "callee": "evaluate_device_health",
+          "lineNumber": 113
+        },
+        {
+          "caller": "aggregate_health",
+          "callee": "self._links[GripperSide.LEFT].health_signal",
+          "lineNumber": 114
+        },
+        {
+          "caller": "aggregate_health",
+          "callee": "evaluate_device_health",
+          "lineNumber": 119
+        },
+        {
+          "caller": "aggregate_health",
+          "callee": "self._links[GripperSide.RIGHT].health_signal",
+          "lineNumber": 120
+        },
+        {
+          "caller": "aggregate_health",
+          "callee": "aggregate_node_health",
+          "lineNumber": 125
+        },
+        {
+          "caller": "estop_all",
+          "callee": "self._links.values",
+          "lineNumber": 132
+        },
+        {
+          "caller": "estop_all",
+          "callee": "link.trigger_estop",
+          "lineNumber": 133
+        },
+        {
+          "caller": "clear_estop",
+          "callee": "self._links.values",
+          "lineNumber": 137
+        },
+        {
+          "caller": "clear_estop",
+          "callee": "link.clear_estop",
+          "lineNumber": 138
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/permit_gate.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 25,
+      "functions": [
+        {
+          "name": "evaluate_permit",
+          "startLine": 14,
+          "endLine": 33,
+          "params": [
+            "permit",
+            "now_monotonic_s",
+            "timeout_s"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "evaluate_permit",
+          "line": 14,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/types/command_permit.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 24,
+      "classes": [
+        {
+          "name": "CommandPermit",
+          "startLine": 16,
+          "endLine": 33,
+          "methods": [
+            "denied"
+          ],
+          "properties": [
+            "allowed",
+            "reason_code",
+            "stamp_monotonic_s"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "CommandPermit",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "denied",
+          "callee": "cls",
+          "lineNumber": 33
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/ui/elephant_gripper_node.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 230,
+      "nonEmptyLines": 198,
+      "functions": [
+        {
+          "name": "main",
+          "startLine": 206,
+          "endLine": 226,
+          "params": [
+            "args"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ElephantGripperNode",
+          "startLine": 37,
+          "endLine": 203,
+          "methods": [
+            "__init__",
+            "destroy_node",
+            "shutdown_driver",
+            "_on_target",
+            "_on_permit",
+            "_on_emergency_stop",
+            "_publish_states",
+            "_publish_health",
+            "_default_config_file"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ElephantGripperNode",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "main",
+          "line": 206,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "super().__init__",
+          "lineNumber": 41
+        },
+        {
+          "caller": "__init__",
+          "callee": "super",
+          "lineNumber": 41
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.declare_parameter",
+          "lineNumber": 42
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_parameter",
+          "lineNumber": 44
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._default_config_file",
+          "lineNumber": 46
+        },
+        {
+          "caller": "__init__",
+          "callee": "load_config",
+          "lineNumber": 49
+        },
+        {
+          "caller": "__init__",
+          "callee": "str",
+          "lineNumber": 49
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_name",
+          "lineNumber": 49
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_logger().fatal",
+          "lineNumber": 51
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_logger",
+          "lineNumber": 51
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_logger().warn",
+          "lineNumber": 56
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_logger",
+          "lineNumber": 56
+        },
+        {
+          "caller": "__init__",
+          "callee": "make_fake_serial_factory",
+          "lineNumber": 57
+        },
+        {
+          "caller": "__init__",
+          "callee": "GripperSupervisor",
+          "lineNumber": 59
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_logger",
+          "lineNumber": 61
+        },
+        {
+          "caller": "__init__",
+          "callee": "MutuallyExclusiveCallbackGroup",
+          "lineNumber": 68
+        },
+        {
+          "caller": "__init__",
+          "callee": "ReentrantCallbackGroup",
+          "lineNumber": 69
+        },
+        {
+          "caller": "__init__",
+          "callee": "MutuallyExclusiveCallbackGroup",
+          "lineNumber": 70
+        },
+        {
+          "caller": "__init__",
+          "callee": "MutuallyExclusiveCallbackGroup",
+          "lineNumber": 71
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_publisher",
+          "lineNumber": 74
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_publisher",
+          "lineNumber": 75
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_publisher",
+          "lineNumber": 76
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_subscription",
+          "lineNumber": 81
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._on_target",
+          "lineNumber": 84
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_subscription",
+          "lineNumber": 88
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._on_target",
+          "lineNumber": 91
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_subscription",
+          "lineNumber": 95
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_service",
+          "lineNumber": 104
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_timer",
+          "lineNumber": 112
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_timer",
+          "lineNumber": 117
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._supervisor.start",
+          "lineNumber": 123
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_logger().info",
+          "lineNumber": 124
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_logger",
+          "lineNumber": 124
+        },
+        {
+          "caller": "destroy_node",
+          "callee": "self.shutdown_driver",
+          "lineNumber": 132
+        },
+        {
+          "caller": "destroy_node",
+          "callee": "super().destroy_node",
+          "lineNumber": 133
+        },
+        {
+          "caller": "destroy_node",
+          "callee": "super",
+          "lineNumber": 133
+        },
+        {
+          "caller": "shutdown_driver",
+          "callee": "self._supervisor.shutdown",
+          "lineNumber": 137
+        },
+        {
+          "caller": "shutdown_driver",
+          "callee": "self.get_logger().error",
+          "lineNumber": 139
+        },
+        {
+          "caller": "shutdown_driver",
+          "callee": "self.get_logger",
+          "lineNumber": 139
+        },
+        {
+          "caller": "_on_target",
+          "callee": "GripperCommand",
+          "lineNumber": 144
+        },
+        {
+          "caller": "_on_target",
+          "callee": "float",
+          "lineNumber": 144
+        },
+        {
+          "caller": "_on_target",
+          "callee": "self.get_logger().warn",
+          "lineNumber": 146
+        },
+        {
+          "caller": "_on_target",
+          "callee": "self.get_logger",
+          "lineNumber": 146
+        },
+        {
+          "caller": "_on_target",
+          "callee": "self._supervisor.route_command",
+          "lineNumber": 148
+        },
+        {
+          "caller": "_on_permit",
+          "callee": "CommandPermit",
+          "lineNumber": 151
+        },
+        {
+          "caller": "_on_permit",
+          "callee": "bool",
+          "lineNumber": 152
+        },
+        {
+          "caller": "_on_permit",
+          "callee": "time.monotonic",
+          "lineNumber": 154
+        },
+        {
+          "caller": "_on_permit",
+          "callee": "self._supervisor.apply_permit",
+          "lineNumber": 156
+        },
+        {
+          "caller": "_on_emergency_stop",
+          "callee": "self._supervisor.estop_all",
+          "lineNumber": 162
+        },
+        {
+          "caller": "_on_emergency_stop",
+          "callee": "self.get_logger().warn",
+          "lineNumber": 165
+        },
+        {
+          "caller": "_on_emergency_stop",
+          "callee": "self.get_logger",
+          "lineNumber": 165
+        },
+        {
+          "caller": "_on_emergency_stop",
+          "callee": "self._supervisor.clear_estop",
+          "lineNumber": 167
+        },
+        {
+          "caller": "_on_emergency_stop",
+          "callee": "self.get_logger().info",
+          "lineNumber": 170
+        },
+        {
+          "caller": "_on_emergency_stop",
+          "callee": "self.get_logger",
+          "lineNumber": 170
+        },
+        {
+          "caller": "_publish_states",
+          "callee": "self._supervisor.latest_state",
+          "lineNumber": 175
+        },
+        {
+          "caller": "_publish_states",
+          "callee": "self._supervisor.latest_state",
+          "lineNumber": 176
+        },
+        {
+          "caller": "_publish_states",
+          "callee": "self._left_state_pub.publish",
+          "lineNumber": 178
+        },
+        {
+          "caller": "_publish_states",
+          "callee": "Float64",
+          "lineNumber": 178
+        },
+        {
+          "caller": "_publish_states",
+          "callee": "float",
+          "lineNumber": 178
+        },
+        {
+          "caller": "_publish_states",
+          "callee": "self._right_state_pub.publish",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_publish_states",
+          "callee": "Float64",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_publish_states",
+          "callee": "float",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self._supervisor.aggregate_health",
+          "lineNumber": 183
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "GripperHealthMsg",
+          "lineNumber": 184
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self.get_clock().now().to_msg",
+          "lineNumber": 185
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self.get_clock().now",
+          "lineNumber": 185
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self.get_clock",
+          "lineNumber": 185
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "int",
+          "lineNumber": 187
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "int",
+          "lineNumber": 190
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "int",
+          "lineNumber": 191
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self._health_pub.publish",
+          "lineNumber": 194
+        },
+        {
+          "caller": "_default_config_file",
+          "callee": "Path",
+          "lineNumber": 199
+        },
+        {
+          "caller": "_default_config_file",
+          "callee": "get_package_share_directory",
+          "lineNumber": 199
+        },
+        {
+          "caller": "_default_config_file",
+          "callee": "str",
+          "lineNumber": 200
+        },
+        {
+          "caller": "_default_config_file",
+          "callee": "Path(__file__).resolve",
+          "lineNumber": 202
+        },
+        {
+          "caller": "_default_config_file",
+          "callee": "Path",
+          "lineNumber": 202
+        },
+        {
+          "caller": "_default_config_file",
+          "callee": "str",
+          "lineNumber": 203
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.init",
+          "lineNumber": 207
+        },
+        {
+          "caller": "main",
+          "callee": "ElephantGripperNode",
+          "lineNumber": 211
+        },
+        {
+          "caller": "main",
+          "callee": "MultiThreadedExecutor",
+          "lineNumber": 212
+        },
+        {
+          "caller": "main",
+          "callee": "executor.add_node",
+          "lineNumber": 213
+        },
+        {
+          "caller": "main",
+          "callee": "executor.spin",
+          "lineNumber": 214
+        },
+        {
+          "caller": "main",
+          "callee": "executor.shutdown",
+          "lineNumber": 219
+        },
+        {
+          "caller": "main",
+          "callee": "node.destroy_node",
+          "lineNumber": 222
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.ok",
+          "lineNumber": 225
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.shutdown",
+          "lineNumber": 226
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "elephant_gripper/tests/runtime/test_supervisor.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 149,
+      "nonEmptyLines": 127,
+      "functions": [
+        {
+          "name": "_node_config",
+          "startLine": 16,
+          "endLine": 31,
+          "params": [
+            "**kwargs"
+          ]
+        },
+        {
+          "name": "_wait_until",
+          "startLine": 34,
+          "endLine": 40,
+          "params": [
+            "predicate",
+            "timeout",
+            "interval"
+          ]
+        },
+        {
+          "name": "_fresh_permit",
+          "startLine": 43,
+          "endLine": 48,
+          "params": [
+            "allowed"
+          ]
+        },
+        {
+          "name": "test_command_dropped_without_permit",
+          "startLine": 51,
+          "endLine": 60,
+          "params": []
+        },
+        {
+          "name": "test_command_accepted_with_fresh_permit",
+          "startLine": 63,
+          "endLine": 76,
+          "params": []
+        },
+        {
+          "name": "test_expired_permit_drops_command",
+          "startLine": 79,
+          "endLine": 92,
+          "params": []
+        },
+        {
+          "name": "test_telemetry_continues_without_permit",
+          "startLine": 95,
+          "endLine": 102,
+          "params": []
+        },
+        {
+          "name": "test_estop_latches_and_blocks_commands",
+          "startLine": 105,
+          "endLine": 119,
+          "params": []
+        },
+        {
+          "name": "test_clear_estop_reenables_commands",
+          "startLine": 122,
+          "endLine": 136,
+          "params": []
+        },
+        {
+          "name": "test_health_ok_when_connected",
+          "startLine": 139,
+          "endLine": 149,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_node_config",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "_wait_until",
+          "line": 34,
+          "isDefault": false
+        },
+        {
+          "name": "_fresh_permit",
+          "line": 43,
+          "isDefault": false
+        },
+        {
+          "name": "test_command_dropped_without_permit",
+          "line": 51,
+          "isDefault": false
+        },
+        {
+          "name": "test_command_accepted_with_fresh_permit",
+          "line": 63,
+          "isDefault": false
+        },
+        {
+          "name": "test_expired_permit_drops_command",
+          "line": 79,
+          "isDefault": false
+        },
+        {
+          "name": "test_telemetry_continues_without_permit",
+          "line": 95,
+          "isDefault": false
+        },
+        {
+          "name": "test_estop_latches_and_blocks_commands",
+          "line": 105,
+          "isDefault": false
+        },
+        {
+          "name": "test_clear_estop_reenables_commands",
+          "line": 122,
+          "isDefault": false
+        },
+        {
+          "name": "test_health_ok_when_connected",
+          "line": 139,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_node_config",
+          "callee": "dict",
+          "lineNumber": 17
+        },
+        {
+          "caller": "_node_config",
+          "callee": "dict",
+          "lineNumber": 25
+        },
+        {
+          "caller": "_node_config",
+          "callee": "GripperLinkConfig",
+          "lineNumber": 26
+        },
+        {
+          "caller": "_node_config",
+          "callee": "GripperLinkConfig",
+          "lineNumber": 27
+        },
+        {
+          "caller": "_node_config",
+          "callee": "base.update",
+          "lineNumber": 30
+        },
+        {
+          "caller": "_node_config",
+          "callee": "NodeConfig",
+          "lineNumber": 31
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "time.monotonic",
+          "lineNumber": 35
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "time.monotonic",
+          "lineNumber": 36
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "predicate",
+          "lineNumber": 37
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "time.sleep",
+          "lineNumber": 39
+        },
+        {
+          "caller": "_wait_until",
+          "callee": "predicate",
+          "lineNumber": 40
+        },
+        {
+          "caller": "_fresh_permit",
+          "callee": "CommandPermit",
+          "lineNumber": 44
+        },
+        {
+          "caller": "_fresh_permit",
+          "callee": "time.monotonic",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_command_dropped_without_permit",
+          "callee": "GripperSupervisor",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_command_dropped_without_permit",
+          "callee": "_node_config",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_command_dropped_without_permit",
+          "callee": "make_fake_serial_factory",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_command_dropped_without_permit",
+          "callee": "sup.start",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_command_dropped_without_permit",
+          "callee": "sup.route_command",
+          "lineNumber": 55
+        },
+        {
+          "caller": "test_command_dropped_without_permit",
+          "callee": "GripperCommand",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_command_dropped_without_permit",
+          "callee": "sup.shutdown",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "GripperSupervisor",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "_node_config",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "make_fake_serial_factory",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "sup.start",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "sup.apply_permit",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "_fresh_permit",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "sup.route_command",
+          "lineNumber": 68
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "GripperCommand",
+          "lineNumber": 69
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "_wait_until",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "sup.latest_state",
+          "lineNumber": 73
+        },
+        {
+          "caller": "test_command_accepted_with_fresh_permit",
+          "callee": "sup.shutdown",
+          "lineNumber": 76
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "GripperSupervisor",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "_node_config",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "make_fake_serial_factory",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "sup.start",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "CommandPermit",
+          "lineNumber": 83
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "time.monotonic",
+          "lineNumber": 84
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "sup.apply_permit",
+          "lineNumber": 86
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "sup.route_command",
+          "lineNumber": 87
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "GripperCommand",
+          "lineNumber": 88
+        },
+        {
+          "caller": "test_expired_permit_drops_command",
+          "callee": "sup.shutdown",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_telemetry_continues_without_permit",
+          "callee": "GripperSupervisor",
+          "lineNumber": 96
+        },
+        {
+          "caller": "test_telemetry_continues_without_permit",
+          "callee": "_node_config",
+          "lineNumber": 96
+        },
+        {
+          "caller": "test_telemetry_continues_without_permit",
+          "callee": "make_fake_serial_factory",
+          "lineNumber": 96
+        },
+        {
+          "caller": "test_telemetry_continues_without_permit",
+          "callee": "sup.start",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_telemetry_continues_without_permit",
+          "callee": "_wait_until",
+          "lineNumber": 99
+        },
+        {
+          "caller": "test_telemetry_continues_without_permit",
+          "callee": "sup.latest_state",
+          "lineNumber": 99
+        },
+        {
+          "caller": "test_telemetry_continues_without_permit",
+          "callee": "_wait_until",
+          "lineNumber": 100
+        },
+        {
+          "caller": "test_telemetry_continues_without_permit",
+          "callee": "sup.latest_state",
+          "lineNumber": 100
+        },
+        {
+          "caller": "test_telemetry_continues_without_permit",
+          "callee": "sup.shutdown",
+          "lineNumber": 102
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "GripperSupervisor",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "_node_config",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "make_fake_serial_factory",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "sup.start",
+          "lineNumber": 107
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "sup.apply_permit",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "_fresh_permit",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "sup.estop_all",
+          "lineNumber": 110
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "sup.route_command",
+          "lineNumber": 112
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "GripperCommand",
+          "lineNumber": 113
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "sup.aggregate_health",
+          "lineNumber": 116
+        },
+        {
+          "caller": "test_estop_latches_and_blocks_commands",
+          "callee": "sup.shutdown",
+          "lineNumber": 119
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "GripperSupervisor",
+          "lineNumber": 123
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "_node_config",
+          "lineNumber": 123
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "make_fake_serial_factory",
+          "lineNumber": 123
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "sup.start",
+          "lineNumber": 124
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "sup.apply_permit",
+          "lineNumber": 126
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "_fresh_permit",
+          "lineNumber": 126
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "sup.estop_all",
+          "lineNumber": 127
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "sup.clear_estop",
+          "lineNumber": 128
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "_wait_until",
+          "lineNumber": 130
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "sup.route_command",
+          "lineNumber": 131
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "GripperCommand",
+          "lineNumber": 132
+        },
+        {
+          "caller": "test_clear_estop_reenables_commands",
+          "callee": "sup.shutdown",
+          "lineNumber": 136
+        },
+        {
+          "caller": "test_health_ok_when_connected",
+          "callee": "GripperSupervisor",
+          "lineNumber": 140
+        },
+        {
+          "caller": "test_health_ok_when_connected",
+          "callee": "_node_config",
+          "lineNumber": 140
+        },
+        {
+          "caller": "test_health_ok_when_connected",
+          "callee": "make_fake_serial_factory",
+          "lineNumber": 140
+        },
+        {
+          "caller": "test_health_ok_when_connected",
+          "callee": "sup.start",
+          "lineNumber": 141
+        },
+        {
+          "caller": "test_health_ok_when_connected",
+          "callee": "_wait_until",
+          "lineNumber": 143
+        },
+        {
+          "caller": "test_health_ok_when_connected",
+          "callee": "sup.latest_state",
+          "lineNumber": 143
+        },
+        {
+          "caller": "test_health_ok_when_connected",
+          "callee": "sup.aggregate_health",
+          "lineNumber": 144
+        },
+        {
+          "caller": "test_health_ok_when_connected",
+          "callee": "sup.shutdown",
+          "lineNumber": 149
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 10,
+        "functionCount": 10,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/tests/service/test_permit_gate.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 20,
+      "functions": [
+        {
+          "name": "test_missing_permit_denied",
+          "startLine": 7,
+          "endLine": 8,
+          "params": []
+        },
+        {
+          "name": "test_denied_permit_denied",
+          "startLine": 11,
+          "endLine": 13,
+          "params": []
+        },
+        {
+          "name": "test_fresh_allowed_permit_accepted",
+          "startLine": 16,
+          "endLine": 18,
+          "params": []
+        },
+        {
+          "name": "test_expired_allowed_permit_denied",
+          "startLine": 21,
+          "endLine": 23,
+          "params": []
+        },
+        {
+          "name": "test_boundary_exactly_at_timeout_accepted",
+          "startLine": 26,
+          "endLine": 28,
+          "params": []
+        },
+        {
+          "name": "test_future_stamp_treated_as_fresh",
+          "startLine": 31,
+          "endLine": 33,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "test_missing_permit_denied",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "test_denied_permit_denied",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "test_fresh_allowed_permit_accepted",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "test_expired_allowed_permit_denied",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "test_boundary_exactly_at_timeout_accepted",
+          "line": 26,
+          "isDefault": false
+        },
+        {
+          "name": "test_future_stamp_treated_as_fresh",
+          "line": 31,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_missing_permit_denied",
+          "callee": "evaluate_permit",
+          "lineNumber": 8
+        },
+        {
+          "caller": "test_denied_permit_denied",
+          "callee": "CommandPermit",
+          "lineNumber": 12
+        },
+        {
+          "caller": "test_denied_permit_denied",
+          "callee": "evaluate_permit",
+          "lineNumber": 13
+        },
+        {
+          "caller": "test_fresh_allowed_permit_accepted",
+          "callee": "CommandPermit",
+          "lineNumber": 17
+        },
+        {
+          "caller": "test_fresh_allowed_permit_accepted",
+          "callee": "evaluate_permit",
+          "lineNumber": 18
+        },
+        {
+          "caller": "test_expired_allowed_permit_denied",
+          "callee": "CommandPermit",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_expired_allowed_permit_denied",
+          "callee": "evaluate_permit",
+          "lineNumber": 23
+        },
+        {
+          "caller": "test_boundary_exactly_at_timeout_accepted",
+          "callee": "CommandPermit",
+          "lineNumber": 27
+        },
+        {
+          "caller": "test_boundary_exactly_at_timeout_accepted",
+          "callee": "evaluate_permit",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_future_stamp_treated_as_fresh",
+          "callee": "CommandPermit",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_future_stamp_treated_as_fresh",
+          "callee": "evaluate_permit",
+          "lineNumber": 33
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    }
+  ]
+}

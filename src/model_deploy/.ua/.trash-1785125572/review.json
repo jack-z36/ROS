@@ -1,0 +1,52 @@
+{
+  "issues": [],
+  "warnings": [
+    "Node 'file:__init__.py' has no edges (orphan)",
+    "Node 'file:act/__init__.py' has no edges (orphan)",
+    "Node 'file:act/runtime/__init__.py' has no edges (orphan)",
+    "Node 'file:act/tests/__init__.py' has no edges (orphan)",
+    "Node 'file:act/tests/integration/__init__.py' has no edges (orphan)",
+    "Node 'file:act/tests/repo/__init__.py' has no edges (orphan)",
+    "Node 'file:act/tests/runtime/__init__.py' has no edges (orphan)",
+    "Node 'file:act/tests/service/__init__.py' has no edges (orphan)",
+    "Node 'file:act/tests/ui/__init__.py' has no edges (orphan)",
+    "Node 'file:dual_fisheye_camera/dual_fisheye_camera/__init__.py' has no edges (orphan)",
+    "Node 'file:elephant_gripper/conftest.py' has no edges (orphan)",
+    "Node 'file:elephant_gripper/elephant_gripper/__init__.py' has no edges (orphan)",
+    "Node 'file:elephant_gripper/elephant_gripper/config/__init__.py' has no edges (orphan)",
+    "Node 'file:elephant_gripper/elephant_gripper/repo/__init__.py' has no edges (orphan)",
+    "Node 'file:elephant_gripper/elephant_gripper/runtime/__init__.py' has no edges (orphan)",
+    "Node 'file:elephant_gripper/elephant_gripper/types/__init__.py' has no edges (orphan)",
+    "Node 'file:elephant_gripper/elephant_gripper/ui/__init__.py' has no edges (orphan)",
+    "Node 'file:elephant_gripper/resource/elephant_gripper' has no edges (orphan)",
+    "Node 'file:elephant_gripper/setup.py' has no edges (orphan)"
+  ],
+  "stats": {
+    "totalNodes": 607,
+    "totalEdges": 1144,
+    "totalLayers": 9,
+    "tourSteps": 11,
+    "nodeTypes": {
+      "file": 155,
+      "class": 228,
+      "function": 197,
+      "document": 10,
+      "config": 14,
+      "schema": 3
+    },
+    "edgeTypes": {
+      "contains": 425,
+      "exports": 283,
+      "imports": 78,
+      "tested_by": 191,
+      "calls": 43,
+      "depends_on": 67,
+      "documents": 17,
+      "related": 16,
+      "configures": 21,
+      "defines_schema": 1,
+      "triggers": 1,
+      "provisions": 1
+    }
+  }
+}

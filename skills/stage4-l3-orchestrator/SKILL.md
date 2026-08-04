@@ -23,6 +23,7 @@ Required related paths:
 
 ```text
 DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<l2>/<deploy_id>_*.md
+DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<l2>/<deploy_id>_*.md
 DOCS/03_工程/阶段四：模型部署/03_tasks/cards/<l2>/<deploy_id>_验收卡片.md
 DOCS/03_工程/阶段四：模型部署/03_tasks/cards/<l2>/<l2>_整体验收卡片.md
 DOCS/03_工程/阶段四：模型部署/05_acceptance/<l2>/
@@ -53,12 +54,32 @@ python skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py --ro
 ```
 
 8. If the acceptance result is `FAIL_LOCAL`, return the feedback to the same execution sub-agent or a new execution sub-agent with the same L3 ownership.
-9. Stop after three execute-review rounds for the same L3 and escalate to the main Agent.
-10. When all required L3 tasks for one L2 are complete or explicitly blocked, run L2 acceptance:
+9. If the acceptance result is `PASS_LOCAL`, archive the matching L3 task file from `03_tasks/task/active/<l2>/` to `03_tasks/completed/<l2>/` before the L3 atomic commit. The acceptance sub-agent must not do this; the main Agent owns the move.
+10. Stop after three execute-review rounds for the same L3 and escalate to the main Agent.
+11. When all required L3 tasks for one L2 are complete or explicitly blocked, run L2 acceptance:
 
 ```bash
 python skills/stage4-l3-orchestrator/scripts/make_stage4_subagent_prompt.py --role l2-acceptor --l2 <l2>
 ```
+
+## PASS_LOCAL Archive Rule
+
+Whenever an L3 acceptance card returns `PASS_LOCAL`, the main Agent must synchronously archive the corresponding L3 task card:
+
+```text
+from: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<l2>/<deploy_id>_*.md
+to:   DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<l2>/<deploy_id>_*.md
+```
+
+Rules:
+
+- Create `03_tasks/completed/<l2>/` if it does not exist.
+- Move only the L3 task file that matches the accepted card's `deploy_id` and `l2`.
+- Do not move unrelated active tasks, dispatch files, L2 acceptance cards, or evidence logs.
+- Do not let an acceptance sub-agent move files; acceptance remains read-only.
+- If the destination file already exists, stop and report the conflict instead of overwriting.
+- Include the archive move in the same L3 atomic commit as the accepted implementation, task summary, acceptance feedback, and optional dispatch status update.
+- `DEFER_TO_L2_GATE`, `BLOCKED_ENV`, and `BLOCKED_HARDWARE_EXPECTED` are not `PASS_LOCAL`; do not archive the task file for those conclusions unless the user explicitly instructs it.
 
 ## Execution Sub-Agent Rules
 
@@ -90,6 +111,7 @@ The acceptance sub-agent must:
 - Return `BLOCKED_ENV` when Ubuntu lacks ROS, bundle, SDK, or dependencies.
 - Return `BLOCKED_HARDWARE_EXPECTED` for real hardware checks in no-hardware environments.
 - Never edit source, tests, dispatch, cards, or Git state.
+- Never archive L3 task files; if the result is `PASS_LOCAL`, report that the main Agent must archive the matching task file.
 
 Allowed conclusions:
 

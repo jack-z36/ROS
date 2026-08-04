@@ -1,0 +1,44 @@
+# RM65 双臂节点默认配置。
+# 默认值 = 最保守安全值，真机测试期严禁放大（见 README"微小运动测试规约"）。
+#
+# 启动期硬性校验（违反则节点拒绝启动，fail-fast）：
+#   - left_arm.ip 与 right_arm.ip 必须不同
+#   - motion.speed_percent ∈ [1,100]
+#   - safety.max_step_xyz_m ∈ (0, 0.05]      ← 5cm 硬上限，防误配成大运动
+#   - safety.max_step_angle_rad ∈ (0, 0.2]   ← ~11.5° 硬上限
+#   - frame_id 固定 left_arm_base / right_arm_base
+rm65_dual_arm_node:
+  ros__parameters:
+    left_arm:
+      ip: "192.168.2.19"          # 必填，真机替换
+      port: 8080
+      frame_id: "left_arm_base"
+    right_arm:
+      ip: "192.168.1.18"          # 必填，与左臂不同
+      port: 8080
+      frame_id: "right_arm_base"
+
+    motion:
+      speed_percent: 10           # ★ 测试期默认最低 10（契约允许 10-30）
+      blend_radius_percent: 0
+      block: false                # 默认非阻塞（契约 block=false）
+      command_timeout_sec: 2.0
+
+    safety:
+      stale_target_sec: 0.5       # 目标 PoseStamped 最大年龄
+      permit_stale_sec: 1.0       # CommandPermit 最大年龄
+      max_step_xyz_m: 0.010       # ★ 单步位移上限 1cm
+      max_step_angle_rad: 0.05    # ★ 单步角度上限 ~2.9°
+
+    publish:
+      pose_hz: 50.0               # /arm/*_tcp_pose 发布频率
+      health_hz: 10.0             # /hardware/rm65/health 发布频率
+
+    topics:
+      left_tcp_pose: /arm/left_tcp_pose
+      right_tcp_pose: /arm/right_tcp_pose
+      health: /hardware/rm65/health
+      left_target: /act/command/arm/left_target
+      right_target: /act/command/arm/right_target
+      permit: /act/command/permit
+      emergency_stop_service: /hardware/rm65/emergency_stop

@@ -1,0 +1,84 @@
+{
+  "nodes": [
+    {
+      "id": "document:rm65_dual_arm/CMakeLists.txt",
+      "type": "document",
+      "name": "CMakeLists.txt",
+      "filePath": "rm65_dual_arm/CMakeLists.txt",
+      "summary": "rm65_dual_arm 包的 ament_cmake 构建脚本：声明对 rclcpp/geometry_msgs/act_interfaces 等的依赖，按 vendor 方式集成睿尔曼 libRM_Service.so，并条件构建 rm65_dual_arm_node 可执行文件与四组纯逻辑 gtest。",
+      "tags": ["build-system", "cmake", "ros2", "ament-cmake", "infrastructure"],
+      "complexity": "moderate",
+      "languageNotes": "通过 EXISTS 检测 rm_service.h 实现 SDK 可选构建：头文件缺失时跳过节点可执行文件，纯逻辑测试（pose_conversion/target_validator/delta_guard/permit_guard）仍可编译，便于真机 SDK 到位前的离线验证。"
+    },
+    {
+      "id": "document:rm65_dual_arm/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "rm65_dual_arm/README.md",
+      "summary": "rm65_dual_arm 双臂 ROS2 节点的完整说明文档，覆盖 topic/service 接口、多重安全闸门（permit_guard/target_validator/delta_guard）、delta_guard 微小运动安全规约、vendor SDK 集成步骤、构建测试流程与强制真机测试规约。",
+      "tags": ["documentation", "ros2", "safety", "dual-arm", "entry-point"],
+      "complexity": "complex",
+      "languageNotes": "采用 ★ 标记核心安全条款（delta_guard 与真机测试规约），并用 fail-closed/fail-fast 明确失败语义；列出 Jazzy 兼容性、单位陷阱（quaternion 顺序差异）、UDP 端口冲突等真机风险。"
+    },
+    {
+      "id": "config:rm65_dual_arm/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "rm65_dual_arm/package.xml",
+      "summary": "rm65_dual_arm ROS2 包清单（format 3），声明包描述、Apache-2.0 许可、buildtool_depend ament_cmake，以及 rclcpp/geometry_msgs/std_msgs/std_srvs/act_interfaces 等运行与编译依赖和 ament_cmake_gtest 测试依赖。",
+      "tags": ["configuration", "ros2", "package-manifest", "ament-cmake", "infrastructure"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:rm65_dual_arm/README.md",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:rm65_dual_arm/README.md",
+      "target": "file:rm65_dual_arm/src/delta_guard.cpp",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:rm65_dual_arm/README.md",
+      "target": "file:rm65_dual_arm/src/pose_conversion.cpp",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:rm65_dual_arm/README.md",
+      "target": "file:rm65_dual_arm/config/rm65_dual_arm.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:rm65_dual_arm/CMakeLists.txt",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:rm65_dual_arm/CMakeLists.txt",
+      "target": "config:rm65_dual_arm/package.xml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:rm65_dual_arm/package.xml",
+      "target": "file:rm65_dual_arm/src/rm65_dual_arm_node.cpp",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

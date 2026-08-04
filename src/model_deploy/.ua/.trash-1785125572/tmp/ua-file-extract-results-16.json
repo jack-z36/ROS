@@ -1,0 +1,1537 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 18,
+  "filesSkipped": [
+    "act_interfaces/CMakeLists.txt",
+    "act_interfaces/msg/CommandPermit.msg",
+    "act_interfaces/msg/GripperHealth.msg",
+    "act_interfaces/msg/HardwareHealth.msg",
+    "act_interfaces/package.xml",
+    "dual_fisheye_camera/resource/dual_fisheye_camera",
+    "elephant_gripper/config/99-elephant-gripper.rules"
+  ],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 18,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 15,
+      "failed": 0,
+      "skipped": 3
+    }
+  },
+  "results": [
+    {
+      "path": "act_system/launch/act_system.launch.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 211,
+      "nonEmptyLines": 183,
+      "functions": [
+        {
+          "name": "_find_workspace_root",
+          "startLine": 47,
+          "endLine": 67,
+          "params": []
+        },
+        {
+          "name": "_executable_exists",
+          "startLine": 81,
+          "endLine": 87,
+          "params": [
+            "pkg",
+            "executable"
+          ]
+        },
+        {
+          "name": "_include_hardware_launch",
+          "startLine": 90,
+          "endLine": 117,
+          "params": [
+            "pkg",
+            "launch_file",
+            "label",
+            "required_executables"
+          ]
+        },
+        {
+          "name": "_make_hardware_includes",
+          "startLine": 120,
+          "endLine": 138,
+          "params": [
+            "context"
+          ]
+        },
+        {
+          "name": "_make_act_node_process",
+          "startLine": 141,
+          "endLine": 167,
+          "params": [
+            "context"
+          ]
+        },
+        {
+          "name": "_on_any_process_exit",
+          "startLine": 170,
+          "endLine": 178,
+          "params": [
+            "event",
+            "context"
+          ]
+        },
+        {
+          "name": "generate_launch_description",
+          "startLine": 181,
+          "endLine": 211,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_find_workspace_root",
+          "line": 47,
+          "isDefault": false
+        },
+        {
+          "name": "_executable_exists",
+          "line": 81,
+          "isDefault": false
+        },
+        {
+          "name": "_include_hardware_launch",
+          "line": 90,
+          "isDefault": false
+        },
+        {
+          "name": "_make_hardware_includes",
+          "line": 120,
+          "isDefault": false
+        },
+        {
+          "name": "_make_act_node_process",
+          "line": 141,
+          "isDefault": false
+        },
+        {
+          "name": "_on_any_process_exit",
+          "line": 170,
+          "isDefault": false
+        },
+        {
+          "name": "generate_launch_description",
+          "line": 181,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_find_workspace_root",
+          "callee": "os.environ.get",
+          "lineNumber": 53
+        },
+        {
+          "caller": "_find_workspace_root",
+          "callee": "os.path.isdir",
+          "lineNumber": 54
+        },
+        {
+          "caller": "_find_workspace_root",
+          "callee": "os.path.abspath",
+          "lineNumber": 55
+        },
+        {
+          "caller": "_find_workspace_root",
+          "callee": "os.path.join",
+          "lineNumber": 56
+        },
+        {
+          "caller": "_find_workspace_root",
+          "callee": "os.path.dirname",
+          "lineNumber": 57
+        },
+        {
+          "caller": "_find_workspace_root",
+          "callee": "os.path.abspath",
+          "lineNumber": 57
+        },
+        {
+          "caller": "_find_workspace_root",
+          "callee": "os.path.isfile",
+          "lineNumber": 59
+        },
+        {
+          "caller": "_find_workspace_root",
+          "callee": "os.path.join",
+          "lineNumber": 59
+        },
+        {
+          "caller": "_find_workspace_root",
+          "callee": "os.path.dirname",
+          "lineNumber": 61
+        },
+        {
+          "caller": "_find_workspace_root",
+          "callee": "RuntimeError",
+          "lineNumber": 63
+        },
+        {
+          "caller": "_executable_exists",
+          "callee": "get_package_prefix",
+          "lineNumber": 84
+        },
+        {
+          "caller": "_executable_exists",
+          "callee": "os.path.isfile",
+          "lineNumber": 87
+        },
+        {
+          "caller": "_executable_exists",
+          "callee": "os.path.join",
+          "lineNumber": 87
+        },
+        {
+          "caller": "_include_hardware_launch",
+          "callee": "_executable_exists",
+          "lineNumber": 99
+        },
+        {
+          "caller": "_include_hardware_launch",
+          "callee": "LogInfo",
+          "lineNumber": 103
+        },
+        {
+          "caller": "_include_hardware_launch",
+          "callee": "'[act_system] 跳过 {}：可执行文件缺失 {}（包未编译或依赖未就绪）'.format",
+          "lineNumber": 104
+        },
+        {
+          "caller": "_include_hardware_launch",
+          "callee": "', '.join",
+          "lineNumber": 105
+        },
+        {
+          "caller": "_include_hardware_launch",
+          "callee": "IncludeLaunchDescription",
+          "lineNumber": 110
+        },
+        {
+          "caller": "_include_hardware_launch",
+          "callee": "PythonLaunchDescriptionSource",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_include_hardware_launch",
+          "callee": "os.path.join",
+          "lineNumber": 112
+        },
+        {
+          "caller": "_include_hardware_launch",
+          "callee": "get_package_share_directory",
+          "lineNumber": 113
+        },
+        {
+          "caller": "_make_hardware_includes",
+          "callee": "_include_hardware_launch",
+          "lineNumber": 123
+        },
+        {
+          "caller": "_make_hardware_includes",
+          "callee": "_include_hardware_launch",
+          "lineNumber": 127
+        },
+        {
+          "caller": "_make_hardware_includes",
+          "callee": "_include_hardware_launch",
+          "lineNumber": 131
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "LaunchConfiguration('act_config').perform",
+          "lineNumber": 143
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 143
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "LaunchConfiguration('act_python').perform",
+          "lineNumber": 144
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 144
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "LaunchConfiguration('enable_command_output').perform",
+          "lineNumber": 150
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 150
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "enable_output.lower",
+          "lineNumber": 151
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "cmd.append",
+          "lineNumber": 152
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "_find_workspace_root",
+          "lineNumber": 154
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "os.path.join",
+          "lineNumber": 155
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "os.environ.get",
+          "lineNumber": 157
+        },
+        {
+          "caller": "_make_act_node_process",
+          "callee": "ExecuteProcess",
+          "lineNumber": 161
+        },
+        {
+          "caller": "_on_any_process_exit",
+          "callee": "LogInfo",
+          "lineNumber": 173
+        },
+        {
+          "caller": "_on_any_process_exit",
+          "callee": "'[act_system] 组件进程退出: {} (returncode={})'.format",
+          "lineNumber": 174
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "_find_workspace_root",
+          "lineNumber": 182
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "os.path.join",
+          "lineNumber": 183
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 187
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 192
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 197
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "LaunchDescription",
+          "lineNumber": 203
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "OpaqueFunction",
+          "lineNumber": 207
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "OpaqueFunction",
+          "lineNumber": 208
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "RegisterEventHandler",
+          "lineNumber": 210
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "OnProcessExit",
+          "lineNumber": 210
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 7,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "act_system/scripts/start_act_system.sh",
+      "language": "shell",
+      "fileCategory": "script",
+      "totalLines": 214,
+      "nonEmptyLines": 191,
+      "functions": [
+        {
+          "name": "source_setup_file",
+          "startLine": 35,
+          "endLine": 42,
+          "params": []
+        },
+        {
+          "name": "cleanup",
+          "startLine": 139,
+          "endLine": 160,
+          "params": []
+        },
+        {
+          "name": "check_component",
+          "startLine": 176,
+          "endLine": 191,
+          "params": []
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 39,
+      "nonEmptyLines": 35,
+      "sections": [
+        {
+          "heading": "dual_fisheye_camera",
+          "level": 1,
+          "line": 15
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    },
+    {
+      "path": "dual_fisheye_camera/dual_fisheye_camera/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 169,
+      "nonEmptyLines": 132,
+      "functions": [
+        {
+          "name": "_stamp_to_sec",
+          "startLine": 37,
+          "endLine": 39,
+          "params": [
+            "stamp"
+          ]
+        },
+        {
+          "name": "main",
+          "startLine": 156,
+          "endLine": 165,
+          "params": [
+            "args"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "CameraHealthNode",
+          "startLine": 42,
+          "endLine": 143,
+          "methods": [
+            "__init__",
+            "_on_image",
+            "_publish_health",
+            "_eval_side"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_SideState",
+          "startLine": 146,
+          "endLine": 153,
+          "methods": [
+            "__init__"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_stamp_to_sec",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "CameraHealthNode",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "_SideState",
+          "line": 146,
+          "isDefault": false
+        },
+        {
+          "name": "main",
+          "line": 156,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "super().__init__",
+          "lineNumber": 46
+        },
+        {
+          "caller": "__init__",
+          "callee": "super",
+          "lineNumber": 46
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.declare_parameter",
+          "lineNumber": 49
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.declare_parameter",
+          "lineNumber": 50
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.declare_parameter",
+          "lineNumber": 51
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.declare_parameter",
+          "lineNumber": 52
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.declare_parameter",
+          "lineNumber": 53
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_parameter",
+          "lineNumber": 55
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_parameter",
+          "lineNumber": 56
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_parameter",
+          "lineNumber": 57
+        },
+        {
+          "caller": "__init__",
+          "callee": "float",
+          "lineNumber": 58
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_parameter",
+          "lineNumber": 58
+        },
+        {
+          "caller": "__init__",
+          "callee": "float",
+          "lineNumber": 59
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_parameter",
+          "lineNumber": 59
+        },
+        {
+          "caller": "__init__",
+          "callee": "ValueError",
+          "lineNumber": 62
+        },
+        {
+          "caller": "__init__",
+          "callee": "ValueError",
+          "lineNumber": 64
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_subscription",
+          "lineNumber": 75
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._on_image",
+          "lineNumber": 78
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_subscription",
+          "lineNumber": 81
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._on_image",
+          "lineNumber": 84
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_publisher",
+          "lineNumber": 89
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.create_timer",
+          "lineNumber": 92
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_logger().info",
+          "lineNumber": 94
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.get_logger",
+          "lineNumber": 94
+        },
+        {
+          "caller": "_on_image",
+          "callee": "self.get_clock().now",
+          "lineNumber": 104
+        },
+        {
+          "caller": "_on_image",
+          "callee": "self.get_clock",
+          "lineNumber": 104
+        },
+        {
+          "caller": "_on_image",
+          "callee": "_stamp_to_sec",
+          "lineNumber": 107
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self.get_clock().now",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self.get_clock",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self._eval_side",
+          "lineNumber": 113
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self._eval_side",
+          "lineNumber": 114
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "HardwareHealth",
+          "lineNumber": 116
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self.get_clock().now().to_msg",
+          "lineNumber": 117
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self.get_clock().now",
+          "lineNumber": 117
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self.get_clock",
+          "lineNumber": 117
+        },
+        {
+          "caller": "_publish_health",
+          "callee": "self._health_pub.publish",
+          "lineNumber": 134
+        },
+        {
+          "caller": "_eval_side",
+          "callee": "_SideState",
+          "lineNumber": 139
+        },
+        {
+          "caller": "_eval_side",
+          "callee": "_SideState",
+          "lineNumber": 142
+        },
+        {
+          "caller": "_eval_side",
+          "callee": "_SideState",
+          "lineNumber": 143
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.init",
+          "lineNumber": 157
+        },
+        {
+          "caller": "main",
+          "callee": "CameraHealthNode",
+          "lineNumber": 158
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.spin",
+          "lineNumber": 160
+        },
+        {
+          "caller": "main",
+          "callee": "node.destroy_node",
+          "lineNumber": 164
+        },
+        {
+          "caller": "main",
+          "callee": "rclpy.shutdown",
+          "lineNumber": 165
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 4,
+        "functionCount": 2,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 160,
+      "nonEmptyLines": 133,
+      "functions": [
+        {
+          "name": "_load_yaml_params",
+          "startLine": 33,
+          "endLine": 40,
+          "params": [
+            "context"
+          ]
+        },
+        {
+          "name": "_make_camera_pair",
+          "startLine": 43,
+          "endLine": 88,
+          "params": [
+            "context",
+            "side"
+          ]
+        },
+        {
+          "name": "_launch_setup",
+          "startLine": 91,
+          "endLine": 122,
+          "params": [
+            "context"
+          ]
+        },
+        {
+          "name": "_default_params_file",
+          "startLine": 125,
+          "endLine": 128,
+          "params": []
+        },
+        {
+          "name": "generate_launch_description",
+          "startLine": 131,
+          "endLine": 160,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_load_yaml_params",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "_make_camera_pair",
+          "line": 43,
+          "isDefault": false
+        },
+        {
+          "name": "_launch_setup",
+          "line": 91,
+          "isDefault": false
+        },
+        {
+          "name": "_default_params_file",
+          "line": 125,
+          "isDefault": false
+        },
+        {
+          "name": "generate_launch_description",
+          "line": 131,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_load_yaml_params",
+          "callee": "LaunchConfiguration('params_file').perform",
+          "lineNumber": 35
+        },
+        {
+          "caller": "_load_yaml_params",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 35
+        },
+        {
+          "caller": "_load_yaml_params",
+          "callee": "os.path.exists",
+          "lineNumber": 36
+        },
+        {
+          "caller": "_load_yaml_params",
+          "callee": "get_package_share_directory",
+          "lineNumber": 38
+        },
+        {
+          "caller": "_load_yaml_params",
+          "callee": "os.path.join",
+          "lineNumber": 39
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration(f'{side}_video_device').perform",
+          "lineNumber": 50
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 50
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration('frame_rate').perform",
+          "lineNumber": 51
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 51
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration(f'{side}_frame_id').perform",
+          "lineNumber": 52
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 52
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration(f'{side}_image_topic').perform",
+          "lineNumber": 53
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 53
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration(f'{side}_namespace').perform",
+          "lineNumber": 54
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 54
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration(f'{side}_node_name').perform",
+          "lineNumber": 55
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 55
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "_load_yaml_params",
+          "lineNumber": 56
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "ExecuteProcess",
+          "lineNumber": 60
+        },
+        {
+          "caller": "_make_camera_pair",
+          "callee": "Node",
+          "lineNumber": 66
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "_load_yaml_params",
+          "lineNumber": 92
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "LaunchConfiguration('health_topic').perform",
+          "lineNumber": 93
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 93
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "_make_camera_pair",
+          "lineNumber": 96
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "_make_camera_pair",
+          "lineNumber": 97
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "Node",
+          "lineNumber": 100
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "RegisterEventHandler",
+          "lineNumber": 115
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "OnProcessExit",
+          "lineNumber": 116
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "RegisterEventHandler",
+          "lineNumber": 118
+        },
+        {
+          "caller": "_launch_setup",
+          "callee": "OnProcessExit",
+          "lineNumber": 119
+        },
+        {
+          "caller": "_default_params_file",
+          "callee": "PathJoinSubstitution",
+          "lineNumber": 126
+        },
+        {
+          "caller": "_default_params_file",
+          "callee": "FindPackageShare",
+          "lineNumber": 127
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "LaunchDescription",
+          "lineNumber": 133
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 135
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "str",
+          "lineNumber": 135
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "_default_params_file",
+          "lineNumber": 135
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 138
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 139
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 142
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 143
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 146
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 149
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 150
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 151
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 154
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 155
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 156
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 157
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "OpaqueFunction",
+          "lineNumber": 159
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "dual_fisheye_camera/setup.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 38,
+      "nonEmptyLines": 33,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/config/elephant_gripper.yaml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 45,
+      "nonEmptyLines": 35,
+      "sections": [
+        {
+          "heading": "elephant_gripper_node",
+          "level": 1,
+          "line": 1
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    },
+    {
+      "path": "elephant_gripper/conftest.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 11,
+      "nonEmptyLines": 8,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/config/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/repo/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/runtime/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/service/frame_codec.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 168,
+      "nonEmptyLines": 118,
+      "functions": [
+        {
+          "name": "_build_crc_table",
+          "startLine": 36,
+          "endLine": 46,
+          "params": []
+        },
+        {
+          "name": "crc16",
+          "startLine": 52,
+          "endLine": 61,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "build_frame",
+          "startLine": 64,
+          "endLine": 84,
+          "params": [
+            "func_code",
+            "reg_addr",
+            "reg_data",
+            "gripper_id"
+          ]
+        },
+        {
+          "name": "enable_frame",
+          "startLine": 87,
+          "endLine": 90,
+          "params": [
+            "gripper_id"
+          ]
+        },
+        {
+          "name": "disable_frame",
+          "startLine": 93,
+          "endLine": 96,
+          "params": [
+            "gripper_id"
+          ]
+        },
+        {
+          "name": "stop_frame",
+          "startLine": 99,
+          "endLine": 102,
+          "params": [
+            "gripper_id"
+          ]
+        },
+        {
+          "name": "read_angle_frame",
+          "startLine": 105,
+          "endLine": 108,
+          "params": [
+            "gripper_id"
+          ]
+        },
+        {
+          "name": "read_clamp_frame",
+          "startLine": 111,
+          "endLine": 114,
+          "params": [
+            "gripper_id"
+          ]
+        },
+        {
+          "name": "build_set_angle_frame",
+          "startLine": 117,
+          "endLine": 122,
+          "params": [
+            "angle",
+            "gripper_id"
+          ]
+        },
+        {
+          "name": "parse_response",
+          "startLine": 134,
+          "endLine": 168,
+          "params": [
+            "resp",
+            "expected_reg",
+            "gripper_id"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ParsedResponse",
+          "startLine": 126,
+          "endLine": 131,
+          "methods": [],
+          "properties": [
+            "func_code",
+            "reg_addr",
+            "data"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_build_crc_table",
+          "line": 36,
+          "isDefault": false
+        },
+        {
+          "name": "crc16",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "build_frame",
+          "line": 64,
+          "isDefault": false
+        },
+        {
+          "name": "enable_frame",
+          "line": 87,
+          "isDefault": false
+        },
+        {
+          "name": "disable_frame",
+          "line": 93,
+          "isDefault": false
+        },
+        {
+          "name": "stop_frame",
+          "line": 99,
+          "isDefault": false
+        },
+        {
+          "name": "read_angle_frame",
+          "line": 105,
+          "isDefault": false
+        },
+        {
+          "name": "read_clamp_frame",
+          "line": 111,
+          "isDefault": false
+        },
+        {
+          "name": "build_set_angle_frame",
+          "line": 117,
+          "isDefault": false
+        },
+        {
+          "name": "ParsedResponse",
+          "line": 125,
+          "isDefault": false
+        },
+        {
+          "name": "parse_response",
+          "line": 134,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_build_crc_table",
+          "callee": "range",
+          "lineNumber": 38
+        },
+        {
+          "caller": "_build_crc_table",
+          "callee": "range",
+          "lineNumber": 40
+        },
+        {
+          "caller": "_build_crc_table",
+          "callee": "table.append",
+          "lineNumber": 45
+        },
+        {
+          "caller": "_build_crc_table",
+          "callee": "tuple",
+          "lineNumber": 46
+        },
+        {
+          "caller": "crc16",
+          "callee": "crc.to_bytes",
+          "lineNumber": 61
+        },
+        {
+          "caller": "build_frame",
+          "callee": "bytes",
+          "lineNumber": 72
+        },
+        {
+          "caller": "build_frame",
+          "callee": "crc16",
+          "lineNumber": 84
+        },
+        {
+          "caller": "enable_frame",
+          "callee": "build_frame",
+          "lineNumber": 90
+        },
+        {
+          "caller": "disable_frame",
+          "callee": "build_frame",
+          "lineNumber": 96
+        },
+        {
+          "caller": "stop_frame",
+          "callee": "build_frame",
+          "lineNumber": 102
+        },
+        {
+          "caller": "read_angle_frame",
+          "callee": "build_frame",
+          "lineNumber": 108
+        },
+        {
+          "caller": "read_clamp_frame",
+          "callee": "build_frame",
+          "lineNumber": 114
+        },
+        {
+          "caller": "build_set_angle_frame",
+          "callee": "ValueError",
+          "lineNumber": 121
+        },
+        {
+          "caller": "build_set_angle_frame",
+          "callee": "build_frame",
+          "lineNumber": 122
+        },
+        {
+          "caller": "parse_response",
+          "callee": "len",
+          "lineNumber": 146
+        },
+        {
+          "caller": "parse_response",
+          "callee": "len",
+          "lineNumber": 147
+        },
+        {
+          "caller": "parse_response",
+          "callee": "bytes",
+          "lineNumber": 148
+        },
+        {
+          "caller": "parse_response",
+          "callee": "frame[0:2].hex",
+          "lineNumber": 151
+        },
+        {
+          "caller": "parse_response",
+          "callee": "crc16",
+          "lineNumber": 158
+        },
+        {
+          "caller": "parse_response",
+          "callee": "ParsedResponse",
+          "lineNumber": 168
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 11,
+        "functionCount": 10,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/types/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/elephant_gripper/ui/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "elephant_gripper/launch/elephant_gripper.launch.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 30,
+      "nonEmptyLines": 26,
+      "functions": [
+        {
+          "name": "generate_launch_description",
+          "startLine": 8,
+          "endLine": 30,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "generate_launch_description",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "generate_launch_description",
+          "callee": "PathJoinSubstitution",
+          "lineNumber": 9
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "FindPackageShare",
+          "lineNumber": 10
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "LaunchConfiguration",
+          "lineNumber": 13
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "LaunchDescription",
+          "lineNumber": 15
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "DeclareLaunchArgument",
+          "lineNumber": 17
+        },
+        {
+          "caller": "generate_launch_description",
+          "callee": "Node",
+          "lineNumber": 22
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

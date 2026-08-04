@@ -1,0 +1,372 @@
+{
+  "nodes": [
+    {
+      "id": "file:act/tests/runtime/test_runtime_metrics.py",
+      "type": "file",
+      "name": "test_runtime_metrics.py",
+      "filePath": "act/tests/runtime/test_runtime_metrics.py",
+      "summary": "对 act/runtime/runtime_metrics 模块的运行期度量工具进行单元测试，覆盖快照构造、事件记录、丢弃分类与并发更新四类场景。",
+      "tags": ["test", "unit-test", "runtime-metrics", "pytest", "concurrency"],
+      "complexity": "moderate",
+      "languageNotes": "使用 dataclass 风格的 metrics 快照与 fake clock，验证多线程下的丢弃分类逻辑。"
+    },
+    {
+      "id": "file:act/tests/service/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/service/__init__.py",
+      "summary": "service 测试子包的标记模块，无任何业务逻辑。",
+      "tags": ["package-init", "test", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/tests/service/test_act_inference.py",
+      "type": "file",
+      "name": "test_act_inference.py",
+      "filePath": "act/tests/service/test_act_inference.py",
+      "summary": "对 ActInferenceService 与 run_act_inference 推理入口进行全面单元测试，覆盖构造校验、契约校验、端到端推理、stub policy 替换与各阶段失败传播。",
+      "tags": ["test", "unit-test", "inference", "contract-validation", "stub-policy"],
+      "complexity": "complex",
+      "languageNotes": "使用 StubPolicy 与 StubPolicyWithRaisingSelectAction 替身，证明 select_action 在端到端推理路径上永不被调用。"
+    },
+    {
+      "id": "file:act/tests/service/test_action_chunk_postprocess.py",
+      "type": "file",
+      "name": "test_action_chunk_postprocess.py",
+      "filePath": "act/tests/service/test_action_chunk_postprocess.py",
+      "summary": "测试 action_chunk_postprocess 模块对推理原始输出的后处理链路：去 batch 维度、反归一化、CPU float32 转换及最终 ActionChunk 契约组装。",
+      "tags": ["test", "unit-test", "postprocess", "normalization", "contract-validation"],
+      "complexity": "complex",
+      "languageNotes": "通过 RecordingNormalizer 验证反归一化的调用次数与方向，确保 normalizer 被正确触发。"
+    },
+    {
+      "id": "file:act/tests/service/test_action_output_adapter.py",
+      "type": "file",
+      "name": "test_action_output_adapter.py",
+      "filePath": "act/tests/service/test_action_output_adapter.py",
+      "summary": "测试 action_output_adapter 模块将 SafetyResult 与 ActionSpec 组合产出 TopicPayloadBundle 的适配逻辑，覆盖 pass/adjust/reject 三种安全裁决路径及非有限向量异常。",
+      "tags": ["test", "unit-test", "adapter", "safety", "contract-validation"],
+      "complexity": "moderate",
+      "languageNotes": "采用模块级 test_* 函数而非类组织用例，便于逐条断言 C4/C9 契约字段。"
+    },
+    {
+      "id": "file:act/tests/service/test_image_preprocess.py",
+      "type": "file",
+      "name": "test_image_preprocess.py",
+      "filePath": "act/tests/service/test_image_preprocess.py",
+      "summary": "测试 image_preprocess 模块对原始 RGB 图像的 CHW float32 [0,1] 预处理，覆盖配置构造、合法预处理、非法输入与无 ROS 环境下的导入回退。",
+      "tags": ["test", "unit-test", "image-preprocess", "config", "ros-optional"],
+      "complexity": "moderate",
+      "languageNotes": "显式验证无 rclpy 环境下模块仍可被导入（TestImportWithoutROS）。"
+    },
+    {
+      "id": "file:act/tests/service/test_observation_batch.py",
+      "type": "file",
+      "name": "test_observation_batch.py",
+      "filePath": "act/tests/service/test_observation_batch.py",
+      "summary": "测试 observation_batch 模块将 ObservationSnapshot 转换为推理所用 ActBatch 的全链路：模型输入兼容性校验、状态张量化与归一化、图像绑定、batch 维组装与设备对齐。",
+      "tags": ["test", "unit-test", "observation", "batch-assembly", "tensorization"],
+      "complexity": "complex",
+      "languageNotes": "通过 stub_state_normalizer 与 _replace_encoded_state 等工厂函数隔离 normalizer 副作用。"
+    },
+    {
+      "id": "file:act/tests/service/test_observation_collector.py",
+      "type": "file",
+      "name": "test_observation_collector.py",
+      "filePath": "act/tests/service/test_observation_collector.py",
+      "summary": "测试 observation_collector 模块在并发更新下对 ObservationSnapshot 的字段填充、缺失/陈旧拒绝、新鲜度结果与默认状态编解码行为。",
+      "tags": ["test", "unit-test", "observation", "concurrency", "freshness"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/service/test_safety_guard.py",
+      "type": "file",
+      "name": "test_safety_guard.py",
+      "filePath": "act/tests/service/test_safety_guard.py",
+      "summary": "对 SafetyGuard 安全护栏进行单元测试，覆盖构造、pass/adjust/reject 三类裁决路径、参考帧选择、纯函数性与公共端口契约。",
+      "tags": ["test", "unit-test", "safety", "guard", "contract-validation"],
+      "complexity": "complex",
+      "languageNotes": "通过 _unit_quat_about_z、_tcp、_action 等工厂函数构造四元数与 TCP 位姿测试夹具。"
+    },
+    {
+      "id": "file:act/tests/service/test_safety_primitives.py",
+      "type": "file",
+      "name": "test_safety_primitives.py",
+      "filePath": "act/tests/service/test_safety_primitives.py",
+      "summary": "对 safety_guard 内部的安全原语进行细粒度单元测试，覆盖 16D 动作向量校验、有限性检查、四元数规范化、参考选择、平移/旋转步长限制、夹爪投影与 build_safe_action 组装。",
+      "tags": ["test", "unit-test", "safety", "primitives", "quaternion"],
+      "complexity": "complex",
+      "languageNotes": "围绕旋转角与单位四元数构造大量几何测试夹具，验证步长限制的边界行为。"
+    },
+    {
+      "id": "file:act/tests/types/test_action_chunk.py",
+      "type": "file",
+      "name": "test_action_chunk.py",
+      "filePath": "act/tests/types/test_action_chunk.py",
+      "summary": "测试 ActionChunk 冻结数据类的构造契约：合法 (N,16) float32 有限数组、单行/大块合法构造，以及维度、dtype、rank、有限性、空数组等非法输入的拒绝。",
+      "tags": ["test", "unit-test", "data-model", "validation", "frozen-dataclass"],
+      "complexity": "moderate",
+      "languageNotes": "验证 @dataclass(frozen=True) 在非法构造时抛出 FrozenInstanceError 与 ValueError/TypeError。"
+    },
+    {
+      "id": "file:act/tests/types/test_action_publish.py",
+      "type": "file",
+      "name": "test_action_publish.py",
+      "filePath": "act/tests/types/test_action_publish.py",
+      "summary": "测试 action_publish 类型模块的命令许可、发布请求、ArmPoseTarget、TopicPayloadBundle、PublishOutcome、ActionPublishResult 与发布溯源等数据契约。",
+      "tags": ["test", "unit-test", "data-model", "action-publish", "contract-validation"],
+      "complexity": "complex",
+      "languageNotes": "ActionPublishResult 包含 14 条测试用例，是该模块的核心结果类型。"
+    },
+    {
+      "id": "file:act/tests/types/test_action_spec.py",
+      "type": "file",
+      "name": "test_action_spec.py",
+      "filePath": "act/tests/types/test_action_spec.py",
+      "summary": "测试 action_spec 模块的常量定义、ActionSpec 数据模型、ensure_action_vector 校验与 split_action 拆分逻辑。",
+      "tags": ["test", "unit-test", "data-model", "action-spec", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/types/test_contract_result.py",
+      "type": "file",
+      "name": "test_contract_result.py",
+      "filePath": "act/tests/types/test_contract_result.py",
+      "summary": "测试 contract_result 模块的 BundleContractResult 与 NormalizerContractResult 两类契约结果类型的字段约束与组装行为。",
+      "tags": ["test", "unit-test", "data-model", "contract-result", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/tests/types/test_observation.py",
+      "type": "file",
+      "name": "test_observation.py",
+      "filePath": "act/tests/types/test_observation.py",
+      "summary": "测试 observation 类型模块的 ObservationState、ObservationSnapshot、ObservationFreshnessResult 数据契约，以及无 ROS 环境下仍可导入的行为。",
+      "tags": ["test", "unit-test", "data-model", "observation", "ros-optional"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/types/test_safety_result.py",
+      "type": "file",
+      "name": "test_safety_result.py",
+      "filePath": "act/tests/types/test_safety_result.py",
+      "summary": "测试 safety_result 类型模块的 SafetyStatus、SafetyCode、SafetyFinding、SafetyResult 数据契约及模块导出面（__all__）。",
+      "tags": ["test", "unit-test", "data-model", "safety-result", "contract-validation"],
+      "complexity": "moderate",
+      "languageNotes": "SafetyResult 与 SafetyFinding 是测试重点，分别包含 10 与 8 条用例。"
+    },
+    {
+      "id": "file:act/tests/types/test_state_spec.py",
+      "type": "file",
+      "name": "test_state_spec.py",
+      "filePath": "act/tests/types/test_state_spec.py",
+      "summary": "测试 state_spec 模块的常量定义、StateSpec 数据模型、ensure_state_vector 校验与 encode_state 编码逻辑。",
+      "tags": ["test", "unit-test", "data-model", "state-spec", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:act/tests/ui/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/ui/__init__.py",
+      "summary": "ui 测试子包的标记模块，无任何业务逻辑。",
+      "tags": ["package-init", "test", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/tests/ui/test_action_publisher.py",
+      "type": "file",
+      "name": "test_action_publisher.py",
+      "filePath": "act/tests/ui/test_action_publisher.py",
+      "summary": "对 ActionPublisher 进行单元测试，覆盖构造校验（G09）、安全门控（G10）、命令项路由（G11）、部分失败处理（G12）与夹爪防抖（G13）等门控规则。",
+      "tags": ["test", "unit-test", "action-publisher", "gating", "ros"],
+      "complexity": "complex",
+      "languageNotes": "使用 RecordingPublisher、FailingPublisher 与 FakeNode 替身隔离真实 rclpy 发布副作用。"
+    },
+    {
+      "id": "file:act/tests/ui/test_action_publisher_messages.py",
+      "type": "file",
+      "name": "test_action_publisher_messages.py",
+      "filePath": "act/tests/ui/test_action_publisher_messages.py",
+      "summary": "测试 build_ros_messages 将 TopicPayloadBundle 转换为 ROS 消息（PoseStamped、Float32MultiArray、Float64 等）的细节，使用大量 Mock 消息类型避免依赖真实 rclpy。",
+      "tags": ["test", "unit-test", "ros-messages", "serialization", "mock"],
+      "complexity": "moderate",
+      "languageNotes": "通过 MockPose、MockQuaternion、MockFloat32MultiArray 等 12 个 Mock 类完整复现 ROS 消息字段布局。"
+    },
+    {
+      "id": "file:act/tests/ui/test_observation_pipeline.py",
+      "type": "file",
+      "name": "test_observation_pipeline.py",
+      "filePath": "act/tests/ui/test_observation_pipeline.py",
+      "summary": "测试 ObservationPipeline 与 build_observation_pipeline 的公共接缝、fail-fast 行为、单调新鲜度、深度所有权与订阅回滚能力。",
+      "tags": ["test", "unit-test", "observation-pipeline", "fail-fast", "rollback"],
+      "complexity": "moderate",
+      "languageNotes": "通过 FakeClock 与 MockNode 验证单调时钟下的新鲜度判定与订阅回滚。"
+    },
+    {
+      "id": "file:act/tests/ui/test_observation_ros_adapter.py",
+      "type": "file",
+      "name": "test_observation_ros_adapter.py",
+      "filePath": "act/tests/ui/test_observation_ros_adapter.py",
+      "summary": "对 ObservationRosAdapter 进行单元测试，覆盖无 ROS 环境导入、配置/spec 一致性校验、图像/TCP 位姿/夹爪三类回调的消息解码与边界处理。",
+      "tags": ["test", "unit-test", "ros-adapter", "observation", "ros-optional"],
+      "complexity": "complex",
+      "languageNotes": "通过 MockImageMsg、MockCompressedImageMsg、MockPoseMsg、MockGripperMsgWidth/Pose 等 Mock 消息验证多类型回调。"
+    },
+    {
+      "id": "file:act/types/action_chunk.py",
+      "type": "file",
+      "name": "action_chunk.py",
+      "filePath": "act/types/action_chunk.py",
+      "summary": "定义 ActionChunk 冻结数据类，作为 ACT 推理管道 L2-03 到 L2-06 之间唯一的跨模块输出类型，仅携带原始动作数组（无运行期元数据）。",
+      "tags": ["data-model", "value-object", "type-definition", "frozen-dataclass", "validation"],
+      "complexity": "simple",
+      "languageNotes": "使用 @dataclass(frozen=True) 并通过 __post_init__ 在构造期强制校验 ndim/shape/dtype/finite/non-empty 五项不变量。"
+    },
+    {
+      "id": "class:act/types/action_chunk.py:ActionChunk",
+      "type": "class",
+      "name": "ActionChunk",
+      "filePath": "act/types/action_chunk.py",
+      "lineRange": [17, 56],
+      "summary": "不可变的 ACT 推理动作块值对象，在构造期校验 (chunk_size, 16) 的 float32 有限数组并拒绝空数组与非有限元素。",
+      "tags": ["data-model", "value-object", "frozen-dataclass", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/ui/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/ui/__init__.py",
+      "summary": "act.ui 包的 barrel 入口，统一导出 ActionPublisher、ActDeployNode、ObservationPipeline 及其构建函数，构成 L2-05 ROS 输出适配与观测管道的公共 API 表面。",
+      "tags": ["entry-point", "barrel", "package-init", "public-api"],
+      "complexity": "simple",
+      "languageNotes": "通过 __all__ 显式声明公共导出面，便于下游模块与测试统一引用。"
+    },
+    {
+      "id": "file:act/ui/observation_ros_adapter.py",
+      "type": "file",
+      "name": "observation_ros_adapter.py",
+      "filePath": "act/ui/observation_ros_adapter.py",
+      "summary": "ObservationRosAdapter 作为 ROS 消息与 service/runtime 层 RAM 值之间的桥接器，将 Image/CompressedImage/Pose/gripper 消息解码、预处理后写入 ObservationCollector，并在快照就绪时推入 ObservationBuffer。",
+      "tags": ["middleware", "adapter", "ros", "observation", "service"],
+      "complexity": "complex",
+      "languageNotes": "采用惰性 rclpy 导入：无 ROS 时 create_subscriptions 记录 env_blocked，但配置/spec 错误从不被降级为 env_blocked。"
+    },
+    {
+      "id": "function:act/ui/observation_ros_adapter.py:decode_gripper_width",
+      "type": "function",
+      "name": "decode_gripper_width",
+      "filePath": "act/ui/observation_ros_adapter.py",
+      "lineRange": [60, 82],
+      "summary": "从夹爪状态消息中提取标量宽度，依次尝试 msg.width、msg.position.x（Pose 布局）与 msg.data，无法提取时抛出 ValueError（本地 FAIL 永不被掩盖）。",
+      "tags": ["utility", "decoder", "gripper", "fallback"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/ui/observation_ros_adapter.py:ObservationRosAdapter",
+      "type": "class",
+      "name": "ObservationRosAdapter",
+      "filePath": "act/ui/observation_ros_adapter.py",
+      "lineRange": [90, 452],
+      "summary": "ROS 回调到 service/runtime 层的桥接类，在构造期校验 collector/buffer/config/input_spec 类型与相机键一致性，并暴露图像/位姿/夹爪三类回调与单调时钟下的快照门控逻辑。",
+      "tags": ["middleware", "adapter", "ros", "observation", "callback"],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {"source": "file:act/types/action_chunk.py", "target": "class:act/types/action_chunk.py:ActionChunk", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/types/action_chunk.py", "target": "class:act/types/action_chunk.py:ActionChunk", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/ui/observation_ros_adapter.py", "target": "function:act/ui/observation_ros_adapter.py:decode_gripper_width", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/ui/observation_ros_adapter.py", "target": "function:act/ui/observation_ros_adapter.py:decode_gripper_width", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:act/ui/observation_ros_adapter.py", "target": "class:act/ui/observation_ros_adapter.py:ObservationRosAdapter", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:act/ui/observation_ros_adapter.py", "target": "class:act/ui/observation_ros_adapter.py:ObservationRosAdapter", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:act/runtime/runtime_metrics.py", "target": "file:act/tests/runtime/test_runtime_metrics.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/config/schema.py", "target": "file:act/tests/service/test_act_inference.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "file:act/tests/service/test_act_inference.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/repo/normalization.py", "target": "file:act/tests/service/test_act_inference.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/service/act_inference.py", "target": "file:act/tests/service/test_act_inference.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_chunk.py", "target": "file:act/tests/service/test_act_inference.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/observation.py", "target": "file:act/tests/service/test_act_inference.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/repo/normalization.py", "target": "file:act/tests/service/test_action_chunk_postprocess.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/service/action_chunk_postprocess.py", "target": "file:act/tests/service/test_action_chunk_postprocess.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_chunk.py", "target": "file:act/tests/service/test_action_chunk_postprocess.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_spec.py", "target": "file:act/tests/service/test_action_chunk_postprocess.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/config/schema.py", "target": "file:act/tests/service/test_action_output_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_publish.py", "target": "file:act/tests/service/test_action_output_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_spec.py", "target": "file:act/tests/service/test_action_output_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/safety_result.py", "target": "file:act/tests/service/test_action_output_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/service/action_output_adapter.py", "target": "file:act/tests/service/test_action_output_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/service/image_preprocess.py", "target": "file:act/tests/service/test_image_preprocess.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/service/__init__.py", "target": "file:act/tests/service/test_image_preprocess.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/repo/act_runtime_resources.py", "target": "file:act/tests/service/test_observation_batch.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/repo/normalization.py", "target": "file:act/tests/service/test_observation_batch.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/service/observation_batch.py", "target": "file:act/tests/service/test_observation_batch.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/observation.py", "target": "file:act/tests/service/test_observation_batch.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/service/observation_collector.py", "target": "file:act/tests/service/test_observation_collector.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/observation.py", "target": "file:act/tests/service/test_observation_collector.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/config/schema.py", "target": "file:act/tests/service/test_safety_guard.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/service/__init__.py", "target": "file:act/tests/service/test_safety_guard.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/service/safety_guard.py", "target": "file:act/tests/service/test_safety_guard.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_spec.py", "target": "file:act/tests/service/test_safety_guard.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/observation.py", "target": "file:act/tests/service/test_safety_guard.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/safety_result.py", "target": "file:act/tests/service/test_safety_guard.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/service/safety_guard.py", "target": "file:act/tests/service/test_safety_primitives.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_spec.py", "target": "file:act/tests/service/test_safety_primitives.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/observation.py", "target": "file:act/tests/service/test_safety_primitives.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/safety_result.py", "target": "file:act/tests/service/test_safety_primitives.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/types/action_chunk.py", "target": "file:act/tests/types/test_action_chunk.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_spec.py", "target": "file:act/tests/types/test_action_chunk.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/types/action_publish.py", "target": "file:act/tests/types/test_action_publish.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/safety_result.py", "target": "file:act/tests/types/test_action_publish.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_spec.py", "target": "file:act/tests/types/test_action_publish.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/types/action_spec.py", "target": "file:act/tests/types/test_action_spec.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/types/contract_result.py", "target": "file:act/tests/types/test_contract_result.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/types/observation.py", "target": "file:act/tests/types/test_observation.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/__init__.py", "target": "file:act/tests/types/test_observation.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/types/action_spec.py", "target": "file:act/tests/types/test_safety_result.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/safety_result.py", "target": "file:act/tests/types/test_safety_result.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/types/state_spec.py", "target": "file:act/tests/types/test_state_spec.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/config/schema.py", "target": "file:act/tests/ui/test_action_publisher.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_publish.py", "target": "file:act/tests/ui/test_action_publisher.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/action_spec.py", "target": "file:act/tests/ui/test_action_publisher.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/types/safety_result.py", "target": "file:act/tests/ui/test_action_publisher.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/ui/__init__.py", "target": "file:act/tests/ui/test_action_publisher.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/ui/action_publisher.py", "target": "file:act/tests/ui/test_action_publisher.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/types/action_publish.py", "target": "file:act/tests/ui/test_action_publisher_messages.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/ui/__init__.py", "target": "file:act/tests/ui/test_action_publisher_messages.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/ui/action_publisher.py", "target": "file:act/tests/ui/test_action_publisher_messages.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/config/__init__.py", "target": "file:act/tests/ui/test_observation_pipeline.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/repo/__init__.py", "target": "file:act/tests/ui/test_observation_pipeline.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/service/observation_collector.py", "target": "file:act/tests/ui/test_observation_pipeline.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/ui/__init__.py", "target": "file:act/tests/ui/test_observation_pipeline.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/ui/observation_pipeline.py", "target": "file:act/tests/ui/test_observation_pipeline.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/runtime/observation_buffer.py", "target": "file:act/tests/ui/test_observation_pipeline.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+
+    {"source": "file:act/config/__init__.py", "target": "file:act/tests/ui/test_observation_ros_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/repo/__init__.py", "target": "file:act/tests/ui/test_observation_ros_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/runtime/observation_buffer.py", "target": "file:act/tests/ui/test_observation_ros_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/service/observation_collector.py", "target": "file:act/tests/ui/test_observation_ros_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/ui/__init__.py", "target": "file:act/tests/ui/test_observation_ros_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:act/ui/observation_ros_adapter.py", "target": "file:act/tests/ui/test_observation_ros_adapter.py", "type": "tested_by", "direction": "forward", "weight": 0.5}
+  ]
+}

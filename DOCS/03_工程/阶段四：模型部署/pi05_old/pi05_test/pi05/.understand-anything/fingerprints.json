@@ -1,0 +1,4663 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "01ce64c7d80e5ba68f144ca9b7731b0a7b2c3403",
+  "generatedAt": "2026-07-04T07:56:12.940Z",
+  "files": {
+    "common/src/pi05/common/__init__.py": {
+      "filePath": "common/src/pi05/common/__init__.py",
+      "contentHash": "f7ec8e4ccf5d4833ad9e9f3ebcfbdb512faa57e26052b92255531832a4fbd2d3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/config/__init__.py": {
+      "filePath": "common/src/pi05/common/config/__init__.py",
+      "contentHash": "f89e15324cfcc69a2f19eb3b3e0bbfd9281d4aa4a91b76a097c39c38ac146986",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pi05.common.config.schema",
+          "specifiers": [
+            "ConfigError",
+            "DataConfig",
+            "ExperimentConfig",
+            "LoggingConfig",
+            "LoraConfig",
+            "ModelConfig",
+            "TrainingConfig",
+            "load_experiment_config"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/config/schema.py": {
+      "filePath": "common/src/pi05/common/config/schema.py",
+      "contentHash": "0a9a35834064eae9e638f6dd0f674d3a088e89240eac2ec395e9d753aac46671",
+      "functions": [
+        {
+          "name": "load_experiment_config",
+          "params": [
+            "path"
+          ],
+          "returnType": "ExperimentConfig",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_required_section",
+          "params": [
+            "raw",
+            "key"
+          ],
+          "returnType": "Mapping[str, Any]",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_mapping_value",
+          "params": [
+            "value",
+            "key"
+          ],
+          "returnType": "Mapping[str, Any]",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_mapping",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "Mapping[str, Any]",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_str",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "_attention_implementation",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_optional_str",
+          "params": [
+            "raw",
+            "key"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_str_or_str_list",
+          "params": [
+            "raw",
+            "key"
+          ],
+          "returnType": "str | tuple[str, ...]",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "_str_or_path",
+          "params": [
+            "raw",
+            "key",
+            "default",
+            "base_dir"
+          ],
+          "returnType": "str | Path",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_path",
+          "params": [
+            "raw",
+            "key",
+            "base_dir"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "_optional_path",
+          "params": [
+            "raw",
+            "key",
+            "base_dir"
+          ],
+          "returnType": "Path | None",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "_resolve_path_value",
+          "params": [
+            "value",
+            "base_dir"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_bool",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "_positive_int",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_non_negative_int",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_optional_int",
+          "params": [
+            "raw",
+            "key"
+          ],
+          "returnType": "int | None",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_int",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_float",
+          "params": [
+            "raw",
+            "key",
+            "min_value",
+            "max_value"
+          ],
+          "returnType": "float",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "_optional_float",
+          "params": [
+            "raw",
+            "key",
+            "min_value"
+          ],
+          "returnType": "float | None",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_str_list",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "list[str]",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "_port",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_serialize_tracker_value",
+          "params": [
+            "value"
+          ],
+          "returnType": "Any",
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [
+        {
+          "name": "ConfigError",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "LoraConfig",
+          "methods": [
+            "from_mapping"
+          ],
+          "properties": [
+            "rank",
+            "alpha",
+            "dropout",
+            "target_modules"
+          ],
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "DataConfig",
+          "methods": [
+            "from_mapping",
+            "resolved_dataset_path"
+          ],
+          "properties": [
+            "dataset_path",
+            "fps",
+            "num_workers",
+            "chunk_size",
+            "use_color_jitter",
+            "image_size",
+            "state_dim",
+            "action_dim",
+            "cameras",
+            "features"
+          ],
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "ModelConfig",
+          "methods": [
+            "from_mapping"
+          ],
+          "properties": [
+            "pretrained_path",
+            "device",
+            "dtype",
+            "gradient_checkpointing",
+            "train_expert_only",
+            "allow_random_init_peft",
+            "chunk_size",
+            "n_action_steps",
+            "state_dim",
+            "action_dim",
+            "max_action_dim",
+            "paligemma_variant",
+            "action_expert_variant",
+            "attention_implementation"
+          ],
+          "exported": true,
+          "lineCount": 35
+        },
+        {
+          "name": "TrainingConfig",
+          "methods": [
+            "from_mapping"
+          ],
+          "properties": [
+            "batch_size",
+            "lr",
+            "epochs",
+            "gradient_accumulation_steps",
+            "warmup_steps",
+            "checkpoint_freq_epochs",
+            "max_steps_per_epoch",
+            "seed",
+            "grad_clip_norm",
+            "resume_from_checkpoint",
+            "mixed_precision"
+          ],
+          "exported": true,
+          "lineCount": 34
+        },
+        {
+          "name": "LoggingConfig",
+          "methods": [
+            "from_mapping",
+            "resolved_output_dir",
+            "run_output_dir",
+            "resolved_export_dir",
+            "run_export_dir",
+            "resolved_tensorboard_dir"
+          ],
+          "properties": [
+            "project_name",
+            "run_name",
+            "output_dir",
+            "export_dir",
+            "use_tensorboard",
+            "tensorboard_dir",
+            "tensorboard_auto_launch",
+            "tensorboard_host",
+            "tensorboard_port",
+            "log_freq"
+          ],
+          "exported": true,
+          "lineCount": 50
+        },
+        {
+          "name": "ExperimentConfig",
+          "methods": [
+            "from_mapping",
+            "to_tracker_config",
+            "run_summary"
+          ],
+          "properties": [
+            "lora",
+            "data",
+            "model",
+            "training",
+            "logging",
+            "raw"
+          ],
+          "exported": true,
+          "lineCount": 47
+        }
+      ],
+      "imports": [
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass",
+            "field"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Mapping"
+          ]
+        },
+        {
+          "source": "yaml",
+          "specifiers": [
+            "yaml"
+          ]
+        },
+        {
+          "source": "pi05.common.utils.paths",
+          "specifiers": [
+            "PROJECT_ROOT"
+          ]
+        }
+      ],
+      "exports": [
+        "ConfigError",
+        "LoraConfig",
+        "DataConfig",
+        "ModelConfig",
+        "TrainingConfig",
+        "LoggingConfig",
+        "ExperimentConfig",
+        "load_experiment_config",
+        "_required_section",
+        "_mapping_value",
+        "_mapping",
+        "_str",
+        "_attention_implementation",
+        "_optional_str",
+        "_str_or_str_list",
+        "_str_or_path",
+        "_path",
+        "_optional_path",
+        "_resolve_path_value",
+        "_bool",
+        "_positive_int",
+        "_non_negative_int",
+        "_optional_int",
+        "_int",
+        "_float",
+        "_optional_float",
+        "_str_list",
+        "_port",
+        "_serialize_tracker_value"
+      ],
+      "totalLines": 463,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/data/__init__.py": {
+      "filePath": "common/src/pi05/common/data/__init__.py",
+      "contentHash": "a9d251bbf479fb991ad62b348e14026af9f3a8f9ce0f49002e1e7afda5f72986",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/data/action_codec.py": {
+      "filePath": "common/src/pi05/common/data/action_codec.py",
+      "contentHash": "db377b4ac817a53307b565f277a7bd445e0b5c78b3629014366c727396f7ff56",
+      "functions": [
+        {
+          "name": "ensure_action_vector",
+          "params": [
+            "action"
+          ],
+          "returnType": "np.ndarray",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ensure_action_chunk",
+          "params": [
+            "chunk",
+            "action_dim"
+          ],
+          "returnType": "np.ndarray",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "split_action",
+          "params": [
+            "action"
+          ],
+          "returnType": "BimanualAction",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "typing",
+          "specifiers": [
+            "Iterable"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pi05.common.robot.action_spec",
+          "specifiers": [
+            "ACTION_DIM",
+            "BimanualAction",
+            "split_bimanual_action"
+          ]
+        }
+      ],
+      "exports": [
+        "ensure_action_vector",
+        "ensure_action_chunk",
+        "split_action"
+      ],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/data/image_preprocess.py": {
+      "filePath": "common/src/pi05/common/data/image_preprocess.py",
+      "contentHash": "c001da4acb5746b581f3493a8cc85f92752b70d25c07b2718ac20f5d3a3677fa",
+      "functions": [
+        {
+          "name": "preprocess_rgb_image",
+          "params": [
+            "rgb",
+            "config"
+          ],
+          "returnType": "torch.Tensor",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_resize_crop",
+          "params": [
+            "rgb",
+            "image_size"
+          ],
+          "returnType": "torch.Tensor",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "_resize_pad",
+          "params": [
+            "rgb",
+            "image_size"
+          ],
+          "returnType": "torch.Tensor",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "_cv2_resize_rgb",
+          "params": [
+            "rgb",
+            "width",
+            "height"
+          ],
+          "returnType": "np.ndarray",
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [
+        {
+          "name": "ImagePreprocessConfig",
+          "methods": [],
+          "properties": [
+            "image_size",
+            "mode"
+          ],
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Literal"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "torch",
+          "specifiers": [
+            "torch"
+          ]
+        },
+        {
+          "source": "torchvision.transforms",
+          "specifiers": [
+            "InterpolationMode"
+          ]
+        },
+        {
+          "source": "torchvision.transforms",
+          "specifiers": [
+            "TF"
+          ]
+        }
+      ],
+      "exports": [
+        "ImagePreprocessConfig",
+        "preprocess_rgb_image",
+        "_resize_crop",
+        "_resize_pad",
+        "_cv2_resize_rgb"
+      ],
+      "totalLines": 77,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/data/normalization.py": {
+      "filePath": "common/src/pi05/common/data/normalization.py",
+      "contentHash": "c1b67f6ddfaf3beb1b2df8571b070a92cd801c2e5c784fd6a883236c3d0c88a2",
+      "functions": [
+        {
+          "name": "build_normalizer_from_lerobot",
+          "params": [
+            "dataset",
+            "key",
+            "max_samples",
+            "identity_indices",
+            "refresh_invalid_stats"
+          ],
+          "returnType": "ActionStateNormalizer",
+          "exported": true,
+          "lineCount": 45
+        },
+        {
+          "name": "build_state_action_normalizers",
+          "params": [
+            "dataset",
+            "max_samples",
+            "identity_indices"
+          ],
+          "returnType": "tuple[ActionStateNormalizer, ActionStateNormalizer]",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "ensure_vector_stats",
+          "params": [
+            "dataset",
+            "keys"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_build_from_stats",
+          "params": [
+            "dataset",
+            "key",
+            "identity_indices"
+          ],
+          "returnType": "ActionStateNormalizer | None",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "_stats_need_refresh",
+          "params": [
+            "dataset",
+            "key"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "_scan_vector_stats",
+          "params": [
+            "dataset",
+            "keys"
+          ],
+          "returnType": "dict[str, dict[str, np.ndarray]]",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "_feature_dim",
+          "params": [
+            "dataset",
+            "key"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [
+        {
+          "name": "ActionStateNormalizer",
+          "methods": [
+            "__init__",
+            "normalize",
+            "unnormalize",
+            "__call__",
+            "_as_vector",
+            "_as_tensor",
+            "_broadcast",
+            "_build_identity_mask"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 106
+        },
+        {
+          "name": "_VectorStatsAccumulator",
+          "methods": [
+            "__init__",
+            "update",
+            "finalize"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 35
+        }
+      ],
+      "imports": [
+        {
+          "source": "typing",
+          "specifiers": [
+            "Iterable",
+            "Mapping",
+            "Sequence"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "torch",
+          "specifiers": [
+            "torch"
+          ]
+        },
+        {
+          "source": "lerobot.datasets.lerobot_dataset",
+          "specifiers": [
+            "LeRobotDataset"
+          ]
+        },
+        {
+          "source": "lerobot.datasets.io_utils",
+          "specifiers": [
+            "write_stats"
+          ]
+        }
+      ],
+      "exports": [
+        "ActionStateNormalizer",
+        "build_normalizer_from_lerobot",
+        "build_state_action_normalizers",
+        "ensure_vector_stats",
+        "_build_from_stats",
+        "_stats_need_refresh",
+        "_scan_vector_stats",
+        "_feature_dim",
+        "_VectorStatsAccumulator"
+      ],
+      "totalLines": 311,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/data/state_codec.py": {
+      "filePath": "common/src/pi05/common/data/state_codec.py",
+      "contentHash": "91c558e19ac069af7f76b2bdff49e13d117417aa93b8d85ac1050dadfea4c51b",
+      "functions": [
+        {
+          "name": "encode_bimanual_state",
+          "params": [
+            "state"
+          ],
+          "returnType": "np.ndarray",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "decode_picotele_proprioception",
+          "params": [
+            "position"
+          ],
+          "returnType": "tuple[np.ndarray, np.ndarray]",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "_vector",
+          "params": [
+            "value",
+            "dim",
+            "name"
+          ],
+          "returnType": "np.ndarray",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "BimanualState",
+          "methods": [],
+          "properties": [
+            "left_arm_q",
+            "right_arm_q",
+            "left_hand_q",
+            "right_hand_q",
+            "left_ee_pos",
+            "left_ee_rpy",
+            "right_ee_pos",
+            "right_ee_rpy"
+          ],
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Iterable"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pi05.common.robot.action_spec",
+          "specifiers": [
+            "ARM_DOF",
+            "STATE_DIM"
+          ]
+        }
+      ],
+      "exports": [
+        "BimanualState",
+        "encode_bimanual_state",
+        "decode_picotele_proprioception",
+        "_vector"
+      ],
+      "totalLines": 61,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/model/__init__.py": {
+      "filePath": "common/src/pi05/common/model/__init__.py",
+      "contentHash": "1b45cc0010c0086076dee407eaba292591e79e2388f05a95e5055d8cc9829fcc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/model/builder.py": {
+      "filePath": "common/src/pi05/common/model/builder.py",
+      "contentHash": "701afc873fe397e48573f489b94b913c500dc5179a8737ab77e8fb2c2c6c763b",
+      "functions": [
+        {
+          "name": "build_pi05_with_lora",
+          "params": [
+            "config",
+            "pretrained_path",
+            "config_dict"
+          ],
+          "returnType": "torch.nn.Module",
+          "exported": true,
+          "lineCount": 119
+        },
+        {
+          "name": "_resolve_peft_target_modules",
+          "params": [
+            "config"
+          ],
+          "returnType": "str | list[str]",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_image_keys_from_cameras",
+          "params": [
+            "cameras"
+          ],
+          "returnType": "tuple[str, ...]",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "get_pi05_policy_config",
+          "params": [
+            "model"
+          ],
+          "returnType": "Any",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "_as_experiment_config",
+          "params": [
+            "config"
+          ],
+          "returnType": "ExperimentConfig",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_resolve_device",
+          "params": [
+            "device"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_enable_gradient_checkpointing",
+          "params": [
+            "model"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "_print_trainable_ratio",
+          "params": [
+            "model"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "_resize_pi05_action_projections",
+          "params": [
+            "policy",
+            "action_dim"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 47
+        },
+        {
+          "name": "_force_pi05_attention_implementation",
+          "params": [
+            "policy",
+            "attention_implementation"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "_iter_attention_configs",
+          "params": [
+            "policy"
+          ],
+          "exported": true,
+          "lineCount": 24
+        },
+        {
+          "name": "_set_config_attr",
+          "params": [
+            "config",
+            "name",
+            "value"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_ensure_pi05_feature_specs",
+          "params": [
+            "policy_config",
+            "state_dim",
+            "action_dim",
+            "image_keys"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "_is_visual_feature",
+          "params": [
+            "feature"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Mapping"
+          ]
+        },
+        {
+          "source": "torch",
+          "specifiers": [
+            "torch"
+          ]
+        },
+        {
+          "source": "peft",
+          "specifiers": [
+            "LoraConfig"
+          ]
+        },
+        {
+          "source": "lerobot.configs.policies",
+          "specifiers": [
+            "PreTrainedConfig"
+          ]
+        },
+        {
+          "source": "lerobot.configs.types",
+          "specifiers": [
+            "FeatureType",
+            "NormalizationMode",
+            "PolicyFeature"
+          ]
+        },
+        {
+          "source": "lerobot.policies.pi05.configuration_pi05",
+          "specifiers": [
+            "PI05Config"
+          ]
+        },
+        {
+          "source": "lerobot.policies.pi05.modeling_pi05",
+          "specifiers": [
+            "PI05Policy"
+          ]
+        },
+        {
+          "source": "lerobot.utils.constants",
+          "specifiers": [
+            "ACTION",
+            "OBS_STATE"
+          ]
+        },
+        {
+          "source": "pi05.common.config.schema",
+          "specifiers": [
+            "ExperimentConfig"
+          ]
+        }
+      ],
+      "exports": [
+        "build_pi05_with_lora",
+        "_resolve_peft_target_modules",
+        "_image_keys_from_cameras",
+        "get_pi05_policy_config",
+        "_as_experiment_config",
+        "_resolve_device",
+        "_enable_gradient_checkpointing",
+        "_print_trainable_ratio",
+        "_resize_pi05_action_projections",
+        "_force_pi05_attention_implementation",
+        "_iter_attention_configs",
+        "_set_config_attr",
+        "_ensure_pi05_feature_specs",
+        "_is_visual_feature"
+      ],
+      "totalLines": 356,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/robot/__init__.py": {
+      "filePath": "common/src/pi05/common/robot/__init__.py",
+      "contentHash": "98894e29a9425bd50810c3b24cb8cc8ae38be178cf962e20f88582b4e2e36187",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/robot/action_spec.py": {
+      "filePath": "common/src/pi05/common/robot/action_spec.py",
+      "contentHash": "d4c4eb440fe18d3d0eae9bb623865c92f0227aae0f83d98d9dc69d7761075d61",
+      "functions": [
+        {
+          "name": "split_bimanual_action",
+          "params": [
+            "action"
+          ],
+          "returnType": "BimanualAction",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "hand_command_to_trigger",
+          "params": [
+            "command",
+            "open_value",
+            "closed_value"
+          ],
+          "returnType": "float",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "BimanualAction",
+          "methods": [
+            "as_vector"
+          ],
+          "properties": [
+            "left_arm",
+            "right_arm",
+            "left_hand",
+            "right_hand"
+          ],
+          "exported": true,
+          "lineCount": 17
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Iterable"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        }
+      ],
+      "exports": [
+        "BimanualAction",
+        "split_bimanual_action",
+        "hand_command_to_trigger"
+      ],
+      "totalLines": 60,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/robot/joint_limits.py": {
+      "filePath": "common/src/pi05/common/robot/joint_limits.py",
+      "contentHash": "9569b6d5499dab84a6ba5e823f159a24ed3ba98bb9aee1c0412f200a390f69fe",
+      "functions": [
+        {
+          "name": "broad_joint_limits",
+          "params": [
+            "limit_rad"
+          ],
+          "returnType": "JointLimitSpec",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "JointLimitSpec",
+          "methods": [
+            "from_values",
+            "clamp",
+            "contains"
+          ],
+          "properties": [
+            "min_rad",
+            "max_rad"
+          ],
+          "exported": true,
+          "lineCount": 29
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Iterable"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pi05.common.robot.action_spec",
+          "specifiers": [
+            "ARM_DOF"
+          ]
+        }
+      ],
+      "exports": [
+        "JointLimitSpec",
+        "broad_joint_limits"
+      ],
+      "totalLines": 49,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/ros/__init__.py": {
+      "filePath": "common/src/pi05/common/ros/__init__.py",
+      "contentHash": "4966eeeda39ef9646fb947e14247f691218b5f7feea2b253aa85f5003cea6b59",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/ros/topics.py": {
+      "filePath": "common/src/pi05/common/ros/topics.py",
+      "contentHash": "a48c6b67c56cb2a2e422aaff9c194c618acdfe8a03feb1316beb03b99ff43768",
+      "functions": [
+        {
+          "name": "join_topic",
+          "params": [
+            "namespace"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "Pi05CommandTopics",
+          "methods": [
+            "with_namespace"
+          ],
+          "properties": [
+            "left_arm_joint_target",
+            "right_arm_joint_target",
+            "left_hand_target",
+            "right_hand_target",
+            "status",
+            "metrics"
+          ],
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "Pi05ObservationTopics",
+          "methods": [
+            "with_namespace"
+          ],
+          "properties": [
+            "top_image",
+            "left_wrist_image",
+            "right_wrist_image",
+            "proprioception",
+            "left_hand_state",
+            "right_hand_state",
+            "left_ee_position",
+            "left_ee_rpy",
+            "right_ee_position",
+            "right_ee_rpy"
+          ],
+          "exported": true,
+          "lineCount": 28
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        }
+      ],
+      "exports": [
+        "join_topic",
+        "Pi05CommandTopics",
+        "Pi05ObservationTopics"
+      ],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/runtime/__init__.py": {
+      "filePath": "common/src/pi05/common/runtime/__init__.py",
+      "contentHash": "e80cb593cc8a30fa2afc4de88b2eecb2f1c08eef8e093b48b2dd8ca55bcb708d",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": ".bundle",
+          "specifiers": [
+            "export_deploy_bundle",
+            "load_bundle_manifest",
+            "load_bundle_normalizers",
+            "resolve_bundle_adapter_dir"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/runtime/bundle.py": {
+      "filePath": "common/src/pi05/common/runtime/bundle.py",
+      "contentHash": "aaf83a8e1d9bc779cf37befc35ec03b7813c879963a120fe9643b1aac293ea73",
+      "functions": [
+        {
+          "name": "export_deploy_bundle",
+          "params": [
+            "config",
+            "adapter_dir",
+            "output_dir",
+            "overwrite"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "load_bundle_manifest",
+          "params": [
+            "bundle_dir"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "load_bundle_normalizers",
+          "params": [
+            "bundle_dir"
+          ],
+          "returnType": "tuple[ActionStateNormalizer, ActionStateNormalizer]",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "resolve_bundle_adapter_dir",
+          "params": [
+            "bundle_dir"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_prepare_output_dir",
+          "params": [
+            "output_dir",
+            "overwrite"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_manifest_payload",
+          "params": [
+            "config",
+            "tactile_preprocess_path"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "_copy_tactile_preprocess",
+          "params": [
+            "config",
+            "output_dir"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "_normalizer_payload",
+          "params": [
+            "state_normalizer",
+            "action_normalizer"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "_single_normalizer_payload",
+          "params": [
+            "normalizer"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_identity_indices",
+          "params": [
+            "normalizer"
+          ],
+          "returnType": "list[int]",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "_write_json",
+          "params": [
+            "path",
+            "payload"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "_write_yaml",
+          "params": [
+            "path",
+            "payload"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime",
+            "timezone"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "shutil",
+          "specifiers": [
+            "shutil"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "yaml",
+          "specifiers": [
+            "yaml"
+          ]
+        },
+        {
+          "source": "lerobot.datasets.lerobot_dataset",
+          "specifiers": [
+            "LeRobotDataset"
+          ]
+        },
+        {
+          "source": "pi05.common.config.schema",
+          "specifiers": [
+            "ExperimentConfig"
+          ]
+        },
+        {
+          "source": "pi05.common.data.normalization",
+          "specifiers": [
+            "ActionStateNormalizer",
+            "build_state_action_normalizers"
+          ]
+        }
+      ],
+      "exports": [
+        "export_deploy_bundle",
+        "load_bundle_manifest",
+        "load_bundle_normalizers",
+        "resolve_bundle_adapter_dir",
+        "_prepare_output_dir",
+        "_manifest_payload",
+        "_copy_tactile_preprocess",
+        "_normalizer_payload",
+        "_single_normalizer_payload",
+        "_identity_indices",
+        "_write_json",
+        "_write_yaml"
+      ],
+      "totalLines": 185,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/utils/__init__.py": {
+      "filePath": "common/src/pi05/common/utils/__init__.py",
+      "contentHash": "5f1b7d5f7d41156cdd541de93576f5e6fcf804dcc3cf38c5729154fc327f7a74",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pi05.common.utils.paths",
+          "specifiers": [
+            "COMMON_SRC_ROOT",
+            "DEPLOY_SRC_ROOT",
+            "PROJECT_ROOT",
+            "PROJECT_SRC_ROOTS",
+            "THIRD_PARTY_LEROBOT_SRC",
+            "TRAIN_SRC_ROOT",
+            "WORKSPACE_ROOT",
+            "bootstrap_project_paths",
+            "default_deploy_config_path",
+            "default_data_config_path",
+            "default_train_config_path"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    "common/src/pi05/common/utils/paths.py": {
+      "filePath": "common/src/pi05/common/utils/paths.py",
+      "contentHash": "e5e0246c974ab169b838a119164b48340ecce04ed340cbc74b91e382219b6f0d",
+      "functions": [
+        {
+          "name": "_find_project_root",
+          "params": [],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_find_workspace_root",
+          "params": [
+            "project_root"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "bootstrap_project_paths",
+          "params": [
+            "include_project_src"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "default_train_config_path",
+          "params": [],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "default_data_config_path",
+          "params": [],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "default_deploy_config_path",
+          "params": [],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 2
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        }
+      ],
+      "exports": [
+        "_find_project_root",
+        "_find_workspace_root",
+        "bootstrap_project_paths",
+        "default_train_config_path",
+        "default_data_config_path",
+        "default_deploy_config_path"
+      ],
+      "totalLines": 69,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/__init__.py": {
+      "filePath": "deploy/src/pi05/deploy/__init__.py",
+      "contentHash": "75f9253af624e62ab21a4ce2d235cb43665285746b0b601d0942a8ee0e0bc714",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/cli/__init__.py": {
+      "filePath": "deploy/src/pi05/deploy/cli/__init__.py",
+      "contentHash": "bddfee7c2648ce26544af89df2f7d5f4354f58c949c84583422054af95b6ac37",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/cli/bridge_ros.py": {
+      "filePath": "deploy/src/pi05/deploy/cli/bridge_ros.py",
+      "contentHash": "85134cd6354023991ae7efba8194c41249760175f0509d2ca718b39b93793462",
+      "functions": [
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pi05.common.utils.paths",
+          "specifiers": [
+            "bootstrap_project_paths"
+          ]
+        }
+      ],
+      "exports": [
+        "main"
+      ],
+      "totalLines": 20,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/cli/command_mux_ros.py": {
+      "filePath": "deploy/src/pi05/deploy/cli/command_mux_ros.py",
+      "contentHash": "51403c641466cecec027ddba04f53d2f9ba3c5ec49ec8f3b42132e932e8c81d2",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pi05.deploy.ros_nodes.command_mux_node",
+          "specifiers": [
+            "main"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/cli/deploy_ros.py": {
+      "filePath": "deploy/src/pi05/deploy/cli/deploy_ros.py",
+      "contentHash": "32a7f8086414c8152118e6cf747262927996d28747913840715f3bdd25c33aee",
+      "functions": [
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pi05.common.utils.paths",
+          "specifiers": [
+            "bootstrap_project_paths"
+          ]
+        }
+      ],
+      "exports": [
+        "main"
+      ],
+      "totalLines": 20,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/config/__init__.py": {
+      "filePath": "deploy/src/pi05/deploy/config/__init__.py",
+      "contentHash": "403ad420f84b547a084a11969859d560193a45e6b8958b7b43471cc354cf1354",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pi05.deploy.config.schema",
+          "specifiers": [
+            "DeployConfig",
+            "DeployConfigError",
+            "load_deploy_config"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/config/schema.py": {
+      "filePath": "deploy/src/pi05/deploy/config/schema.py",
+      "contentHash": "35f9ad179aacbaf27480bd5979bc366d182d9222feaeacf9fbb1000a6cfd9bc7",
+      "functions": [
+        {
+          "name": "load_deploy_config",
+          "params": [
+            "path"
+          ],
+          "returnType": "DeployConfig",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "_deploy_from_mapping",
+          "params": [
+            "raw",
+            "base_dir"
+          ],
+          "returnType": "DeployConfig",
+          "exported": true,
+          "lineCount": 73
+        },
+        {
+          "name": "_observation_topics",
+          "params": [
+            "topics_raw",
+            "defaults"
+          ],
+          "returnType": "ObservationTopicsConfig",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "_command_topics",
+          "params": [
+            "topics_raw",
+            "defaults"
+          ],
+          "returnType": "CommandTopicsConfig",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "_bridge_topics",
+          "params": [
+            "topics_raw"
+          ],
+          "returnType": "BridgeTopicsConfig",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "_mux_topics",
+          "params": [
+            "topics_raw"
+          ],
+          "returnType": "MuxTopicsConfig",
+          "exported": true,
+          "lineCount": 38
+        },
+        {
+          "name": "_safety_config",
+          "params": [
+            "raw",
+            "runtime_raw"
+          ],
+          "returnType": "SafetyConfig",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "_mux_config",
+          "params": [
+            "raw"
+          ],
+          "returnType": "MuxConfig",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "_required_mapping",
+          "params": [
+            "raw",
+            "key"
+          ],
+          "returnType": "Mapping[str, Any]",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_mapping",
+          "params": [
+            "value",
+            "name"
+          ],
+          "returnType": "Mapping[str, Any]",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_path",
+          "params": [
+            "raw",
+            "key",
+            "base_dir"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_str",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_optional_str",
+          "params": [
+            "raw",
+            "key"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_choice",
+          "params": [
+            "raw",
+            "key",
+            "choices",
+            "default"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_bool",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "_positive_int",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_non_negative_int",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_int_value",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "_float",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "float",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_positive_float",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "float",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_float_list",
+          "params": [
+            "raw",
+            "key",
+            "default"
+          ],
+          "returnType": "list[float]",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "DeployConfigError",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "BundleConfig",
+          "methods": [
+            "resolved_bundle_dir"
+          ],
+          "properties": [
+            "bundle_dir"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "RuntimeConfig",
+          "methods": [
+            "publishes_command_topics",
+            "__post_init__"
+          ],
+          "properties": [
+            "mode",
+            "device",
+            "secondary_device",
+            "multi_gpu_strategy",
+            "dtype",
+            "inference_hz",
+            "control_hz",
+            "chunk_size",
+            "execute_horizon",
+            "prefetch_steps",
+            "blend_steps",
+            "action_dim",
+            "state_dim",
+            "max_action_age_sec",
+            "max_inference_requests",
+            "max_pending_chunks",
+            "fallback_policy",
+            "max_delta_per_step",
+            "warmup_steps",
+            "compile_model",
+            "compile_mode",
+            "publish_metrics_hz",
+            "task"
+          ],
+          "exported": true,
+          "lineCount": 58
+        },
+        {
+          "name": "ObservationTopicsConfig",
+          "methods": [],
+          "properties": [
+            "top_image",
+            "left_wrist_image",
+            "right_wrist_image",
+            "top_image_raw",
+            "left_wrist_image_raw",
+            "right_wrist_image_raw",
+            "proprioception",
+            "left_hand_state",
+            "right_hand_state",
+            "left_ee_position",
+            "left_ee_rpy",
+            "right_ee_position",
+            "right_ee_rpy",
+            "proprioception_order",
+            "left_tactile_image",
+            "right_tactile_image",
+            "left_tactile_image_raw",
+            "right_tactile_image_raw"
+          ],
+          "exported": true,
+          "lineCount": 21
+        },
+        {
+          "name": "CommandTopicsConfig",
+          "methods": [],
+          "properties": [
+            "left_arm_joint_target",
+            "right_arm_joint_target",
+            "left_hand_target",
+            "right_hand_target",
+            "status",
+            "metrics"
+          ],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "BridgeTopicsConfig",
+          "methods": [],
+          "properties": [
+            "left_arm_joint_target",
+            "right_arm_joint_target",
+            "left_hand_trigger",
+            "right_hand_trigger",
+            "left_deadman",
+            "right_deadman"
+          ],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "MuxTopicsConfig",
+          "methods": [],
+          "properties": [
+            "teleop_left_arm_joint_target",
+            "teleop_right_arm_joint_target",
+            "teleop_left_hand_trigger",
+            "teleop_right_hand_trigger",
+            "teleop_left_deadman",
+            "teleop_right_deadman",
+            "vla_left_arm_joint_target",
+            "vla_right_arm_joint_target",
+            "vla_left_hand_trigger",
+            "vla_right_hand_trigger",
+            "output_left_arm_joint_target",
+            "output_right_arm_joint_target",
+            "output_left_hand_trigger",
+            "output_right_hand_trigger",
+            "output_left_deadman",
+            "output_right_deadman",
+            "vla_enable",
+            "status"
+          ],
+          "exported": true,
+          "lineCount": 21
+        },
+        {
+          "name": "TopicsConfig",
+          "methods": [],
+          "properties": [
+            "namespace",
+            "observation",
+            "command",
+            "bridge_output",
+            "mux"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "JointLimitsConfig",
+          "methods": [],
+          "properties": [
+            "enabled",
+            "left_min_rad",
+            "left_max_rad",
+            "right_min_rad",
+            "right_max_rad"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "SafetyConfig",
+          "methods": [],
+          "properties": [
+            "max_joint_delta_rad",
+            "stale_observation_timeout_s",
+            "command_timeout_s",
+            "clamp_normalized_action",
+            "hold_last_action",
+            "hand_min",
+            "hand_max",
+            "joint_limits"
+          ],
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "BridgeConfig",
+          "methods": [
+            "forwards_commands"
+          ],
+          "properties": [
+            "enabled",
+            "publish_to_picotele",
+            "forward_commands",
+            "speed_scale",
+            "publish_deadman"
+          ],
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "MuxConfig",
+          "methods": [],
+          "properties": [
+            "enabled",
+            "default_mode",
+            "publish_hz",
+            "vla_command_timeout_s",
+            "manual_takeover_deadman_threshold",
+            "vla_deadman_value",
+            "status_publish_hz"
+          ],
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "ImageConfig",
+          "methods": [],
+          "properties": [
+            "image_size",
+            "resize_mode",
+            "transport"
+          ],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "DeployConfig",
+          "methods": [
+            "from_mapping"
+          ],
+          "properties": [
+            "bundle",
+            "runtime",
+            "image",
+            "topics",
+            "safety",
+            "bridge",
+            "mux",
+            "raw"
+          ],
+          "exported": true,
+          "lineCount": 15
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass",
+            "field"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Mapping"
+          ]
+        },
+        {
+          "source": "yaml",
+          "specifiers": [
+            "yaml"
+          ]
+        },
+        {
+          "source": "pi05.common.ros.topics",
+          "specifiers": [
+            "Pi05CommandTopics",
+            "Pi05ObservationTopics"
+          ]
+        }
+      ],
+      "exports": [
+        "DeployConfigError",
+        "BundleConfig",
+        "RuntimeConfig",
+        "ObservationTopicsConfig",
+        "CommandTopicsConfig",
+        "BridgeTopicsConfig",
+        "MuxTopicsConfig",
+        "TopicsConfig",
+        "JointLimitsConfig",
+        "SafetyConfig",
+        "BridgeConfig",
+        "MuxConfig",
+        "ImageConfig",
+        "DeployConfig",
+        "load_deploy_config",
+        "_deploy_from_mapping",
+        "_observation_topics",
+        "_command_topics",
+        "_bridge_topics",
+        "_mux_topics",
+        "_safety_config",
+        "_mux_config",
+        "_required_mapping",
+        "_mapping",
+        "_path",
+        "_str",
+        "_optional_str",
+        "_choice",
+        "_bool",
+        "_positive_int",
+        "_non_negative_int",
+        "_int_value",
+        "_float",
+        "_positive_float",
+        "_float_list"
+      ],
+      "totalLines": 562,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/models/__init__.py": {
+      "filePath": "deploy/src/pi05/deploy/models/__init__.py",
+      "contentHash": "edc4888cba82d3696ef93787bc3d90f026314d482d51c0d4f0b35f086a0d55f0",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pi05.deploy.models.policy_loader",
+          "specifiers": [
+            "Pi05PolicyRuntime",
+            "load_policy_runtime"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/models/policy_loader.py": {
+      "filePath": "deploy/src/pi05/deploy/models/policy_loader.py",
+      "contentHash": "e4a0978ddc90e1514234985857347a1d53bda79c154981ea57a68921fc2d282a",
+      "functions": [
+        {
+          "name": "load_policy_runtime",
+          "params": [
+            "config"
+          ],
+          "returnType": "Pi05PolicyRuntime",
+          "exported": true,
+          "lineCount": 46
+        },
+        {
+          "name": "_manifest_image_names",
+          "params": [
+            "manifest"
+          ],
+          "returnType": "tuple[str, ...]",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_validate_bundle",
+          "params": [
+            "bundle_dir"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_load_bundle_experiment_config",
+          "params": [
+            "bundle_dir",
+            "config"
+          ],
+          "returnType": "ExperimentConfig",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_load_adapter",
+          "params": [
+            "model",
+            "adapter_dir",
+            "device"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_require_cpu_float_tensor",
+          "params": [
+            "tensor",
+            "name"
+          ],
+          "returnType": "torch.Tensor",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_move_tensors_to_device",
+          "params": [
+            "value",
+            "device"
+          ],
+          "returnType": "Any",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "_configure_cuda_runtime",
+          "params": [
+            "device"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_resolve_policy",
+          "params": [
+            "model"
+          ],
+          "returnType": "Any",
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [
+        {
+          "name": "Pi05PolicyRuntime",
+          "methods": [
+            "__init__",
+            "predict_action_chunk",
+            "_build_batch",
+            "_maybe_compile"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 81
+        }
+      ],
+      "imports": [
+        {
+          "source": "copy",
+          "specifiers": [
+            "copy"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "torch",
+          "specifiers": [
+            "torch"
+          ]
+        },
+        {
+          "source": "lerobot.policies.pi05.processor_pi05",
+          "specifiers": [
+            "make_pi05_pre_post_processors"
+          ]
+        },
+        {
+          "source": "peft",
+          "specifiers": [
+            "set_peft_model_state_dict"
+          ]
+        },
+        {
+          "source": "safetensors.torch",
+          "specifiers": [
+            "load_safetensors"
+          ]
+        },
+        {
+          "source": "pi05.common.config.schema",
+          "specifiers": [
+            "ExperimentConfig",
+            "load_experiment_config"
+          ]
+        },
+        {
+          "source": "pi05.common.model.builder",
+          "specifiers": [
+            "build_pi05_with_lora",
+            "get_pi05_policy_config"
+          ]
+        },
+        {
+          "source": "pi05.common.runtime.bundle",
+          "specifiers": [
+            "EXPERIMENT_CONFIG_NAME",
+            "load_bundle_manifest",
+            "load_bundle_normalizers",
+            "resolve_bundle_adapter_dir"
+          ]
+        },
+        {
+          "source": "pi05.deploy.config.schema",
+          "specifiers": [
+            "DeployConfig"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.shared_buffer",
+          "specifiers": [
+            "ObservationSnapshot"
+          ]
+        }
+      ],
+      "exports": [
+        "Pi05PolicyRuntime",
+        "load_policy_runtime",
+        "_manifest_image_names",
+        "_validate_bundle",
+        "_load_bundle_experiment_config",
+        "_load_adapter",
+        "_require_cpu_float_tensor",
+        "_move_tensors_to_device",
+        "_configure_cuda_runtime",
+        "_resolve_policy"
+      ],
+      "totalLines": 247,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/ros/__init__.py": {
+      "filePath": "deploy/src/pi05/deploy/ros/__init__.py",
+      "contentHash": "a23459c940953c2e3e0164c3f745a8c97e37edd9c609d98f95eb2056ab953bb1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/ros/policy_node.py": {
+      "filePath": "deploy/src/pi05/deploy/ros/policy_node.py",
+      "contentHash": "2a476e9f148fa08d3e03efa6f70673f492e9fdad58f9d7a3461ea0a2f084eb8e",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pi05.deploy.ros_nodes.pi05_vla_deploy_node",
+          "specifiers": [
+            "main"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/ros_nodes/__init__.py": {
+      "filePath": "deploy/src/pi05/deploy/ros_nodes/__init__.py",
+      "contentHash": "6e6c8b6cb508ea2ecae550346b7bf08e98726cb9acd42968a561f8a342a3474c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py": {
+      "filePath": "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py",
+      "contentHash": "f26d4c84432d95eeb50c98389586c9ba5e55971ef261f29c9cab53ab0d4b78d5",
+      "functions": [
+        {
+          "name": "build_arg_parser",
+          "params": [],
+          "returnType": "argparse.ArgumentParser",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "classes": [
+        {
+          "name": "CommandMuxNode",
+          "methods": [
+            "__init__",
+            "_create_subscriptions",
+            "_arm_cb",
+            "_hand_cb",
+            "_teleop_deadman_cb",
+            "_vla_enable_cb",
+            "_tick",
+            "_maybe_enter_vla",
+            "_vla_arm_targets_fresh",
+            "_switch_mode",
+            "_publish_vla_deadman",
+            "_publish_teleop_deadman_or_stop",
+            "publish_safe_stop",
+            "_publish_status_if_due",
+            "_arm_publisher",
+            "_hand_publisher",
+            "_deadman_publisher"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 216
+        }
+      ],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "rclpy",
+          "specifiers": [
+            "rclpy"
+          ]
+        },
+        {
+          "source": "rclpy.node",
+          "specifiers": [
+            "Node"
+          ]
+        },
+        {
+          "source": "sensor_msgs.msg",
+          "specifiers": [
+            "JointState"
+          ]
+        },
+        {
+          "source": "std_msgs.msg",
+          "specifiers": [
+            "Bool",
+            "Float64",
+            "String"
+          ]
+        },
+        {
+          "source": "pi05.deploy.config",
+          "specifiers": [
+            "load_deploy_config"
+          ]
+        },
+        {
+          "source": "pi05.deploy.config.schema",
+          "specifiers": [
+            "DeployConfig"
+          ]
+        }
+      ],
+      "exports": [
+        "CommandMuxNode",
+        "build_arg_parser",
+        "main"
+      ],
+      "totalLines": 268,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py": {
+      "filePath": "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+      "contentHash": "0f3b7bf98a2f9162bc371ac7e1a3140c3331a8a00708c6ec8a9fd9846eb7d9cd",
+      "functions": [
+        {
+          "name": "build_arg_parser",
+          "params": [],
+          "returnType": "argparse.ArgumentParser",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 15
+        }
+      ],
+      "classes": [
+        {
+          "name": "Pi05BridgeNode",
+          "methods": [
+            "__init__",
+            "_arm_cb",
+            "_hand_cb",
+            "_filter_joint_target",
+            "_publish_deadman"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 82
+        }
+      ],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "rclpy",
+          "specifiers": [
+            "rclpy"
+          ]
+        },
+        {
+          "source": "rclpy.node",
+          "specifiers": [
+            "Node"
+          ]
+        },
+        {
+          "source": "sensor_msgs.msg",
+          "specifiers": [
+            "JointState"
+          ]
+        },
+        {
+          "source": "std_msgs.msg",
+          "specifiers": [
+            "Float64"
+          ]
+        },
+        {
+          "source": "pi05.common.robot.action_spec",
+          "specifiers": [
+            "ARM_DOF",
+            "ARM_JOINT_NAMES",
+            "hand_command_to_trigger"
+          ]
+        },
+        {
+          "source": "pi05.deploy.config",
+          "specifiers": [
+            "load_deploy_config"
+          ]
+        },
+        {
+          "source": "pi05.deploy.config.schema",
+          "specifiers": [
+            "DeployConfig"
+          ]
+        }
+      ],
+      "exports": [
+        "Pi05BridgeNode",
+        "build_arg_parser",
+        "main"
+      ],
+      "totalLines": 129,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py": {
+      "filePath": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "contentHash": "46d7574015f413474371133e1ef51db9b00007f9e4988a4552a37cd78a69f594",
+      "functions": [
+        {
+          "name": "_decode_image",
+          "params": [
+            "msg"
+          ],
+          "returnType": "np.ndarray",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "_joint_msg",
+          "params": [
+            "joints_rad"
+          ],
+          "returnType": "JointState",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "build_arg_parser",
+          "params": [],
+          "returnType": "argparse.ArgumentParser",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [
+        {
+          "name": "Pi05VlaDeployNode",
+          "methods": [
+            "__init__",
+            "shutdown",
+            "_create_subscriptions",
+            "_image_topic_map",
+            "_create_publishers",
+            "_image_cb",
+            "_proprio_cb",
+            "_hand_cb",
+            "_point_cb",
+            "_vec3_cb",
+            "_publish_observation_if_ready",
+            "_control_tick",
+            "_publish_metrics"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 190
+        }
+      ],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "rclpy",
+          "specifiers": [
+            "rclpy"
+          ]
+        },
+        {
+          "source": "geometry_msgs.msg",
+          "specifiers": [
+            "Point",
+            "Vector3"
+          ]
+        },
+        {
+          "source": "rclpy.executors",
+          "specifiers": [
+            "MultiThreadedExecutor"
+          ]
+        },
+        {
+          "source": "rclpy.node",
+          "specifiers": [
+            "Node"
+          ]
+        },
+        {
+          "source": "sensor_msgs.msg",
+          "specifiers": [
+            "CompressedImage",
+            "Image",
+            "JointState"
+          ]
+        },
+        {
+          "source": "std_msgs.msg",
+          "specifiers": [
+            "Float64",
+            "String"
+          ]
+        },
+        {
+          "source": "pi05.common.data.image_preprocess",
+          "specifiers": [
+            "ImagePreprocessConfig",
+            "preprocess_rgb_image"
+          ]
+        },
+        {
+          "source": "pi05.deploy.config",
+          "specifiers": [
+            "load_deploy_config"
+          ]
+        },
+        {
+          "source": "pi05.deploy.config.schema",
+          "specifiers": [
+            "DeployConfig"
+          ]
+        },
+        {
+          "source": "pi05.deploy.models",
+          "specifiers": [
+            "load_policy_runtime"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.control_loop",
+          "specifiers": [
+            "ControlLoop"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.inference_worker",
+          "specifiers": [
+            "InferenceWorker"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.observation_collector",
+          "specifiers": [
+            "ObservationCollector"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.safety_guard",
+          "specifiers": [
+            "SafetyGuard"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.shared_buffer",
+          "specifiers": [
+            "SharedBuffer"
+          ]
+        }
+      ],
+      "exports": [
+        "Pi05VlaDeployNode",
+        "_decode_image",
+        "_joint_msg",
+        "build_arg_parser",
+        "main"
+      ],
+      "totalLines": 275,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/runtime/__init__.py": {
+      "filePath": "deploy/src/pi05/deploy/runtime/__init__.py",
+      "contentHash": "e913c92c20a2e61db6336d05a0b41efe077ec5ff8d0661fdc254ce409585ba8c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/runtime/control_loop.py": {
+      "filePath": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "contentHash": "57a094107fb74eceba09e90533c09d92291653ff7d6e32e6d649673b11e323b2",
+      "functions": [
+        {
+          "name": "smoothstep_alpha",
+          "params": [
+            "step",
+            "blend_steps"
+          ],
+          "returnType": "float",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "is_action_chunk_usable",
+          "params": [
+            "chunk",
+            "now",
+            "action_dim",
+            "max_action_age_s"
+          ],
+          "returnType": "tuple[bool, str | None]",
+          "exported": true,
+          "lineCount": 20
+        }
+      ],
+      "classes": [
+        {
+          "name": "ControlCommand",
+          "methods": [],
+          "properties": [
+            "action",
+            "held",
+            "fallback"
+          ],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ControlLoop",
+          "methods": [
+            "__init__",
+            "tick",
+            "status_snapshot",
+            "_collect_result",
+            "_maybe_submit_request",
+            "_next_raw_action",
+            "_activate_pending",
+            "_start_blend_or_switch",
+            "_blend_next_action",
+            "_fallback",
+            "_log_fallback",
+            "_log_summary"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 290
+        }
+      ],
+      "imports": [
+        {
+          "source": "collections.abc",
+          "specifiers": [
+            "Callable"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pi05.common.robot.action_spec",
+          "specifiers": [
+            "BimanualAction"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.safety_guard",
+          "specifiers": [
+            "SafetyGuard"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.shared_buffer",
+          "specifiers": [
+            "ActionChunk",
+            "InferenceRequest",
+            "LatestQueue",
+            "ObservationSnapshot",
+            "SharedBuffer"
+          ]
+        }
+      ],
+      "exports": [
+        "ControlCommand",
+        "smoothstep_alpha",
+        "is_action_chunk_usable",
+        "ControlLoop"
+      ],
+      "totalLines": 349,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/runtime/inference_worker.py": {
+      "filePath": "deploy/src/pi05/deploy/runtime/inference_worker.py",
+      "contentHash": "5d483fb923208b8336a796014c6a61762c2da0ebc8a15ab4d426a336d9e11398",
+      "functions": [],
+      "classes": [
+        {
+          "name": "InferenceWorker",
+          "methods": [
+            "__init__",
+            "stop",
+            "run",
+            "_run_request"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 77
+        }
+      ],
+      "imports": [
+        {
+          "source": "collections.abc",
+          "specifiers": [
+            "Callable"
+          ]
+        },
+        {
+          "source": "threading",
+          "specifiers": [
+            "threading"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.shared_buffer",
+          "specifiers": [
+            "ActionChunk",
+            "InferenceRequest",
+            "LatestQueue",
+            "SharedBuffer"
+          ]
+        }
+      ],
+      "exports": [
+        "InferenceWorker"
+      ],
+      "totalLines": 92,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/runtime/observation_collector.py": {
+      "filePath": "deploy/src/pi05/deploy/runtime/observation_collector.py",
+      "contentHash": "342bd3e515456fa1dcd998a9ba822ddaa38e92cb46a9a11cd3031ec51975959d",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ObservationCollector",
+          "methods": [
+            "__init__",
+            "set_required_image_keys",
+            "update_image",
+            "update_proprioception",
+            "update_hand",
+            "update_vector",
+            "snapshot",
+            "missing_fields",
+            "_has_required_locked",
+            "_has_stale_field_locked",
+            "_normalize_image_keys",
+            "_required_value_keys"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 135
+        }
+      ],
+      "imports": [
+        {
+          "source": "threading",
+          "specifiers": [
+            "threading"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "torch",
+          "specifiers": [
+            "torch"
+          ]
+        },
+        {
+          "source": "pi05.common.data.state_codec",
+          "specifiers": [
+            "BimanualState",
+            "decode_picotele_proprioception",
+            "encode_bimanual_state"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.shared_buffer",
+          "specifiers": [
+            "ObservationSnapshot"
+          ]
+        }
+      ],
+      "exports": [
+        "ObservationCollector"
+      ],
+      "totalLines": 155,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/runtime/safety_guard.py": {
+      "filePath": "deploy/src/pi05/deploy/runtime/safety_guard.py",
+      "contentHash": "5dd76d621e3fa51a3621265e599cf5fc295898dff797d50c20e9162b13c54043",
+      "functions": [],
+      "classes": [
+        {
+          "name": "SafetyResult",
+          "methods": [],
+          "properties": [
+            "action",
+            "accepted",
+            "reason"
+          ],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "SafetyGuard",
+          "methods": [
+            "__init__",
+            "filter_action",
+            "_clamp_delta",
+            "_delta_anchor",
+            "_build_joint_limits"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 71
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "TYPE_CHECKING"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pi05.common.data.action_codec",
+          "specifiers": [
+            "ensure_action_vector",
+            "split_action"
+          ]
+        },
+        {
+          "source": "pi05.common.robot.action_spec",
+          "specifiers": [
+            "BimanualAction"
+          ]
+        },
+        {
+          "source": "pi05.common.robot.joint_limits",
+          "specifiers": [
+            "JointLimitSpec"
+          ]
+        },
+        {
+          "source": "pi05.deploy.config.schema",
+          "specifiers": [
+            "SafetyConfig"
+          ]
+        }
+      ],
+      "exports": [
+        "SafetyResult",
+        "SafetyGuard"
+      ],
+      "totalLines": 99,
+      "hasStructuralAnalysis": true
+    },
+    "deploy/src/pi05/deploy/runtime/shared_buffer.py": {
+      "filePath": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "contentHash": "72351ef84cd8a29975de18ef0e7011b0d4d644d399ae17a28c2bfa7704a3e76c",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ObservationSnapshot",
+          "methods": [],
+          "properties": [
+            "images",
+            "state",
+            "encoded_state",
+            "captured_at_s"
+          ],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "ActionChunk",
+          "methods": [
+            "__post_init__",
+            "chunk_size",
+            "aligned_index"
+          ],
+          "properties": [
+            "actions",
+            "obs_time",
+            "infer_start_time",
+            "ready_time",
+            "action_dt",
+            "request_id",
+            "cursor"
+          ],
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "InferenceRequest",
+          "methods": [],
+          "properties": [
+            "observation",
+            "obs_time",
+            "request_id",
+            "trigger_step"
+          ],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "LatestQueue",
+          "methods": [
+            "__init__",
+            "put_latest",
+            "get_latest_or_none",
+            "empty",
+            "__len__"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 32
+        },
+        {
+          "name": "RuntimeMetrics",
+          "methods": [
+            "record_latency",
+            "as_dict"
+          ],
+          "properties": [
+            "inference_count",
+            "inference_error_count",
+            "inference_request_count",
+            "chunk_result_count",
+            "discarded_chunk_count",
+            "chunk_switch_count",
+            "fallback_count",
+            "dropped_observation_count",
+            "published_action_count",
+            "held_action_count",
+            "rejected_action_count",
+            "last_inference_latency_s",
+            "ema_inference_latency_s",
+            "last_action_age_s",
+            "last_error",
+            "updated_at_s"
+          ],
+          "exported": true,
+          "lineCount": 48
+        },
+        {
+          "name": "SharedBuffer",
+          "methods": [
+            "__init__",
+            "set_observation",
+            "latest_observation",
+            "record_inference_latency",
+            "record_inference_request",
+            "record_chunk_result",
+            "record_discarded_chunk",
+            "record_chunk_switch",
+            "record_fallback",
+            "record_inference_error",
+            "record_published_action",
+            "record_held_action",
+            "record_rejected_action",
+            "metrics_snapshot"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 87
+        }
+      ],
+      "imports": [
+        {
+          "source": "collections",
+          "specifiers": [
+            "deque"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass",
+            "field"
+          ]
+        },
+        {
+          "source": "threading",
+          "specifiers": [
+            "threading"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Generic",
+            "Mapping",
+            "TypeVar",
+            "TYPE_CHECKING"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pi05.common.data.state_codec",
+          "specifiers": [
+            "BimanualState"
+          ]
+        }
+      ],
+      "exports": [
+        "ObservationSnapshot",
+        "ActionChunk",
+        "InferenceRequest",
+        "LatestQueue",
+        "RuntimeMetrics",
+        "SharedBuffer"
+      ],
+      "totalLines": 243,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/__init__.py": {
+      "filePath": "train/src/pi05/train/__init__.py",
+      "contentHash": "fc23c034f7c225f15557479c164d4ace434a6997929464e95a85604a6097131e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/cli/__init__.py": {
+      "filePath": "train/src/pi05/train/cli/__init__.py",
+      "contentHash": "b737d95870e3a770f3db296a697c08da1fa82f22dad8d6f22c9efac1ba1b9625",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/cli/export_bundle.py": {
+      "filePath": "train/src/pi05/train/cli/export_bundle.py",
+      "contentHash": "0263365754052aac0302038d7e2b12954e7112a0565c756109e5dddae1d6c0e8",
+      "functions": [
+        {
+          "name": "parse_args",
+          "params": [],
+          "returnType": "argparse.Namespace",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "_resolve_paths",
+          "params": [
+            "args",
+            "config"
+          ],
+          "returnType": "tuple[Path, Path]",
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "pi05.common.config.schema",
+          "specifiers": [
+            "load_experiment_config"
+          ]
+        },
+        {
+          "source": "pi05.common.utils.paths",
+          "specifiers": [
+            "bootstrap_project_paths",
+            "default_train_config_path"
+          ]
+        }
+      ],
+      "exports": [
+        "parse_args",
+        "main",
+        "_resolve_paths"
+      ],
+      "totalLines": 59,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/cli/train.py": {
+      "filePath": "train/src/pi05/train/cli/train.py",
+      "contentHash": "88f58004e16c565fcb184eab209ae88c9e381bee7a4085cba888b958786700e4",
+      "functions": [
+        {
+          "name": "parse_args",
+          "params": [],
+          "returnType": "argparse.Namespace",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "pi05.common.config.schema",
+          "specifiers": [
+            "load_experiment_config"
+          ]
+        },
+        {
+          "source": "pi05.common.utils.paths",
+          "specifiers": [
+            "bootstrap_project_paths",
+            "default_train_config_path"
+          ]
+        }
+      ],
+      "exports": [
+        "parse_args",
+        "main"
+      ],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/data/__init__.py": {
+      "filePath": "train/src/pi05/train/data/__init__.py",
+      "contentHash": "f82d62ce47004e596387cb65f7e286f30c6cfb1433377638735998363a1b3a46",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/data/dataset.py": {
+      "filePath": "train/src/pi05/train/data/dataset.py",
+      "contentHash": "d2f8eaa75685034e4a53fa595c0ce94981e19b0e978707ffd4afefb550acd966",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Pi05LeRobotDataset",
+          "methods": [
+            "__init__",
+            "__len__",
+            "__getitem__",
+            "_resolve_image_keys",
+            "_validate_vector_features",
+            "_build_episode_ranges",
+            "_get_action_chunk",
+            "_prepare_image",
+            "_normalize_cameras",
+            "_dataset_image_key",
+            "_output_image_key",
+            "_camera_from_output_key",
+            "_resolve_task",
+            "_task_from_index",
+            "_to_image_tensor",
+            "_to_int",
+            "_apply_normalizer",
+            "_feature_dim",
+            "_warn_if_stale_expected_dim"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 248
+        }
+      ],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Callable"
+          ]
+        },
+        {
+          "source": "warnings",
+          "specifiers": [
+            "warnings"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "torch",
+          "specifiers": [
+            "torch"
+          ]
+        },
+        {
+          "source": "lerobot.datasets.lerobot_dataset",
+          "specifiers": [
+            "LeRobotDataset"
+          ]
+        },
+        {
+          "source": "torch.utils.data",
+          "specifiers": [
+            "Dataset"
+          ]
+        },
+        {
+          "source": "torchvision.transforms",
+          "specifiers": [
+            "ColorJitter",
+            "InterpolationMode"
+          ]
+        },
+        {
+          "source": "torchvision.transforms",
+          "specifiers": [
+            "TF"
+          ]
+        }
+      ],
+      "exports": [
+        "Pi05LeRobotDataset"
+      ],
+      "totalLines": 272,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/engine/__init__.py": {
+      "filePath": "train/src/pi05/train/engine/__init__.py",
+      "contentHash": "e4c4830d29edb11685eae0c3ca1b48396f481d99129b1ac31f6c1e3a76836f49",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/engine/batches.py": {
+      "filePath": "train/src/pi05/train/engine/batches.py",
+      "contentHash": "32d79462badcc08d85c952be6ab1063662f64c4526caf2f5576d0c91d984bb58",
+      "functions": [
+        {
+          "name": "to_lerobot_pi05_batch",
+          "params": [
+            "batch"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        }
+      ],
+      "exports": [
+        "to_lerobot_pi05_batch"
+      ],
+      "totalLines": 20,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/engine/builders.py": {
+      "filePath": "train/src/pi05/train/engine/builders.py",
+      "contentHash": "96de93dc741e3d19a369f873fa282c9634842c9b48dff96de493f769358dd933",
+      "functions": [
+        {
+          "name": "build_train_dataloader",
+          "params": [
+            "data_cfg",
+            "train_cfg"
+          ],
+          "returnType": "DataLoader",
+          "exported": true,
+          "lineCount": 35
+        },
+        {
+          "name": "count_training_steps",
+          "params": [
+            "dataloader",
+            "train_cfg"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "build_optimizer",
+          "params": [
+            "model",
+            "train_cfg"
+          ],
+          "returnType": "Optimizer",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "build_lr_scheduler",
+          "params": [
+            "optimizer",
+            "train_cfg",
+            "num_training_steps"
+          ],
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "math",
+          "specifiers": [
+            "math"
+          ]
+        },
+        {
+          "source": "torch",
+          "specifiers": [
+            "torch"
+          ]
+        },
+        {
+          "source": "torch.optim",
+          "specifiers": [
+            "AdamW",
+            "Optimizer"
+          ]
+        },
+        {
+          "source": "torch.utils.data",
+          "specifiers": [
+            "DataLoader"
+          ]
+        },
+        {
+          "source": "transformers",
+          "specifiers": [
+            "get_cosine_schedule_with_warmup"
+          ]
+        },
+        {
+          "source": "pi05.common.config.schema",
+          "specifiers": [
+            "DataConfig",
+            "TrainingConfig"
+          ]
+        },
+        {
+          "source": "pi05.common.data.normalization",
+          "specifiers": [
+            "build_state_action_normalizers"
+          ]
+        },
+        {
+          "source": "pi05.train.data.dataset",
+          "specifiers": [
+            "Pi05LeRobotDataset"
+          ]
+        }
+      ],
+      "exports": [
+        "build_train_dataloader",
+        "count_training_steps",
+        "build_optimizer",
+        "build_lr_scheduler"
+      ],
+      "totalLines": 74,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/engine/checkpoints.py": {
+      "filePath": "train/src/pi05/train/engine/checkpoints.py",
+      "contentHash": "5ac3762523af0090998c89bdec84a0410f46a4a8462f7625a88df70f190ce40b",
+      "functions": [
+        {
+          "name": "maybe_resume",
+          "params": [
+            "accelerator",
+            "checkpoint_path"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "save_epoch_adapter_checkpoint",
+          "params": [
+            "accelerator",
+            "model",
+            "run_output_dir",
+            "epoch"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "export_final_adapter",
+          "params": [
+            "accelerator",
+            "model",
+            "run_output_dir"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "_save_adapter",
+          "params": [
+            "accelerator",
+            "model",
+            "output_dir"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "torch",
+          "specifiers": [
+            "torch"
+          ]
+        },
+        {
+          "source": "accelerate",
+          "specifiers": [
+            "Accelerator"
+          ]
+        }
+      ],
+      "exports": [
+        "maybe_resume",
+        "save_epoch_adapter_checkpoint",
+        "export_final_adapter",
+        "_save_adapter"
+      ],
+      "totalLines": 50,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/engine/trainer.py": {
+      "filePath": "train/src/pi05/train/engine/trainer.py",
+      "contentHash": "d530f80f0b34214fbb4c6e66ed49e97cb90e0712a74e12ecb40a047069e1a9e9",
+      "functions": [
+        {
+          "name": "train_from_config",
+          "params": [
+            "config"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 2
+        }
+      ],
+      "classes": [
+        {
+          "name": "_AverageMeter",
+          "methods": [
+            "update",
+            "avg"
+          ],
+          "properties": [
+            "total",
+            "count"
+          ],
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_LogWindow",
+          "methods": [
+            "__init__",
+            "update",
+            "as_dict",
+            "count",
+            "reset"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "Pi05LoraTrainer",
+          "methods": [
+            "__init__",
+            "run",
+            "_build_accelerator",
+            "_init_trackers",
+            "_train_loop",
+            "_maybe_export_deploy_bundle",
+            "_flush_log_window",
+            "_get_lr",
+            "_resolve_loss_value",
+            "_to_float",
+            "_log_train_step"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 245
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "torch",
+          "specifiers": [
+            "torch"
+          ]
+        },
+        {
+          "source": "accelerate",
+          "specifiers": [
+            "Accelerator"
+          ]
+        },
+        {
+          "source": "lerobot.policies.pi05.processor_pi05",
+          "specifiers": [
+            "make_pi05_pre_post_processors"
+          ]
+        },
+        {
+          "source": "pi05.common.config.schema",
+          "specifiers": [
+            "ExperimentConfig"
+          ]
+        },
+        {
+          "source": "pi05.common.model.builder",
+          "specifiers": [
+            "build_pi05_with_lora",
+            "get_pi05_policy_config"
+          ]
+        },
+        {
+          "source": "pi05.common.runtime.bundle",
+          "specifiers": [
+            "export_deploy_bundle"
+          ]
+        },
+        {
+          "source": "pi05.train.engine.batches",
+          "specifiers": [
+            "to_lerobot_pi05_batch"
+          ]
+        },
+        {
+          "source": "pi05.train.engine.builders",
+          "specifiers": [
+            "build_lr_scheduler",
+            "build_optimizer",
+            "build_train_dataloader",
+            "count_training_steps"
+          ]
+        },
+        {
+          "source": "pi05.train.engine.checkpoints",
+          "specifiers": [
+            "export_final_adapter",
+            "maybe_resume",
+            "save_epoch_adapter_checkpoint"
+          ]
+        },
+        {
+          "source": "pi05.train.utils.logging",
+          "specifiers": [
+            "configure_logging",
+            "log_run_summary"
+          ]
+        },
+        {
+          "source": "pi05.train.utils.seed",
+          "specifiers": [
+            "set_training_seed"
+          ]
+        },
+        {
+          "source": "pi05.train.utils.tensorboard",
+          "specifiers": [
+            "launch_tensorboard"
+          ]
+        }
+      ],
+      "exports": [
+        "_AverageMeter",
+        "_LogWindow",
+        "Pi05LoraTrainer",
+        "train_from_config"
+      ],
+      "totalLines": 324,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/utils/__init__.py": {
+      "filePath": "train/src/pi05/train/utils/__init__.py",
+      "contentHash": "0e02e33a96434b76e593d2f254fb258f05af84d4ea7fd2e8f1da9542989c6f11",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/utils/logging.py": {
+      "filePath": "train/src/pi05/train/utils/logging.py",
+      "contentHash": "b2d2aacc6d5dd3e6ec3250747aee14540808622988ea54ec627d33237411e2c1",
+      "functions": [
+        {
+          "name": "configure_logging",
+          "params": [
+            "level"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "log_run_summary",
+          "params": [
+            "logger",
+            "summary"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        }
+      ],
+      "exports": [
+        "configure_logging",
+        "log_run_summary"
+      ],
+      "totalLines": 20,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/utils/seed.py": {
+      "filePath": "train/src/pi05/train/utils/seed.py",
+      "contentHash": "ecd290b5821c8987a7c9004558422dcf7616280882b1fbf64b39cc40da13dc4d",
+      "functions": [
+        {
+          "name": "set_training_seed",
+          "params": [
+            "seed"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "accelerate.utils",
+          "specifiers": [
+            "accelerate_set_seed"
+          ]
+        }
+      ],
+      "exports": [
+        "set_training_seed"
+      ],
+      "totalLines": 12,
+      "hasStructuralAnalysis": true
+    },
+    "train/src/pi05/train/utils/tensorboard.py": {
+      "filePath": "train/src/pi05/train/utils/tensorboard.py",
+      "contentHash": "64a7fa61908779d31e89561e49fd20cfad8a3501bf3af7f55745ea74fd68a736",
+      "functions": [
+        {
+          "name": "launch_tensorboard",
+          "params": [
+            "logdir",
+            "host",
+            "port"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 40
+        },
+        {
+          "name": "_resolve_tensorboard_command",
+          "params": [
+            "logdir",
+            "host",
+            "port"
+          ],
+          "returnType": "list[str]",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "_is_port_open",
+          "params": [
+            "host",
+            "port"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_connect_host",
+          "params": [
+            "host"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_build_url",
+          "params": [
+            "host",
+            "port"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "_find_available_port",
+          "params": [
+            "host",
+            "start_port",
+            "max_tries"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_find_running_tensorboard_port",
+          "params": [
+            "logdir"
+          ],
+          "returnType": "int | None",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "_extract_cli_flag",
+          "params": [
+            "args",
+            "flag"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "_print_tensorboard_banner",
+          "params": [
+            "url",
+            "status",
+            "note"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "shlex",
+          "specifiers": [
+            "shlex"
+          ]
+        },
+        {
+          "source": "shutil",
+          "specifiers": [
+            "shutil"
+          ]
+        },
+        {
+          "source": "socket",
+          "specifiers": [
+            "socket"
+          ]
+        },
+        {
+          "source": "subprocess",
+          "specifiers": [
+            "subprocess"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        }
+      ],
+      "exports": [
+        "launch_tensorboard",
+        "_resolve_tensorboard_command",
+        "_is_port_open",
+        "_connect_host",
+        "_build_url",
+        "_find_available_port",
+        "_find_running_tensorboard_port",
+        "_extract_cli_flag",
+        "_print_tensorboard_banner"
+      ],
+      "totalLines": 160,
+      "hasStructuralAnalysis": true
+    },
+    "tests/deploy/test_deploy_config.py": {
+      "filePath": "tests/deploy/test_deploy_config.py",
+      "contentHash": "8ba60f38e40e8aac76d98e4db090380aa835d4f92513b8c3854db867839c6bf8",
+      "functions": [
+        {
+          "name": "test_load_deploy_config_resolves_bundle_path",
+          "params": [
+            "tmp_path"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "test_state_and_action_codecs_match_pi05_dims",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "test_safety_guard_rejects_nan_and_clamps_delta",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "test_latest_queue_keeps_only_latest",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "test_action_chunk_aligned_index_clamps",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "test_deploy_schema_rejects_invalid_horizons",
+          "params": [
+            "tmp_path"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 28
+        },
+        {
+          "name": "test_bridge_forward_commands_aliases_legacy_publish_flag",
+          "params": [
+            "tmp_path"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "test_mux_config_loads_topics_and_mode",
+          "params": [
+            "tmp_path"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "test_smoothstep_alpha_is_monotonic_and_ends_at_one",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "test_action_chunk_usability_rejects_old_or_nan_chunks",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 38
+        },
+        {
+          "name": "test_control_loop_does_not_block_when_pending_chunk_is_missing",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 35
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pytest",
+          "specifiers": [
+            "pytest"
+          ]
+        },
+        {
+          "source": "pi05.common.data.action_codec",
+          "specifiers": [
+            "ensure_action_chunk",
+            "split_action"
+          ]
+        },
+        {
+          "source": "pi05.common.data.state_codec",
+          "specifiers": [
+            "BimanualState",
+            "encode_bimanual_state"
+          ]
+        },
+        {
+          "source": "pi05.deploy.config",
+          "specifiers": [
+            "DeployConfigError",
+            "load_deploy_config"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.control_loop",
+          "specifiers": [
+            "ControlLoop",
+            "is_action_chunk_usable",
+            "smoothstep_alpha"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.safety_guard",
+          "specifiers": [
+            "SafetyGuard"
+          ]
+        },
+        {
+          "source": "pi05.deploy.runtime.shared_buffer",
+          "specifiers": [
+            "ActionChunk",
+            "LatestQueue",
+            "SharedBuffer"
+          ]
+        }
+      ],
+      "exports": [
+        "test_load_deploy_config_resolves_bundle_path",
+        "test_state_and_action_codecs_match_pi05_dims",
+        "test_safety_guard_rejects_nan_and_clamps_delta",
+        "test_latest_queue_keeps_only_latest",
+        "test_action_chunk_aligned_index_clamps",
+        "test_deploy_schema_rejects_invalid_horizons",
+        "test_bridge_forward_commands_aliases_legacy_publish_flag",
+        "test_mux_config_loads_topics_and_mode",
+        "test_smoothstep_alpha_is_monotonic_and_ends_at_one",
+        "test_action_chunk_usability_rejects_old_or_nan_chunks",
+        "test_control_loop_does_not_block_when_pending_chunk_is_missing"
+      ],
+      "totalLines": 271,
+      "hasStructuralAnalysis": true
+    },
+    "tests/train/test_config.py": {
+      "filePath": "tests/train/test_config.py",
+      "contentHash": "ce4cef9fa3426d138ea9c289dd1086b9134e3a488bf1da5e0461cacb1000d5f5",
+      "functions": [
+        {
+          "name": "_minimal_config",
+          "params": [],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 33
+        },
+        {
+          "name": "test_config_accepts_existing_yaml_shape",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "test_config_accepts_train_expert_only_with_regex_targets",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "test_config_rejects_ambiguous_string_bool",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_load_experiment_config",
+          "params": [
+            "tmp_path"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 34
+        },
+        {
+          "name": "test_load_experiment_config_resolves_relative_paths",
+          "params": [
+            "tmp_path"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "pytest",
+          "specifiers": [
+            "pytest"
+          ]
+        },
+        {
+          "source": "pi05.common.config.schema",
+          "specifiers": [
+            "ConfigError",
+            "ExperimentConfig",
+            "load_experiment_config"
+          ]
+        }
+      ],
+      "exports": [
+        "_minimal_config",
+        "test_config_accepts_existing_yaml_shape",
+        "test_config_accepts_train_expert_only_with_regex_targets",
+        "test_config_rejects_ambiguous_string_bool",
+        "test_load_experiment_config",
+        "test_load_experiment_config_resolves_relative_paths"
+      ],
+      "totalLines": 145,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

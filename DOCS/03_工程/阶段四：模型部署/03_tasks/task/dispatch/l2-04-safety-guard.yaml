@@ -1,0 +1,147 @@
+# L2-04 单步 Action 安全检查闭环 调度索引
+
+> [!info] 归属
+> - 功能组：`l2-04-safety-guard`
+> - L2 设计目录：`DOCS/03_工程/阶段四：模型部署/02_implement/l2-04-safety-guard_单步Action安全检查闭环/`
+> - L2 功能边界：`agent_context/01_L2功能边界.md`
+> - L2 验收机制：`agent_context/04_L2验收机制.md`
+> - 本文件是调度索引，主 Agent 据此判断并行 / 串行；不随单个 L3 归档移动。
+
+> [!warning] 旧版隔离
+> 旧 layer-based L2 ID dispatch 已隔离到 `03_tasks/归档/`，不得作为当前调度来源。
+
+```yaml
+dispatch_index:
+  group: l2-04-safety-guard
+  branch: feat/model_deploy/l2-04-safety-guard
+  integration_branch: model_deploy
+  source_l2: DOCS/03_工程/阶段四：模型部署/02_implement/l2-04-safety-guard_单步Action安全检查闭环/agent_context/01_L2功能边界.md
+  max_parallel_agents: 2
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-safety-guard
+  cards_dir: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-safety-guard
+  l2_acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-safety-guard/l2-04-safety-guard_整体验收卡片.md
+  l2_acceptance_report: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-safety-guard/L2验收报告.md
+  acceptance_round_limit: 3
+
+  waves:
+    - wave: 1
+      parallel_group: l2-04-safety-guard-p1
+      tasks: [deploy_031, deploy_032]
+    - wave: 2
+      parallel_group: l2-04-safety-guard-p2
+      depends_on: [deploy_031, deploy_032]
+      tasks: [deploy_033]
+    - wave: 3
+      parallel_group: l2-04-safety-guard-p3
+      depends_on: [deploy_031, deploy_032, deploy_033]
+      tasks: [deploy_034]
+    - wave: 4
+      parallel_group: l2-04-safety-guard-p4
+      depends_on: [deploy_031, deploy_032, deploy_033, deploy_034]
+      tasks: [deploy_035]
+
+  tasks:
+    deploy_031:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-safety-guard/deploy_031_SafetyResult类型定义.md
+      title: SafetyResult 类型定义
+      depends_on: []
+      can_run_parallel_with: [deploy_032]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-safety-guard/deploy_031_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/types/safety_result.py
+          - src/model_deploy/act/types/__init__.py
+          - src/model_deploy/act/tests/types/test_safety_result.py
+        modules:
+          - model_deploy.act.types.safety_result
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_032:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-safety-guard/deploy_032_SafetyConfig契约协调.md
+      title: SafetyConfig 契约协调
+      depends_on: []
+      can_run_parallel_with: [deploy_031]
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-safety-guard/deploy_032_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S2]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/config/schema.py
+          - src/model_deploy/act/config_files/deploy.yaml
+          - src/model_deploy/act/tests/config/test_safety_config.py
+          - src/model_deploy/act/tests/config/test_schema.py
+        modules:
+          - model_deploy.act.config.schema
+        config_keys:
+          - safety.max_translation_step_m
+          - safety.max_rotation_step_rad
+          - safety.gripper_min
+          - safety.gripper_max
+          - safety.max_gripper_step
+          - safety.quaternion_norm_tolerance
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_033:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-safety-guard/deploy_033_安全检查纯函数微元.md
+      title: 安全检查纯函数微元
+      depends_on: [deploy_031, deploy_032]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-safety-guard/deploy_033_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S3]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/service/safety_guard.py
+          - src/model_deploy/act/tests/service/test_safety_primitives.py
+        modules:
+          - model_deploy.act.service.safety_guard
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_034:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-safety-guard/deploy_034_SafetyGuard编排与入口.md
+      title: SafetyGuard 编排与入口
+      depends_on: [deploy_031, deploy_032, deploy_033]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-safety-guard/deploy_034_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S4]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/service/safety_guard.py
+          - src/model_deploy/act/service/__init__.py
+          - src/model_deploy/act/tests/service/test_safety_guard.py
+        modules:
+          - model_deploy.act.service.safety_guard
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+
+    deploy_035:
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-04-safety-guard/deploy_035_L2Gate集成测试与验收脚本.md
+      title: L2-04 Gate 集成测试与验收脚本
+      depends_on: [deploy_031, deploy_032, deploy_033, deploy_034]
+      can_run_parallel_with: []
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-04-safety-guard/deploy_035_验收卡片.md
+      acceptance_mode: direct-local
+      acceptance_scenarios: [S1, S2, S3, S4, S5]
+      robot_risk: none
+      conflict_scope:
+        files:
+          - src/model_deploy/act/tests/integration/test_l2_04_gate.py
+          - DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-04-safety-guard/scripts/l2_04_verify.sh
+        modules: []
+        config_keys: []
+        runtime_modes: []
+        hardware_paths: []
+```

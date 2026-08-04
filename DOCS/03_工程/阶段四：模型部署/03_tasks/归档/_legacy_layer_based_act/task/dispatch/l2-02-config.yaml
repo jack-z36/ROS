@@ -1,0 +1,103 @@
+# L2-02 ACT Config 层 dispatch 索引
+# 权威调度文件：主 Agent 读取本文件决定 L3 并行/串行关系。
+# 状态字段以本文件 dispatch_status 为准。
+
+dispatch_index:
+  l2: l2-02-config
+  branch: feat/model_deploy/l2-02-config
+  integration_branch: model_deploy
+  acceptance_dir: DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-config
+  max_parallel_agents: 2
+  required_l3:
+    - deploy_005
+    - deploy_006
+    - deploy_007
+    - deploy_008
+
+  waves:
+    - wave: 1
+      parallel_group: l2-02-config-w1
+      description: config 骨架与基础 dataclass（是地基，006/007/008 都依赖 schema.py）
+      tasks:
+        - deploy_005  # config 骨架 + 基础 dataclass + load_deploy_config（blocks 006/007/008）
+      note: deploy_005 必须先完成，因为 006/007 都在 schema.py 上填充不同段落
+
+    - wave: 1b
+      parallel_group: l2-02-config-w1
+      description: deploy_005 完成后，006 与 007 可并行（都改 schema.py 但改不同段落：006 改 topics，007 改 safety/runtime）
+      tasks:
+        - deploy_006  # TopicsConfig
+        - deploy_007  # SafetyConfig + RuntimeConfig dim=16
+      note: can_run_parallel_with 互相引用；conflict_scope.files 均含 schema.py，但改不同段落
+
+    - wave: 2
+      parallel_group: l2-02-config-w2
+      description: deploy.yaml 实例与全量 config 单测，依赖 005/006/007 全部完成
+      tasks:
+        - deploy_008
+
+  tasks:
+    - task_id: deploy_005
+      title: 新建 ACT config schema 骨架与基础 dataclass
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_005_config骨架与基础dataclass.md
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_005_验收卡片.md
+      acceptance_mode: direct-local
+      wave: 1
+      depends_on: []
+      blocks: [deploy_006, deploy_007, deploy_008]
+      can_run_parallel_with: []
+      conflict_scope:
+        files:
+          - src/model_deploy/act/config/schema.py
+          - src/model_deploy/act/config/__init__.py
+        modules: [act.config.schema]
+      robot_risk: none
+      dispatch_status: ready
+
+    - task_id: deploy_006
+      title: 新建 ACT TopicsConfig（observation TCP/gripper + 单路 command）
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_006_TopicsConfig.md
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_006_验收卡片.md
+      acceptance_mode: direct-local
+      wave: 1b
+      depends_on: [deploy_005]
+      blocks: [deploy_008]
+      can_run_parallel_with: [deploy_007]
+      conflict_scope:
+        files: [src/model_deploy/act/config/schema.py]
+        modules: [act.config.schema]
+      robot_risk: none
+      dispatch_status: ready
+
+    - task_id: deploy_007
+      title: 新建 ACT SafetyConfig + RuntimeConfig 维度与 mode
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_007_SafetyConfig与RuntimeDim.md
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_007_验收卡片.md
+      acceptance_mode: direct-local
+      wave: 1b
+      depends_on: [deploy_005]
+      blocks: [deploy_008]
+      can_run_parallel_with: [deploy_006]
+      conflict_scope:
+        files: [src/model_deploy/act/config/schema.py]
+        modules: [act.config.schema]
+      robot_risk: none
+      dispatch_status: ready
+
+    - task_id: deploy_008
+      title: ACT deploy.yaml 实例与全量 config 单测
+      file: DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/l2-02-config/deploy_008_deploy_yaml与全量单测.md
+      acceptance_card: DOCS/03_工程/阶段四：模型部署/03_tasks/cards/l2-02-config/deploy_008_验收卡片.md
+      acceptance_mode: direct-local
+      wave: 2
+      depends_on: [deploy_005, deploy_006, deploy_007]
+      blocks: []
+      can_run_parallel_with: []
+      conflict_scope:
+        files:
+          - src/model_deploy/act/config_files/deploy.yaml
+          - src/model_deploy/act/tests/config/test_deploy_config_full.py
+          - src/model_deploy/act/tests/config/conftest.py
+        modules: []
+      robot_risk: none
+      dispatch_status: ready

@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "ENVIRONMENT.md", "language": "markdown", "sizeLines": 61, "fileCategory": "docs"},
+    {"path": "environment.yml", "language": "yaml", "sizeLines": 31, "fileCategory": "config"},
+    {"path": "requirements.txt", "language": "txt", "sizeLines": 27, "fileCategory": "docs"}
+  ],
+  "batchImportData": {
+    "ENVIRONMENT.md": [],
+    "environment.yml": [],
+    "requirements.txt": []
+  }
+}

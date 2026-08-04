@@ -1,0 +1,180 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 4,
+  "filesSkipped": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 4,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 4
+    }
+  },
+  "results": [
+    {
+      "path": "act/scripts/l2_02_verify.sh",
+      "language": "shell",
+      "fileCategory": "script",
+      "totalLines": 223,
+      "nonEmptyLines": 182,
+      "functions": [
+        {
+          "name": "_run_pytest",
+          "startLine": 26,
+          "endLine": 45,
+          "params": []
+        },
+        {
+          "name": "_rg_scan",
+          "startLine": 47,
+          "endLine": 67,
+          "params": []
+        },
+        {
+          "name": "_check_ros",
+          "startLine": 69,
+          "endLine": 71,
+          "params": []
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "act/scripts/l2_03_verify.sh",
+      "language": "shell",
+      "fileCategory": "script",
+      "totalLines": 284,
+      "nonEmptyLines": 229,
+      "functions": [
+        {
+          "name": "_run_pytest",
+          "startLine": 26,
+          "endLine": 47,
+          "params": []
+        },
+        {
+          "name": "_run_pytest_test",
+          "startLine": 49,
+          "endLine": 69,
+          "params": []
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "act/scripts/l2_05_verify.sh",
+      "language": "shell",
+      "fileCategory": "script",
+      "totalLines": 221,
+      "nonEmptyLines": 205,
+      "functions": [
+        {
+          "name": "_run_tests",
+          "startLine": 42,
+          "endLine": 63,
+          "params": []
+        },
+        {
+          "name": "_emit_blocked",
+          "startLine": 65,
+          "endLine": 70,
+          "params": []
+        },
+        {
+          "name": "_ros_observe",
+          "startLine": 72,
+          "endLine": 81,
+          "params": []
+        },
+        {
+          "name": "_hardware_blocked",
+          "startLine": 83,
+          "endLine": 88,
+          "params": []
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "act/scripts/l2_06_verify.sh",
+      "language": "shell",
+      "fileCategory": "script",
+      "totalLines": 295,
+      "nonEmptyLines": 270,
+      "functions": [
+        {
+          "name": "_run_tests",
+          "startLine": 95,
+          "endLine": 116,
+          "params": []
+        },
+        {
+          "name": "_run_baseline",
+          "startLine": 118,
+          "endLine": 135,
+          "params": []
+        },
+        {
+          "name": "_emit_blocked",
+          "startLine": 137,
+          "endLine": 142,
+          "params": []
+        },
+        {
+          "name": "_ros_env_check",
+          "startLine": 144,
+          "endLine": 151,
+          "params": []
+        },
+        {
+          "name": "_real_policy_check",
+          "startLine": 153,
+          "endLine": 156,
+          "params": []
+        },
+        {
+          "name": "_hardware_check",
+          "startLine": 158,
+          "endLine": 161,
+          "params": []
+        },
+        {
+          "name": "_run_local_core",
+          "startLine": 167,
+          "endLine": 214,
+          "params": []
+        },
+        {
+          "name": "_run_external_local_contract",
+          "startLine": 217,
+          "endLine": 229,
+          "params": []
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L2-02 传感器订阅与 ObservationSnapshot 组装闭环 · 架构交互可视化</title>
+<style>
+:root{
+  --bg:#f6f7f9;--ink:#1f2937;--muted:#667085;--line:#d0d5dd;--panel:#ffffff;
+  --config:#2563eb;--types:#0f766e;--repo:#7c3aed;--warn:#b42318;--ok:#047857;
+  --ctrl:#344054;--pi:#c2410c;--grey:#98a2b3;--yellow:#b54708;
+  --types-bg:#ecfdf5;--config-bg:#eff6ff;--repo-bg:#f5f3ff;--warn-bg:#fef2f2;--ok-bg:#ecfdf5;--grey-bg:#f2f4f7;--pi-bg:#fff7ed;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.page{max-width:1240px;margin:0 auto;padding:22px}
+header{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start;margin-bottom:14px}
+@media(max-width:820px){header{grid-template-columns:1fr}}
+h1{margin:0 0 6px;font-size:26px;line-height:1.2}
+h2{margin:0 0 6px;font-size:19px}
+h3{margin:14px 0 6px;font-size:15px}
+h4{margin:10px 0 4px;font-size:14px;color:var(--ctrl)}
+p{margin:0 0 8px;line-height:1.65}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.subtitle{color:var(--muted);max-width:820px}
+.note{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:11px 12px;color:var(--muted);font-size:12.5px;line-height:1.55}
+.note b{color:var(--ink)}
+
+input[name=tab]{position:absolute;opacity:0;pointer-events:none}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.tabs label{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:9px 13px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.tabs label .n{display:inline-flex;width:18px;height:18px;border-radius:999px;background:var(--grey-bg);color:var(--muted);font-size:11px;align-items:center;justify-content:center;font-weight:700}
+#v1:checked~.tabs label[for=v1]{background:var(--types);color:#fff;border-color:transparent}
+#v2:checked~.tabs label[for=v2]{background:var(--pi);color:#fff;border-color:transparent}
+#v3:checked~.tabs label[for=v3]{background:var(--types);color:#fff;border-color:transparent}
+#v4:checked~.tabs label[for=v4]{background:var(--ctrl);color:#fff;border-color:transparent}
+#v1:checked~.tabs label[for=v1] .n,#v2:checked~.tabs label[for=v2] .n,#v3:checked~.tabs label[for=v3] .n,#v4:checked~.tabs label[for=v4] .n{background:rgba(255,255,255,.25);color:#fff}
+
+.views>section{display:none}
+#v1:checked~.views .boundary,#v2:checked~.views .pi05map,#v3:checked~.views .blueprint,#v4:checked~.views .acceptance{display:block}
+
+.view{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.lead{color:var(--muted);margin:0 0 12px}
+.figure{border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:10px;margin-bottom:12px;overflow:auto}
+svg{width:100%;min-width:700px;height:auto;display:block}
+.box{fill:#fff;stroke:var(--line);stroke-width:1.4}
+.band{stroke:none}
+.title{font-size:13.5px;font-weight:760;fill:var(--ink)}
+.sub{font-size:11.5px;fill:var(--muted)}
+.edge{fill:none;stroke:#475467;stroke-width:1.8;marker-end:url(#arrow)}
+.ctl{stroke:var(--ctrl);stroke-dasharray:4 4}
+.fedge{stroke:var(--warn)}
+.io{stroke:var(--ok)}
+.elabel{font-size:11px;fill:#475467}
+.mono{font-family:ui-monospace,monospace;font-size:11px;fill:var(--repo)}
+
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+	.card{border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:8px;background:#fff;padding:12px;transition:box-shadow .15s,transform .15s}
+	.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-1px)}
+	.card h3{margin-top:0}
+.card.types{border-left-color:var(--types)}
+.card.config{border-left-color:var(--config)}
+.card.repo{border-left-color:var(--repo)}
+.card.ok{border-left-color:var(--ok)}
+.card.warn{border-left-color:var(--warn)}
+.card.pi{border-left-color:var(--pi)}
+.card.grey{border-left-color:var(--grey);background:var(--grey-bg)}
+.card.yellow{border-left-color:var(--yellow);background:#fffbeb}
+.card ul{margin:6px 0 0;padding-left:18px;color:var(--muted);line-height:1.6;font-size:13px}
+.card p{font-size:13px;color:var(--muted);line-height:1.65}
+
+.tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin:2px 3px 2px 0;font-size:11.5px;color:var(--muted);background:#fff}
+.badge{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:600}
+.badge.layer{background:var(--grey-bg);color:var(--ctrl)}
+.badge.direct{background:var(--ok-bg);color:var(--ok)}
+.badge.struct{background:var(--config-bg);color:var(--config)}
+.badge.ref{background:#fff7ed;color:var(--yellow)}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;color:var(--muted);font-size:12px;margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+
+details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;margin-bottom:8px}
+details[open]{background:#fbfcfe}
+summary{cursor:pointer;font-weight:700;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details p,details ul{margin:8px 0 0;padding-left:0;color:var(--muted);line-height:1.7;font-size:13px}
+details ul{padding-left:18px}
+details .body{padding-top:8px}
+
+.callout{border:1px solid #fedf89;background:#fffbeb;color:#7a5c00;border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.6;font-size:13px}
+.callout.warn{border-color:#fecdca;background:var(--warn-bg);color:#912018}
+.callout.pi{border-color:#fed7aa;background:var(--pi-bg);color:#9a3412}
+.callout.ok{border-color:#a7f3d0;background:var(--ok-bg);color:#065f46}
+.src{color:var(--muted);font-size:12px;margin:10px 0 0}
+.src code{color:var(--repo)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+	th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:12px}
+	tr:nth-child(even) td{background:#fafbfc}
+	td .okc{color:var(--ok);font-weight:600}
+	td .errc{color:var(--warn);font-weight:600}
+
+	/* 阅读路径提示 */
+	.reading-path{font-size:11.5px;color:var(--muted);margin:-6px 0 10px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+	.reading-path a{color:var(--config);text-decoration:none;font-weight:600}
+	.reading-path a:hover{text-decoration:underline}
+
+	/* 术语词典表 */
+	.dict{width:100%}
+	.dict td:first-child{width:24%;font-weight:600;color:var(--ctrl);font-family:ui-monospace,monospace;font-size:12.5px;vertical-align:top}
+	.dict td{font-size:13px;line-height:1.65}
+
+	/* 维度3 图② 单选切换层（radio driven，点一层只显示该层） */
+	.lpick input{position:absolute;opacity:0;pointer-events:none}
+	.lpick .ltabs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 12px}
+	@media(max-width:780px){.lpick .ltabs{grid-template-columns:repeat(3,1fr)}}
+	.lpick .ltabs label{border:1px solid var(--line);border-radius:8px;padding:12px 8px;text-align:center;font-size:13px;cursor:pointer;background:#fff;color:var(--muted);display:block;transition:all .12s}
+	.lpick .ltabs label b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+	.lpick .ltabs label.has{border-color:var(--types)}
+	.lpick .ltabs label.none{border-color:var(--line);background:var(--grey-bg)}
+	.lpick .lpane{display:none;border:1px solid var(--line);border-radius:8px;background:#fbfcfe;padding:14px}
+	.lpick .lpane h4{margin:0 0 6px;color:var(--types)}
+	.lpick .lpane.none-pane h4{color:var(--ctrl)}
+	#l-types:checked~.lp-types,
+	#l-config:checked~.lp-config,
+	#l-repo:checked~.lp-repo,
+	#l-service:checked~.lp-service,
+	#l-runtime:checked~.lp-runtime,
+	#l-ui:checked~.lp-ui{display:block}
+	#l-types:checked~.ltabs label[for=l-types]{background:var(--types);border-color:var(--types);color:#fff}
+	#l-types:checked~.ltabs label[for=l-types] b{color:#fff}
+	#l-config:checked~.ltabs label[for=l-config]{background:var(--grey);border-color:var(--grey);color:#fff}
+	#l-config:checked~.ltabs label[for=l-config] b{color:#fff}
+	#l-repo:checked~.ltabs label[for=l-repo]{background:var(--grey);border-color:var(--grey);color:#fff}
+	#l-repo:checked~.ltabs label[for=l-repo] b{color:#fff}
+	#l-service:checked~.ltabs label[for=l-service]{background:var(--config);border-color:var(--config);color:#fff}
+	#l-service:checked~.ltabs label[for=l-service] b{color:#fff}
+	#l-runtime:checked~.ltabs label[for=l-runtime]{background:var(--repo);border-color:var(--repo);color:#fff}
+	#l-runtime:checked~.ltabs label[for=l-runtime] b{color:#fff}
+	#l-ui:checked~.ltabs label[for=l-ui]{background:var(--yellow);border-color:var(--yellow);color:#fff}
+	#l-ui:checked~.ltabs label[for=l-ui] b{color:#fff}
+
+	/* class 封装拆解卡 */
+	.classbox{border:1px solid var(--line);border-left:4px solid var(--types);border-radius:8px;background:#fff;padding:12px;margin:8px 0}
+	.classbox.svc{border-left-color:var(--config)}
+	.classbox.rt{border-left-color:var(--repo)}
+	.classbox.ui{border-left-color:var(--yellow)}
+	.classbox h5{margin:0 0 4px;font-size:13.5px;color:var(--types);font-family:ui-monospace,monospace}
+	.classbox.svc h5{color:var(--config)}
+	.classbox.rt h5{color:var(--repo)}
+	.classbox.ui h5{color:var(--yellow)}
+	.classbox .role{font-size:12px;color:var(--muted);margin:0 0 8px}
+	.mu-list{display:grid;gap:6px;margin-top:6px}
+	.mu{display:grid;grid-template-columns:90px 1fr;gap:10px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:6px}
+	.mu .kind{font-weight:700;text-align:right}
+	.mu .kind.data{color:var(--types)}
+	.mu .kind.calc{color:var(--config)}
+	.mu .kind.io{color:var(--repo)}
+	.mu .kind.orch{color:var(--yellow)}
+	.mu .kind.state{color:#92400e}
+	.mu .desc{color:var(--muted);line-height:1.6}
+	.mu .desc .fn{display:block;margin:0 0 5px}
+	.mu .desc .fn:last-child{margin-bottom:0}
+	.mu .desc .dim{color:var(--muted)}
+	.mu .desc .dim b{color:var(--ctrl);font-weight:600}
+		.mu .desc .data-table{width:100%;border-collapse:collapse;font-size:11.5px;margin:0}
+		.mu .desc .data-table th{background:var(--grey-bg);color:var(--ctrl);font-weight:600;font-size:11px;padding:4px 7px;border:1px solid var(--line);text-align:left}
+		.mu .desc .data-table td{padding:4px 7px;border:1px solid var(--line);font-size:11.5px;vertical-align:top;color:var(--ink);line-height:1.55}
+		.mu .desc .data-table td:first-child{font-family:ui-monospace,monospace;white-space:nowrap;color:var(--ctrl)}
+		.mu .desc .data-table td:nth-child(2){font-size:11px;color:var(--muted)}
+		.mu .desc .data-table td:nth-child(3){font-family:ui-monospace,monospace;font-size:11px;color:var(--repo)}
+
+	/* 维度2 专用：流程步骤 */
+	.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:6px 0}
+	@media(max-width:980px){.flow{grid-template-columns:1fr}}
+      .step{background:#fff;border:1px solid var(--line);border-top:4px solid var(--config);border-radius:8px;padding:16px 14px;position:relative;font-size:13px}
+      .step.s1{border-top-color:var(--repo)}
+      .step.s2{border-top-color:var(--types)}
+      .step.s3{border-top-color:var(--config)}
+      .step.s4{border-top-color:var(--ok)}
+      .step .no{position:absolute;top:-12px;left:12px;background:var(--ctrl);color:#fff;width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+      .step h4{margin:4px 0 6px;color:var(--ink)}
+      .step .what{font-size:12.5px;color:var(--muted);line-height:1.7}
+	.arrow-r{display:flex;align-items:center;justify-content:center;color:var(--grey);font-size:20px}
+	@media(min-width:981px){.arrow-r{padding:0 2px}}
+
+	/* 跟一个字段走全流程 */
+	.trace{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 20px;font-family:ui-monospace,monospace;font-size:13px;line-height:2.4;overflow:auto;letter-spacing:.3px}
+	.trace .ln{color:#64748b;font-weight:700;margin-right:6px}
+	.trace .key{color:#7dd3fc}
+	.trace .val{color:#fde68a}
+	.trace .cmt{color:#64748b}
+	.trace .ok{color:#86efac}
+	.trace .err{color:#fca5a5}
+	.trace .gap{display:block;height:8px}
+
+	/* 命令块 */
+	.cmd{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:6px 8px;font-family:ui-monospace,monospace;font-size:12px;overflow:auto;display:block;margin-top:6px}
+	.cmd .c{color:#94a3b8}
+
+	/* 维度4 验收动作卡 */
+	.vfy{margin:10px 0}
+	.vfy-item{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+	.vfy-item .num{width:28px;height:28px;border-radius:999px;background:var(--ctrl);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:2px}
+	.vfy-item .body{min-width:0}
+	.vfy-item .do{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 6px}
+	.vfy-item .cmd-block{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:8px 12px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;display:block;margin:6px 0}
+	.vfy-item .cmd-block .c{color:#94a3b8}
+	.vfy-item .result{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+	@media(max-width:700px){.vfy-item .result{grid-template-columns:1fr}}
+	.vfy-item .pass{border:1px solid #a7f3d0;border-radius:6px;background:var(--ok-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+	.vfy-item .pass::before{content:"✅ 通过 → ";font-weight:700;color:var(--ok)}
+	.vfy-item .fail{border:1px solid #fecdca;border-radius:6px;background:var(--warn-bg);padding:8px 10px;font-size:12.5px;line-height:1.65}
+	.vfy-item .fail::before{content:"❌ 失败 → ";font-weight:700;color:var(--warn)}
+	.vfy-item .why{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
+	.vfy-item .why a{color:var(--config);font-weight:600;text-decoration:none}
+	.vfy-item .why a:hover{text-decoration:underline}
+	.vfy-sep{margin:18px 0 12px;border-top:2px dashed var(--line)}
+	.vfy-section-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);background:var(--grey-bg);border-radius:999px;padding:2px 10px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+	.vfy-item .do .tag{vertical-align:middle;margin-left:4px}
+
+	/* 维度4 终端范例块 + 翻译表 */
+	.term{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 18px;font-family:ui-monospace,monospace;font-size:12.5px;overflow:auto;margin:8px 0}
+	.term .t-hdr{color:#94a3b8;font-weight:700;margin-bottom:10px}
+	.term .t-grp{color:#7dd3fc;font-weight:700;margin:12px 0 5px}
+	.term .t-grp:first-of-type{margin-top:0}
+	.term .t-row{display:grid;grid-template-columns:72px 232px 1fr;gap:6px;line-height:2.0;align-items:baseline}
+	.term .t-row .ok{color:#86efac;font-weight:700}
+	.term .t-row .fail{color:#fca5a5;font-weight:700}
+	.term .t-row .blk{color:#fde68a;font-weight:700}
+	.term .t-row .lbl{color:#e2e8f0;overflow:hidden;text-overflow:ellipsis}
+	.term .t-row .note{color:#64748b}
+	.term .t-loc{color:#94a3b8;line-height:1.75;padding:2px 0 4px 24px;font-size:11.5px;border-left:2px solid #334155;margin-left:6px}
+	.term .t-loc span{display:block}
+	.term .t-sep{color:#475569;margin-top:8px}
+	.term .t-sum{color:#e2e8f0;font-weight:700;margin-top:4px}
+	.trtab{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+	.trtab th,.trtab td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+	.trtab th{background:var(--grey-bg);color:var(--ctrl);font-weight:700;font-size:11.5px}
+	.trtab td.lbl{font-family:ui-monospace,monospace;color:var(--repo);font-size:12px;white-space:nowrap}
+	.trtab td.lyr{font-weight:600;white-space:nowrap}
+	.trtab tr.types td.lyr{color:var(--types)}
+	.trtab tr.service td.lyr{color:var(--config)}
+	.trtab tr.runtime td.lyr{color:var(--repo)}
+	.trtab tr.ui td.lyr,.trtab tr.boundary td.lyr{color:var(--yellow)}
+	.trtab td.mu{display:block;font-size:11.5px;color:var(--muted);line-height:1.7}
+	.trtab td.mu .fpath{color:var(--repo);font-family:ui-monospace,monospace;font-size:11px}
+	.trtab td.mu .cls{color:var(--config);font-weight:600}
+	.trtab td.mu .kindtag{font-size:10.5px;background:var(--grey-bg);color:var(--ctrl);border-radius:3px;padding:0 5px;margin-left:2px;white-space:nowrap}
+	.trtab td.mu .kindtag.data{color:var(--types)}
+	.trtab td.mu .kindtag.calc{color:var(--config)}
+	.trtab td.mu .kindtag.io{color:var(--repo)}
+	.trtab td.mu .kindtag.orch{color:var(--yellow)}
+	.trtab td.mu .kindtag.state{color:#92400e}
+	.trtab td.pf{display:block;font-size:12px;line-height:1.8}
+	.trtab td.pf .fp{color:var(--warn);font-weight:600}
+	.trtab td.pf .pp{color:var(--ok);font-weight:600}
+	.trtab td.pf .blk{color:#b54708;font-weight:600}
+	.trtab td.pf .fn{display:block}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>L2-02 · 传感器订阅与 ObservationSnapshot 组装闭环</h1>
+      <p class="subtitle">把外部 observation topics 转换成完整、新鲜、合法的 RAM 对象 ObservationSnapshot，并写入 latest-only buffer。它是外部传感器世界进入 ACT 部署程序内存的入口。本页用 4 个维度交互呈现：功能边界、Pi0.5 对应部分如何运作、开发蓝图、人类验收标准。</p>
+    </div>
+    <div class="note">
+      <b>本页只是人类快速浏览入口，不作为 L3 生成依据。</b><br>
+      权威细节见 <code>agent_context/00_INDEX.md</code> 及其路由的 Markdown。HTML 与 MD 冲突时，以 MD 为准。
+    </div>
+  </header>
+
+  <input id="v1" name="tab" type="radio" checked>
+  <input id="v2" name="tab" type="radio">
+  <input id="v3" name="tab" type="radio">
+  <input id="v4" name="tab" type="radio">
+
+  <nav class="tabs" aria-label="维度视图">
+    <label for="v1"><span class="n">1</span>功能边界</label>
+    <label for="v2"><span class="n">2</span>Pi0.5 如何运作</label>
+    <label for="v3"><span class="n">3</span>开发蓝图</label>
+    <label for="v4"><span class="n">4</span>人类验收标准</label>
+  </nav>
+
+  <div class="views">
+
+    <!-- ============ 维度 1 · 功能边界 ============ -->
+    <section class="view boundary" data-agent-source="agent_context/01_L2功能边界.md#2-l2-功能边界">
+      <h2>维度 1 · 功能边界</h2>
+      <div class="reading-path">📖 阅读路径：先理解 L2-02 做什么、不做什么 → 然后去<a href="#" onclick="document.getElementById('v4').click()">维度4</a>对照验收</div>
+      <p class="lead">用三张图把 L2-02 的功能边界讲清楚：① 它在整个程序里的定位；② 负责 vs 不负责的边界墙；③ 输入输出契约（topic → snapshot → latest buffer 的数据流）。</p>
+
+      <h3>图① 地位定位：外部传感器世界 → RAM 入口</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 250" role="img" aria-label="L2-02 地位定位">
+          <defs><marker id="arrow" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker></defs>
+          <rect class="box" x="20" y="70" width="150" height="110" rx="8"></rect><rect class="band" x="20" y="70" width="6" height="110" fill="var(--yellow)"></rect>
+          <text class="title" x="36" y="94">外部 observation topics</text>
+          <text class="sub" x="36" y="118">/act/observation/image/*</text>
+          <text class="sub" x="36" y="136">/act/observation/arm/*_tcp_pose</text>
+          <text class="sub" x="36" y="154">/act/observation/gripper/*_state</text>
+          <text class="sub" x="36" y="172">（ROS 进程边界外）</text>
+          <path class="edge" d="M172 125 L242 125"></path>
+          <text class="elabel" x="176" y="118">订阅 + 解码</text>
+          <rect class="box" x="244" y="55" width="280" height="140" rx="10" fill="#fcfdff" stroke="var(--types)" stroke-width="2"></rect>
+          <rect class="band" x="244" y="55" width="280" height="28" fill="var(--types)"></rect>
+          <text x="384" y="74" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">L2-02（事件驱动）</text>
+          <text class="title" x="260" y="106">ObservationSnapshot 组装闭环</text>
+          <text class="sub" x="260" y="126">字段缓存 → 齐全 + 新鲜 → 编 16D</text>
+          <text class="sub" x="260" y="146">写入 latest-only buffer</text>
+          <text class="sub" x="260" y="168" fill="var(--ok)">是 L2-03 推理、L2-06 控制的</text>
+          <text class="sub" x="260" y="184" fill="var(--ok)">observation 来源</text>
+          <path class="edge" d="M526 125 L600 125"></path>
+          <text class="elabel" x="532" y="118">ObservationSnapshot</text>
+          <rect class="box" x="602" y="40" width="150" height="170" rx="8"></rect><rect class="band" x="602" y="40" width="6" height="170" fill="var(--ok)"></rect>
+          <text class="title" x="618" y="64">latest-only buffer</text>
+          <text class="sub" x="618" y="92">ObservationSnapshot</text>
+          <text class="sub" x="618" y="110">images / state</text>
+          <text class="sub" x="618" y="128">encoded_state (16,)</text>
+          <text class="sub" x="618" y="146">captured_at_s</text>
+          <path class="edge io" d="M754 125 L800 80"></path>
+          <path class="edge io" d="M754 125 L800 170"></path>
+          <text class="elabel" x="760" y="70">读 latest</text>
+          <text class="title" x="804" y="84" fill="var(--ctrl)">L2-03</text>
+          <text class="sub" x="804" y="104">consume snapshot</text>
+          <text class="title" x="804" y="158" fill="var(--ctrl)">L2-06</text>
+          <text class="sub" x="804" y="178">latest_observation()</text>
+        </svg>
+      </div>
+
+      <h3>图② 负责 vs 不负责：边界墙</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 260" role="img" aria-label="负责与不负责边界墙">
+          <rect x="430" y="20" width="60" height="220" fill="#fde68a" opacity="0.35"></rect>
+          <text x="460" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="var(--yellow)">边界墙</text>
+          <line x1="460" y1="20" x2="460" y2="240" stroke="var(--yellow)" stroke-width="2" stroke-dasharray="6 4"></line>
+          <text class="title" x="30" y="36" fill="var(--ok)">✓ 负责（observation 组装）</text>
+          <g><rect class="box" x="20" y="48" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="66">设计 observation topic 订阅入口；转 ROS image → ACT RAM image 对象</text></g>
+          <g><rect class="box" x="20" y="82" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="100">接收左/右 TCP pose、左/右 gripper width/state</text></g>
+          <g><rect class="box" x="20" y="116" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="134">维护每字段 latest 值 + 捕获时间戳；齐全性检查 + max_age_s 新鲜度检查</text></g>
+          <g><rect class="box" x="20" y="150" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="168">调 L2-01 state codec 产生 16D encoded_state；合法 snapshot 写 latest-only buffer</text></g>
+          <g><rect class="box" x="20" y="184" width="420" height="28" rx="6"></rect><text class="sub" x="32" y="202">暴露缺字段 / 过期 / decode 失败诊断</text></g>
+          <text class="title" x="510" y="36" fill="var(--warn)">✗ 不负责（归其他 L2）</text>
+          <g><rect class="box" x="500" y="48" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="66" fill="var(--warn)">不调 ACT 模型 / 不组 ACT batch（→ L2-03）</text></g>
+          <g><rect class="box" x="500" y="82" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="100" fill="var(--warn)">不生成 / 消费 / 选择 ActionChunk（→ L2-03/L2-06）</text></g>
+          <g><rect class="box" x="500" y="116" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="134" fill="var(--warn)">不决定是否触发下一次推理 / 不维护 ControlLoop tick（→ L2-06）</text></g>
+          <g><rect class="box" x="500" y="150" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="168" fill="var(--warn)">不做 action 安全检查（→ L2-04 SafetyGuard）</text></g>
+          <g><rect class="box" x="500" y="184" width="400" height="28" rx="6" fill="var(--warn-bg)"></rect><text class="sub" x="512" y="202" fill="var(--warn)">不发硬件命令（→ L2-05）；不声明真机/真 ROS 已通过</text></g>
+        </svg>
+      </div>
+
+      <h3>图③ 输入输出契约：topic → snapshot → latest buffer</h3>
+      <div class="figure">
+        <svg viewBox="0 0 920 280" role="img" aria-label="输入输出契约数据流">
+          <defs><marker id="arrow2" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker></defs>
+          <rect class="box" x="20" y="30" width="170" height="200" rx="8"></rect><rect class="band" x="20" y="30" width="6" height="200" fill="var(--repo)"></rect>
+          <text class="title" x="36" y="54">输入 topics（6 个）</text>
+          <text class="mono" x="36" y="78">image/left_fisheye</text>
+          <text class="mono" x="36" y="98">image/right_fisheye</text>
+          <text class="mono" x="36" y="118">arm/left_tcp_pose</text>
+          <text class="mono" x="36" y="138">arm/right_tcp_pose</text>
+          <text class="mono" x="36" y="158">gripper/left_state</text>
+          <text class="mono" x="36" y="178">gripper/right_state</text>
+          <text class="sub" x="36" y="204">topic 名来自 DeployConfig</text>
+          <path class="edge" d="M192 130 L252 130"></path>
+          <text class="elabel" x="196" y="122">ROS msg</text>
+          <rect class="box" x="254" y="40" width="150" height="180" rx="8"></rect><rect class="band" x="254" y="40" width="6" height="180" fill="var(--yellow)"></rect>
+          <text class="title" x="270" y="64">ui adapter</text>
+          <text class="sub" x="270" y="90">decode_image_message</text>
+          <text class="sub" x="270" y="110">handle_tcp_pose</text>
+          <text class="sub" x="270" y="130">handle_gripper_state</text>
+          <text class="sub" x="270" y="158" fill="var(--repo)">只做消息解码</text>
+          <text class="sub" x="270" y="176" fill="var(--repo)">+ 类型转换</text>
+          <text class="sub" x="270" y="194" fill="var(--repo)">不做业务规则</text>
+          <path class="edge" d="M406 130 L466 130"></path>
+          <text class="elabel" x="410" y="122">RAM 值</text>
+          <rect class="box" x="468" y="40" width="170" height="180" rx="8" fill="#fcfdff" stroke="var(--config)" stroke-width="2"></rect><rect class="band" x="468" y="40" width="6" height="180" fill="var(--config)"></rect>
+          <text class="title" x="484" y="64">ObservationCollector</text>
+          <text class="sub" x="484" y="90">update_image / pose / gripper</text>
+          <text class="sub" x="484" y="110">_images / _values / _stamps</text>
+          <text class="sub" x="484" y="130">missing_fields() / snapshot()</text>
+          <text class="sub" x="484" y="150">齐全 + max_age_s 新鲜</text>
+          <text class="sub" x="484" y="178" fill="var(--config)">调 L2-01 编 16D</text>
+          <text class="sub" x="484" y="196" fill="var(--config)">构造 ObservationSnapshot</text>
+          <path class="edge" d="M640 130 L700 130"></path>
+          <text class="elabel" x="644" y="122">snapshot 或 None</text>
+          <rect class="box" x="702" y="40" width="180" height="180" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect><rect class="band" x="702" y="40" width="6" height="180" fill="var(--ok)"></rect>
+          <text class="title" x="718" y="64" fill="var(--ok)">ObservationBuffer</text>
+          <text class="sub" x="718" y="90">set_observation()</text>
+          <text class="sub" x="718" y="110">latest_observation()</text>
+          <text class="sub" x="718" y="138">images: Mapping</text>
+          <text class="sub" x="718" y="158">state: ObservationState</text>
+          <text class="sub" x="718" y="178">encoded_state: (16,)</text>
+          <text class="sub" x="718" y="198">captured_at_s: float</text>
+        </svg>
+      </div>
+
+      <div class="callout">边界不变量：L2-02 必须在缺字段或过期时<b>不生成 snapshot</b>（返回 None + 诊断），绝不把非法 observation 喂给下游。`ObservationSnapshot` 作为跨 L2 公共 RAM 契约放在 <code>types/observation.py</code>，让 L2-03 / L2-06 只依赖 <code>types/</code>，不依赖 L2-02 的 service / runtime 实现。</div>
+      <p class="src">权威来源：<code>agent_context/01_L2功能边界.md</code>（§2 功能边界 / §3 输入输出契约 / §4 负责 / §5 不负责 / §6 完成判据）、<code>agent_context/03_ACT微元设计与协作.md</code>（§4 内部协作关系）</p>
+    </section>
+
+    <!-- ============ 维度 2 · Pi0.5 如何运作 ============ -->
+    <section class="view pi05map" data-agent-source="agent_context/02_pi05源码3.5层微元拆解.md#1-源码范围">
+      <h2>维度 2 · Pi0.5 这部分是如何运作的</h2>
+      <div class="reading-path">📖 阅读路径：理解源码结构（collector / buffer / node）可复用，但数值（26D vs 16D、topics）必须重写 → 开发蓝图见<a href="#" onclick="document.getElementById('v3').click()">维度3</a></div>
+      <p class="lead">这一维度只回答一个问题：<b>Pi0.5 部署代码中，负责"把外部 observation 组装成 snapshot 并缓存"的那部分，到底是怎么跑起来的。</b>不涉及 ACT 怎么改。下面按"先懂概念 → 看整体流程 → 跟一个例子 → 看差异"的顺序讲。</p>
+
+      <div class="callout pi">这一节用<b>白话</b>讲。每个专业术语第一次出现时都会解释，点开"术语词典"可以随时查。</div>
+
+      <!-- 术语词典 -->
+      <details open>
+        <summary>📖 术语词典（点开随时查）</summary>
+        <div class="body">
+        <table class="dict">
+          <tr><td>callback<br>（回调）</td><td>ROS 收到一条消息时，自动调用你预先注册的函数。L2-02 的 ui 层就是一串 callback：每来一张图或一个 pose，就触发对应的 handle 函数。</td></tr>
+          <tr><td>ObservationCollector<br>（字段收集器）</td><td>一个"记事本"对象。每次 callback 到来，它就把某个字段的最新值和时间戳记下来。凑齐所有必需字段后，它能判断"能不能拼一个完整的 snapshot"。</td></tr>
+          <tr><td>snapshot</td><td>某一时刻所有字段的快照——两张图、左右 TCP pose、左右夹爪宽度，再加上用 state codec 编码出的 16D 向量。snapshot 一旦创建就只读。</td></tr>
+          <tr><td>latest-only buffer</td><td>只保留<b>最新一份</b> snapshot 的缓存。新 snapshot 来了就把旧的覆盖掉，不存历史。下游 L2-06 随时来读最新的那份。</td></tr>
+          <tr><td>max_age_s<br>（最大年龄）</td><td>新鲜度阈值。如果某个字段最后一次更新距现在超过 max_age_s 秒，就判它"过期"，不拼 snapshot。防止用到陈旧数据。</td></tr>
+          <tr><td>monotonic stamp<br>（单调时间戳）</td><td>用 <code>time.monotonic()</code> 记下的、不会因系统时钟回拨而倒退的时间。用来算字段年龄，比墙钟更可靠。</td></tr>
+          <tr><td>state codec<br>（状态编码器）</td><td>L2-01 提供的函数，把结构化状态（TCP pose + gripper width）编成模型要的 16D 向量。L2-02 的 collector 调它，自己不重新实现编码。</td></tr>
+          <tr><td>try_publish_observation</td><td>局部编排点。每次 callback 更新完字段后，尝试拼一次 snapshot；拼成功就写 buffer，拼不成功只记诊断。</td></tr>
+        </table>
+        </div>
+      </details>
+
+      <!-- 整体流程 4 步 -->
+      <h3>① 整体流程：一次 callback 的四个步骤</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:6px">Pi0.5 这部分代码是<b>事件驱动</b>的：每来一条消息就跑一遍下面的流程。任一步失败（缺字段 / 过期 / decode 错），都不写非法 snapshot。</p>
+      <div class="flow">
+        <div class="step s1">
+          <span class="no">1</span>
+          <h4>消息到达</h4>
+          <div class="what">ROS callback 触发：ui adapter 收到一条 image / pose / gripper message。<b>跨进程边界</b>：从 ROS 到程序内存。</div>
+        </div>
+        <div class="step s2">
+          <span class="no">2</span>
+          <h4>解码 + 更新缓存</h4>
+          <div class="what">adapter 把消息<b>解码成 RAM 值</b>（图片张量、pose 数组、gripper 宽度），调 collector 的 update_* 方法。collector 更新字段值 + monotonic 时间戳。</div>
+        </div>
+        <div class="step s3">
+          <span class="no">3</span>
+          <h4>尝试拼 snapshot</h4>
+          <div class="what"><code>try_publish_observation</code>：检查必需字段齐全？都在 max_age_s 内？是 → 调 L2-01 编 16D → 构造 ObservationSnapshot。否 → 只记诊断，不拼。</div>
+        </div>
+        <div class="step s4">
+          <span class="no">4</span>
+          <h4>写 latest buffer</h4>
+          <div class="what">snapshot 构造成功 → 写入 <code>ObservationBuffer.set_observation</code>，覆盖上一份。下游 L2-03/L2-06 读 <code>latest_observation</code> 拿到最新的。</div>
+        </div>
+      </div>
+
+      <!-- 跟一个字段走全流程 -->
+      <h3>② 跟一个 TCP pose 字段走完全流程</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">以左臂 TCP pose 为例，看它怎么从一条 ROS 消息变成 snapshot 里的 16D 向量的一段。</p>
+      <div class="trace">
+<span class="cmt"># ROS topic: /act/observation/arm/left_tcp_pose</span>
+<span class="gap"></span>
+<span class="ln">①</span> <span class="cmt"># ui adapter 收到消息（跨进程边界，从 ROS 到 RAM）</span>
+   msg = <span class="key">Pose</span>(position=<span class="val">[x,y,z]</span>, orientation=<span class="val">[qx,qy,qz,qw]</span>)
+   adapter.handle_tcp_pose(<span class="key">"left"</span>, msg)
+<span class="gap"></span>
+<span class="ln">②</span> <span class="cmt"># collector 更新左臂字段缓存 + monotonic 时间戳（纯 RAM 内）</span>
+   collector.update_tcp_pose(<span class="key">"left"</span>, position=<span class="val">[x,y,z]</span>, orientation=<span class="val">[qx,qy,qz,qw]</span>)
+   <span class="cmt">#  → _values["left_tcp"] = ...,  _stamps["left_tcp"] = time.monotonic()</span>
+<span class="gap"></span>
+<span class="ln">③</span> <span class="cmt"># try_publish_observation：齐全性 + 新鲜度检查</span>
+   missing = collector.missing_fields()        <span class="cmt"># 其他必需字段都在吗？</span>
+   stale  = collector.stale_fields(now, max_age_s)
+   <span class="cmt">#  → 若 missing 或 stale 非空 → 记诊断，不拼 snapshot</span>
+<span class="gap"></span>
+<span class="ln">④</span> <span class="cmt"># 齐全且新鲜 → 调 L2-01 state codec 编 16D</span>
+   encoded = state_codec.encode(<span class="key">left_tcp</span>, right_tcp, left_grip, right_grip)
+   snapshot = <span class="ok">ObservationSnapshot(images, state, encoded_state=encoded, captured_at_s=now)</span>
+   buffer.set_observation(snapshot)            <span class="cmt"># 覆盖 latest</span>
+<span class="gap"></span>
+<span class="cmt"># ── 如果消息 decode 失败（比如 orientation 非法四元数）会怎样？</span>
+<span class="ln">②'</span> <span class="cmt"># adapter 检测到非法 shape / quaternion</span>
+   <span class="err">log warning，不更新 collector 缓存</span>
+   <span class="cmt">#  → 该字段保持旧值或缺失，下一步 snapshot 判定会把它当 missing/stale 处理。</span>
+      </div>
+
+      <!-- Pi0.5 参考 + 差异 -->
+      <h3>③ Pi0.5 参考对象 + ACT 差异</h3>
+      <div class="grid g2">
+        <div class="card repo">
+          <h4>🔬 Pi0.5 源码盘点（结构复用）</h4>
+          <ul>
+            <li><code>observation_collector.py::ObservationCollector</code> — 字段缓存、齐全性、新鲜度、snapshot 构造 → 结构复用</li>
+            <li><code>shared_buffer.py::ObservationSnapshot</code> — snapshot 数据结构 → 结构复用（迁移到 types/）</li>
+            <li><code>shared_buffer.py::SharedBuffer.latest_observation</code> — latest-only buffer → 结构复用</li>
+            <li><code>state_codec.py::BimanualState / encode_bimanual_state</code> — 结构化状态 + 编码 → 结构复用</li>
+            <li><code>pi05_vla_deploy_node.py</code> — ROS callback / _publish_observation_if_ready → 仅作理解参考</li>
+          </ul>
+        </div>
+        <div class="card warn">
+          <h4>⚠️ 不可照搬项</h4>
+          <ul>
+            <li>Pi0.5 是 <b>26D state</b>（含本体感知 [right6,left6]）；ACT 是 <b>16D</b>（TCP pose + gripper width）</li>
+            <li>Pi0.5 topics 名是旧名；ACT 用 <code>/act/observation/*</code></li>
+            <li>不整体搬入 <code>SharedBuffer</code>（request queue / chunk queue / 全局 metrics 归后续 L2 / L2-06）</li>
+            <li>ui 层不实现核心 snapshot 业务规则（规则必须能在 service/runtime 无 ROS 测试）</li>
+            <li>无 ROS / 无硬件环境不得写成"真实 subscription 已通过"</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout pi"><b>维度差异（决定不能照搬）：</b>Pi0.5 是 <b>26D state</b>（关节角表示，含本体感知），把 ObservationSnapshot 放在 <code>runtime/</code>；ACT 是 <b>16D / 16D</b>（TCP pose + gripper width），且要求 ObservationSnapshot 作为跨 L2 公共契约放在 <code>types/observation.py</code>。所以这部分代码的<b>结构</b>（callback → 缓存 → 齐全新鲜 → snapshot → latest）可复用，但<b>数值与落点</b>必须重写。详见维度 3 与权威 MD。</div>
+
+      <!-- 四个核心问题 -->
+      <h3>④ 回答四个核心问题（谁持有状态、谁跨边界、谁加工、谁管时序）</h3>
+      <div class="grid g2">
+        <div class="card repo"><h4>❶ 谁持有状态？</h4><p>两个对象持有"会长期存在、会变化"的状态：</p><ul>
+          <li><code>ObservationCollector</code>：持有 _images / _values / _stamps + _lock（callback 可能并发写，用 lock 保护）。</li>
+          <li><code>ObservationBuffer</code>：持有 _latest_observation + _lock + metrics。</li></ul>
+          <p style="font-size:12px;margin-top:4px"><code>ObservationSnapshot</code> 本身创建后只读，不算可变状态。</p></div>
+        <div class="card repo"><h4>❷ 谁跨越外部边界？</h4><p>只有 ui 层的 adapter：</p><ul>
+          <li><code>ObservationRosAdapter</code> 订阅 topic、收 ROS message</li>
+          <li><code>decode_image_message</code> 把 ROS image 转成 RAM 张量</li></ul>
+          <p style="font-size:12px;margin-top:4px">service / runtime / types <b>不碰 ROS</b>，保证无 ROS 环境可测。L2-02 不发布任何 topic。</p></div>
+        <div class="card config"><h4>❸ 谁只负责加工 RAM 对象？</h4><ul>
+          <li>collector 的 update_* / missing_fields / stale_fields</li>
+          <li>snapshot 构造（含调 L2-01 编 16D）</li>
+          <li><code>preprocess_observation_image</code>（图片 RAM 内变换）</li></ul>
+          <p style="font-size:12px;margin-top:4px">这些都是"输入在内存、输出也在内存"的纯计算。</p></div>
+        <div class="card grey"><h4>❹ 谁负责 runtime 时序？</h4><p style="color:var(--ctrl);font-weight:600">答：全局节奏归 L2-06。</p>
+          <p>L2-02 只有<b>局部编排点</b> <code>try_publish_observation</code>（每次 callback 后触发）。全局 ControlLoop.tick()、推理触发时机、chunk cursor 都是 L2-06 的事。L2-02 是被动响应，不主动调度。</p></div>
+      </div>
+
+      <p class="src">权威来源：<code>agent_context/02_pi05源码3.5层微元拆解.md</code>（§1 源码范围 / §2 3.5 层微元 / §3 class 封装 / §4 不可照搬项）、<code>agent_context/03_ACT微元设计与协作.md</code>（§4 内部协作 / §5 失败传播）</p>
+    </section>
+
+    <!-- ============ 维度 3 · 开发蓝图 ============ -->
+    <section class="view blueprint" data-agent-source="agent_context/03_ACT微元设计与协作.md#2-ACT-微元设计">
+      <h2>维度 3 · 开发建议与蓝图</h2>
+      <div class="reading-path">📖 阅读路径：了解代码如何分层组织 → 代码写完后用<a href="#" onclick="document.getElementById('v4').click()">维度4</a>检查产物与越界</div>
+      <p class="lead">L2-02 把 Pi0.5 混在 collector/buffer/node 里的 observation 能力拆清：<code>types/</code> 定义跨 L2 数据语言；<code>service/</code> 做 RAM 字段组装 + 齐全 + 新鲜；<code>runtime/</code> 存 latest-only observation；<code>ui/</code> 把 ROS 消息转成 service 可消费的 RAM 值。落到六层中的四层（types/service/runtime/ui），config 和 repo 不落点。</p>
+
+      <h3>图① 一次 callback 的运行时协作调用链</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">这张图回答"<b>运行起来后，各层模块怎么协作</b>"——按步骤①→⑤看箭头方向：<b>ui 是驱动方</b>（callback 触发），service 做字段组装，runtime 只被写入；下游 L2-06 反过来读 runtime。每一步都标了对应的 3.5 层微元类型，可与图②对照。L2-01 只在编译时注入配置，不参与运行时调用（虚线）。</p>
+      <div class="figure">
+        <svg viewBox="0 0 920 410" role="img" aria-label="一次callback的运行时协作调用链">
+          <defs><marker id="arrow3" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#475467"></path></marker>
+            <marker id="arrowf" viewBox="0 0 10 10" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="var(--warn)"></path></marker></defs>
+          <!-- L2-01 注入 banner（编译时注入，非运行时调用） -->
+          <rect class="box" x="40" y="12" width="840" height="44" rx="8" fill="var(--ok-bg)" stroke="var(--ok)" stroke-dasharray="5 4"></rect>
+          <text class="title" x="460" y="32" text-anchor="middle" fill="var(--ctrl)">L2-01 提供（编译时注入，不参与运行时调用）</text>
+          <text class="sub" x="460" y="48" text-anchor="middle">DeployConfig.topics.observation / image config → 注入 ui；state spec/codec / required fields → 注入 service</text>
+          <!-- 注入虚线箭头 -->
+          <path class="edge" d="M135 56 L135 74" stroke="var(--ok)" stroke-dasharray="4 3"></path>
+          <path class="edge" d="M355 56 L355 74" stroke="var(--ok)" stroke-dasharray="4 3"></path>
+          <!-- 泳道表头 -->
+          <rect class="box" x="40" y="74" width="190" height="34" rx="6"></rect><rect class="band" x="40" y="74" width="6" height="34" fill="var(--yellow)"></rect>
+          <text class="title" x="135" y="96" text-anchor="middle">ui · Adapter</text>
+          <rect class="box" x="242" y="74" width="226" height="34" rx="6"></rect><rect class="band" x="242" y="74" width="6" height="34" fill="var(--config)"></rect>
+          <text class="title" x="355" y="96" text-anchor="middle">service · ObservationCollector</text>
+          <rect class="box" x="492" y="74" width="190" height="34" rx="6"></rect><rect class="band" x="492" y="74" width="6" height="34" fill="var(--repo)"></rect>
+          <text class="title" x="587" y="96" text-anchor="middle">runtime · Buffer</text>
+          <rect class="box" x="692" y="74" width="188" height="34" rx="6"></rect><rect class="band" x="692" y="74" width="6" height="34" fill="var(--ctrl)"></rect>
+          <text class="title" x="786" y="96" text-anchor="middle">下游 L2-03 / L2-06</text>
+          <!-- 泳道分隔虚线 -->
+          <line x1="236" y1="112" x2="236" y2="400" stroke="var(--line)" stroke-dasharray="3 4"></line>
+          <line x1="486" y1="112" x2="486" y2="400" stroke="var(--line)" stroke-dasharray="3 4"></line>
+          <line x1="686" y1="112" x2="686" y2="400" stroke="var(--line)" stroke-dasharray="3 4"></line>
+          <!-- ① callback 到达（ui 泳道） -->
+          <rect class="box" x="50" y="140" width="170" height="64" rx="8"></rect>
+          <text class="title" x="60" y="162">① callback 到达</text>
+          <text class="sub" x="60" y="180">decode_image_message</text>
+          <text class="sub" x="60" y="196" fill="var(--yellow)">（数据读写函数 + 编排）</text>
+          <!-- ② 更新缓存（service 泳道） -->
+          <rect class="box" x="252" y="140" width="206" height="64" rx="8"></rect>
+          <text class="title" x="262" y="162">② 更新字段缓存</text>
+          <text class="sub" x="262" y="180">collector.update_image/pose/gripper</text>
+          <text class="sub" x="262" y="196" fill="var(--config)">（内部状态更新函数）</text>
+          <!-- 箭头 ①→② -->
+          <path class="edge" d="M220 172 L252 172"></path>
+          <!-- ③ 拼装 snapshot（service 泳道，下一行） -->
+          <rect class="box" x="252" y="234" width="206" height="64" rx="8"></rect>
+          <text class="title" x="262" y="256">③ 拼装 snapshot</text>
+          <text class="sub" x="262" y="274">snapshot()：齐全+新鲜检查</text>
+          <text class="sub" x="262" y="290" fill="var(--config)">+ state codec 编 16D（计算函数）</text>
+          <!-- 箭头 ②→③（service 内垂直下行） -->
+          <path class="edge" d="M355 204 L355 234"></path>
+          <!-- ④ 写 latest buffer（runtime 泳道） -->
+          <rect class="box" x="502" y="234" width="170" height="64" rx="8" fill="var(--ok-bg)" stroke="var(--ok)"></rect>
+          <text class="title" x="512" y="256" fill="var(--ok)">④ 写 latest buffer</text>
+          <text class="sub" x="512" y="274">buffer.set_observation</text>
+          <text class="sub" x="512" y="290" fill="var(--repo)">（内部状态更新函数）</text>
+          <!-- 箭头 ③→④ -->
+          <path class="edge" d="M458 266 L502 266"></path>
+          <text class="elabel" x="462" y="258">snapshot</text>
+          <!-- ⑤ 下游读取（下游泳道） -->
+          <rect class="box" x="702" y="332" width="168" height="64" rx="8"></rect>
+          <text class="title" x="712" y="354">⑤ 下游读 latest</text>
+          <text class="sub" x="712" y="372">L2-06 latest_observation</text>
+          <text class="sub" x="712" y="388">（max_age_s 读最新）</text>
+          <!-- 箭头 ④→⑤（runtime→下游，斜向） -->
+          <path class="edge io" d="M620 298 L702 348"></path>
+          <!-- 失败分支（③ 失败，红色虚线） -->
+          <rect class="box" x="252" y="332" width="206" height="56" rx="8" fill="var(--warn-bg)" stroke="var(--warn)" stroke-dasharray="5 4"></rect>
+          <text class="title" x="262" y="354" fill="var(--warn)">✗ 失败分支</text>
+          <text class="sub" x="262" y="372" fill="var(--warn)">缺字段 / 过期 → snapshot()=None</text>
+          <text class="sub" x="262" y="388" fill="var(--warn)">停在此，不写 buffer，只记诊断</text>
+          <path d="M355 298 L355 332" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#arrowf)"></path>
+          <!-- 说明注脚 -->
+          <text class="sub" x="50" y="406" fill="var(--muted)">注：①→②→③ 在一次 callback 内顺序发生；④ 仅当③成功才执行；⑤ 由 L2-06 自己的 tick 触发，不在此 callback 链内。</text>
+        </svg>
+      </div>
+      <div class="callout"><b>关键协作事实（对照图②）：</b>① <b>ui 是驱动方</b>，callback 触发整条链；②③ service 内部"先更新缓存、再拼 snapshot"——<code>update_*</code> 是<b>内部状态更新函数</b>，<code>snapshot()</code> 是<b>计算函数</b>；④ runtime 的 <code>set_observation</code> 是<b>内部状态更新函数</b>（覆盖 latest），L2-02 的 runtime <b>没有编排函数</b>（编排已剥离到 <code>try_publish_observation</code> 与 L2-06 ControlLoop）；⑤ 下游反向读 runtime。L2-01 只注入配置，运行时不参与调用。</div>
+
+      <h3>图② 六层代码落点（点击一层，只看这一层的内部）</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">点一个层，下方只显示该层的内容：它有哪些文件、每个 class 封装了哪些子功能微元。有产物的层是 <b>types / service / runtime / ui</b>；config / repo 不落点，点击可看原因。</p>
+
+      <div class="lpick">
+        <input id="l-types" name="layer" type="radio" checked>
+        <input id="l-config" name="layer" type="radio">
+        <input id="l-repo" name="layer" type="radio">
+        <input id="l-service" name="layer" type="radio">
+        <input id="l-runtime" name="layer" type="radio">
+        <input id="l-ui" name="layer" type="radio">
+
+        <div class="ltabs">
+          <label for="l-types" class="has"><b>types</b>有产物</label>
+          <label for="l-config" class="none"><b>config</b>无</label>
+          <label for="l-repo" class="none"><b>repo</b>无</label>
+          <label for="l-service" class="has"><b>service</b>有产物</label>
+          <label for="l-runtime" class="has"><b>runtime</b>有产物</label>
+          <label for="l-ui" class="has"><b>ui</b>有产物</label>
+        </div>
+
+        <!-- types 层 -->
+        <div class="lpane lp-types">
+          <h4>types/ · 跨 L2 数据契约层（3 个 frozen dataclass）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">这一层只定义"数据长什么样"——观察状态、snapshot、新鲜度结果。<b>不读配置、不依赖 ROS、不维护 buffer。</b>ObservationSnapshot 放在这里，让 L2-03/L2-06 只依赖 types/，不依赖 L2-02 的实现。</p>
+
+          <div class="classbox">
+            <h5>ObservationState（frozen dataclass）</h5>
+            <p class="role">结构化观察状态：左右 TCP pose + 左右夹爪宽度。供 state codec 编码。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table"><tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr><tr><td><code>left_tcp_position</code> / <code>right_tcp_position</code></td><td>frozen dataclass 字段</td><td>tuple 或 np.array，shape <b>(3,)</b>，float（x,y,z）</td></tr><tr><td><code>left_tcp_orientation</code> / <code>right_tcp_orientation</code></td><td>frozen dataclass 字段</td><td>tuple 或 np.array，shape <b>(4,)</b>，float（四元数）</td></tr><tr><td><code>left_gripper_width</code> / <code>right_gripper_width</code></td><td>frozen dataclass 字段</td><td>float（米）</td></tr></table></span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>ObservationSnapshot（frozen dataclass）</h5>
+            <p class="role">完整的、冻结的 observation 契约对象。L2-03 推理与 L2-06 控制的输入。创建后只读。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table"><tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr><tr><td><code>images</code></td><td>dict（key 为 topic/相机名）</td><td>np.ndarray，float 或 uint8</td></tr><tr><td><code>state</code></td><td>ObservationState（frozen dataclass）</td><td>见 ObservationState</td></tr><tr><td><code>encoded_state</code></td><td>np.ndarray</td><td>float，shape <b>(16,)</b>（state codec 编码后）</td></tr><tr><td><code>captured_at_s</code></td><td>标量字段</td><td>float（<code>time.monotonic()</code> 秒）</td></tr></table></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><code>validate_encoded_state_dim</code> / <code>__post_init__</code> — <b>输入：</b>自身 encoded_state（np.ndarray）；<b>输出：</b>无返回（合法则通过）；encoded_state.shape ≠ (16,) 时 <b>抛 ValueError</b></span></span></div>
+            </div>
+          </div>
+
+          <div class="classbox">
+            <h5>ObservationFreshnessResult（frozen dataclass）</h5>
+            <p class="role">齐全性 + 新鲜度检查结果。供诊断与 buffer 记录。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table"><tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr><tr><td><code>missing_fields</code></td><td>list</td><td>str（缺失字段名）</td></tr><tr><td><code>stale_fields</code></td><td>list</td><td>str（过期字段名）</td></tr><tr><td><code>field_ages_s</code></td><td>dict（key 字段名，value 年龄秒）</td><td>float</td></tr><tr><td><code>ready</code></td><td>标量字段</td><td>bool（missing 与 stale 均空时为 True）</td></tr></table></span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">文件：<code>src/model_deploy/act/types/observation.py</code>。依赖方向：stdlib / typing / dataclasses / numpy，不得 import config/repo/service/runtime/ui。验收覆盖：16D encoded_state、下游 import 无需拉入 service/runtime、非法维度被拒。<br>参考 Pi0.5：<code>shared_buffer.py::ObservationSnapshot</code>（维度 26D → 16D，落点 runtime → types）。</p>
+        </div>
+
+        <!-- config 层 -->
+        <div class="lpane lp-config none-pane">
+          <h4>config/ · 本 L2 不落点</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>L2-02 直接消费 L2-01 的 <code>DeployConfig</code>（topics.observation / image / 新鲜度超时）和 state spec/codec 配置。重新声明会造出<b>两个配置权威</b>，破坏 L1「L2-01 是静态契约地基」的边界。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>使用的配置对象：</b><code>DeployConfig.topics.observation</code>、<code>DeployConfig.image</code>、<code>DeployConfig.safety.stale_observation_timeout_s</code>（或等价 runtime freshness 参数）、L2-01 state spec/codec。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>验收确认：</b>不产生 <code>src/model_deploy/act/config/*</code>；缺配置 / 非法 topic / 非法 image shape 由 L2-01 Gate 覆盖。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- repo 层 -->
+        <div class="lpane lp-repo none-pane">
+          <h4>repo/ · 本 L2 不落点</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px"><b>原因：</b>L2-02 <b>不读模型 bundle / normalizer / manifest / checkpoint / 任何外部文件</b>——它处理的是已经通过 ROS topic 进入进程的消息 + L2-01 已在 RAM 的配置。repo/ 归 L2-03（bundle/policy loader）。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0"><b>验收确认：</b>不产生 <code>src/model_deploy/act/repo/*</code>；无 bundle/normalizer/checkpoint 加载；<code>rg</code> 在 L2-02 目标里找不到模型文件读取逻辑。<br>← 验收方式见<a href="#" onclick="document.getElementById('v4').click()" style="color:var(--config);font-weight:600">维度4</a></p>
+        </div>
+
+        <!-- service 层 -->
+        <div class="lpane lp-service">
+          <h4>service/ · RAM 内 observation 组装层（2 个文件）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">这一层做 RAM 内业务计算：接收 ui 转来的 RAM 值、维护字段缓存、齐全性+新鲜度检查、调 state codec 编 16D、构造 ObservationSnapshot。<b>不 import ROS、不创建 timer/thread、不写硬件/topic。</b></p>
+
+          <div class="classbox svc">
+            <h5>ObservationCollector（class，observation_collector.py）</h5>
+            <p class="role">字段收集器：缓存每字段最新值 + 时间戳，判断能不能拼 snapshot。Pi0.5 参考：<code>observation_collector.py::ObservationCollector</code>（结构复用，字段改为 ACT 16D 契约）。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table"><tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr><tr><td><code>_images</code></td><td>dict</td><td>key 为 str（相机名），value 为 np.ndarray</td></tr><tr><td><code>_values</code></td><td>dict</td><td>key 为 str，value 为 tuple/np.array（pose）或 float（gripper）</td></tr><tr><td><code>_stamps</code></td><td>dict</td><td>key 为 str，value 为 float（<code>time.monotonic()</code> 秒）</td></tr><tr><td><code>_lock</code></td><td><code>threading.Lock</code></td><td>—（同步原语）</td></tr><tr><td><code>_required_fields</code></td><td>set/list</td><td>str（必需字段名，来自 L2-01 配置）</td></tr></table></span></div>
+              <div class="mu"><span class="kind state">内部状态更新函数</span><span class="desc"><span class="fn"><code>update_image(name, image)</code> — <b>修改对象：</b><code>_images[name]</code> 与 <code>_stamps[name]</code>；<b>如何修改：</b>写入新图像张量 + 记录当前 monotonic 时间</span><span class="fn"><code>update_tcp_pose(side, position, orientation)</code> — <b>修改对象：</b><code>_values[f"{side}_tcp"]</code> 与对应 <code>_stamps</code>；<b>如何修改：</b>写入 pose 值 + 时间戳；position/orientation shape 非法时 <b>抛异常</b></span><span class="fn"><code>update_gripper_state(side, width)</code> — <b>修改对象：</b><code>_values[f"{side}_gripper"]</code> 与对应 <code>_stamps</code>；<b>如何修改：</b>写入 width 值 + 时间戳；非法 width 时抛异常或记录</span></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><code>missing_fields()</code> — <b>输入：</b>无（读 <code>_values</code> 与 <code>_required_fields</code>）；<b>输出：</b>list[str]，缺失的必需字段名</span><span class="fn"><code>stale_fields(now, max_age_s)</code> — <b>输入：</b>now（float，monotonic 秒）+ max_age_s（float）；<b>输出：</b>list[str]，过期字段名（<code>now - _stamps[f] &gt; max_age_s</code>）</span><span class="fn"><code>snapshot(max_age_s)</code> — <b>输入：</b>max_age_s（float）；<b>输出：</b>ObservationSnapshot（齐全且新鲜时，调 L2-01 state codec 编 16D 构造）或 <b>None + 诊断</b>（缺字段/过期）；codec 失败抛明确异常或返回诊断</span></span></div>
+            </div>
+          </div>
+
+          <div class="classbox svc">
+            <h5>preprocess_observation_image（函数，image_preprocess.py）</h5>
+            <div class="mu-list">
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><code>preprocess_observation_image(image, image_config)</code> — <b>输入：</b>image（np.ndarray，原始图像）+ image_config（L2-01 对象，含目标 shape/dtype/resize）；<b>输出：</b>ACT 图像张量/数组（按 image_config 处理后的 shape/dtype）；不支持的 shape/dtype <b>抛异常</b></span></span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">文件：<code>service/observation_collector.py</code>、<code>service/image_preprocess.py</code>。允许依赖：types/observation.py、L2-01 state spec/codec/config 对象、stdlib、numpy。禁止依赖：runtime/observation_buffer.py、ui/observation_ros_adapter.py、ROS 包、ACT policy runtime。<br>验收覆盖：mock 全字段→snapshot；缺字段→None+missing 列表；stale→None+stale 列表；无 ROS 可 import 与单测。</p>
+        </div>
+
+        <!-- runtime 层 -->
+        <div class="lpane lp-runtime">
+          <h4>runtime/ · latest-only observation 缓存层（1 个文件）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">这一层负责时间/状态/队列/调度语义。L2-02 的 runtime 只保存 latest-only observation，并提供按 max age 读取最新 snapshot 的能力。<b>不存推理请求队列、action chunk 队列、ControlLoop cursor</b>（那些归后续 L2 / L2-06）。</p>
+
+          <div class="classbox rt">
+            <h5>ObservationBuffer（class，observation_buffer.py）</h5>
+            <p class="role">latest-only 缓存：只留最新一份 snapshot，新覆盖旧。Pi0.5 参考：<code>SharedBuffer.set_observation / latest_observation</code>（ACT 只抽出 observation 部分）。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table"><tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr><tr><td><code>_latest_observation</code></td><td>单值引用</td><td>ObservationSnapshot 或 None</td></tr><tr><td><code>_lock</code></td><td><code>threading.Lock</code></td><td>—（同步原语）</td></tr><tr><td><code>metrics</code></td><td>ObservationMetrics（dataclass）</td><td>就绪/覆盖/过期计数 + 最近诊断</td></tr></table></span></div>
+              <div class="mu"><span class="kind state">内部状态更新函数</span><span class="desc"><span class="fn"><code>set_observation(observation)</code> — <b>修改对象：</b><code>_latest_observation</code> + <code>metrics</code>；<b>如何修改：</b>用新 snapshot <b>覆盖</b> latest，replaced_observation_count 等计数 +1；非法 snapshot 拒绝</span><span class="fn"><code>record_missing_fields(fields)</code> — <b>修改对象：</b><code>metrics.last_missing_fields</code>；<b>如何修改：</b>写入最近缺失字段名列表</span></span></div>
+              <div class="mu"><span class="kind calc">计算函数</span><span class="desc"><span class="fn"><code>latest_observation(max_age_s=None)</code> — <b>输入：</b>max_age_s（float 或 None）；<b>输出：</b>ObservationSnapshot 或 None（超过 max_age_s 则判 stale，返回 None 并可能更新 stale counter）</span><span class="fn"><code>metrics_snapshot()</code> — <b>输入：</b>无；<b>输出：</b>dict（metrics 当前值副本）</span></span></div>
+            </div>
+          </div>
+
+          <div class="classbox rt">
+            <h5>ObservationMetrics（dataclass，observation_buffer.py）</h5>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table"><tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr><tr><td><code>observation_ready_count</code></td><td>标量字段</td><td>int（成功就绪次数）</td></tr><tr><td><code>replaced_observation_count</code></td><td>标量字段</td><td>int（被覆盖次数）</td></tr><tr><td><code>stale_observation_count</code></td><td>标量字段</td><td>int（过期命中次数）</td></tr><tr><td><code>last_missing_fields</code></td><td>list</td><td>str（最近缺失字段名）</td></tr><tr><td><code>last_error</code></td><td>标量字段</td><td>str 或 None</td></tr><tr><td><code>updated_at_s</code></td><td>标量字段</td><td>float（最近更新 monotonic 秒）</td></tr></table><p style="font-size:11px;color:var(--muted);margin:4px 0 0">不负责统一 /act/status 或 /act/metrics 发布</p></span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">文件：<code>runtime/observation_buffer.py</code>。允许依赖：types/observation.py、stdlib threading/time。禁止依赖：ui/ + ROS 包、service/observation_collector.py、L2-03 推理队列、L2-06 ControlLoop。<br>验收覆盖：写 A/B→读 B；max_age_s 生效；无 snapshot→None；无 ROS import。</p>
+        </div>
+
+        <!-- ui 层 -->
+        <div class="lpane lp-ui">
+          <h4>ui/ · ROS 消息边界层（1 个文件）</h4>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 6px">这一层是外部交互边界：把 ROS observation 消息转成 service 可消费的 RAM 值，并在 callback 后尝试把 ready snapshot 写入 runtime buffer。<b>不实现核心 snapshot 业务规则、不调 ACT 模型、不发硬件命令。</b></p>
+
+          <div class="classbox ui">
+            <h5>ObservationRosAdapter（class，observation_ros_adapter.py）</h5>
+            <p class="role">ROS 订阅 + 消息解码 + callback 转发。Pi0.5 参考：<code>_create_subscriptions / _image_cb / _point_cb / _hand_cb / _publish_observation_if_ready / _decode_image</code>——ACT 必须拆进 adapter，不整体搬 deploy node。</p>
+            <div class="mu-list">
+              <div class="mu"><span class="kind data">数据</span><span class="desc"><table class="data-table"><tr><th>变量名</th><th>数据结构</th><th>内部存储的数据类型</th></tr><tr><td><code>node</code></td><td>ROS node handle 引用</td><td>—（延迟导入）</td></tr><tr><td><code>collector</code></td><td>ObservationCollector 引用</td><td>service 对象</td></tr><tr><td><code>buffer</code></td><td>ObservationBuffer 引用</td><td>runtime 对象</td></tr><tr><td><code>config</code></td><td>DeployConfig 引用</td><td>L2-01 对象，含 topics/image config</td></tr><tr><td><code>last_log_time</code></td><td>标量字段</td><td>float（monotonic 秒，日志限速）</td></tr></table></span></div>
+              <div class="mu"><span class="kind io">数据读写</span><span class="desc"><span class="fn"><code>create_subscriptions(node)</code> — <b>从哪读：</b>ROS topic（来自 <code>config.topics.observation</code>，6 个：image/arm/gripper × 左右）；<b>读出什么：</b>subscription handles（绑定 callback 到 topic）；缺 topic <b>抛异常</b></span><span class="fn"><code>decode_image_message(msg)</code> — <b>从哪读：</b>ROS image message（进程外部消息）；<b>读出什么：</b>RGB RAM 图像（np.ndarray）；不支持的编码 <b>抛异常</b></span></span></div>
+              <div class="mu"><span class="kind orch">编排函数</span><span class="desc"><span class="fn"><code>handle_image(name, msg)</code> — <b>顺序：</b>decode_image_message → collector.update_image → try_publish_observation；<b>调用条件：</b>每来一条 image msg；<b>失败处理：</b>decode 失败只 log warning，不更新 collector</span><span class="fn"><code>handle_tcp_pose(side, msg)</code> — <b>顺序：</b>解析 pose → collector.update_tcp_pose → try_publish_observation；<b>调用条件：</b>每来一条 tcp_pose msg；<b>失败处理：</b>非法 shape 抛/记录</span><span class="fn"><code>handle_gripper_state(side, msg)</code> — <b>顺序：</b>解析 width → collector.update_gripper_state → try_publish_observation；<b>调用条件：</b>每来一条 gripper msg；<b>失败处理：</b>非法 width 抛/记录</span><span class="fn"><code>try_publish_observation()</code> — <b>顺序：</b>查 missing_fields → 查 stale_fields → 调 snapshot() → 写 buffer.set_observation；<b>调用条件：</b>每次 callback 后；ready 才写 buffer；<b>失败处理：</b>缺字段只记诊断，不写</span></span></div>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0"><b>ROS import 策略：</b>真实 ROS 包延迟导入或包在 adapter init 路径，保证 types/service/runtime 在无 ROS 环境 importable。无 ROS 时，真实 subscription 验收 = <code>BLOCKED_ENV</code>，但 mock 消息解码 + 静态检查仍跑。</p>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0">文件：<code>ui/observation_ros_adapter.py</code>。允许依赖：types/observation.py、config 公开对象、service/observation_collector.py、service/image_preprocess.py、runtime/observation_buffer.py、ROS 包（仅 ui 层）。禁止：L2-03 policy runtime、L2-04 SafetyGuard、L2-05 命令发布/硬件驱动、L2-06 ControlLoop 内部。</p>
+        </div>
+
+      </div>
+
+      <div class="callout warn"><b>反模式（Gate 会判失败）：</b>把 <code>ObservationSnapshot</code> 放在 service/ 或 runtime/ 导致 L2-03/L2-06 依赖下游实现；<code>snapshot()</code> 在缺字段时仍生成对象；stale 超时形同虚设；ui adapter 的 import 使无 ROS 环境 service/runtime 单测跑不起来；L2-02 里出现推理 / ActionChunk 消费 / safety / 硬件发送逻辑。</div>
+      <p class="src">权威来源：<code>agent_context/03_ACT微元设计与协作.md</code>（§2 ACT 微元 / §3 六层产物 / §4 协作）、<code>agent_context/06_types层设计.md</code>、<code>agent_context/07_config层设计.md</code>、<code>agent_context/08_repo层设计.md</code>、<code>agent_context/09_service层设计.md</code>、<code>agent_context/10_runtime层设计.md</code>、<code>agent_context/11_ui层设计.md</code></p>
+    </section>
+
+    <!-- ============ 维度 4 · 人类验收标准 ============ -->
+    <section class="view acceptance" data-agent-source="agent_context/04_L2验收机制.md#3-Gate-验收项">
+      <h2>维度 4 · 人类验收标准</h2>
+      <div class="reading-path">📖 阅读路径：功能承诺来源见<a href="#" onclick="document.getElementById('v1').click()">维度1</a> → 下面验收动作逐个执行，每个都告诉你「做什么 → 看到什么 → 意味着什么」</div>
+      <p class="lead">人类验收只做两件事：<b>①</b> 跑一个 <code>.sh</code> 脚本，它会自动执行所有子功能模块的测试并在终端分层分组打印结果；<b>②</b> 用下面的「终端输出翻译表」对照终端每一行，搞清楚含义、出了问题该查哪个模块。核心目标：无 ROS / 无硬件条件下，L2-02 能从 mock 输入生成完整/新鲜/合法的 ObservationSnapshot，并在缺字段/过期/非法编码时拒绝生成。</p>
+
+      <h3>① 怎么验收：跑一个脚本</h3>
+      <div class="cmd-block"><span class="c"># /home/hit/ROS，无 ROS / 无硬件环境</span>
+bash src/model_deploy/act/scripts/l2_02_verify.sh</div>
+      <p style="font-size:13px;color:var(--muted);margin:6px 0 0">脚本把所有子功能模块的测试自动跑完，终端按 <b>types / service / runtime / ui·边界</b> 分层分组打印（与维度3 图②六层落点视觉对齐）。每行一个标签，结果为 <span style="color:var(--ok);font-weight:600">PASS</span> / <span style="color:var(--warn);font-weight:600">FAIL</span> / <span style="color:#b54708;font-weight:600">BLOCKED</span>；末行汇总。<b>FAIL 行会附简要定位</b>（文件 / 微元 / pytest 节点 / 错误摘要），<b>BLOCKED ≠ 失败</b>（环境约束）。</p>
+
+      <div class="callout ok" style="margin-top:8px"><b>脚本设计依据：</b><code>agent_context/04_L2验收机制.md §4</code> 给出了该 <code>.sh</code> 的完整设计需求（输出格式 / 退出码 / 标签→微元映射 / BLOCKED 判定），由后续 L3 微元任务据此生成脚本本身。</div>
+
+      <div class="term">
+        <div class="t-hdr">=== L2-02 ObservationSnapshot 验收 ===</div>
+        <div class="t-grp">[ types ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">contract.encoded_state_dim</span><span class="note">16D 维度校验</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">contract.importable</span><span class="note">契约可 import</span></div>
+        <div class="t-grp">[ service ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">collector.mock_snapshot</span><span class="note">mock 全字段→snapshot</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">collector.missing_reject</span><span class="note">缺字段→None</span></div>
+        <div class="t-row"><span class="fail">FAIL</span><span class="lbl">collector.stale_reject</span><span class="note">过期→None</span></div>
+        <div class="t-loc"><span>├─ 文件: service/observation_collector.py</span><span>├─ class: ObservationCollector</span><span>├─ 微元: snapshot() / stale_fields() 计算函数</span><span>├─ pytest: tests/service/test_stale.py::test_stale_reject</span><span>└─ 摘要: AssertionError: expected None, got ObservationSnapshot(...)</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">preprocess.image</span><span class="note">图像预处理</span></div>
+        <div class="t-grp">[ runtime ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">buffer.latest_only</span><span class="note">覆盖语义</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">buffer.max_age</span><span class="note">max_age_s 生效</span></div>
+        <div class="t-grp">[ ui / 边界 ]</div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">adapter.no_ros_importable</span><span class="note">无 ROS 可 import</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.no_overreach</span><span class="note">无越界</span></div>
+        <div class="t-row"><span class="ok">PASS</span><span class="lbl">boundary.no_config_repo</span><span class="note">config/repo 无产物</span></div>
+        <div class="t-row"><span class="blk">BLOCKED</span><span class="lbl">adapter.real_subscription</span><span class="note">无 ROS 环境</span></div>
+        <div class="t-sep">────────────────────────────────</div>
+        <div class="t-sum">8 PASS / 1 FAIL / 1 BLOCKED</div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin:-2px 0 0">↑ 上图是一次<b>有 FAIL 的范例</b>输出（演示 FAIL 定位格式）。正常通过时所有标签为 PASS/BLOCKED，汇总行无 FAIL。</p>
+
+      <h3>② 终端输出翻译表（每行什么含义 / 出问题查哪里）</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 8px">终端任意一行都能在下表查到：它属于哪个层、对应维度3 图②的哪个微元、PASS 说明什么、FAIL 该查哪个文件/微元。这就是"翻译表"的作用。</p>
+
+      <table class="trtab">
+        <tr><th>标签</th><th>层</th><th>对应维度3 图②微元（文件 → class → 微元）</th><th>PASS 含义 / FAIL 查哪里</th></tr>
+        <tr class="types"><td class="lbl">contract.encoded_state_dim</td><td class="lyr">types</td><td class="mu"><span class="fpath">types/observation.py</span> → <span class="cls">ObservationSnapshot</span><br><code>validate_encoded_state_dim</code> / <code>__post_init__</code><span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>encoded_state shape (16,) 合法，非法维度抛 ValueError</span><span class="fn"><span class="fp">FAIL 查：</span>ObservationSnapshot 的 <code>validate_encoded_state_dim</code> / <code>__post_init__</code></span></td></tr>
+        <tr class="types"><td class="lbl">contract.importable</td><td class="lyr">types</td><td class="mu"><span class="fpath">types/observation.py</span>（契约对象本身）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>无 ROS 可 import，不拉入 service/runtime</span><span class="fn"><span class="fp">FAIL 查：</span><code>types/observation.py</code> 依赖方向（是否误 import 下游/ROS）</span></td></tr>
+        <tr class="service"><td class="lbl">collector.mock_snapshot</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/observation_collector.py</span> → <span class="cls">ObservationCollector</span><br><code>snapshot()</code><span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>mock 全字段→ObservationSnapshot，encoded_state (16,)，captured_at_s 单调</span><span class="fn"><span class="fp">FAIL 查：</span>ObservationCollector.<code>snapshot()</code>（齐全/新鲜/编 16D）</span></td></tr>
+        <tr class="service"><td class="lbl">collector.missing_reject</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/observation_collector.py</span> → <span class="cls">ObservationCollector</span><br><code>snapshot()</code> + <code>missing_fields()</code><span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>缺字段→missing_fields() 返回字段名 + snapshot()=None</span><span class="fn"><span class="fp">FAIL 查：</span>ObservationCollector.<code>snapshot()</code> 是否在缺字段时仍生成对象（齐全闸门失效）</span></td></tr>
+        <tr class="service"><td class="lbl">collector.stale_reject</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/observation_collector.py</span> → <span class="cls">ObservationCollector</span><br><code>snapshot()</code> + <code>stale_fields()</code><span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>过期→stale 诊断非空 + snapshot(max_age_s)=None</span><span class="fn"><span class="fp">FAIL 查：</span>ObservationCollector.<code>stale_fields()</code>（stale 超时是否形同虚设）</span></td></tr>
+        <tr class="service"><td class="lbl">preprocess.image</td><td class="lyr">service</td><td class="mu"><span class="fpath">service/image_preprocess.py</span>（模块级函数，无 class）<br><code>preprocess_observation_image()</code><span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>输出符合 image_config 的 shape/dtype</span><span class="fn"><span class="fp">FAIL 查：</span><code>preprocess_observation_image()</code>（shape/dtype 校验/resize）</span></td></tr>
+        <tr class="runtime"><td class="lbl">buffer.latest_only</td><td class="lyr">runtime</td><td class="mu"><span class="fpath">runtime/observation_buffer.py</span> → <span class="cls">ObservationBuffer</span><br><code>set_observation()</code><span class="kindtag state">内部状态更新函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>写 A/B→latest_observation() 返回 B，replaced 计数递增</span><span class="fn"><span class="fp">FAIL 查：</span>ObservationBuffer.<code>set_observation()</code>（覆盖语义/计数）</span></td></tr>
+        <tr class="runtime"><td class="lbl">buffer.max_age</td><td class="lyr">runtime</td><td class="mu"><span class="fpath">runtime/observation_buffer.py</span> → <span class="cls">ObservationBuffer</span><br><code>latest_observation()</code><span class="kindtag calc">计算函数</span></td><td class="pf"><span class="fn"><span class="pp">PASS：</span>超 max_age_s 读取返回 None，stale 计数更新</span><span class="fn"><span class="fp">FAIL 查：</span>ObservationBuffer.<code>latest_observation(max_age_s)</code>（超龄是否仍返回旧值）</span></td></tr>
+        <tr class="ui"><td class="lbl">adapter.no_ros_importable</td><td class="lyr">ui / 边界</td><td class="mu"><span class="fpath">ui/observation_ros_adapter.py</span> → <span class="cls">ObservationRosAdapter</span>（ROS import 策略）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>types/service/runtime 无 ROS 可 import 与单测</span><span class="fn"><span class="fp">FAIL 查：</span>ObservationRosAdapter 是否把 ROS import 写死（污染上游）</span></td></tr>
+        <tr class="boundary"><td class="lbl">boundary.no_overreach</td><td class="lyr">边界</td><td class="mu">—（L2 责任墙，维度1 图②；扫 service/runtime/ui 全部文件）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>无推理/ActionChunk/safety/硬件发送实现</span><span class="fn"><span class="fp">FAIL 查：</span>命中行——若实现了推理/控制/硬件则 L2-02 越界（归 L2-03~L2-06）</span></td></tr>
+        <tr class="boundary"><td class="lbl">boundary.no_config_repo</td><td class="lyr">边界</td><td class="mu">—（六层落点判定；查 <code>config/</code>、<code>repo/</code> 目录）</td><td class="pf"><span class="fn"><span class="pp">PASS：</span>config/repo 无 L2-02 新增 .py</span><span class="fn"><span class="fp">FAIL 查：</span>config/repo 出现越界产物（重复配置权威 / 越界读盘）</span></td></tr>
+        <tr class="ui"><td class="lbl">adapter.real_subscription</td><td class="lyr">ui</td><td class="mu"><span class="fpath">ui/observation_ros_adapter.py</span> → <span class="cls">ObservationRosAdapter</span><br><code>create_subscriptions()</code><span class="kindtag io">数据读写函数</span></td><td class="pf"><span class="fn"><span class="blk">BLOCKED：</span>当前无 ROS 环境 → <code>BLOCKED_ENV</code>，<b>不是失败</b>，等 ROS 环境</span><span class="fn"><span class="fp">（有 ROS 时 FAIL 查）：</span>ObservationRosAdapter.<code>create_subscriptions(node)</code> 缺 topic 是否抛异常</span></td></tr>
+      </table>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 0">退出码：全 PASS（BLOCKED 可存在）→ <code>0</code>；任一 FAIL → <code>1</code>。签字时看汇总行 + 退出码即可。</p>
+
+      <div class="vfy-sep"></div>
+      <span class="vfy-section-tag">文档审查项（非脚本，人工查）</span>
+      <p style="font-size:12.5px;color:var(--muted);margin:0 0 6px">以下 5 项是文档/结构审查，不在 <code>.sh</code> 脚本内，由人类按 <code>05_人类验收机制.md §2</code> 逐条执行：① 设计包结构校验 ② 边界审查 ③ Pi0.5 映射审查 ④ HTML 对齐检查 ⑤ ROS 真机边界（blocked 记录）。</p>
+
+
+      <div class="callout warn"><b>Blocked 项（不是失败，是环境约束）：</b>当前环境无 ROS 2 Python package → <code>BLOCKED_ENV</code>，不影响 service/runtime mock Gate，真实 subscription 验收等 ROS 环境；L2-01 state codec/DeployConfig 未落地 → <code>BLOCKED_ENV</code>（上游未完成）；真实传感器未接 → <code>BLOCKED_HARDWARE_EXPECTED</code>，本 L2 不要求真机通过。签字位置：<code>DOCS/03_工程/阶段四：模型部署/05_acceptance/l2-02-observation-snapshot/验收结果.md</code>。</div>
+      <p class="src">权威来源：<code>agent_context/04_L2验收机制.md</code>（§3 Gate / §4 命令 / §5 Blocked / §6 失败现象）、<code>agent_context/05_人类验收机制.md</code>（§2 人类验收清单 / §3 签字格式 / §4 真机风险）</p>
+    </section>
+
+  <!-- deploy_057 (owner-remediation / P0-05,06,07,08,09): typed observation pipeline contract -->
+  <section data-agent-source="agent_context/11_ui层设计.md">
+    <h2>ObservationSnapshot 契约与 Typed Pipeline（deploy_057）</h2>
+    <ul>
+      <li><strong>camera / image</strong>：adapter 只消费 <code>DeployConfig</code> 与 <code>PolicyInputSpec</code>，无 Dict fallback；camera keys 必须与 spec 精确一致，否则 fail-fast。</li>
+      <li><strong>image shape / dtype / range</strong>：进入 snapshot 的 image 为 owned <code>float32</code> <code>CHW</code>，范围 <code>[0,1]</code>，shape 精确等于 <code>spec.image_shapes</code>。</li>
+      <li><strong>snapshot 所有权</strong>：<code>ObservationSnapshot</code> 构造时对 images / state / encoded_state 深复制，已发布 snapshot 不受源缓存后续修改影响。</li>
+      <li><strong>monotonic freshness</strong>：collector / buffer / pipeline 共用注入的 monotonic clock，<code>captured_at_s</code> 与 buffer 新鲜度同域。</li>
+      <li><strong>gripper</strong>：订阅消息类型与 <code>decode_gripper_width</code> 解码器一致；真实 topology 未知，置 <code>gripper_topology_unknown</code> 单独记录，不掩盖 local FAIL。</li>
+      <li><strong>fail-fast / rollback</strong>：仅 ROS packages 缺失记 <code>env_blocked</code>；配置 / decoder 错误传播；订阅中途失败 rollback 已创建 handles。</li>
+      <li><strong>factory</strong>：<code>build_observation_pipeline(node, config, input_spec, monotonic_clock)</code> 在创建订阅前完成纯 RAM 校验，返回冻结 <code>ObservationPipeline</code>（spec / clock 保持 identity）。</li>
+    </ul>
+    <p class="src">权威来源：<code>agent_context/11_ui层设计.md</code>（ObservationRosAdapter / observation_pipeline.py）、<code>agent_context/09_service层设计.md</code>、<code>agent_context/10_runtime层设计.md</code></p>
+  </section>
+
+  </div>
+</div>
+</body>
+</html>

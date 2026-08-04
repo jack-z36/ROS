@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "document:elephant_gripper/elephant_gripper_architecture.md",
+      "type": "document",
+      "name": "elephant_gripper_architecture.md",
+      "filePath": "elephant_gripper/elephant_gripper_architecture.md",
+      "summary": "elephant_gripper 这个 ROS 2（Jazzy / ament_python）节点的设计文档，详述六层分层架构（types→config→repo→service→runtime→ui）、双 USB-485 自定义 Modbus 协议帧、每夹爪独立事务线程的并发模型，以及许可门控、急停、指数退避重连等 Fail-safe 策略。",
+      "tags": ["documentation", "architecture", "ros2", "hardware-driver", "fail-safe"],
+      "complexity": "moderate",
+      "languageNotes": "文档同时充当接口契约清单（topic/service 列表）、分层依赖说明与未验证项跟踪，未实现代码但精确标注了待真机确认项（如 topic 命名对齐 ActVlaDeployNode、width↔angle 标定）。"
+    },
+    {
+      "id": "config:elephant_gripper/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "elephant_gripper/package.xml",
+      "summary": "elephant_gripper 这个 ROS 2 ament_python 包的 manifest（package format 3），声明构建类型为 ament_python，并列出运行期依赖（rclpy、std_msgs、std_srvs、act_interfaces、python3-serial、launch_ros 等）与 lint/测试依赖。",
+      "tags": ["configuration", "ros2", "ament-python", "package-manifest", "build-system"],
+      "complexity": "simple",
+      "languageNotes": "依赖 act_interfaces 表明该包消费 ACT 模型部署栈的自定义消息（HardwareHealth、CommandPermit），与 act/ 推理栈通过 ROS msg 解耦。"
+    },
+    {
+      "id": "config:elephant_gripper/setup.cfg",
+      "type": "config",
+      "name": "setup.cfg",
+      "filePath": "elephant_gripper/setup.cfg",
+      "summary": "elephant_gripper 包的 setuptools 配置，指定 develop 与 install 阶段脚本安装到 $base/lib/elephant_gripper，是 ament_python 包将可执行节点装入 ROS 安装树的标准配置。",
+      "tags": ["configuration", "ros2", "ament-python", "setuptools", "build-system"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "config:elephant_gripper/setup.cfg",
+      "target": "config:elephant_gripper/package.xml",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:elephant_gripper/elephant_gripper_architecture.md",
+      "target": "config:elephant_gripper/package.xml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

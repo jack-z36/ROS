@@ -1,0 +1,374 @@
+{
+  "nodes": [
+    {
+      "id": "file:elephant_gripper/elephant_gripper/config/schema.py",
+      "type": "file",
+      "name": "schema.py",
+      "filePath": "elephant_gripper/elephant_gripper/config/schema.py",
+      "summary": "定义 Elephant 夹爪的配置数据模型，包括链路配置、宽度-角度标定参数与节点级运行参数，并在 dataclass 构造时逐项执行完整性校验。",
+      "tags": ["data-model", "configuration", "validation", "schema-definition"],
+      "complexity": "moderate",
+      "languageNotes": "大量使用 dataclass 的 __post_init__ 钩子做集中式契约校验，失败时统一抛出 ConfigError。"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/config/schema.py:WidthAngleCalibration",
+      "type": "class",
+      "name": "WidthAngleCalibration",
+      "filePath": "elephant_gripper/elephant_gripper/config/schema.py",
+      "lineRange": [25, 44],
+      "summary": "夹爪宽度与电机角度的标定参数数据类，在构造时校验闭合/张开角度的合理性与顺序。",
+      "tags": ["data-model", "calibration", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/config/schema.py:GripperLinkConfig",
+      "type": "class",
+      "name": "GripperLinkConfig",
+      "filePath": "elephant_gripper/elephant_gripper/config/schema.py",
+      "lineRange": [48, 88],
+      "summary": "单侧夹爪串行链路的配置数据类，聚合端口、波特率、轮询频率、重连退避及命令范围等参数，并在构造时逐项校验。",
+      "tags": ["data-model", "configuration", "validation", "serial"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/config/schema.py:NodeConfig",
+      "type": "class",
+      "name": "NodeConfig",
+      "filePath": "elephant_gripper/elephant_gripper/config/schema.py",
+      "lineRange": [92, 119],
+      "summary": "夹爪节点的顶层配置数据类，组合左右链路配置、发布频率、许可超时与急停启动等节点级运行参数。",
+      "tags": ["data-model", "configuration", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "type": "file",
+      "name": "config_loader.py",
+      "filePath": "elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "summary": "从 YAML 文件或 ROS 参数字典中解析并组装夹爪节点配置，提供类型转换、范围校验与缺省值填充的辅助函数。",
+      "tags": ["configuration", "factory", "validation", "yaml-parsing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/repo/config_loader.py:load_config",
+      "type": "function",
+      "name": "load_config",
+      "filePath": "elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "lineRange": [27, 41],
+      "summary": "从指定 YAML 文件加载原始配置并提取目标节点的参数块，随后委托 parse_node_config 完成结构化解析。",
+      "tags": ["factory", "configuration", "yaml-parsing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/repo/config_loader.py:parse_node_config",
+      "type": "function",
+      "name": "parse_node_config",
+      "filePath": "elephant_gripper/elephant_gripper/repo/config_loader.py",
+      "lineRange": [53, 105],
+      "summary": "将原始参数字典组装为 NodeConfig，逐项执行类型转换、范围校验与标定解析，失败时抛出 ConfigError。",
+      "tags": ["factory", "validation", "configuration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "type": "file",
+      "name": "serial_link.py",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "summary": "基于后台线程管理单侧夹爪串行链路，负责命令下发、遥测读取、急停（estop）与指数退避重连，是硬件通信的核心运行时组件。",
+      "tags": ["runtime", "serial", "hardware", "threading", "service"],
+      "complexity": "complex",
+      "languageNotes": "采用 threading.Lock + Event 实现可中断的收发循环，串口工厂以依赖注入方式暴露以便测试替换。"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/runtime/serial_link.py:_default_serial_factory",
+      "type": "function",
+      "name": "_default_serial_factory",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "lineRange": [35, 45],
+      "summary": "默认串口工厂，构造 pyserial Serial 实例供 GripperSerialLink 使用，便于在测试中注入 FakeSerial 替身。",
+      "tags": ["factory", "serial", "dependency-injection"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/runtime/serial_link.py:GripperSerialLink",
+      "type": "class",
+      "name": "GripperSerialLink",
+      "filePath": "elephant_gripper/elephant_gripper/runtime/serial_link.py",
+      "lineRange": [48, 324],
+      "summary": "单侧夹爪串行链路的线程化运行时，管理连接建立、命令队列、遥测轮询、急停收发与重连退避，对外暴露最新状态采样与健康信号。",
+      "tags": ["runtime", "serial", "threading", "hardware", "service"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "type": "file",
+      "name": "health_aggregator.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "summary": "汇总左右夹爪链路的健康信号，依据连接状态、连续错误计数与接收时延判定设备与节点的健康等级。",
+      "tags": ["monitoring", "health", "aggregation", "service"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/service/health_aggregator.py:LinkHealthInput",
+      "type": "class",
+      "name": "LinkHealthInput",
+      "filePath": "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "lineRange": [22, 29],
+      "summary": "单侧链路健康评估的输入数据类，承载侧别、连接状态、连续错误计数、接收时延与最近明细。",
+      "tags": ["data-model", "health", "input"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/health_aggregator.py:evaluate_device_health",
+      "type": "function",
+      "name": "evaluate_device_health",
+      "filePath": "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "lineRange": [32, 72],
+      "summary": "依据连接状态、连续错误计数与接收时延，将单侧链路信号评定为 OK/degraded/fault 健康等级并附明细。",
+      "tags": ["monitoring", "health", "evaluation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/health_aggregator.py:aggregate_node_health",
+      "type": "function",
+      "name": "aggregate_node_health",
+      "filePath": "elephant_gripper/elephant_gripper/service/health_aggregator.py",
+      "lineRange": [75, 98],
+      "summary": "综合左右链路健康与急停状态，取最差等级输出节点级 NodeHealth 并拼接明细描述。",
+      "tags": ["monitoring", "health", "aggregation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/service/mapping.py",
+      "type": "file",
+      "name": "mapping.py",
+      "filePath": "elephant_gripper/elephant_gripper/service/mapping.py",
+      "summary": "提供夹爪宽度与电机角度之间的双向线性映射，基于标定参数做限幅与取整。",
+      "tags": ["utility", "mapping", "calibration", "math"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/mapping.py:width_to_angle",
+      "type": "function",
+      "name": "width_to_angle",
+      "filePath": "elephant_gripper/elephant_gripper/service/mapping.py",
+      "lineRange": [22, 29],
+      "summary": "根据标定参数将夹爪宽度映射为电机角度，并对结果做限幅与四舍五入取整。",
+      "tags": ["utility", "mapping", "calibration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:elephant_gripper/elephant_gripper/service/mapping.py:angle_to_width",
+      "type": "function",
+      "name": "angle_to_width",
+      "filePath": "elephant_gripper/elephant_gripper/service/mapping.py",
+      "lineRange": [32, 39],
+      "summary": "根据标定参数将电机角度反映射为夹爪宽度，并做限幅处理。",
+      "tags": ["utility", "mapping", "calibration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "type": "file",
+      "name": "gripper_types.py",
+      "filePath": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "summary": "定义夹爪包的共享类型词汇表，包括侧别枚举、夹持状态、健康等级、状态采样、命令及设备/节点健康报告等数据类。",
+      "tags": ["data-model", "type-definition", "enumeration", "shared-types"],
+      "complexity": "moderate",
+      "languageNotes": "以 dataclass 与 Enum 构成纯数据契约层，零项目内依赖，是整个 elephant_gripper 包的类型基石。"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:GripperSide",
+      "type": "class",
+      "name": "GripperSide",
+      "filePath": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "lineRange": [14, 18],
+      "summary": "夹爪侧别枚举（left/right），用于区分双臂场景中的左右夹爪。",
+      "tags": ["enumeration", "type-definition", "shared-types"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:ClampStatus",
+      "type": "class",
+      "name": "ClampStatus",
+      "filePath": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "lineRange": [21, 34],
+      "summary": "夹爪夹持状态枚举，提供 from_raw 工厂方法从原始寄存器字节解析。",
+      "tags": ["enumeration", "type-definition", "factory"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:HealthLevel",
+      "type": "class",
+      "name": "HealthLevel",
+      "filePath": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "lineRange": [37, 45],
+      "summary": "健康等级枚举（OK/degraded/fault），用于设备与节点健康评估的有序比较。",
+      "tags": ["enumeration", "type-definition", "health"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:GripperStateSample",
+      "type": "class",
+      "name": "GripperStateSample",
+      "filePath": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "lineRange": [58, 95],
+      "summary": "单次夹爪状态采样数据类，承载宽度、角度、夹持状态、时间戳与有效性，并在构造时校验取值范围。",
+      "tags": ["data-model", "state", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:GripperCommand",
+      "type": "class",
+      "name": "GripperCommand",
+      "filePath": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "lineRange": [99, 110],
+      "summary": "夹爪命令数据类，承载目标侧别与目标宽度，并在构造时校验宽度范围。",
+      "tags": ["data-model", "command", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:DeviceHealth",
+      "type": "class",
+      "name": "DeviceHealth",
+      "filePath": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "lineRange": [114, 120],
+      "summary": "单侧设备健康报告数据类，聚合侧别、连接状态、健康等级与明细描述。",
+      "tags": ["data-model", "health", "report"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:NodeHealth",
+      "type": "class",
+      "name": "NodeHealth",
+      "filePath": "elephant_gripper/elephant_gripper/types/gripper_types.py",
+      "lineRange": [124, 132],
+      "summary": "节点级健康报告数据类，汇总硬件 ID、总体健康等级、左右设备健康与急停状态。",
+      "tags": ["data-model", "health", "report"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/tests/repo/test_config_loader.py",
+      "type": "file",
+      "name": "test_config_loader.py",
+      "filePath": "elephant_gripper/tests/repo/test_config_loader.py",
+      "summary": "针对配置加载器的合法加载、缺失字段、非法取值与默认值场景编写单元测试。",
+      "tags": ["test", "configuration", "validation", "unit-test"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:elephant_gripper/tests/runtime/test_serial_link.py",
+      "type": "file",
+      "name": "test_serial_link.py",
+      "filePath": "elephant_gripper/tests/runtime/test_serial_link.py",
+      "summary": "使用 FakeSerial 验证串行链路的遥测更新、命令下发、急停阻断与断连健康降级行为。",
+      "tags": ["test", "serial", "hardware", "integration-test"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:elephant_gripper/tests/service/test_health_aggregator.py",
+      "type": "file",
+      "name": "test_health_aggregator.py",
+      "filePath": "elephant_gripper/tests/service/test_health_aggregator.py",
+      "summary": "验证设备与节点健康聚合逻辑，覆盖断连、错误阈值、接收陈旧与急停细节上报等场景。",
+      "tags": ["test", "monitoring", "health", "unit-test"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:elephant_gripper/tests/service/test_mapping.py",
+      "type": "file",
+      "name": "test_mapping.py",
+      "filePath": "elephant_gripper/tests/service/test_mapping.py",
+      "summary": "检验宽度-角度映射的端点值、限幅行为、受限标定区间与往返稳定性。",
+      "tags": ["test", "mapping", "calibration", "unit-test"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "class:elephant_gripper/elephant_gripper/config/schema.py:WidthAngleCalibration", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "class:elephant_gripper/elephant_gripper/config/schema.py:GripperLinkConfig", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "class:elephant_gripper/elephant_gripper/config/schema.py:NodeConfig", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "class:elephant_gripper/elephant_gripper/config/schema.py:WidthAngleCalibration", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "class:elephant_gripper/elephant_gripper/config/schema.py:GripperLinkConfig", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "class:elephant_gripper/elephant_gripper/config/schema.py:NodeConfig", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py", "target": "function:elephant_gripper/elephant_gripper/repo/config_loader.py:load_config", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py", "target": "function:elephant_gripper/elephant_gripper/repo/config_loader.py:parse_node_config", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py", "target": "function:elephant_gripper/elephant_gripper/repo/config_loader.py:load_config", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py", "target": "function:elephant_gripper/elephant_gripper/repo/config_loader.py:parse_node_config", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "function:elephant_gripper/elephant_gripper/runtime/serial_link.py:_default_serial_factory", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "class:elephant_gripper/elephant_gripper/runtime/serial_link.py:GripperSerialLink", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "function:elephant_gripper/elephant_gripper/runtime/serial_link.py:_default_serial_factory", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "class:elephant_gripper/elephant_gripper/runtime/serial_link.py:GripperSerialLink", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "target": "class:elephant_gripper/elephant_gripper/service/health_aggregator.py:LinkHealthInput", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "target": "function:elephant_gripper/elephant_gripper/service/health_aggregator.py:evaluate_device_health", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "target": "function:elephant_gripper/elephant_gripper/service/health_aggregator.py:aggregate_node_health", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "target": "class:elephant_gripper/elephant_gripper/service/health_aggregator.py:LinkHealthInput", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "target": "function:elephant_gripper/elephant_gripper/service/health_aggregator.py:evaluate_device_health", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "target": "function:elephant_gripper/elephant_gripper/service/health_aggregator.py:aggregate_node_health", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:elephant_gripper/elephant_gripper/service/mapping.py", "target": "function:elephant_gripper/elephant_gripper/service/mapping.py:width_to_angle", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/mapping.py", "target": "function:elephant_gripper/elephant_gripper/service/mapping.py:angle_to_width", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/service/mapping.py", "target": "function:elephant_gripper/elephant_gripper/service/mapping.py:width_to_angle", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/service/mapping.py", "target": "function:elephant_gripper/elephant_gripper/service/mapping.py:angle_to_width", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:GripperSide", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:ClampStatus", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:HealthLevel", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:GripperStateSample", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:GripperCommand", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:DeviceHealth", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:NodeHealth", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:GripperSide", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:ClampStatus", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:HealthLevel", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:GripperStateSample", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:GripperCommand", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:DeviceHealth", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "class:elephant_gripper/elephant_gripper/types/gripper_types.py:NodeHealth", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py", "target": "file:elephant_gripper/elephant_gripper/config/schema.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py", "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "file:elephant_gripper/elephant_gripper/config/schema.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "file:elephant_gripper/elephant_gripper/service/__init__.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "file:elephant_gripper/elephant_gripper/service/mapping.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:elephant_gripper/elephant_gripper/service/mapping.py", "target": "file:elephant_gripper/elephant_gripper/config/schema.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/elephant_gripper/service/mapping.py", "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:elephant_gripper/tests/repo/test_config_loader.py", "target": "file:elephant_gripper/elephant_gripper/config/schema.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/tests/repo/test_config_loader.py", "target": "file:elephant_gripper/elephant_gripper/repo/config_loader.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/tests/repo/test_config_loader.py", "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:elephant_gripper/tests/runtime/test_serial_link.py", "target": "file:elephant_gripper/elephant_gripper/config/schema.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/tests/runtime/test_serial_link.py", "target": "file:elephant_gripper/elephant_gripper/runtime/fake_serial.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/tests/runtime/test_serial_link.py", "target": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/tests/runtime/test_serial_link.py", "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:elephant_gripper/tests/service/test_health_aggregator.py", "target": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/tests/service/test_health_aggregator.py", "target": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:elephant_gripper/tests/service/test_mapping.py", "target": "file:elephant_gripper/elephant_gripper/config/schema.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:elephant_gripper/tests/service/test_mapping.py", "target": "file:elephant_gripper/elephant_gripper/service/mapping.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "file:elephant_gripper/tests/repo/test_config_loader.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "file:elephant_gripper/tests/runtime/test_serial_link.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:elephant_gripper/elephant_gripper/config/schema.py", "target": "file:elephant_gripper/tests/service/test_mapping.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:elephant_gripper/elephant_gripper/repo/config_loader.py", "target": "file:elephant_gripper/tests/repo/test_config_loader.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:elephant_gripper/elephant_gripper/runtime/serial_link.py", "target": "file:elephant_gripper/tests/runtime/test_serial_link.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:elephant_gripper/elephant_gripper/service/health_aggregator.py", "target": "file:elephant_gripper/tests/service/test_health_aggregator.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:elephant_gripper/elephant_gripper/service/mapping.py", "target": "file:elephant_gripper/tests/service/test_mapping.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "file:elephant_gripper/tests/repo/test_config_loader.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "file:elephant_gripper/tests/runtime/test_serial_link.py", "type": "tested_by", "direction": "forward", "weight": 0.5},
+    {"source": "file:elephant_gripper/elephant_gripper/types/gripper_types.py", "target": "file:elephant_gripper/tests/service/test_health_aggregator.py", "type": "tested_by", "direction": "forward", "weight": 0.5}
+  ]
+}

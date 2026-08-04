@@ -1,0 +1,1434 @@
+{
+  "nodes": [
+    {
+      "id": "file:act/service/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/service/__init__.py",
+      "summary": "act.service 包的公共门面，重新导出 ACT 推理服务、观测批处理、安全守卫与动作后处理/适配器等服务层稳定 API。",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "facade",
+        "service"
+      ],
+      "complexity": "simple",
+      "languageNotes": "集中 re-export，避免外部直接导入子模块细节；保持服务层公共表面稳定。"
+    },
+    {
+      "id": "file:act/service/act_inference.py",
+      "type": "file",
+      "name": "act_inference.py",
+      "filePath": "act/service/act_inference.py",
+      "summary": "ActInferenceService 封装 ACT 策略模型：加载 checkpoint、解析设备、校验输入契约，并暴露 predict_action_chunk 执行一次推理；同时提供模块级 run_act_inference 便捷函数。",
+      "tags": [
+        "service",
+        "inference",
+        "pytorch",
+        "entry-point"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "推理服务对输入 spec 与 normalizer 做契约校验，确保与训练时维度一致后再前向。"
+    },
+    {
+      "id": "file:act/service/action_chunk_postprocess.py",
+      "type": "file",
+      "name": "action_chunk_postprocess.py",
+      "filePath": "act/service/action_chunk_postprocess.py",
+      "summary": "动作 chunk 后处理流水线：校验原始输出结构、去 batch 维、反归一化、转 CPU float32 数组，并做最终契约校验，统一由 postprocess_action_chunk 串联。",
+      "tags": [
+        "service",
+        "postprocessing",
+        "serialization",
+        "validation"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "每个步骤既是独立函数也是流水线节点，便于单测定位；最终契约校验保护下游消费方。"
+    },
+    {
+      "id": "file:act/service/action_output_adapter.py",
+      "type": "file",
+      "name": "action_output_adapter.py",
+      "filePath": "act/service/action_output_adapter.py",
+      "summary": "动作输出适配器：将安全过滤后的动作向量映射为 ROS 话题可发布的双臂位姿目标与夹爪指令（build_topic_payloads），并校验动作可发布性。",
+      "tags": [
+        "service",
+        "adapter",
+        "serialization",
+        "ros-topics"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "以 ActionPublishContractError 守护发布契约；map_gripper_command 完成归一化到机械限位的映射。"
+    },
+    {
+      "id": "file:act/service/image_preprocess.py",
+      "type": "file",
+      "name": "image_preprocess.py",
+      "filePath": "act/service/image_preprocess.py",
+      "summary": "图像预处理工具：按 ImageConfig（target_shape/dtype/resize 尺寸）将原始观测图像 resize、归一化并转为模型期望的 NCHW tensor。",
+      "tags": [
+        "service",
+        "preprocessing",
+        "image",
+        "pytorch"
+      ],
+      "complexity": "simple",
+      "languageNotes": "resize_width/height 与 resize_mode 配合支持 resize_pad 等策略，输出对齐模型输入通道布局。"
+    },
+    {
+      "id": "file:act/service/observation_batch.py",
+      "type": "file",
+      "name": "observation_batch.py",
+      "filePath": "act/service/observation_batch.py",
+      "summary": "观测批处理流水线：将观测快照编码、tensorize、归一化、绑定图像、加 batch 维并组装为 ACT 前向输入（prepare_observation_batch），含模型输入兼容性校验。",
+      "tags": [
+        "service",
+        "preprocessing",
+        "batch",
+        "pytorch",
+        "validation"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "函数式流水线便于单步替换/测试；check_model_input_compatibility 在装配前对齐维度与字段。"
+    },
+    {
+      "id": "file:act/service/observation_collector.py",
+      "type": "file",
+      "name": "observation_collector.py",
+      "filePath": "act/service/observation_collector.py",
+      "summary": "ObservationCollector 聚合来自多个回调的图像、TCP 位姿与夹爪状态，统一时间戳并对外提供 snapshot 与新鲜度/缺失字段检查，是观测侧的统一入口。",
+      "tags": [
+        "service",
+        "observation",
+        "aggregator",
+        "ros-topics"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "字段缺失与陈旧检测基于单调时钟时间戳，配合默认状态编解码器处理外部状态表示。"
+    },
+    {
+      "id": "file:act/service/safety_guard.py",
+      "type": "file",
+      "name": "safety_guard.py",
+      "filePath": "act/service/safety_guard.py",
+      "summary": "安全守卫模块：SafetyGuard.filter_action 对候选双臂动作做平移/旋转步长限制、夹爪范围与步长裁剪及四元数规范化，确保发布动作始终落在可执行的安全包络内。",
+      "tags": [
+        "service",
+        "safety",
+        "validation",
+        "control"
+      ],
+      "complexity": "complex",
+      "languageNotes": "结合球面线性插值（slerp）、四元数规范化与逐关节步长限制；SafetyContractError 在结构异常时显式抛出。"
+    },
+    {
+      "id": "file:act/tests/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "act/tests/__init__.py",
+      "summary": "act.tests 包标识符，空文件，用于将测试目录标记为可导入包。",
+      "tags": [
+        "package-marker",
+        "test",
+        "boilerplate"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:act/tests/config/test_command_output_config.py",
+      "type": "file",
+      "name": "test_command_output_config.py",
+      "filePath": "act/tests/config/test_command_output_config.py",
+      "summary": "CommandOutputConfig 的单元测试：覆盖默认关闭、调用方显式开启、YAML 持久化开启被拒绝，以及 pose_frame/gripper 域/qos 等校验失败路径。",
+      "tags": [
+        "test",
+        "validation",
+        "config",
+        "unit-test"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "使用 pytest 类分组与 FrozenInstanceError 验证 dataclass 不可变性。"
+    },
+    {
+      "id": "file:act/tests/config/test_contract.py",
+      "type": "file",
+      "name": "test_contract.py",
+      "filePath": "act/tests/config/test_contract.py",
+      "summary": "契约校验的端到端测试：构造临时 bundle 与 deploy.yaml，验证 bundle 完整性、normalizer 维度匹配以及 load_deploy_config 在 dim 不匹配或 bundle 不完整时的失败行为。",
+      "tags": [
+        "test",
+        "validation",
+        "contract",
+        "integration-test"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "通过 _make_bundle 与 _deploy_yaml 工厂函数在 tmp_path 下构建测试夹具。"
+    },
+    {
+      "id": "file:act/tests/config/test_contract_check.py",
+      "type": "file",
+      "name": "test_contract_check.py",
+      "filePath": "act/tests/config/test_contract_check.py",
+      "summary": "check_bundle_contract / check_normalizer_contract / load_deploy_config 的单元测试，逐一覆盖完整 bundle 通过、checkpoint/adapter 缺失、state/action 维度不匹配以及根类型错误等分支。",
+      "tags": [
+        "test",
+        "validation",
+        "contract",
+        "unit-test"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "与 test_contract.py 互补，更细粒度地直接测试 check_* 函数本身。"
+    },
+    {
+      "id": "class:act/service/act_inference.py:ActInferenceService",
+      "type": "class",
+      "name": "ActInferenceService",
+      "filePath": "act/service/act_inference.py",
+      "lineRange": [
+        61,
+        231
+      ],
+      "summary": "ACT 推理服务：加载策略 checkpoint、解析设备、校验输入契约并暴露 predict_action_chunk 执行前向；构造时完成模型与 normalizer 的就绪检查。",
+      "tags": [
+        "service",
+        "inference",
+        "pytorch",
+        "entry-point"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:act/service/act_inference.py:run_act_inference",
+      "type": "function",
+      "name": "run_act_inference",
+      "filePath": "act/service/act_inference.py",
+      "lineRange": [
+        31,
+        53
+      ],
+      "summary": "模块级便捷函数：对给定策略与 batch 执行一次前向并返回原始输出张量。",
+      "tags": [
+        "service",
+        "inference",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/action_chunk_postprocess.py:check_raw_output_structure",
+      "type": "function",
+      "name": "check_raw_output_structure",
+      "filePath": "act/service/action_chunk_postprocess.py",
+      "lineRange": [
+        26,
+        71
+      ],
+      "summary": "校验模型原始输出的形状与类型是否符合预期 chunk_size，异常时显式报错以保护下游。",
+      "tags": [
+        "validation",
+        "postprocessing",
+        "contract"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/action_chunk_postprocess.py:remove_batch_dim",
+      "type": "function",
+      "name": "remove_batch_dim",
+      "filePath": "act/service/action_chunk_postprocess.py",
+      "lineRange": [
+        79,
+        91
+      ],
+      "summary": "移除 [1,N,action_dim] 张量的 batch 维，得到 [N,action_dim] 单条 chunk。",
+      "tags": [
+        "utility",
+        "postprocessing",
+        "tensor"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/action_chunk_postprocess.py:unnormalize_actions",
+      "type": "function",
+      "name": "unnormalize_actions",
+      "filePath": "act/service/action_chunk_postprocess.py",
+      "lineRange": [
+        99,
+        116
+      ],
+      "summary": "依据 action_normalizer 将归一化动作反归一化回原始物理量纲。",
+      "tags": [
+        "postprocessing",
+        "normalization",
+        "tensor"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/action_chunk_postprocess.py:to_cpu_float32_array",
+      "type": "function",
+      "name": "to_cpu_float32_array",
+      "filePath": "act/service/action_chunk_postprocess.py",
+      "lineRange": [
+        124,
+        145
+      ],
+      "summary": "将张量或数组统一转为 CPU 上的 float32 numpy 数组，便于下游消费。",
+      "tags": [
+        "utility",
+        "serialization",
+        "postprocessing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/action_chunk_postprocess.py:check_final_output_contract",
+      "type": "function",
+      "name": "check_final_output_contract",
+      "filePath": "act/service/action_chunk_postprocess.py",
+      "lineRange": [
+        153,
+        190
+      ],
+      "summary": "对最终动作数组做形状/范围契约校验，确保交付给控制环的 chunk 结构合法。",
+      "tags": [
+        "validation",
+        "postprocessing",
+        "contract"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/action_chunk_postprocess.py:postprocess_action_chunk",
+      "type": "function",
+      "name": "postprocess_action_chunk",
+      "filePath": "act/service/action_chunk_postprocess.py",
+      "lineRange": [
+        198,
+        244
+      ],
+      "summary": "动作 chunk 后处理流水线总入口：串联结构校验、去 batch、反归一化、转 CPU 数组与最终契约校验。",
+      "tags": [
+        "postprocessing",
+        "entry-point",
+        "serialization"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/service/action_output_adapter.py:ActionPublishContractError",
+      "type": "class",
+      "name": "ActionPublishContractError",
+      "filePath": "act/service/action_output_adapter.py",
+      "lineRange": [
+        33,
+        39
+      ],
+      "summary": "动作发布契约异常，当动作结果不满足可发布结构要求时抛出。",
+      "tags": [
+        "exception",
+        "validation",
+        "exception"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/action_output_adapter.py:require_publishable_action",
+      "type": "function",
+      "name": "require_publishable_action",
+      "filePath": "act/service/action_output_adapter.py",
+      "lineRange": [
+        47,
+        87
+      ],
+      "summary": "校验推理结果携带的动作向量满足 16 维有限值等可发布契约，否则抛 ActionPublishContractError。",
+      "tags": [
+        "validation",
+        "adapter",
+        "contract"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/action_output_adapter.py:build_arm_pose_target",
+      "type": "function",
+      "name": "build_arm_pose_target",
+      "filePath": "act/service/action_output_adapter.py",
+      "lineRange": [
+        95,
+        122
+      ],
+      "summary": "由 7 维 TCP（xyz+四元数）构造指定 pose_frame_id 下的单臂位姿目标消息。",
+      "tags": [
+        "adapter",
+        "serialization",
+        "ros-topics"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/action_output_adapter.py:map_gripper_command",
+      "type": "function",
+      "name": "map_gripper_command",
+      "filePath": "act/service/action_output_adapter.py",
+      "lineRange": [
+        130,
+        170
+      ],
+      "summary": "依据 CommandOutputConfig 将归一化夹爪值映射到机械输出范围，应用死区与最小发布间隔。",
+      "tags": [
+        "adapter",
+        "serialization",
+        "gripper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/action_output_adapter.py:build_topic_payloads",
+      "type": "function",
+      "name": "build_topic_payloads",
+      "filePath": "act/service/action_output_adapter.py",
+      "lineRange": [
+        178,
+        203
+      ],
+      "summary": "由安全过滤结果与配置组装各 ROS 话题的双臂位姿目标与夹爪指令负载。",
+      "tags": [
+        "adapter",
+        "serialization",
+        "ros-topics"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/service/image_preprocess.py:ImageConfig",
+      "type": "class",
+      "name": "ImageConfig",
+      "filePath": "act/service/image_preprocess.py",
+      "lineRange": [
+        27,
+        46
+      ],
+      "summary": "图像预处理参数 dataclass：target_shape、dtype、resize_width/height，__post_init__ 派生形状。",
+      "tags": [
+        "data-model",
+        "config",
+        "image"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/image_preprocess.py:preprocess_observation_image",
+      "type": "function",
+      "name": "preprocess_observation_image",
+      "filePath": "act/service/image_preprocess.py",
+      "lineRange": [
+        54,
+        120
+      ],
+      "summary": "按 ImageConfig 对单张观测图像 resize、归一化并转为 NCHW tensor，对齐模型输入布局。",
+      "tags": [
+        "preprocessing",
+        "image",
+        "pytorch"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/observation_batch.py:check_model_input_compatibility",
+      "type": "function",
+      "name": "check_model_input_compatibility",
+      "filePath": "act/service/observation_batch.py",
+      "lineRange": [
+        54,
+        117
+      ],
+      "summary": "在装配前校验观测快照与模型 input_spec 的字段、维度与图像键兼容性。",
+      "tags": [
+        "validation",
+        "batch",
+        "contract"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/observation_batch.py:tensorize_state",
+      "type": "function",
+      "name": "tensorize_state",
+      "filePath": "act/service/observation_batch.py",
+      "lineRange": [
+        124,
+        136
+      ],
+      "summary": "将编码后的状态向量转为 float32 张量。",
+      "tags": [
+        "utility",
+        "batch",
+        "tensor"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/observation_batch.py:normalize_state",
+      "type": "function",
+      "name": "normalize_state",
+      "filePath": "act/service/observation_batch.py",
+      "lineRange": [
+        143,
+        174
+      ],
+      "summary": "依据 state_normalizer 对状态张量做归一化，对齐训练时分布。",
+      "tags": [
+        "batch",
+        "normalization",
+        "tensor"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/observation_batch.py:bind_images",
+      "type": "function",
+      "name": "bind_images",
+      "filePath": "act/service/observation_batch.py",
+      "lineRange": [
+        181,
+        213
+      ],
+      "summary": "按 input_spec 顺序绑定快照中的图像，处理缺失与顺序一致性。",
+      "tags": [
+        "batch",
+        "image",
+        "tensor"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/observation_batch.py:assemble_act_batch",
+      "type": "function",
+      "name": "assemble_act_batch",
+      "filePath": "act/service/observation_batch.py",
+      "lineRange": [
+        238,
+        262
+      ],
+      "summary": "将状态张量与图像张量组装为 ACT 前向输入字典结构。",
+      "tags": [
+        "factory",
+        "batch",
+        "tensor"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/observation_batch.py:align_to_device",
+      "type": "function",
+      "name": "align_to_device",
+      "filePath": "act/service/observation_batch.py",
+      "lineRange": [
+        269,
+        286
+      ],
+      "summary": "将组装好的 batch 内全部张量迁移到目标设备与 dtype。",
+      "tags": [
+        "utility",
+        "batch",
+        "pytorch"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/observation_batch.py:prepare_observation_batch",
+      "type": "function",
+      "name": "prepare_observation_batch",
+      "filePath": "act/service/observation_batch.py",
+      "lineRange": [
+        293,
+        350
+      ],
+      "summary": "观测批处理流水线总入口：串联兼容性校验、tensorize、归一化、图像绑定、加 batch 维与设备对齐。",
+      "tags": [
+        "batch",
+        "entry-point",
+        "preprocessing"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/service/observation_collector.py:ObservationCollector",
+      "type": "class",
+      "name": "ObservationCollector",
+      "filePath": "act/service/observation_collector.py",
+      "lineRange": [
+        65,
+        239
+      ],
+      "summary": "观测聚合器：经 update_image/update_tcp_pose/update_gripper_state 回调累积双臂状态，对外提供 snapshot 与新鲜度/缺失字段检查。",
+      "tags": [
+        "service",
+        "observation",
+        "aggregator"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:act/service/observation_collector.py:_default_state_codec",
+      "type": "function",
+      "name": "_default_state_codec",
+      "filePath": "act/service/observation_collector.py",
+      "lineRange": [
+        37,
+        62
+      ],
+      "summary": "默认状态编解码器：将外部状态表示编码为统一的内部状态向量。",
+      "tags": [
+        "utility",
+        "observation",
+        "codec"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/service/safety_guard.py:SafetyContractError",
+      "type": "class",
+      "name": "SafetyContractError",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        31,
+        40
+      ],
+      "summary": "安全契约异常，在动作向量结构或维度不符合 16 维双臂约定时抛出。",
+      "tags": [
+        "exception",
+        "safety",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/service/safety_guard.py:_ComparisonReference",
+      "type": "class",
+      "name": "_ComparisonReference",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        51,
+        62
+      ],
+      "summary": "内部比较参考载体：记录上一次安全动作的左右臂 TCP 与夹爪值，用于步长限制参考。",
+      "tags": [
+        "data-model",
+        "safety",
+        "reference"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/service/safety_guard.py:SafetyGuard",
+      "type": "class",
+      "name": "SafetyGuard",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        593,
+        811
+      ],
+      "summary": "安全守卫：filter_action 对候选双臂动作做平移/旋转步长限制、夹爪范围与步长裁剪、四元数规范化与投影，确保发布动作落在安全包络内。",
+      "tags": [
+        "service",
+        "safety",
+        "control",
+        "entry-point"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:_slerp_xyzw",
+      "type": "function",
+      "name": "_slerp_xyzw",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        95,
+        123
+      ],
+      "summary": "xyzw 顺序四元数的球面线性插值（SLERP），用于旋转步长限制时的比例投影。",
+      "tags": [
+        "utility",
+        "safety",
+        "math"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:require_action_vector_16",
+      "type": "function",
+      "name": "require_action_vector_16",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        131,
+        152
+      ],
+      "summary": "校验对象是否为长度 16 的有限动作向量，否则抛 SafetyContractError。",
+      "tags": [
+        "validation",
+        "safety",
+        "contract"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:require_finite_action",
+      "type": "function",
+      "name": "require_finite_action",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        160,
+        179
+      ],
+      "summary": "校验动作向量所有元素均为有限值。",
+      "tags": [
+        "validation",
+        "safety",
+        "contract"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:canonicalize_quaternion",
+      "type": "function",
+      "name": "canonicalize_quaternion",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        187,
+        232
+      ],
+      "summary": "将四元数规范化为单位长度、统一符号与分量顺序（xyzw），处理近零范数容差。",
+      "tags": [
+        "utility",
+        "safety",
+        "math"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:select_comparison_reference",
+      "type": "function",
+      "name": "select_comparison_reference",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        240,
+        311
+      ],
+      "summary": "根据上一次安全动作与最新观测选择当前 tick 的步长限制参考，封装为 _ComparisonReference。",
+      "tags": [
+        "factory",
+        "safety",
+        "reference"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:limit_translation_step",
+      "type": "function",
+      "name": "limit_translation_step",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        319,
+        355
+      ],
+      "summary": "将目标平移相对参考的位移限制在最大步长内，超出则按方向裁剪。",
+      "tags": [
+        "safety",
+        "control",
+        "step-limit"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:limit_rotation_step",
+      "type": "function",
+      "name": "limit_rotation_step",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        363,
+        404
+      ],
+      "summary": "将目标旋转相对参考的角差限制在最大弧度步长内，使用 SLERP 做比例插值。",
+      "tags": [
+        "safety",
+        "control",
+        "math"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:clamp_gripper_range",
+      "type": "function",
+      "name": "clamp_gripper_range",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        412,
+        438
+      ],
+      "summary": "将夹爪值裁剪到合法 [min,max] 范围内。",
+      "tags": [
+        "utility",
+        "safety",
+        "clamp"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:limit_gripper_step",
+      "type": "function",
+      "name": "limit_gripper_step",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        446,
+        476
+      ],
+      "summary": "将夹爪目标相对参考的变化限制在最大步长内。",
+      "tags": [
+        "safety",
+        "control",
+        "step-limit"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:build_safe_action",
+      "type": "function",
+      "name": "build_safe_action",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        484,
+        507
+      ],
+      "summary": "由左右臂 TCP 动作与夹爪值组装统一的 16 维安全动作向量。",
+      "tags": [
+        "factory",
+        "safety",
+        "bimanual"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:act/service/safety_guard.py:validate_safe_action_invariants",
+      "type": "function",
+      "name": "validate_safe_action_invariants",
+      "filePath": "act/service/safety_guard.py",
+      "lineRange": [
+        515,
+        585
+      ],
+      "summary": "校验安全动作的四元数范数与夹爪范围等不变量，违反时显式报错。",
+      "tags": [
+        "validation",
+        "safety",
+        "invariants"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/config/test_command_output_config.py:TestCommandOutputConfigDefaults",
+      "type": "class",
+      "name": "TestCommandOutputConfigDefaults",
+      "filePath": "act/tests/config/test_command_output_config.py",
+      "lineRange": [
+        24,
+        46
+      ],
+      "summary": "CommandOutputConfig 默认行为测试：默认关闭、显式开启与 frozen 不可变性。",
+      "tags": [
+        "test",
+        "config",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_command_output_config.py:TestDeployConfigCommandOutput",
+      "type": "class",
+      "name": "TestDeployConfigCommandOutput",
+      "filePath": "act/tests/config/test_command_output_config.py",
+      "lineRange": [
+        84,
+        122
+      ],
+      "summary": "DeployConfig 装配时 command_output 的端到端测试：调用方开启、YAML 持久化开启被拒绝等。",
+      "tags": [
+        "test",
+        "config",
+        "integration-test"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/config/test_command_output_config.py:TestCommandOutputValidation",
+      "type": "class",
+      "name": "TestCommandOutputValidation",
+      "filePath": "act/tests/config/test_command_output_config.py",
+      "lineRange": [
+        130,
+        175
+      ],
+      "summary": "CommandOutputConfig 字段校验测试：pose_frame、gripper 域、死区、qos 等非法值被拒绝。",
+      "tags": [
+        "test",
+        "validation",
+        "config"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:act/tests/config/test_contract.py:TestBundleContract",
+      "type": "class",
+      "name": "TestBundleContract",
+      "filePath": "act/tests/config/test_contract.py",
+      "lineRange": [
+        65,
+        88
+      ],
+      "summary": "bundle 契约端到端测试：完整 bundle 通过、缺失 adapter/normalizers 失败。",
+      "tags": [
+        "test",
+        "contract",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_contract.py:TestNormalizerContract",
+      "type": "class",
+      "name": "TestNormalizerContract",
+      "filePath": "act/tests/config/test_contract.py",
+      "lineRange": [
+        91,
+        111
+      ],
+      "summary": "normalizer 维度契约测试：dim 16 通过、dim 14 失败且原因可读。",
+      "tags": [
+        "test",
+        "contract",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_contract.py:TestLoadDeployConfigContract",
+      "type": "class",
+      "name": "TestLoadDeployConfigContract",
+      "filePath": "act/tests/config/test_contract.py",
+      "lineRange": [
+        114,
+        135
+      ],
+      "summary": "load_deploy_config 端到端契约测试：正常通过、dim 不匹配与 bundle 不完整抛错。",
+      "tags": [
+        "test",
+        "contract",
+        "integration-test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_contract_check.py:TestCheckBundleContract",
+      "type": "class",
+      "name": "TestCheckBundleContract",
+      "filePath": "act/tests/config/test_contract_check.py",
+      "lineRange": [
+        90,
+        120
+      ],
+      "summary": "check_bundle_contract 单元测试：完整通过、checkpoint/adapter 缺失失败。",
+      "tags": [
+        "test",
+        "contract",
+        "unit-test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_contract_check.py:TestCheckNormalizerContract",
+      "type": "class",
+      "name": "TestCheckNormalizerContract",
+      "filePath": "act/tests/config/test_contract_check.py",
+      "lineRange": [
+        128,
+        156
+      ],
+      "summary": "check_normalizer_contract 单元测试：dim 16 通过、state/action 维度不匹配失败。",
+      "tags": [
+        "test",
+        "contract",
+        "unit-test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:act/tests/config/test_contract_check.py:TestLoadDeployConfigEndToEnd",
+      "type": "class",
+      "name": "TestLoadDeployConfigEndToEnd",
+      "filePath": "act/tests/config/test_contract_check.py",
+      "lineRange": [
+        164,
+        199
+      ],
+      "summary": "load_deploy_config 端到端单元测试：合法 bundle 通过、bundle 不完整/dim 不匹配/根类型错误抛错。",
+      "tags": [
+        "test",
+        "contract",
+        "integration-test"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "class:act/service/act_inference.py:ActInferenceService",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "function:act/service/act_inference.py:run_act_inference",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_chunk_postprocess.py",
+      "target": "function:act/service/action_chunk_postprocess.py:check_raw_output_structure",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_chunk_postprocess.py",
+      "target": "function:act/service/action_chunk_postprocess.py:remove_batch_dim",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_chunk_postprocess.py",
+      "target": "function:act/service/action_chunk_postprocess.py:unnormalize_actions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_chunk_postprocess.py",
+      "target": "function:act/service/action_chunk_postprocess.py:to_cpu_float32_array",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_chunk_postprocess.py",
+      "target": "function:act/service/action_chunk_postprocess.py:check_final_output_contract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_chunk_postprocess.py",
+      "target": "function:act/service/action_chunk_postprocess.py:postprocess_action_chunk",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "class:act/service/action_output_adapter.py:ActionPublishContractError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "function:act/service/action_output_adapter.py:require_publishable_action",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "function:act/service/action_output_adapter.py:build_arm_pose_target",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "function:act/service/action_output_adapter.py:map_gripper_command",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "function:act/service/action_output_adapter.py:build_topic_payloads",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/image_preprocess.py",
+      "target": "class:act/service/image_preprocess.py:ImageConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/image_preprocess.py",
+      "target": "function:act/service/image_preprocess.py:preprocess_observation_image",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/observation_batch.py",
+      "target": "function:act/service/observation_batch.py:check_model_input_compatibility",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/observation_batch.py",
+      "target": "function:act/service/observation_batch.py:tensorize_state",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/observation_batch.py",
+      "target": "function:act/service/observation_batch.py:normalize_state",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/observation_batch.py",
+      "target": "function:act/service/observation_batch.py:bind_images",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/observation_batch.py",
+      "target": "function:act/service/observation_batch.py:assemble_act_batch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/observation_batch.py",
+      "target": "function:act/service/observation_batch.py:align_to_device",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/observation_batch.py",
+      "target": "function:act/service/observation_batch.py:prepare_observation_batch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/observation_collector.py",
+      "target": "class:act/service/observation_collector.py:ObservationCollector",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/observation_collector.py",
+      "target": "function:act/service/observation_collector.py:_default_state_codec",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "class:act/service/safety_guard.py:SafetyContractError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "class:act/service/safety_guard.py:_ComparisonReference",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "class:act/service/safety_guard.py:SafetyGuard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:_slerp_xyzw",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:require_action_vector_16",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:require_finite_action",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:canonicalize_quaternion",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:select_comparison_reference",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:limit_translation_step",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:limit_rotation_step",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:clamp_gripper_range",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:limit_gripper_step",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:build_safe_action",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "function:act/service/safety_guard.py:validate_safe_action_invariants",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_command_output_config.py",
+      "target": "class:act/tests/config/test_command_output_config.py:TestCommandOutputConfigDefaults",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_command_output_config.py",
+      "target": "class:act/tests/config/test_command_output_config.py:TestDeployConfigCommandOutput",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_command_output_config.py",
+      "target": "class:act/tests/config/test_command_output_config.py:TestCommandOutputValidation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "class:act/tests/config/test_contract.py:TestBundleContract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "class:act/tests/config/test_contract.py:TestNormalizerContract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "class:act/tests/config/test_contract.py:TestLoadDeployConfigContract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "class:act/tests/config/test_contract_check.py:TestCheckBundleContract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "class:act/tests/config/test_contract_check.py:TestCheckNormalizerContract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "class:act/tests/config/test_contract_check.py:TestLoadDeployConfigEndToEnd",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "class:act/service/act_inference.py:ActInferenceService",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/service/act_inference.py",
+      "target": "function:act/service/act_inference.py:run_act_inference",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/service/action_chunk_postprocess.py",
+      "target": "function:act/service/action_chunk_postprocess.py:postprocess_action_chunk",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "function:act/service/action_output_adapter.py:build_topic_payloads",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "function:act/service/action_output_adapter.py:require_publishable_action",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "function:act/service/action_output_adapter.py:build_arm_pose_target",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "function:act/service/action_output_adapter.py:map_gripper_command",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/service/action_output_adapter.py",
+      "target": "class:act/service/action_output_adapter.py:ActionPublishContractError",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/service/observation_batch.py",
+      "target": "function:act/service/observation_batch.py:prepare_observation_batch",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/service/safety_guard.py",
+      "target": "class:act/service/safety_guard.py:SafetyGuard",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:act/tests/config/test_command_output_config.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "file:act/config/schema.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "file:act/repo/normalization.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:act/tests/config/test_contract_check.py",
+      "target": "file:act/types/contract_result.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

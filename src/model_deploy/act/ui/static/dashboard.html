@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACT 推理控制中心</title>
+  <!--
+    面板运行在机器人本机，不能假设操作员浏览器可以访问公网 CDN。
+    依赖固定版本随 Web 服务的 /static/vendor/ 同源提供，避免 Vue 未加载时
+    页面把 {{ ... }} 模板原样显示、控制按钮失效。
+  -->
+  <script src="/static/vendor/vue.global.prod.js"></script>
+  <script src="/static/vendor/tailwindcss.js"></script>
+  <script src="/static/vendor/echarts.min.js"></script>
+  <style>
+    .status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .status-dot.running { background-color: #22c55e; }
+    .status-dot.stopped { background-color: #ef4444; }
+    .status-dot.starting { background-color: #eab308; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="app" class="max-w-4xl mx-auto p-4">
+    
+    <!-- 标题栏 -->
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-bold text-gray-800">ACT 推理控制中心</h1>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="status-dot" :class="statusClass"></span>
+          <span class="text-sm font-medium" :class="status.running ? 'text-green-600' : 'text-red-600'">
+            {{ status.running ? '运行中' : '已停止' }}
+          </span>
+          <span v-if="status.running" class="text-xs text-gray-500">PID: {{ status.pid }}</span>
+        </div>
+        <!-- 启动阶段标记：进程活着但内层 :8081 还没好 = 仍在启动（多半在加载模型） -->
+        <span v-if="status.running && status.node_ready === false"
+              class="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 animate-pulse">
+          启动中…（内层服务未就绪，可能正在加载模型）
+        </span>
+        <span v-else-if="status.running && status.node_ready === true"
+              class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">
+          内层就绪
+        </span>
+      </div>
+    </div>
+
+    <!-- 进程异常退出提示（仅停止且存在退出码时显示） -->
+    <div v-if="!status.running && status.exit_code != null"
+         class="bg-red-50 border border-red-300 text-red-800 rounded-lg p-3 mb-4 text-sm font-mono">
+      <div class="font-semibold mb-1">推理进程已退出（rc={{ status.exit_code }}）</div>
+      <div v-if="status.log_tail && status.log_tail.length" class="text-xs leading-relaxed break-all">
+        <div class="text-red-500 mb-0.5">最近日志：</div>
+        <div v-for="(entry, i) in status.log_tail.slice(-8)" :key="i"
+             :class="entry.stream === 'stderr' ? 'text-red-700' : 'text-gray-700'">{{ entry.text }}</div>
+      </div>
+      <div class="text-xs text-gray-500 mt-1">完整实时日志见页面底部"进程日志"面板。</div>
+    </div>
+
+    <!-- 启动卡住提示：进程活着但内层长时间没就绪 -->
+    <div v-if="status.running && status.node_ready === false"
+         class="bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-lg p-3 mb-4 text-sm">
+      推理进程已运行但内层服务尚未就绪——这通常意味着它仍在加载模型权重（torch/lerobot，可能数十秒），
+      或在初始化 ROS/观测管线。请查看页面底部<strong>"进程日志"</strong>面板确认具体卡在哪一步。
+    </div>
+    
+    <!-- 控制区 -->
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+      <h2 class="text-lg font-semibold mb-3 text-gray-700">控制面板</h2>
+      
+      <!-- 启停按钮 -->
+      <div class="flex gap-3 mb-2">
+        <button @click="startProcess"
+                :disabled="status.running"
+                class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed">
+          ▶ 启动全部节点
+        </button>
+        <button @click="stopProcess"
+                :disabled="!status.running"
+                class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed">
+          ■ 停止
+        </button>
+      </div>
+      <div class="text-xs text-gray-400 mb-4">
+        启动将拉起全部 4 个节点（RM65 双臂 / 大象夹爪 / 双鱼眼相机 / ACT 推理）。
+        <span v-if="status.config_path">配置: <span class="font-mono">{{ status.config_path }}</span></span>
+      </div>
+      
+      <!-- 模式切换 -->
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-sm text-gray-600 w-16">模式:</span>
+        <select v-model="selectedMode" class="border rounded px-2 py-1 text-sm">
+          <option value="dry-run">dry-run（空跑）</option>
+          <option value="real-run">real-run（实际控制）</option>
+        </select>
+        <button @click="switchMode"
+                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
+          切换
+        </button>
+        <span v-if="status.mode" class="text-xs px-2 py-0.5 rounded"
+              :class="status.mode === 'real-run' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'">
+          当前: {{ status.mode }}
+        </span>
+      </div>
+      
+      <!-- 模型权重路径 -->
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-600 w-16">权重:</span>
+        <input v-model="bundleDir" type="text" 
+               placeholder="/home/hit/模型权重/..."
+               class="flex-1 border rounded px-2 py-1 text-sm font-mono">
+        <button @click="applyBundleDir"
+                class="px-3 py-1 bg-purple-500 text-white text-sm rounded hover:bg-purple-600">
+          应用
+        </button>
+      </div>
+    </div>
+    
+    <!-- 基础指标 -->
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+      <h2 class="text-lg font-semibold mb-3 text-gray-700">运行指标</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gray-800">{{ metrics.tick_count || 0 }}</div>
+          <div class="text-xs text-gray-500">Tick 计数</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-green-600">{{ metrics.inference_success_count || 0 }}</div>
+          <div class="text-xs text-gray-500">推理成功</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-red-600">{{ metrics.inference_error_count || 0 }}</div>
+          <div class="text-xs text-gray-500">推理失败</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-yellow-600">{{ metrics.safety_rejected_count || 0 }}</div>
+          <div class="text-xs text-gray-500">安全拒绝</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-3">
+        <div class="text-center">
+          <div class="text-lg font-medium">{{ ((metrics.last_inference_latency_s || 0) * 1000).toFixed(1) }} ms</div>
+          <div class="text-xs text-gray-500">推理延迟</div>
+        </div>
+        <div class="text-center">
+          <div class="text-lg font-medium">{{ metrics.runtime_status || '-' }}</div>
+          <div class="text-xs text-gray-500">运行状态</div>
+        </div>
+        <div class="text-center">
+          <div class="text-lg font-medium">{{ metrics.fallback_count || 0 }}</div>
+          <div class="text-xs text-gray-500">回退次数</div>
+        </div>
+      </div>
+      <div v-if="metrics.last_error || metrics.last_response_detail"
+           class="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+        响应诊断：{{ metrics.last_error || '-' }}
+        <span v-if="metrics.last_response_detail">（未反馈：{{ metrics.last_response_detail }}）</span>
+      </div>
+    </div>
+    
+    <!-- 事件日志 -->
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+      <h2 class="text-lg font-semibold mb-3 text-gray-700">事件日志</h2>
+      <div class="max-h-48 overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50">
+            <tr>
+              <th class="px-2 py-1 text-left">时间</th>
+              <th class="px-2 py-1 text-left">类型</th>
+              <th class="px-2 py-1 text-left">信息</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="event in reversedEvents" :key="event.timestamp" class="border-b">
+              <td class="px-2 py-1 font-mono text-xs">{{ formatTime(event.timestamp) }}</td>
+              <td class="px-2 py-1">
+                <span class="px-1.5 py-0.5 text-xs rounded" :class="eventTagClass(event.type)">
+                  {{ event.type }}
+                </span>
+              </td>
+              <td class="px-2 py-1 text-gray-600">{{ event.message }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="!status.events || status.events.length === 0" class="text-center text-gray-400 py-4">
+          暂无事件
+        </div>
+      </div>
+    </div>
+
+    <!-- Observation 数据面板 -->
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold text-gray-700">Observation 数据</h2>
+        <!-- 数据来源诊断：明确告诉用户为什么没数据 -->
+        <span class="text-xs px-2 py-0.5 rounded" :class="obsDiagClass">
+          {{ obsDiagText }}
+        </span>
+      </div>
+      <!-- 缺数据时的根因提示（比"等待数据…"更具体） -->
+      <div v-if="obsReason" class="bg-blue-50 border border-blue-200 text-blue-800 rounded p-2 mb-3 text-xs">
+        {{ obsReason }}
+      </div>
+
+      <!-- 左/右摄像头画面 -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">左摄像头</h3>
+          <img :src="leftImageSrc" @error="scheduleImageRetry" class="w-full border rounded bg-black" style="image-rendering: pixelated; min-height: 120px;" />
+        </div>
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">右摄像头</h3>
+          <img :src="rightImageSrc" @error="scheduleImageRetry" class="w-full border rounded bg-black" style="image-rendering: pixelated; min-height: 120px;" />
+        </div>
+      </div>
+      
+      <!-- 位姿数值 -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">左臂 TCP 位姿</h3>
+          <div class="font-mono text-xs bg-gray-50 p-2 rounded space-y-0.5">
+            <template v-if="observation.left_tcp_position && observation.left_tcp_position.length">
+              <div class="text-gray-400 text-[10px]">Position (xyz)</div>
+              <div class="flex gap-2">
+                <span v-for="(v, i) in observation.left_tcp_position" :key="'lp'+i">
+                  {{ v?.toFixed(4) }}
+                </span>
+              </div>
+            </template>
+            <template v-if="observation.left_tcp_orientation && observation.left_tcp_orientation.length">
+              <div class="text-gray-400 text-[10px] mt-1">Orientation (xyzw)</div>
+              <div class="flex gap-2">
+                <span v-for="(v, i) in observation.left_tcp_orientation" :key="'lo'+i">
+                  {{ v?.toFixed(4) }}
+                </span>
+              </div>
+            </template>
+            <div v-if="!observation.left_tcp_position || !observation.left_tcp_position.length" class="text-gray-400">等待数据...</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">右臂 TCP 位姿</h3>
+          <div class="font-mono text-xs bg-gray-50 p-2 rounded space-y-0.5">
+            <template v-if="observation.right_tcp_position && observation.right_tcp_position.length">
+              <div class="text-gray-400 text-[10px]">Position (xyz)</div>
+              <div class="flex gap-2">
+                <span v-for="(v, i) in observation.right_tcp_position" :key="'rp'+i">
+                  {{ v?.toFixed(4) }}
+                </span>
+              </div>
+            </template>
+            <template v-if="observation.right_tcp_orientation && observation.right_tcp_orientation.length">
+              <div class="text-gray-400 text-[10px] mt-1">Orientation (xyzw)</div>
+              <div class="flex gap-2">
+                <span v-for="(v, i) in observation.right_tcp_orientation" :key="'ro'+i">
+                  {{ v?.toFixed(4) }}
+                </span>
+              </div>
+            </template>
+            <div v-if="!observation.right_tcp_position || !observation.right_tcp_position.length" class="text-gray-400">等待数据...</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 夹爪状态 -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">左夹爪</h3>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 bg-gray-200 rounded-full h-4">
+              <div class="bg-blue-500 h-4 rounded-full transition-all" :style="{width: ((observation.left_gripper || 0) * 100) + '%'}"></div>
+            </div>
+            <span class="font-mono text-sm w-16 text-right">{{ ((observation.left_gripper || 0) * 100)?.toFixed(1) }}%</span>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">右夹爪</h3>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 bg-gray-200 rounded-full h-4">
+              <div class="bg-green-500 h-4 rounded-full transition-all" :style="{width: ((observation.right_gripper || 0) * 100) + '%'}"></div>
+            </div>
+            <span class="font-mono text-sm w-16 text-right">{{ ((observation.right_gripper || 0) * 100)?.toFixed(1) }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action 数据流面板 -->
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+      <h2 class="text-lg font-semibold mb-3 text-gray-700">Action 数据流</h2>
+
+      <!-- 统计信息 -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="text-center bg-gray-50 rounded p-2">
+          <div class="text-xl font-bold text-gray-800">{{ actionStats.total_steps || 0 }}</div>
+          <div class="text-xs text-gray-500">总步数</div>
+        </div>
+        <div class="text-center bg-green-50 rounded p-2">
+          <div class="text-xl font-bold text-green-600">{{ actionStats.pass_count || 0 }}</div>
+          <div class="text-xs text-gray-500">PASS</div>
+        </div>
+        <div class="text-center bg-yellow-50 rounded p-2">
+          <div class="text-xl font-bold text-yellow-600">{{ actionStats.adjusted_count || 0 }}</div>
+          <div class="text-xs text-gray-500">ADJUSTED</div>
+        </div>
+        <div class="text-center bg-red-50 rounded p-2">
+          <div class="text-xl font-bold text-red-600">{{ actionStats.rejected_count || 0 }}</div>
+          <div class="text-xs text-gray-500">REJECTED</div>
+        </div>
+      </div>
+
+      <!-- 最新一步三阶段对比 -->
+      <div v-if="latestAction" class="mb-4">
+        <h3 class="text-sm font-medium text-gray-600 mb-2">最新一步 (Step #{{ latestAction.step_id }})</h3>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="border rounded p-2">
+            <div class="text-xs font-semibold text-blue-600 mb-1">推理输出 (Raw)</div>
+            <div class="font-mono text-xs text-gray-700 break-all">
+              {{ formatActionPreview(latestAction.raw_action) }}
+            </div>
+          </div>
+          <div class="border rounded p-2">
+            <div class="text-xs font-semibold mb-1" :class="safetyColor(latestAction.safety_verdict)">
+              安全过滤 ({{ latestAction.safety_verdict || '-' }})
+            </div>
+            <div class="font-mono text-xs text-gray-700 break-all">
+              {{ formatActionPreview(latestAction.filtered_action) }}
+            </div>
+          </div>
+          <div class="border rounded p-2">
+            <div class="text-xs font-semibold text-purple-600 mb-1">
+              发布结果 ({{ latestAction.publish_outcome || '-' }})
+            </div>
+            <div class="font-mono text-xs text-gray-700 break-all">
+              {{ formatActionPreview(latestAction.command_action) }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="text-center text-gray-400 py-4 mb-4">等待推理数据...</div>
+
+      <!-- 历史表格 -->
+      <h3 class="text-sm font-medium text-gray-600 mb-2">历史记录</h3>
+      <div class="max-h-60 overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50">
+            <tr>
+              <th class="px-2 py-1 text-left">Step</th>
+              <th class="px-2 py-1 text-left">时间</th>
+              <th class="px-2 py-1 text-left">Safety</th>
+              <th class="px-2 py-1 text-left">Publish</th>
+              <th class="px-2 py-1 text-left">Raw (前4维)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="rec in actionHistory" :key="rec.step_id" class="border-b">
+              <td class="px-2 py-1 font-mono text-xs">{{ rec.step_id }}</td>
+              <td class="px-2 py-1 font-mono text-xs">{{ formatTime(rec.timestamp) }}</td>
+              <td class="px-2 py-1">
+                <span class="px-1.5 py-0.5 text-xs rounded font-medium"
+                      :class="safetyBadgeClass(rec.safety_verdict)">
+                  {{ rec.safety_verdict }}
+                </span>
+              </td>
+              <td class="px-2 py-1 text-xs">{{ rec.publish_outcome }}</td>
+              <td class="px-2 py-1 font-mono text-xs text-gray-500">
+                {{ formatActionPreview(rec.raw_action, 4) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="!actionHistory || actionHistory.length === 0" class="text-center text-gray-400 py-4">
+          暂无数据
+        </div>
+      </div>
+    </div>
+
+    <!-- Action 可视化图表 -->
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+      <h2 class="text-lg font-semibold mb-3 text-gray-700">Action 趋势图</h2>
+      
+      <!-- 维度选择 -->
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-sm text-gray-500">显示维度:</span>
+        <select v-model="selectedActionDim" class="border rounded px-2 py-1 text-sm">
+          <option v-for="i in actionDimCount" :key="i-1" :value="i-1">Dim {{ i-1 }}</option>
+        </select>
+        <span class="text-xs text-gray-400 ml-2">共 {{ actionDimCount }} 维</span>
+      </div>
+      
+      <!-- Raw vs Filtered 对比图 -->
+      <div ref="actionChart" style="width: 100%; height: 300px;"></div>
+    </div>
+
+    <!-- 进程实时日志（定位启动卡在哪一步 / 推理报错） -->
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-semibold text-gray-700">进程日志</h2>
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-gray-500 flex items-center gap-1">
+            <input type="checkbox" v-model="logAutoscroll" class="h-3 w-3" /> 自动滚动
+          </label>
+          <span class="text-xs" :class="logWsConnected ? 'text-green-500' : 'text-gray-400'">
+            {{ logWsConnected ? '● 实时' : '○ 未连接' }}
+          </span>
+          <button @click="clearLogs" class="text-xs px-2 py-0.5 border rounded hover:bg-gray-50">清空</button>
+        </div>
+      </div>
+      <div ref="logConsole" class="bg-gray-900 rounded p-2 font-mono text-xs leading-relaxed overflow-y-auto"
+           style="height: 280px;">
+        <div v-if="!logs.length" class="text-gray-500 text-center py-8">
+          暂无日志。启动推理进程后，这里会实时显示子进程的 stdout/stderr（含模型加载进度、ROS 初始化、报错）。
+        </div>
+        <div v-for="entry in logs" :key="entry.seq"
+             :class="entry.stream === 'stderr' ? 'text-red-300' : 'text-gray-300'"
+             class="whitespace-pre-wrap break-all">
+          <span class="text-gray-500">{{ formatLogTime(entry.ts) }}</span>
+          <span class="text-gray-600 ml-1">{{ entry.stream === 'stderr' ? 'ERR' : 'OUT' }}</span>
+          <span class="ml-1">{{ entry.text }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+  const { createApp } = Vue;
+  
+  createApp({
+    data() {
+      return {
+        status: {},
+        metrics: {},
+        selectedMode: 'dry-run',
+        bundleDir: '',
+        metricsWs: null,
+        pollTimer: null,
+        latestAction: null,
+        actionHistory: [],
+        actionStats: {},
+        actionWs: null,
+        observation: {
+          left_tcp_position: null,
+          left_tcp_orientation: null,
+          right_tcp_position: null,
+          right_tcp_orientation: null,
+          left_gripper: 0,
+          right_gripper: 0,
+        },
+        imageStreamVersion: 0,
+        imageRetryTimer: null,
+        observationWs: null,
+        selectedActionDim: 0,
+        actionDimCount: 16,
+        actionChartInstance: null,
+        actionChartData: { raw: [], filtered: [], timestamps: [] },
+        // 进程实时日志
+        logs: [],
+        logWs: null,
+        logWsConnected: false,
+        logAutoscroll: true,
+        logLastSeq: 0,
+        // observation 缺数据原因（来自 WS proxy 下发的 _reason/_hint）
+        obsReason: '',
+      };
+    },
+    computed: {
+      leftImageSrc() {
+        return `/stream/image/left?stream=${this.imageStreamVersion}`;
+      },
+      rightImageSrc() {
+        return `/stream/image/right?stream=${this.imageStreamVersion}`;
+      },
+      statusClass() {
+        return this.status.running ? 'running' : 'stopped';
+      },
+      reversedEvents() {
+        return [...(this.status.events || [])].reverse();
+      },
+      // Observation 数据来源诊断徽章文字/颜色
+      obsDiagText() {
+        if (!this.status.running) return '进程未运行';
+        if (this.status.node_ready === false) return '内层启动中';
+        if ((this.status.obs_frame_count ?? 0) > 0) return `已收 ${this.status.obs_frame_count} 帧`;
+        return '无观测数据';
+      },
+      obsDiagClass() {
+        if (!this.status.running) return 'bg-gray-100 text-gray-500';
+        if (this.status.node_ready === false) return 'bg-yellow-100 text-yellow-800';
+        if ((this.status.obs_frame_count ?? 0) > 0) return 'bg-green-100 text-green-700';
+        return 'bg-orange-100 text-orange-700';
+      },
+    },
+    mounted() {
+      this.fetchStatus();
+      this.connectMetricsWs();
+      this.connectActionWs();
+      this.fetchActionHistory();
+      this.fetchActionStats();
+      this.connectObservationWs();
+      this.connectLogsWs();
+      this.$nextTick(() => this.initActionChart());
+      // 轮询状态（兜底，主要靠 WebSocket）
+      this.pollTimer = setInterval(() => {
+        this.fetchStatus();
+        this.fetchActionStats();
+      }, 3000);
+    },
+    beforeUnmount() {
+      if (this.metricsWs) this.metricsWs.close();
+      if (this.observationWs) this.observationWs.close();
+      if (this.actionWs) this.actionWs.close();
+      if (this.logWs) this.logWs.close();
+      if (this.pollTimer) clearInterval(this.pollTimer);
+      if (this.imageRetryTimer) clearTimeout(this.imageRetryTimer);
+    },
+    methods: {
+      async fetchStatus() {
+        try {
+          const wasNodeReady = Boolean(this.status.running && this.status.node_ready);
+          const resp = await fetch('/api/status');
+          this.status = await resp.json();
+          if (this.status.mode) this.selectedMode = this.status.mode;
+          if (this.status.bundle_dir) this.bundleDir = this.status.bundle_dir;
+          if (this.status.running && this.status.node_ready && !wasNodeReady) {
+            this.refreshImageStreams();
+          }
+        } catch (e) {
+          console.error('Failed to fetch status:', e);
+        }
+      },
+
+      refreshImageStreams() {
+        this.imageStreamVersion += 1;
+      },
+
+      scheduleImageRetry() {
+        if (!this.status.running || this.imageRetryTimer) return;
+        this.imageRetryTimer = setTimeout(() => {
+          this.imageRetryTimer = null;
+          this.refreshImageStreams();
+        }, 1000);
+      },
+      
+      connectMetricsWs() {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        this.metricsWs = new WebSocket(`${protocol}//${location.host}/ws/metrics`);
+        this.metricsWs.onmessage = (e) => {
+          try {
+            this.metrics = JSON.parse(e.data);
+          } catch {}
+        };
+        this.metricsWs.onclose = () => {
+          setTimeout(() => this.connectMetricsWs(), 2000);
+        };
+        this.metricsWs.onerror = () => {
+          this.metricsWs.close();
+        };
+      },
+      
+      async startProcess() {
+        try {
+          const params = new URLSearchParams();
+          if (this.selectedMode) params.append('mode', this.selectedMode);
+          if (this.bundleDir) params.append('bundle_dir', this.bundleDir);
+          await fetch(`/api/start?${params.toString()}`, { method: 'POST' });
+          await this.fetchStatus();
+        } catch (e) {
+          alert('启动失败: ' + e.message);
+        }
+      },
+      
+      async stopProcess() {
+        if (!confirm('确认停止推理进程？')) return;
+        try {
+          await fetch('/api/stop', { method: 'POST' });
+          await this.fetchStatus();
+        } catch (e) {
+          alert('停止失败: ' + e.message);
+        }
+      },
+      
+      async switchMode() {
+        if (this.status.mode === this.selectedMode) return;
+        if (!confirm(`确认切换到 ${this.selectedMode}？推理进程将重启。`)) return;
+        try {
+          await fetch(`/api/mode?mode=${encodeURIComponent(this.selectedMode)}`, { method: 'POST' });
+          await this.fetchStatus();
+        } catch (e) {
+          alert('切换失败: ' + e.message);
+        }
+      },
+      
+      async applyBundleDir() {
+        if (!this.bundleDir.trim()) return;
+        if (!confirm(`确认切换权重路径？推理进程将重启。\n路径: ${this.bundleDir}`)) return;
+        try {
+          await fetch(`/api/bundle_dir?bundle_dir=${encodeURIComponent(this.bundleDir)}`, { method: 'POST' });
+          await this.fetchStatus();
+        } catch (e) {
+          alert('切换失败: ' + e.message);
+        }
+      },
+      
+      formatTime(ts) {
+        if (!ts) return '-';
+        const d = new Date(ts * 1000);
+        return d.toLocaleTimeString('zh-CN', { hour12: false });
+      },
+      
+      eventTagClass(type) {
+        const map = {
+          'start': 'bg-green-100 text-green-700',
+          'stop': 'bg-red-100 text-red-700',
+          'mode_switch': 'bg-blue-100 text-blue-700',
+          'bundle_change': 'bg-purple-100 text-purple-700',
+          'error': 'bg-red-100 text-red-700',
+        };
+        return map[type] || 'bg-gray-100 text-gray-700';
+      },
+
+      connectActionWs() {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        this.actionWs = new WebSocket(`${protocol}//${location.host}/ws/action`);
+        this.actionWs.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data && data.step_id) {
+              this.latestAction = data;
+              if (data.raw_action) {
+                this.actionDimCount = data.raw_action.length;
+              }
+              // 刷新历史
+              this.fetchActionHistory();
+            }
+          } catch {}
+        };
+        this.actionWs.onclose = () => {
+          setTimeout(() => this.connectActionWs(), 3000);
+        };
+        this.actionWs.onerror = () => {
+          this.actionWs.close();
+        };
+      },
+
+      async fetchActionHistory() {
+        try {
+          const resp = await fetch('/api/action/history?n=30');
+          this.actionHistory = await resp.json();
+        } catch (e) {
+          // 内层可能未启动
+        }
+      },
+
+      async fetchActionStats() {
+        try {
+          const resp = await fetch('/api/action/stats');
+          this.actionStats = await resp.json();
+        } catch (e) {
+          // 内层可能未启动
+        }
+      },
+
+      formatActionPreview(arr, maxDims) {
+        if (!arr || arr.length === 0) return '-';
+        const n = maxDims || 8;
+        const slice = arr.slice(0, n);
+        const str = slice.map(v => typeof v === 'number' ? v.toFixed(3) : v).join(', ');
+        return arr.length > n ? str + ' ...' : str;
+      },
+
+      safetyColor(verdict) {
+        if (verdict === 'PASS') return 'text-green-600';
+        if (verdict === 'ADJUSTED') return 'text-yellow-600';
+        if (verdict === 'REJECTED') return 'text-red-600';
+        return 'text-gray-500';
+      },
+
+      safetyBadgeClass(verdict) {
+        if (verdict === 'PASS') return 'bg-green-100 text-green-700';
+        if (verdict === 'ADJUSTED') return 'bg-yellow-100 text-yellow-700';
+        if (verdict === 'REJECTED') return 'bg-red-100 text-red-700';
+        return 'bg-gray-100 text-gray-500';
+      },
+
+      connectObservationWs() {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        this.observationWs = new WebSocket(`${protocol}//${location.host}/ws/observation`);
+        this.observationWs.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            // 后端在缺数据时下发的诊断信号，不更新 observation 数值
+            if (data && data._reason) {
+              this.obsReason = data._hint || data._reason;
+              return;
+            }
+            // 真实数据到达，清空诊断提示
+            if (data && (data.left_tcp_position || data.right_tcp_position)) {
+              this.obsReason = '';
+            }
+            this.observation = data;
+          } catch {}
+        };
+        this.observationWs.onclose = () => {
+          setTimeout(() => this.connectObservationWs(), 2000);
+        };
+        this.observationWs.onerror = () => {
+          this.observationWs.close();
+        };
+      },
+
+      // -- 进程实时日志 -------------------------------------------------------
+      connectLogsWs() {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        this.logWs = new WebSocket(`${protocol}//${location.host}/ws/logs`);
+        this.logWs.onopen = () => {
+          this.logWsConnected = true;
+          // 续传起点：告诉后端从上次最后一条之后开始
+          try { this.logWs.send(JSON.stringify({ after: this.logLastSeq })); } catch {}
+        };
+        this.logWs.onmessage = (e) => {
+          try {
+            const payload = JSON.parse(e.data);
+            if (payload.heartbeat) return;  // 无新日志的心跳
+            if (payload.logs && payload.logs.length) {
+              // 合并并去重（按 seq），限制前端保留条数避免内存膨胀
+              const merged = [...this.logs, ...payload.logs];
+              const seen = new Set();
+              const deduped = [];
+              for (let i = merged.length - 1; i >= 0; i--) {
+                if (!seen.has(merged[i].seq)) { seen.add(merged[i].seq); deduped.unshift(merged[i]); }
+              }
+              this.logs = deduped.slice(-500);
+              this.logLastSeq = this.logs[this.logs.length - 1].seq;
+              if (this.logAutoscroll) this.$nextTick(() => this.scrollLogToBottom());
+            }
+          } catch {}
+        };
+        this.logWs.onclose = () => {
+          this.logWsConnected = false;
+          setTimeout(() => this.connectLogsWs(), 2500);
+        };
+        this.logWs.onerror = () => { this.logWs.close(); };
+      },
+      scrollLogToBottom() {
+        const el = this.$refs.logConsole;
+        if (el) el.scrollTop = el.scrollHeight;
+      },
+      clearLogs() {
+        this.logs = [];
+        this.obsReason = '';
+      },
+      formatLogTime(ts) {
+        if (!ts) return '';
+        const d = new Date(ts * 1000);
+        return d.toLocaleTimeString('zh-CN', { hour12: false });
+      },
+
+      initActionChart() {
+        if (typeof echarts === 'undefined') return;
+        const chartEl = this.$refs.actionChart;
+        if (!chartEl) return;
+        this.actionChartInstance = echarts.init(chartEl);
+        this.updateActionChart();
+      },
+
+      updateActionChart() {
+        if (!this.actionChartInstance) return;
+        
+        const dim = this.selectedActionDim;
+        const history = this.actionHistory.slice(0, 100).reverse();
+        
+        const timestamps = history.map(r => new Date(r.timestamp * 1000).toLocaleTimeString('zh-CN', {hour12: false}));
+        const rawData = history.map(r => r.raw_action?.[dim] ?? null);
+        const filteredData = history.map(r => r.filtered_action?.[dim] ?? null);
+        
+        this.actionChartInstance.setOption({
+          tooltip: { trigger: 'axis' },
+          legend: { data: ['推理输出 (Raw)', '安全过滤后 (Filtered)'], top: 0 },
+          grid: { left: 60, right: 20, top: 40, bottom: 30 },
+          xAxis: { type: 'category', data: timestamps, axisLabel: { fontSize: 10 } },
+          yAxis: { type: 'value', axisLabel: { fontSize: 10 } },
+          series: [
+            {
+              name: '推理输出 (Raw)',
+              type: 'line',
+              data: rawData,
+              smooth: true,
+              lineStyle: { width: 1.5 },
+              itemStyle: { color: '#3b82f6' },
+              showSymbol: false,
+            },
+            {
+              name: '安全过滤后 (Filtered)',
+              type: 'line',
+              data: filteredData,
+              smooth: true,
+              lineStyle: { width: 1.5 },
+              itemStyle: { color: '#ef4444' },
+              showSymbol: false,
+            },
+          ],
+        });
+      },
+    },
+    watch: {
+      actionHistory: {
+        handler() { this.updateActionChart(); },
+        deep: true,
+      },
+      selectedActionDim() { this.updateActionChart(); },
+    },
+  }).mount('#app');
+  </script>
+</body>
+</html>

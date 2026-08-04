@@ -1,0 +1,899 @@
+{
+  "schemaVersion": 1,
+  "algorithm": "louvain",
+  "totalFiles": 77,
+  "totalBatches": 6,
+  "exportsByPath": {
+    "common/src/pi05/common/__init__.py": [],
+    "common/src/pi05/common/config/__init__.py": [],
+    "common/src/pi05/common/config/schema.py": [
+      "ConfigError",
+      "LoraConfig",
+      "DataConfig",
+      "ModelConfig",
+      "TrainingConfig",
+      "LoggingConfig",
+      "ExperimentConfig",
+      "load_experiment_config",
+      "_required_section",
+      "_mapping_value",
+      "_mapping",
+      "_str",
+      "_attention_implementation",
+      "_optional_str",
+      "_str_or_str_list",
+      "_str_or_path",
+      "_path",
+      "_optional_path",
+      "_resolve_path_value",
+      "_bool",
+      "_positive_int",
+      "_non_negative_int",
+      "_optional_int",
+      "_int",
+      "_float",
+      "_optional_float",
+      "_str_list",
+      "_port",
+      "_serialize_tracker_value"
+    ],
+    "common/src/pi05/common/data/__init__.py": [],
+    "common/src/pi05/common/data/action_codec.py": [
+      "ensure_action_vector",
+      "ensure_action_chunk",
+      "split_action"
+    ],
+    "common/src/pi05/common/data/image_preprocess.py": [
+      "ImagePreprocessConfig",
+      "preprocess_rgb_image",
+      "_resize_crop",
+      "_resize_pad",
+      "_cv2_resize_rgb"
+    ],
+    "common/src/pi05/common/data/normalization.py": [
+      "ActionStateNormalizer",
+      "build_normalizer_from_lerobot",
+      "build_state_action_normalizers",
+      "ensure_vector_stats",
+      "_build_from_stats",
+      "_stats_need_refresh",
+      "_scan_vector_stats",
+      "_feature_dim",
+      "_VectorStatsAccumulator"
+    ],
+    "common/src/pi05/common/data/state_codec.py": [
+      "BimanualState",
+      "encode_bimanual_state",
+      "decode_picotele_proprioception",
+      "_vector"
+    ],
+    "common/src/pi05/common/model/__init__.py": [],
+    "common/src/pi05/common/model/builder.py": [
+      "build_pi05_with_lora",
+      "_resolve_peft_target_modules",
+      "_image_keys_from_cameras",
+      "get_pi05_policy_config",
+      "_as_experiment_config",
+      "_resolve_device",
+      "_enable_gradient_checkpointing",
+      "_print_trainable_ratio",
+      "_resize_pi05_action_projections",
+      "_force_pi05_attention_implementation",
+      "_iter_attention_configs",
+      "_set_config_attr",
+      "_ensure_pi05_feature_specs",
+      "_is_visual_feature"
+    ],
+    "common/src/pi05/common/robot/__init__.py": [],
+    "common/src/pi05/common/robot/action_spec.py": [
+      "BimanualAction",
+      "split_bimanual_action",
+      "hand_command_to_trigger"
+    ],
+    "common/src/pi05/common/robot/joint_limits.py": [
+      "JointLimitSpec",
+      "broad_joint_limits"
+    ],
+    "common/src/pi05/common/ros/__init__.py": [],
+    "common/src/pi05/common/ros/topics.py": [
+      "join_topic",
+      "Pi05CommandTopics",
+      "Pi05ObservationTopics"
+    ],
+    "common/src/pi05/common/runtime/__init__.py": [],
+    "common/src/pi05/common/runtime/bundle.py": [
+      "export_deploy_bundle",
+      "load_bundle_manifest",
+      "load_bundle_normalizers",
+      "resolve_bundle_adapter_dir",
+      "_prepare_output_dir",
+      "_manifest_payload",
+      "_copy_tactile_preprocess",
+      "_normalizer_payload",
+      "_single_normalizer_payload",
+      "_identity_indices",
+      "_write_json",
+      "_write_yaml"
+    ],
+    "common/src/pi05/common/utils/__init__.py": [],
+    "common/src/pi05/common/utils/paths.py": [
+      "_find_project_root",
+      "_find_workspace_root",
+      "bootstrap_project_paths",
+      "default_train_config_path",
+      "default_data_config_path",
+      "default_deploy_config_path"
+    ],
+    "deploy/src/pi05/deploy/__init__.py": [],
+    "deploy/src/pi05/deploy/cli/__init__.py": [],
+    "deploy/src/pi05/deploy/cli/bridge_ros.py": [
+      "main"
+    ],
+    "deploy/src/pi05/deploy/cli/command_mux_ros.py": [],
+    "deploy/src/pi05/deploy/cli/deploy_ros.py": [
+      "main"
+    ],
+    "deploy/src/pi05/deploy/config/__init__.py": [],
+    "deploy/src/pi05/deploy/config/schema.py": [
+      "DeployConfigError",
+      "BundleConfig",
+      "RuntimeConfig",
+      "ObservationTopicsConfig",
+      "CommandTopicsConfig",
+      "BridgeTopicsConfig",
+      "MuxTopicsConfig",
+      "TopicsConfig",
+      "JointLimitsConfig",
+      "SafetyConfig",
+      "BridgeConfig",
+      "MuxConfig",
+      "ImageConfig",
+      "DeployConfig",
+      "load_deploy_config",
+      "_deploy_from_mapping",
+      "_observation_topics",
+      "_command_topics",
+      "_bridge_topics",
+      "_mux_topics",
+      "_safety_config",
+      "_mux_config",
+      "_required_mapping",
+      "_mapping",
+      "_path",
+      "_str",
+      "_optional_str",
+      "_choice",
+      "_bool",
+      "_positive_int",
+      "_non_negative_int",
+      "_int_value",
+      "_float",
+      "_positive_float",
+      "_float_list"
+    ],
+    "deploy/src/pi05/deploy/models/__init__.py": [],
+    "deploy/src/pi05/deploy/models/policy_loader.py": [
+      "Pi05PolicyRuntime",
+      "load_policy_runtime",
+      "_manifest_image_names",
+      "_validate_bundle",
+      "_load_bundle_experiment_config",
+      "_load_adapter",
+      "_require_cpu_float_tensor",
+      "_move_tensors_to_device",
+      "_configure_cuda_runtime",
+      "_resolve_policy"
+    ],
+    "deploy/src/pi05/deploy/ros/__init__.py": [],
+    "deploy/src/pi05/deploy/ros/policy_node.py": [],
+    "deploy/src/pi05/deploy/ros_nodes/__init__.py": [],
+    "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py": [
+      "CommandMuxNode",
+      "build_arg_parser",
+      "main"
+    ],
+    "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py": [
+      "Pi05BridgeNode",
+      "build_arg_parser",
+      "main"
+    ],
+    "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py": [
+      "Pi05VlaDeployNode",
+      "_decode_image",
+      "_joint_msg",
+      "build_arg_parser",
+      "main"
+    ],
+    "deploy/src/pi05/deploy/runtime/__init__.py": [],
+    "deploy/src/pi05/deploy/runtime/control_loop.py": [
+      "ControlCommand",
+      "smoothstep_alpha",
+      "is_action_chunk_usable",
+      "ControlLoop"
+    ],
+    "deploy/src/pi05/deploy/runtime/inference_worker.py": [
+      "InferenceWorker"
+    ],
+    "deploy/src/pi05/deploy/runtime/observation_collector.py": [
+      "ObservationCollector"
+    ],
+    "deploy/src/pi05/deploy/runtime/safety_guard.py": [
+      "SafetyResult",
+      "SafetyGuard"
+    ],
+    "deploy/src/pi05/deploy/runtime/shared_buffer.py": [
+      "ObservationSnapshot",
+      "ActionChunk",
+      "InferenceRequest",
+      "LatestQueue",
+      "RuntimeMetrics",
+      "SharedBuffer"
+    ],
+    "train/src/pi05/train/__init__.py": [],
+    "train/src/pi05/train/cli/__init__.py": [],
+    "train/src/pi05/train/cli/export_bundle.py": [
+      "parse_args",
+      "main",
+      "_resolve_paths"
+    ],
+    "train/src/pi05/train/cli/train.py": [
+      "parse_args",
+      "main"
+    ],
+    "train/src/pi05/train/data/__init__.py": [],
+    "train/src/pi05/train/data/dataset.py": [
+      "Pi05LeRobotDataset"
+    ],
+    "train/src/pi05/train/engine/__init__.py": [],
+    "train/src/pi05/train/engine/batches.py": [
+      "to_lerobot_pi05_batch"
+    ],
+    "train/src/pi05/train/engine/builders.py": [
+      "build_train_dataloader",
+      "count_training_steps",
+      "build_optimizer",
+      "build_lr_scheduler"
+    ],
+    "train/src/pi05/train/engine/checkpoints.py": [
+      "maybe_resume",
+      "save_epoch_adapter_checkpoint",
+      "export_final_adapter",
+      "_save_adapter"
+    ],
+    "train/src/pi05/train/engine/trainer.py": [
+      "_AverageMeter",
+      "_LogWindow",
+      "Pi05LoraTrainer",
+      "train_from_config"
+    ],
+    "train/src/pi05/train/utils/__init__.py": [],
+    "train/src/pi05/train/utils/logging.py": [
+      "configure_logging",
+      "log_run_summary"
+    ],
+    "train/src/pi05/train/utils/seed.py": [
+      "set_training_seed"
+    ],
+    "train/src/pi05/train/utils/tensorboard.py": [
+      "launch_tensorboard",
+      "_resolve_tensorboard_command",
+      "_is_port_open",
+      "_connect_host",
+      "_build_url",
+      "_find_available_port",
+      "_find_running_tensorboard_port",
+      "_extract_cli_flag",
+      "_print_tensorboard_banner"
+    ],
+    "tests/deploy/test_deploy_config.py": [
+      "test_load_deploy_config_resolves_bundle_path",
+      "test_state_and_action_codecs_match_pi05_dims",
+      "test_safety_guard_rejects_nan_and_clamps_delta",
+      "test_latest_queue_keeps_only_latest",
+      "test_action_chunk_aligned_index_clamps",
+      "test_deploy_schema_rejects_invalid_horizons",
+      "test_bridge_forward_commands_aliases_legacy_publish_flag",
+      "test_mux_config_loads_topics_and_mode",
+      "test_smoothstep_alpha_is_monotonic_and_ends_at_one",
+      "test_action_chunk_usability_rejects_old_or_nan_chunks",
+      "test_control_loop_does_not_block_when_pending_chunk_is_missing"
+    ],
+    "tests/train/test_config.py": [
+      "_minimal_config",
+      "test_config_accepts_existing_yaml_shape",
+      "test_config_accepts_train_expert_only_with_regex_targets",
+      "test_config_rejects_ambiguous_string_bool",
+      "test_load_experiment_config",
+      "test_load_experiment_config_resolves_relative_paths"
+    ]
+  },
+  "batches": [
+    {
+      "batchIndex": 1,
+      "files": [
+        {
+          "path": "deploy/scripts/package_model.sh",
+          "language": "Shell",
+          "fileCategory": "script",
+          "sizeLines": 25
+        },
+        {
+          "path": "deploy/scripts/run_bridge.sh",
+          "language": "Shell",
+          "fileCategory": "script",
+          "sizeLines": 20
+        },
+        {
+          "path": "deploy/scripts/run_command_mux.sh",
+          "language": "Shell",
+          "fileCategory": "script",
+          "sizeLines": 15
+        },
+        {
+          "path": "deploy/scripts/run_inference.sh",
+          "language": "Shell",
+          "fileCategory": "script",
+          "sizeLines": 30
+        }
+      ],
+      "batchImportData": {
+        "deploy/scripts/package_model.sh": [],
+        "deploy/scripts/run_bridge.sh": [],
+        "deploy/scripts/run_command_mux.sh": [],
+        "deploy/scripts/run_inference.sh": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 2,
+      "files": [
+        {
+          "path": "train/config/data.yaml",
+          "language": "YAML",
+          "fileCategory": "config",
+          "sizeLines": 20
+        },
+        {
+          "path": "train/config/lora.yaml",
+          "language": "YAML",
+          "fileCategory": "config",
+          "sizeLines": 30
+        },
+        {
+          "path": "train/config/lora_vtla_stage1.yaml",
+          "language": "YAML",
+          "fileCategory": "config",
+          "sizeLines": 40
+        },
+        {
+          "path": "train/config/train.yaml",
+          "language": "YAML",
+          "fileCategory": "config",
+          "sizeLines": 50
+        }
+      ],
+      "batchImportData": {
+        "train/config/data.yaml": [],
+        "train/config/lora.yaml": [],
+        "train/config/lora_vtla_stage1.yaml": [],
+        "train/config/train.yaml": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 3,
+      "files": [
+        {
+          "path": "train/scripts/export_policy.sh",
+          "language": "Shell",
+          "fileCategory": "script",
+          "sizeLines": 25
+        },
+        {
+          "path": "train/scripts/prepare_dataset.sh",
+          "language": "Shell",
+          "fileCategory": "script",
+          "sizeLines": 20
+        },
+        {
+          "path": "train/scripts/smoke_test.py",
+          "language": "Python",
+          "fileCategory": "script",
+          "sizeLines": 40
+        },
+        {
+          "path": "train/scripts/test_dataloader.py",
+          "language": "Python",
+          "fileCategory": "script",
+          "sizeLines": 50
+        },
+        {
+          "path": "train/scripts/train_lora.sh",
+          "language": "Shell",
+          "fileCategory": "script",
+          "sizeLines": 30
+        }
+      ],
+      "batchImportData": {
+        "train/scripts/export_policy.sh": [],
+        "train/scripts/prepare_dataset.sh": [],
+        "train/scripts/smoke_test.py": [],
+        "train/scripts/test_dataloader.py": [],
+        "train/scripts/train_lora.sh": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 4,
+      "files": [
+        {
+          "path": "common/config/paths.yaml",
+          "language": "YAML",
+          "fileCategory": "config",
+          "sizeLines": 20
+        },
+        {
+          "path": "common/config/runtime.yaml",
+          "language": "YAML",
+          "fileCategory": "config",
+          "sizeLines": 30
+        },
+        {
+          "path": "common/src/pi05/common/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "common/src/pi05/common/config/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "common/src/pi05/common/config/schema.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 150
+        },
+        {
+          "path": "common/src/pi05/common/data/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "common/src/pi05/common/data/action_codec.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 120
+        },
+        {
+          "path": "common/src/pi05/common/data/image_preprocess.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 80
+        },
+        {
+          "path": "common/src/pi05/common/data/normalization.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 100
+        },
+        {
+          "path": "common/src/pi05/common/data/state_codec.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 90
+        },
+        {
+          "path": "common/src/pi05/common/model/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "common/src/pi05/common/model/builder.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 200
+        },
+        {
+          "path": "common/src/pi05/common/robot/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "common/src/pi05/common/robot/action_spec.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 60
+        },
+        {
+          "path": "common/src/pi05/common/robot/joint_limits.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 80
+        },
+        {
+          "path": "common/src/pi05/common/ros/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "common/src/pi05/common/ros/topics.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 50
+        },
+        {
+          "path": "common/src/pi05/common/runtime/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "common/src/pi05/common/runtime/bundle.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 180
+        },
+        {
+          "path": "common/src/pi05/common/utils/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "common/src/pi05/common/utils/paths.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 40
+        },
+        {
+          "path": "DEPLOY_REPRODUCE.md",
+          "language": "Markdown",
+          "fileCategory": "documentation",
+          "sizeLines": 100
+        },
+        {
+          "path": "deploy/config/deploy.yaml",
+          "language": "YAML",
+          "fileCategory": "config",
+          "sizeLines": 80
+        },
+        {
+          "path": "deploy/launch/pi05_picotele_mux.launch.py",
+          "language": "Python",
+          "fileCategory": "rosLaunch",
+          "sizeLines": 150
+        },
+        {
+          "path": "deploy/service/README.md",
+          "language": "Markdown",
+          "fileCategory": "documentation",
+          "sizeLines": 20
+        }
+      ],
+      "batchImportData": {
+        "common/config/paths.yaml": [],
+        "common/config/runtime.yaml": [],
+        "common/src/pi05/common/__init__.py": [],
+        "common/src/pi05/common/config/__init__.py": [],
+        "common/src/pi05/common/config/schema.py": [],
+        "common/src/pi05/common/data/__init__.py": [],
+        "common/src/pi05/common/data/action_codec.py": [],
+        "common/src/pi05/common/data/image_preprocess.py": [],
+        "common/src/pi05/common/data/normalization.py": [],
+        "common/src/pi05/common/data/state_codec.py": [],
+        "common/src/pi05/common/model/__init__.py": [],
+        "common/src/pi05/common/model/builder.py": [],
+        "common/src/pi05/common/robot/__init__.py": [],
+        "common/src/pi05/common/robot/action_spec.py": [],
+        "common/src/pi05/common/robot/joint_limits.py": [],
+        "common/src/pi05/common/ros/__init__.py": [],
+        "common/src/pi05/common/ros/topics.py": [],
+        "common/src/pi05/common/runtime/__init__.py": [],
+        "common/src/pi05/common/runtime/bundle.py": [],
+        "common/src/pi05/common/utils/__init__.py": [],
+        "common/src/pi05/common/utils/paths.py": [],
+        "DEPLOY_REPRODUCE.md": [],
+        "deploy/config/deploy.yaml": [],
+        "deploy/launch/pi05_picotele_mux.launch.py": [],
+        "deploy/service/README.md": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 5,
+      "files": [
+        {
+          "path": "deploy/src/pi05/deploy/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "deploy/src/pi05/deploy/cli/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "deploy/src/pi05/deploy/cli/bridge_ros.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 80
+        },
+        {
+          "path": "deploy/src/pi05/deploy/cli/command_mux_ros.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 70
+        },
+        {
+          "path": "deploy/src/pi05/deploy/cli/deploy_ros.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 100
+        },
+        {
+          "path": "deploy/src/pi05/deploy/config/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "deploy/src/pi05/deploy/config/schema.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 120
+        },
+        {
+          "path": "deploy/src/pi05/deploy/models/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "deploy/src/pi05/deploy/models/policy_loader.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 150
+        },
+        {
+          "path": "deploy/src/pi05/deploy/ros_nodes/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 200
+        },
+        {
+          "path": "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 150
+        },
+        {
+          "path": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 250
+        },
+        {
+          "path": "deploy/src/pi05/deploy/ros/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "deploy/src/pi05/deploy/ros/policy_node.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 100
+        },
+        {
+          "path": "deploy/src/pi05/deploy/runtime/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "deploy/src/pi05/deploy/runtime/control_loop.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 200
+        },
+        {
+          "path": "deploy/src/pi05/deploy/runtime/inference_worker.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 180
+        },
+        {
+          "path": "deploy/src/pi05/deploy/runtime/observation_collector.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 150
+        },
+        {
+          "path": "deploy/src/pi05/deploy/runtime/safety_guard.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 120
+        },
+        {
+          "path": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 100
+        },
+        {
+          "path": "README.md",
+          "language": "Markdown",
+          "fileCategory": "documentation",
+          "sizeLines": 80
+        },
+        {
+          "path": "tests/deploy/test_deploy_config.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 60
+        },
+        {
+          "path": "tests/train/test_config.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 50
+        },
+        {
+          "path": "train/src/pi05/train/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        }
+      ],
+      "batchImportData": {
+        "deploy/src/pi05/deploy/__init__.py": [],
+        "deploy/src/pi05/deploy/cli/__init__.py": [],
+        "deploy/src/pi05/deploy/cli/bridge_ros.py": [],
+        "deploy/src/pi05/deploy/cli/command_mux_ros.py": [],
+        "deploy/src/pi05/deploy/cli/deploy_ros.py": [],
+        "deploy/src/pi05/deploy/config/__init__.py": [],
+        "deploy/src/pi05/deploy/config/schema.py": [],
+        "deploy/src/pi05/deploy/models/__init__.py": [],
+        "deploy/src/pi05/deploy/models/policy_loader.py": [],
+        "deploy/src/pi05/deploy/ros_nodes/__init__.py": [],
+        "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py": [],
+        "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py": [],
+        "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py": [],
+        "deploy/src/pi05/deploy/ros/__init__.py": [],
+        "deploy/src/pi05/deploy/ros/policy_node.py": [],
+        "deploy/src/pi05/deploy/runtime/__init__.py": [],
+        "deploy/src/pi05/deploy/runtime/control_loop.py": [],
+        "deploy/src/pi05/deploy/runtime/inference_worker.py": [],
+        "deploy/src/pi05/deploy/runtime/observation_collector.py": [],
+        "deploy/src/pi05/deploy/runtime/safety_guard.py": [],
+        "deploy/src/pi05/deploy/runtime/shared_buffer.py": [],
+        "README.md": [],
+        "tests/deploy/test_deploy_config.py": [],
+        "tests/train/test_config.py": [],
+        "train/src/pi05/train/__init__.py": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 6,
+      "files": [
+        {
+          "path": "train/src/pi05/train/cli/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "train/src/pi05/train/cli/export_bundle.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 120
+        },
+        {
+          "path": "train/src/pi05/train/cli/train.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 150
+        },
+        {
+          "path": "train/src/pi05/train/data/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "train/src/pi05/train/data/dataset.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 200
+        },
+        {
+          "path": "train/src/pi05/train/engine/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "train/src/pi05/train/engine/batches.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 150
+        },
+        {
+          "path": "train/src/pi05/train/engine/builders.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 200
+        },
+        {
+          "path": "train/src/pi05/train/engine/checkpoints.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 100
+        },
+        {
+          "path": "train/src/pi05/train/engine/trainer.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 300
+        },
+        {
+          "path": "train/src/pi05/train/utils/__init__.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 1
+        },
+        {
+          "path": "train/src/pi05/train/utils/logging.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 50
+        },
+        {
+          "path": "train/src/pi05/train/utils/seed.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 30
+        },
+        {
+          "path": "train/src/pi05/train/utils/tensorboard.py",
+          "language": "Python",
+          "fileCategory": "code",
+          "sizeLines": 80
+        }
+      ],
+      "batchImportData": {
+        "train/src/pi05/train/cli/__init__.py": [],
+        "train/src/pi05/train/cli/export_bundle.py": [],
+        "train/src/pi05/train/cli/train.py": [],
+        "train/src/pi05/train/data/__init__.py": [],
+        "train/src/pi05/train/data/dataset.py": [],
+        "train/src/pi05/train/engine/__init__.py": [],
+        "train/src/pi05/train/engine/batches.py": [],
+        "train/src/pi05/train/engine/builders.py": [],
+        "train/src/pi05/train/engine/checkpoints.py": [],
+        "train/src/pi05/train/engine/trainer.py": [],
+        "train/src/pi05/train/utils/__init__.py": [],
+        "train/src/pi05/train/utils/logging.py": [],
+        "train/src/pi05/train/utils/seed.py": [],
+        "train/src/pi05/train/utils/tensorboard.py": []
+      },
+      "neighborMap": {}
+    }
+  ]
+}

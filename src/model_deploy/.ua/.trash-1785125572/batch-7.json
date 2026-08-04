@@ -1,0 +1,57 @@
+{
+  "nodes": [
+    {
+      "id": "document:ENVIRONMENT.md",
+      "type": "document",
+      "name": "ENVIRONMENT.md",
+      "filePath": "ENVIRONMENT.md",
+      "summary": "model_deploy 工作空间的运行环境说明文档，明确硬件驱动节点不使用 conda 而依赖 ROS2 Jazzy 系统包与系统 Python，并列出系统依赖、colcon 构建步骤、测试命令、包列表、启动入口与 udev 规则。",
+      "tags": ["documentation", "环境配置", "ros2", "构建说明", "部署"],
+      "complexity": "moderate",
+      "languageNotes": "采用中文撰写，使用三级标题分区（系统依赖/构建方式/测试/包列表/启动入口/udev），并以表格形式罗列依赖与包名，便于真机部署查阅。"
+    },
+    {
+      "id": "config:environment.yml",
+      "type": "config",
+      "name": "environment.yml",
+      "filePath": "environment.yml",
+      "summary": "model_deploy Conda 环境定义文件，固定环境名为 model_deploy（Python 3.12），声明 torch/torchvision/numpy/pyyaml/opencv-python/pytest 的版本下界，并注释说明 RTX 5080 Blackwell 需用 cu128 索引单独安装 PyTorch。",
+      "tags": ["configuration", "conda", "环境依赖", "pytorch", "build-system"],
+      "complexity": "simple",
+      "languageNotes": "顶部大段注释对比了“方式 A（分步控制 torch 索引，推荐）”与“方式 B（一键 env create，不支持 Blackwell）”两种创建路径，反映 GPU 架构对 wheel 索引选择的硬性约束。"
+    },
+    {
+      "id": "document:requirements.txt",
+      "type": "document",
+      "name": "requirements.txt",
+      "filePath": "requirements.txt",
+      "summary": "model_deploy Conda 环境的 pip 依赖清单，服务于 act/ 推理栈，声明 torch(cu128)/torchvision/numpy/pyyaml/opencv-python/pytest 的版本下界，并备注 act 核心层完全不依赖 ROS、pi05 重型依赖不在清单内。",
+      "tags": ["documentation", "依赖清单", "pip", "pytorch", "环境配置"],
+      "complexity": "simple",
+      "languageNotes": "因 --index-url 不能写入 requirements.txt，torch 行仅作版本记录，实际安装需用专用 pip 命令指定 cu128 索引，体现了对 Blackwell GPU 兼容性的特殊处理。"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:ENVIRONMENT.md",
+      "target": "config:environment.yml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:ENVIRONMENT.md",
+      "target": "document:requirements.txt",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:environment.yml",
+      "target": "document:requirements.txt",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

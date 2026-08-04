@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>act_system</name>
+  <version>0.1.0</version>
+  <description>ACT model_deploy system integration package. Provides the
+    top-level launch file and the one-click startup script that bring up the
+    RM65 dual-arm node, the Elephant gripper node, the dual fisheye camera
+    nodes and the ACT deployment node in a single command. This package only
+    orchestrates startup; it contains no SDK, inference or deadman logic.</description>
+  <maintainer email="maintainer@example.com">model_deploy Maintainer</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>rm65_dual_arm</exec_depend>
+  <exec_depend>elephant_gripper</exec_depend>
+  <exec_depend>dual_fisheye_camera</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>act_interfaces</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <test_depend>python3-yaml</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,102 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 1,
+  "filesSkipped": [
+    "rm65_dual_arm/CMakeLists.txt",
+    "rm65_dual_arm/package.xml"
+  ],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 1,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 1
+    }
+  },
+  "results": [
+    {
+      "path": "rm65_dual_arm/README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 147,
+      "nonEmptyLines": 104,
+      "sections": [
+        {
+          "heading": "rm65_dual_arm",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "1. Topic / Service",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "2. 多重闸门（每条目标必须全部通过才下发 `rm_movel`）",
+          "level": 2,
+          "line": 25
+        },
+        {
+          "heading": "3. ★ 微小运动安全闸（delta_guard）",
+          "level": 2,
+          "line": 37
+        },
+        {
+          "heading": "4. 构建",
+          "level": 2,
+          "line": 50
+        },
+        {
+          "heading": "4.1 vendor SDK（真机部署前必须）",
+          "level": 3,
+          "line": 52
+        },
+        {
+          "heading": "4.2 编译",
+          "level": 3,
+          "line": 65
+        },
+        {
+          "heading": "4.3 测试",
+          "level": 3,
+          "line": 75
+        },
+        {
+          "heading": "5. ★ 真机测试规约（强制）",
+          "level": 2,
+          "line": 87
+        },
+        {
+          "heading": "6. 启动",
+          "level": 2,
+          "line": 101
+        },
+        {
+          "heading": "7. 未验证项 / 真机风险",
+          "level": 2,
+          "line": 113
+        },
+        {
+          "heading": "8. 依赖",
+          "level": 2,
+          "line": 123
+        },
+        {
+          "heading": "9. 文件结构",
+          "level": 2,
+          "line": 129
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    }
+  ]
+}

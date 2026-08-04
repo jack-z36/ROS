@@ -1,0 +1,4965 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "PI05 Project",
+    "languages": [
+      "Python",
+      "YAML",
+      "Shell",
+      "Markdown",
+      "JSON",
+      "ROS2 Launch"
+    ],
+    "frameworks": [
+      "PyTorch",
+      "LeRobot",
+      "ROS 2 Jazzy",
+      "PEFT",
+      "Accelerate",
+      "safetensors",
+      "NumPy",
+      "PyYAML",
+      "TensorBoard",
+      "picotele",
+      "RealSense"
+    ],
+    "description": "Standalone repository for PI0.5 Vision-Language-Action (VLA) dataset preparation, training (LoRA fine-tuning), export, and deployment for bimanual robotic manipulation.",
+    "analyzedAt": "2026-07-04T15:30:00Z",
+    "gitCommitHash": "01ce64c7d80e5ba68f144ca9b7731b0a7b2c3403"
+  },
+  "nodes": [
+    {
+      "id": "file:deploy/scripts/package_model.sh",
+      "type": "file",
+      "name": "package_model.sh",
+      "summary": "Standalone shell script that archives a model deploy bundle directory into a timestamped tar.gz under outputs/exports/",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/scripts/package_model.sh"
+    },
+    {
+      "id": "file:deploy/scripts/run_bridge.sh",
+      "type": "file",
+      "name": "run_bridge.sh",
+      "summary": "Launcher script for Pi05BridgeNode: constructs PYTHONPATH from project source dirs and runs python -m pi05.deploy.cli.bridge_ros with deploy config",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/scripts/run_bridge.sh"
+    },
+    {
+      "id": "file:deploy/scripts/run_command_mux.sh",
+      "type": "file",
+      "name": "run_command_mux.sh",
+      "summary": "Launcher script for CommandMuxNode: constructs PYTHONPATH from project source dirs and runs python -m pi05.deploy.cli.command_mux_ros with deploy config",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/scripts/run_command_mux.sh"
+    },
+    {
+      "id": "file:deploy/scripts/run_inference.sh",
+      "type": "file",
+      "name": "run_inference.sh",
+      "summary": "Launcher script for Pi05VlaDeployNode: constructs PYTHONPATH from project source dirs and runs python -m pi05.deploy.cli.deploy_ros with deploy config (overridable via CLI arg)",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/scripts/run_inference.sh"
+    },
+    {
+      "id": "file:pattern:deploy_scripts/pythonpath_setup",
+      "type": "concept",
+      "name": "PYTHONPATH construction pattern (shared)",
+      "summary": "Common code block shared by the 3 launch scripts that builds PYTHONPATH from common/src, train/src, deploy/src, and probes for third_party/lerobot/src",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:pattern:deploy_scripts/config_launch",
+      "type": "concept",
+      "name": "Config-based python -m launch pattern (shared)",
+      "summary": "Common code structure shared by the 3 launch scripts: resolve CONFIG_PATH (with override), log the launch message, and invoke the python -m module with --config flag",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "module:pi05.deploy.cli.bridge_ros",
+      "type": "module",
+      "name": "pi05.deploy.cli.bridge_ros",
+      "summary": "Python CLI entry point for the ROS bridge node (Pi05BridgeNode). Called by run_bridge.sh via python -m.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "deploy/src/pi05/deploy/cli/bridge_ros.py"
+    },
+    {
+      "id": "module:pi05.deploy.cli.command_mux_ros",
+      "type": "module",
+      "name": "pi05.deploy.cli.command_mux_ros",
+      "summary": "Python CLI entry point for the command multiplexer node (CommandMuxNode). Called by run_command_mux.sh via python -m.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "deploy/src/pi05/deploy/cli/command_mux_ros.py"
+    },
+    {
+      "id": "module:pi05.deploy.cli.deploy_ros",
+      "type": "module",
+      "name": "pi05.deploy.cli.deploy_ros",
+      "summary": "Python CLI entry point for the main VLA deploy node (Pi05VlaDeployNode). Called by run_inference.sh via python -m.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "deploy/src/pi05/deploy/cli/deploy_ros.py"
+    },
+    {
+      "id": "config:deploy/config/deploy.yaml",
+      "type": "config",
+      "name": "deploy.yaml",
+      "summary": "Central YAML configuration for Pi0.5 deployment: bundle path, safety limits, topic mappings, camera config, joint limits. Consumed by all 3 launch scripts.",
+      "tags": [
+        "config"
+      ],
+      "filePath": "deploy/config/deploy.yaml"
+    },
+    {
+      "id": "concept:deploy_bundle",
+      "type": "concept",
+      "name": "Deploy bundle",
+      "summary": "Model deploy bundle directory containing adapter weights, normalizer stats, manifest, and tactile preprocess scripts. Produced by export_policy.sh (train/scripts), consumed by the deployment runtime, and archived by package_model.sh.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "config:train/config/data.yaml",
+      "type": "config",
+      "name": "data.yaml",
+      "summary": "Train-side dataset schema sample defining the standard observation/action feature layout for PI0.5: 3 RGB cameras (top, left_wrist, right_wrist) at 224x224, state=26D, action=14D, chunk_size=30, fps=60",
+      "tags": [
+        "config"
+      ],
+      "filePath": "train/config/data.yaml"
+    },
+    {
+      "id": "config:train/config/lora.yaml",
+      "type": "config",
+      "name": "lora.yaml",
+      "summary": "Full LoRA fine-tuning configuration for right-hand pour-water-cup task. Defines LoRA hyperparams (rank=32, alpha=64, dropout=0.05, 10 target modules), training params (batch=2, lr=1e-4, 6 epochs, bf16), 3 cameras, and logging setup",
+      "tags": [
+        "config"
+      ],
+      "filePath": "train/config/lora.yaml"
+    },
+    {
+      "id": "config:train/config/lora_vtla_stage1.yaml",
+      "type": "config",
+      "name": "lora_vtla_stage1.yaml",
+      "summary": "VTLA (Vision-Tactile-Language-Action) variant LoRA fine-tuning config. Extends the 3-camera layout with left_tactile and right_tactile cameras (5 total). Same LoRA and training hyperparams as lora.yaml, targets lerobot_octopus_v3_vtla dataset",
+      "tags": [
+        "config"
+      ],
+      "filePath": "train/config/lora_vtla_stage1.yaml"
+    },
+    {
+      "id": "config:train/config/train.yaml",
+      "type": "config",
+      "name": "train.yaml",
+      "summary": "Minimal experiment configuration template with experiment metadata (name, task), standard output paths (dataset, checkpoints, exports, logs), and launch settings (device, mixed_precision, resume)",
+      "tags": [
+        "config"
+      ],
+      "filePath": "train/config/train.yaml"
+    },
+    {
+      "id": "concept:train_data_schema",
+      "type": "concept",
+      "name": "Train-side dataset schema",
+      "summary": "Standard train-side dataset feature schema: observation.images.{top,left_wrist,right_wrist} (224x224x3 uint8), observation.state (26D float32), action (14D float32). chunk_size=30, fps=60. Used by all training configs and shared with deploy-side normalizer.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:lora_hyperparams",
+      "type": "concept",
+      "name": "LoRA hyperparameters (rank=32, alpha=64, dropout=0.05)",
+      "summary": "Standard LoRA configuration shared across fine-tuning variants: rank=32, alpha=64, dropout=0.05. Used by both lora.yaml and lora_vtla_stage1.yaml.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:lora_target_modules_wide",
+      "type": "concept",
+      "name": "LoRA target modules (wide coverage)",
+      "summary": "10 LoRA target modules covering all attention projections (q_proj, k_proj, v_proj, o_proj, out_proj), action expert head (action_in_proj, action_out_proj), time MLP (time_mlp_in, time_mlp_out), and generic linear layers.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:training_hyperparams_public",
+      "type": "concept",
+      "name": "Training hyperparameters (public default)",
+      "summary": "Standard training hyperparameters: batch_size=2, lr=1e-4, epochs=6, gradient_accumulation_steps=8, warmup_steps=500, max_steps_per_epoch=null, seed=42, grad_clip_norm=1.0, mixed_precision=bf16, checkpoint_freq_epochs=1. Budget ~3k-6k steps, ~2 days on single GPU.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:model_config_public",
+      "type": "concept",
+      "name": "Model config (chunk_size=30, max_action_dim=14)",
+      "summary": "Model configuration: chunk_size=30, n_action_steps=30, state_dim=26, action_dim=14, max_action_dim=14 (forcing PI0.5 to use 14D instead of default 32D padding), pretrained_path='lerobot/pi05_base', train_expert_only=false.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:logging_config_public",
+      "type": "concept",
+      "name": "Logging configuration (wandb + tensorboard)",
+      "summary": "Logging setup: wandb project=pi05, output_dir=../../outputs/checkpoints, export_dir=../../outputs/exports, tensorboard under ../../outputs/logs/tensorboard, auto-launch on localhost:6006, log_freq=200.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:camera_setup_3cam",
+      "type": "concept",
+      "name": "3-camera setup (top, left_wrist, right_wrist)",
+      "summary": "Standard 3-camera observation layout: top (overhead/scene view), left_wrist (egocentric left gripper), right_wrist (egocentric right gripper). Each 224x224x3 RGB. Used by data.yaml, lora.yaml, and shared as base for VTLA variant.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:camera_setup_5cam_vtla",
+      "type": "concept",
+      "name": "5-camera VTLA setup (+ left_tactile, + right_tactile)",
+      "summary": "VTLA variant camera layout extending the 3-camera setup with left_tactile and right_tactile image inputs (224x224x3). Used by lora_vtla_stage1.yaml for the Octopus robot with Inspire Hand tactile sensors.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:action_dim_constraint",
+      "type": "concept",
+      "name": "Action dimension fixed at 14D",
+      "summary": "Enforced constraint: action always 14D regardless of state dimension expansion. Explicitly documented in data.yaml line 28 comment. model config max_action_dim=14 prevents PI0.5 from using 32D default padding.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:state_dim_derivation",
+      "type": "concept",
+      "name": "State dimension derivation (14 + 2*6 = 26)",
+      "summary": "State dimension 26 is derived as 14 (joint positions) + 2x6 (end-effector poses: x, y, z, roll, pitch, yaw for left and right arms). Documented in lora.yaml line 27 comment.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:experiment_template",
+      "type": "concept",
+      "name": "Experiment template (train.yaml)",
+      "summary": "Minimal experiment configuration template defining experiment name/notes/task, standard output paths (dataset, checkpoints, exports, logs), and launch settings (device=cuda, mixed_precision=bf16, resume support). Entry points left blank for CLI override.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:file-train/scripts/export_policy.sh",
+      "type": "file",
+      "name": "export_policy.sh",
+      "summary": "export_policy.sh component",
+      "tags": [
+        "file"
+      ]
+    },
+    {
+      "id": "file:file-train/scripts/prepare_dataset.sh",
+      "type": "file",
+      "name": "prepare_dataset.sh",
+      "summary": "prepare_dataset.sh component",
+      "tags": [
+        "file"
+      ]
+    },
+    {
+      "id": "file:file-train/scripts/smoke_test.py",
+      "type": "file",
+      "name": "smoke_test.py",
+      "summary": "smoke_test.py component",
+      "tags": [
+        "file"
+      ]
+    },
+    {
+      "id": "file:file-train/scripts/test_dataloader.py",
+      "type": "file",
+      "name": "test_dataloader.py",
+      "summary": "test_dataloader.py component",
+      "tags": [
+        "file"
+      ]
+    },
+    {
+      "id": "file:file-train/scripts/train_lora.sh",
+      "type": "file",
+      "name": "train_lora.sh",
+      "summary": "train_lora.sh component",
+      "tags": [
+        "file"
+      ]
+    },
+    {
+      "id": "module:module-pi05.train.cli.export_bundle",
+      "type": "module",
+      "name": "module:module-pi05.train.cli.export_bundle",
+      "summary": "module:module-pi05.train.cli.export_bundle component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "module:module-pi05.train.cli.train",
+      "type": "module",
+      "name": "module:module-pi05.train.cli.train",
+      "summary": "module:module-pi05.train.cli.train component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "module:module-pi05.common.model.builder",
+      "type": "module",
+      "name": "module:module-pi05.common.model.builder",
+      "summary": "module:module-pi05.common.model.builder component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "module:module-pi05.common.data.normalization",
+      "type": "module",
+      "name": "module:module-pi05.common.data.normalization",
+      "summary": "module:module-pi05.common.data.normalization component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "module:module-pi05.train.data.dataset",
+      "type": "module",
+      "name": "module:module-pi05.train.data.dataset",
+      "summary": "module:module-pi05.train.data.dataset component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "module:module-lerobot.policies.pi05.processor_pi05",
+      "type": "module",
+      "name": "module:module-lerobot.policies.pi05.processor_pi05",
+      "summary": "module:module-lerobot.policies.pi05.processor_pi05 component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "module:module-lerobot.utils.constants",
+      "type": "module",
+      "name": "module:module-lerobot.utils.constants",
+      "summary": "module:module-lerobot.utils.constants component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:file-tools/mcap_to_lerobot_v3.py",
+      "type": "file",
+      "name": "mcap_to_lerobot_v3.py",
+      "summary": "mcap_to_lerobot_v3.py component",
+      "tags": [
+        "file"
+      ]
+    },
+    {
+      "id": "file:config-train/config/lora.yaml",
+      "type": "file",
+      "name": "lora.yaml",
+      "summary": "lora.yaml component",
+      "tags": [
+        "file"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:build_pi05_with_lora",
+      "type": "function",
+      "name": "smoke_test.py:build_pi05_with_lora",
+      "summary": "smoke_test.py:build_pi05_with_lora component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:make_mock_batch",
+      "type": "function",
+      "name": "smoke_test.py:make_mock_batch",
+      "summary": "smoke_test.py:make_mock_batch component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:prepare_model_batch",
+      "type": "function",
+      "name": "smoke_test.py:prepare_model_batch",
+      "summary": "smoke_test.py:prepare_model_batch component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:_get_policy_config",
+      "type": "function",
+      "name": "smoke_test.py:_get_policy_config",
+      "summary": "smoke_test.py:_get_policy_config component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:find_lora_gradient",
+      "type": "function",
+      "name": "smoke_test.py:find_lora_gradient",
+      "summary": "smoke_test.py:find_lora_gradient component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:load_yaml",
+      "type": "function",
+      "name": "smoke_test.py:load_yaml",
+      "summary": "smoke_test.py:load_yaml component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:parse_args",
+      "type": "function",
+      "name": "smoke_test.py:parse_args",
+      "summary": "smoke_test.py:parse_args component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:main",
+      "type": "function",
+      "name": "smoke_test.py:main",
+      "summary": "smoke_test.py:main component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:_require_torch",
+      "type": "function",
+      "name": "smoke_test.py:_require_torch",
+      "summary": "smoke_test.py:_require_torch component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/smoke_test.py:_bootstrap_import_paths",
+      "type": "function",
+      "name": "smoke_test.py:_bootstrap_import_paths",
+      "summary": "smoke_test.py:_bootstrap_import_paths component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "class:train/scripts/test_dataloader.py:Pi05LeRobotDataset",
+      "type": "class",
+      "name": "test_dataloader.py:Pi05LeRobotDataset",
+      "summary": "test_dataloader.py:Pi05LeRobotDataset component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "function:train/scripts/test_dataloader.py:build_state_action_normalizers",
+      "type": "function",
+      "name": "test_dataloader.py:build_state_action_normalizers",
+      "summary": "test_dataloader.py:build_state_action_normalizers component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/test_dataloader.py:describe_tensor",
+      "type": "function",
+      "name": "test_dataloader.py:describe_tensor",
+      "summary": "test_dataloader.py:describe_tensor component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/test_dataloader.py:parse_args",
+      "type": "function",
+      "name": "test_dataloader.py:parse_args",
+      "summary": "test_dataloader.py:parse_args component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:train/scripts/test_dataloader.py:main",
+      "type": "function",
+      "name": "test_dataloader.py:main",
+      "summary": "test_dataloader.py:main component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:const-OBS_LANGUAGE_TOKENS",
+      "type": "concept",
+      "name": "file:const-OBS_LANGUAGE_TOKENS",
+      "summary": "file:const-OBS_LANGUAGE_TOKENS component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:const-OBS_LANGUAGE_ATTENTION_MASK",
+      "type": "concept",
+      "name": "file:const-OBS_LANGUAGE_ATTENTION_MASK",
+      "summary": "file:const-OBS_LANGUAGE_ATTENTION_MASK component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "function:third_party/lerobot/src/lerobot/policies/pi05/processor_pi05.py:make_pi05_pre_post_processors",
+      "type": "function",
+      "name": "processor_pi05.py:make_pi05_pre_post_processors",
+      "summary": "processor_pi05.py:make_pi05_pre_post_processors component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:pattern-shared_pythonpath_bootstrap",
+      "type": "concept",
+      "name": "file:pattern-shared_pythonpath_bootstrap",
+      "summary": "file:pattern-shared_pythonpath_bootstrap component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:pattern-3tier_path_search",
+      "type": "concept",
+      "name": "file:pattern-3tier_path_search",
+      "summary": "file:pattern-3tier_path_search component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "schema:schema-state_26d_action_14d",
+      "type": "schema",
+      "name": "schema:schema-state_26d_action_14d",
+      "summary": "schema:schema-state_26d_action_14d component",
+      "tags": [
+        "schema"
+      ]
+    },
+    {
+      "id": "config:config-default_cameras",
+      "type": "config",
+      "name": "config:config-default_cameras",
+      "summary": "config:config-default_cameras component",
+      "tags": [
+        "config"
+      ]
+    },
+    {
+      "id": "concept:pipeline-step-dataset_prep",
+      "type": "concept",
+      "name": "concept:pipeline-step-dataset_prep",
+      "summary": "concept:pipeline-step-dataset_prep component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:pipeline-step-training",
+      "type": "concept",
+      "name": "concept:pipeline-step-training",
+      "summary": "concept:pipeline-step-training component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:pipeline-step-export",
+      "type": "concept",
+      "name": "concept:pipeline-step-export",
+      "summary": "concept:pipeline-step-export component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:common/config/paths.yaml",
+      "type": "file",
+      "name": "paths.yaml",
+      "summary": "paths.yaml component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/config/paths.yaml"
+    },
+    {
+      "id": "config:paths.yaml:workspace_root",
+      "type": "config",
+      "name": "workspace_root (..)",
+      "summary": "workspace_root (..) component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "common/config/paths.yaml"
+    },
+    {
+      "id": "config:paths.yaml:project_root",
+      "type": "config",
+      "name": "project_root (.)",
+      "summary": "project_root (.) component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "common/config/paths.yaml"
+    },
+    {
+      "id": "config:paths.yaml:datasets",
+      "type": "config",
+      "name": "datasets paths",
+      "summary": "datasets paths component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "common/config/paths.yaml"
+    },
+    {
+      "id": "config:paths.yaml:models",
+      "type": "config",
+      "name": "models path",
+      "summary": "models path component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "common/config/paths.yaml"
+    },
+    {
+      "id": "config:paths.yaml:outputs",
+      "type": "config",
+      "name": "outputs paths",
+      "summary": "outputs paths component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "common/config/paths.yaml"
+    },
+    {
+      "id": "file:common/config/runtime.yaml",
+      "type": "file",
+      "name": "runtime.yaml",
+      "summary": "runtime.yaml component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/config/runtime.yaml"
+    },
+    {
+      "id": "config:runtime.yaml:runtime",
+      "type": "config",
+      "name": "runtime settings",
+      "summary": "runtime settings component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "common/config/runtime.yaml"
+    },
+    {
+      "id": "config:runtime.yaml:deployment",
+      "type": "config",
+      "name": "deployment settings",
+      "summary": "deployment settings component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "common/config/runtime.yaml"
+    },
+    {
+      "id": "file:common/src/pi05/common/__init__.py",
+      "type": "file",
+      "name": "pi05.common (package)",
+      "summary": "pi05.common (package) component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/__init__.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/config/__init__.py",
+      "type": "file",
+      "name": "pi05.common.config (package)",
+      "summary": "pi05.common.config (package) component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/config/__init__.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/config/schema.py",
+      "type": "file",
+      "name": "schema.py",
+      "summary": "schema.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "class:ConfigError",
+      "type": "class",
+      "name": "ConfigError",
+      "summary": "ConfigError component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "class:LoraConfig",
+      "type": "class",
+      "name": "LoraConfig",
+      "summary": "LoraConfig component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "class:DataConfig",
+      "type": "class",
+      "name": "DataConfig",
+      "summary": "DataConfig component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "class:ModelConfig",
+      "type": "class",
+      "name": "ModelConfig",
+      "summary": "ModelConfig component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "class:TrainingConfig",
+      "type": "class",
+      "name": "TrainingConfig",
+      "summary": "TrainingConfig component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "class:LoggingConfig",
+      "type": "class",
+      "name": "LoggingConfig",
+      "summary": "LoggingConfig component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "class:ExperimentConfig",
+      "type": "class",
+      "name": "ExperimentConfig",
+      "summary": "ExperimentConfig component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "function:load_experiment_config",
+      "type": "function",
+      "name": "load_experiment_config()",
+      "summary": "load_experiment_config() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "function:schema:from_mapping",
+      "type": "concept",
+      "name": "from_mapping() classmethods",
+      "summary": "from_mapping() classmethods component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "function:schema:validators",
+      "type": "concept",
+      "name": "schema validation helpers",
+      "summary": "schema validation helpers component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/config/schema.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/data/__init__.py",
+      "type": "file",
+      "name": "pi05.common.data (package)",
+      "summary": "pi05.common.data (package) component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/data/__init__.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/data/action_codec.py",
+      "type": "file",
+      "name": "action_codec.py",
+      "summary": "action_codec.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/data/action_codec.py"
+    },
+    {
+      "id": "function:ensure_action_vector",
+      "type": "function",
+      "name": "ensure_action_vector()",
+      "summary": "ensure_action_vector() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/action_codec.py"
+    },
+    {
+      "id": "function:ensure_action_chunk",
+      "type": "function",
+      "name": "ensure_action_chunk()",
+      "summary": "ensure_action_chunk() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/action_codec.py"
+    },
+    {
+      "id": "function:split_action",
+      "type": "function",
+      "name": "split_action()",
+      "summary": "split_action() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/action_codec.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/data/image_preprocess.py",
+      "type": "file",
+      "name": "image_preprocess.py",
+      "summary": "image_preprocess.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/data/image_preprocess.py"
+    },
+    {
+      "id": "class:ImagePreprocessConfig",
+      "type": "class",
+      "name": "ImagePreprocessConfig",
+      "summary": "ImagePreprocessConfig component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/data/image_preprocess.py"
+    },
+    {
+      "id": "function:preprocess_rgb_image",
+      "type": "function",
+      "name": "preprocess_rgb_image()",
+      "summary": "preprocess_rgb_image() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/image_preprocess.py"
+    },
+    {
+      "id": "function:resize_pad",
+      "type": "function",
+      "name": "_resize_pad()",
+      "summary": "_resize_pad() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/image_preprocess.py"
+    },
+    {
+      "id": "function:resize_crop",
+      "type": "function",
+      "name": "_resize_crop()",
+      "summary": "_resize_crop() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/image_preprocess.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/data/normalization.py",
+      "type": "file",
+      "name": "normalization.py",
+      "summary": "normalization.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/data/normalization.py"
+    },
+    {
+      "id": "class:ActionStateNormalizer",
+      "type": "class",
+      "name": "ActionStateNormalizer",
+      "summary": "ActionStateNormalizer component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/data/normalization.py"
+    },
+    {
+      "id": "function:build_normalizer_from_lerobot",
+      "type": "function",
+      "name": "build_normalizer_from_lerobot()",
+      "summary": "build_normalizer_from_lerobot() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/normalization.py"
+    },
+    {
+      "id": "function:build_state_action_normalizers",
+      "type": "function",
+      "name": "build_state_action_normalizers()",
+      "summary": "build_state_action_normalizers() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/normalization.py"
+    },
+    {
+      "id": "function:ensure_vector_stats",
+      "type": "function",
+      "name": "ensure_vector_stats()",
+      "summary": "ensure_vector_stats() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/normalization.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/data/state_codec.py",
+      "type": "file",
+      "name": "state_codec.py",
+      "summary": "state_codec.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/data/state_codec.py"
+    },
+    {
+      "id": "class:BimanualState",
+      "type": "class",
+      "name": "BimanualState",
+      "summary": "BimanualState component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/data/state_codec.py"
+    },
+    {
+      "id": "function:encode_bimanual_state",
+      "type": "function",
+      "name": "encode_bimanual_state()",
+      "summary": "encode_bimanual_state() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/state_codec.py"
+    },
+    {
+      "id": "function:decode_picotele_proprioception",
+      "type": "function",
+      "name": "decode_picotele_proprioception()",
+      "summary": "decode_picotele_proprioception() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/data/state_codec.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/model/__init__.py",
+      "type": "file",
+      "name": "pi05.common.model (package)",
+      "summary": "pi05.common.model (package) component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/model/__init__.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/model/builder.py",
+      "type": "file",
+      "name": "builder.py",
+      "summary": "builder.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/model/builder.py"
+    },
+    {
+      "id": "function:build_pi05_with_lora",
+      "type": "function",
+      "name": "build_pi05_with_lora()",
+      "summary": "build_pi05_with_lora() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/model/builder.py"
+    },
+    {
+      "id": "function:get_pi05_policy_config",
+      "type": "function",
+      "name": "get_pi05_policy_config()",
+      "summary": "get_pi05_policy_config() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/model/builder.py"
+    },
+    {
+      "id": "function:resolve_peft_target_modules",
+      "type": "function",
+      "name": "_resolve_peft_target_modules()",
+      "summary": "_resolve_peft_target_modules() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/model/builder.py"
+    },
+    {
+      "id": "function:image_keys_from_cameras",
+      "type": "function",
+      "name": "_image_keys_from_cameras()",
+      "summary": "_image_keys_from_cameras() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/model/builder.py"
+    },
+    {
+      "id": "function:resize_pi05_action_projections",
+      "type": "function",
+      "name": "_resize_pi05_action_projections()",
+      "summary": "_resize_pi05_action_projections() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/model/builder.py"
+    },
+    {
+      "id": "function:force_pi05_attention_implementation",
+      "type": "function",
+      "name": "_force_pi05_attention_implementation()",
+      "summary": "_force_pi05_attention_implementation() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/model/builder.py"
+    },
+    {
+      "id": "function:ensure_pi05_feature_specs",
+      "type": "function",
+      "name": "_ensure_pi05_feature_specs()",
+      "summary": "_ensure_pi05_feature_specs() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/model/builder.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/robot/__init__.py",
+      "type": "file",
+      "name": "pi05.common.robot (package)",
+      "summary": "pi05.common.robot (package) component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/robot/__init__.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/robot/action_spec.py",
+      "type": "file",
+      "name": "action_spec.py",
+      "summary": "action_spec.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/robot/action_spec.py"
+    },
+    {
+      "id": "file:const:ARM_DOF",
+      "type": "concept",
+      "name": "ARM_DOF=6",
+      "summary": "ARM_DOF=6 component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/robot/action_spec.py"
+    },
+    {
+      "id": "file:const:HAND_DOF",
+      "type": "concept",
+      "name": "HAND_DOF=1",
+      "summary": "HAND_DOF=1 component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/robot/action_spec.py"
+    },
+    {
+      "id": "file:const:ACTION_DIM",
+      "type": "concept",
+      "name": "ACTION_DIM=14",
+      "summary": "ACTION_DIM=14 component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/robot/action_spec.py"
+    },
+    {
+      "id": "file:const:STATE_DIM",
+      "type": "concept",
+      "name": "STATE_DIM=26",
+      "summary": "STATE_DIM=26 component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/robot/action_spec.py"
+    },
+    {
+      "id": "class:BimanualAction",
+      "type": "class",
+      "name": "BimanualAction",
+      "summary": "BimanualAction component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/robot/action_spec.py"
+    },
+    {
+      "id": "function:split_bimanual_action",
+      "type": "function",
+      "name": "split_bimanual_action()",
+      "summary": "split_bimanual_action() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/robot/action_spec.py"
+    },
+    {
+      "id": "function:hand_command_to_trigger",
+      "type": "function",
+      "name": "hand_command_to_trigger()",
+      "summary": "hand_command_to_trigger() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/robot/action_spec.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/robot/joint_limits.py",
+      "type": "file",
+      "name": "joint_limits.py",
+      "summary": "joint_limits.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/robot/joint_limits.py"
+    },
+    {
+      "id": "class:JointLimitSpec",
+      "type": "class",
+      "name": "JointLimitSpec",
+      "summary": "JointLimitSpec component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/robot/joint_limits.py"
+    },
+    {
+      "id": "function:broad_joint_limits",
+      "type": "function",
+      "name": "broad_joint_limits()",
+      "summary": "broad_joint_limits() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/robot/joint_limits.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/ros/__init__.py",
+      "type": "file",
+      "name": "pi05.common.ros (package)",
+      "summary": "pi05.common.ros (package) component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/ros/__init__.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/ros/topics.py",
+      "type": "file",
+      "name": "topics.py",
+      "summary": "topics.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/ros/topics.py"
+    },
+    {
+      "id": "function:join_topic",
+      "type": "function",
+      "name": "join_topic()",
+      "summary": "join_topic() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/ros/topics.py"
+    },
+    {
+      "id": "file:const:DEFAULT_NAMESPACE",
+      "type": "concept",
+      "name": "pi05_vla",
+      "summary": "pi05_vla component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/ros/topics.py"
+    },
+    {
+      "id": "class:Pi05CommandTopics",
+      "type": "class",
+      "name": "Pi05CommandTopics",
+      "summary": "Pi05CommandTopics component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/ros/topics.py"
+    },
+    {
+      "id": "class:Pi05ObservationTopics",
+      "type": "class",
+      "name": "Pi05ObservationTopics",
+      "summary": "Pi05ObservationTopics component",
+      "tags": [
+        "class"
+      ],
+      "filePath": "common/src/pi05/common/ros/topics.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/runtime/__init__.py",
+      "type": "file",
+      "name": "pi05.common.runtime (package)",
+      "summary": "pi05.common.runtime (package) component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/runtime/__init__.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/runtime/bundle.py",
+      "type": "file",
+      "name": "bundle.py",
+      "summary": "bundle.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/runtime/bundle.py"
+    },
+    {
+      "id": "function:export_deploy_bundle",
+      "type": "function",
+      "name": "export_deploy_bundle()",
+      "summary": "export_deploy_bundle() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/runtime/bundle.py"
+    },
+    {
+      "id": "function:load_bundle_manifest",
+      "type": "function",
+      "name": "load_bundle_manifest()",
+      "summary": "load_bundle_manifest() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/runtime/bundle.py"
+    },
+    {
+      "id": "function:load_bundle_normalizers",
+      "type": "function",
+      "name": "load_bundle_normalizers()",
+      "summary": "load_bundle_normalizers() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/runtime/bundle.py"
+    },
+    {
+      "id": "function:resolve_bundle_adapter_dir",
+      "type": "function",
+      "name": "resolve_bundle_adapter_dir()",
+      "summary": "resolve_bundle_adapter_dir() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/runtime/bundle.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/utils/__init__.py",
+      "type": "file",
+      "name": "pi05.common.utils (package)",
+      "summary": "pi05.common.utils (package) component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/utils/__init__.py"
+    },
+    {
+      "id": "file:common/src/pi05/common/utils/paths.py",
+      "type": "file",
+      "name": "paths.py",
+      "summary": "paths.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "file:const:PROJECT_ROOT",
+      "type": "concept",
+      "name": "PROJECT_ROOT",
+      "summary": "PROJECT_ROOT component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "file:const:COMMON_SRC_ROOT",
+      "type": "concept",
+      "name": "COMMON_SRC_ROOT",
+      "summary": "COMMON_SRC_ROOT component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "file:const:TRAIN_SRC_ROOT",
+      "type": "concept",
+      "name": "TRAIN_SRC_ROOT",
+      "summary": "TRAIN_SRC_ROOT component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "file:const:DEPLOY_SRC_ROOT",
+      "type": "concept",
+      "name": "DEPLOY_SRC_ROOT",
+      "summary": "DEPLOY_SRC_ROOT component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "file:const:WORKSPACE_ROOT",
+      "type": "concept",
+      "name": "WORKSPACE_ROOT",
+      "summary": "WORKSPACE_ROOT component",
+      "tags": [
+        "concept"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "function:bootstrap_project_paths",
+      "type": "function",
+      "name": "bootstrap_project_paths()",
+      "summary": "bootstrap_project_paths() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "function:default_deploy_config_path",
+      "type": "function",
+      "name": "default_deploy_config_path()",
+      "summary": "default_deploy_config_path() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "function:default_train_config_path",
+      "type": "function",
+      "name": "default_train_config_path()",
+      "summary": "default_train_config_path() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "function:default_data_config_path",
+      "type": "function",
+      "name": "default_data_config_path()",
+      "summary": "default_data_config_path() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "common/src/pi05/common/utils/paths.py"
+    },
+    {
+      "id": "file:DEPLOY_REPRODUCE.md",
+      "type": "file",
+      "name": "DEPLOY_REPRODUCE.md",
+      "summary": "DEPLOY_REPRODUCE.md component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "DEPLOY_REPRODUCE.md"
+    },
+    {
+      "id": "file:deploy/config/deploy.yaml",
+      "type": "file",
+      "name": "deploy.yaml",
+      "summary": "deploy.yaml component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/config/deploy.yaml"
+    },
+    {
+      "id": "config:deploy.yaml:bundle",
+      "type": "config",
+      "name": "deploy bundle config",
+      "summary": "deploy bundle config component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "deploy/config/deploy.yaml"
+    },
+    {
+      "id": "config:deploy.yaml:runtime",
+      "type": "config",
+      "name": "deploy runtime config",
+      "summary": "deploy runtime config component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "deploy/config/deploy.yaml"
+    },
+    {
+      "id": "config:deploy.yaml:image",
+      "type": "config",
+      "name": "deploy image config",
+      "summary": "deploy image config component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "deploy/config/deploy.yaml"
+    },
+    {
+      "id": "config:deploy.yaml:topics",
+      "type": "config",
+      "name": "deploy topic config",
+      "summary": "deploy topic config component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "deploy/config/deploy.yaml"
+    },
+    {
+      "id": "config:deploy.yaml:safety",
+      "type": "config",
+      "name": "deploy safety config",
+      "summary": "deploy safety config component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "deploy/config/deploy.yaml"
+    },
+    {
+      "id": "config:deploy.yaml:bridge",
+      "type": "config",
+      "name": "deploy bridge config",
+      "summary": "deploy bridge config component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "deploy/config/deploy.yaml"
+    },
+    {
+      "id": "config:deploy.yaml:mux",
+      "type": "config",
+      "name": "deploy mux config",
+      "summary": "deploy mux config component",
+      "tags": [
+        "config"
+      ],
+      "filePath": "deploy/config/deploy.yaml"
+    },
+    {
+      "id": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "type": "file",
+      "name": "pi05_picotele_mux.launch.py",
+      "summary": "pi05_picotele_mux.launch.py component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/launch/pi05_picotele_mux.launch.py"
+    },
+    {
+      "id": "function:generate_launch_description",
+      "type": "function",
+      "name": "generate_launch_description()",
+      "summary": "generate_launch_description() component",
+      "tags": [
+        "function"
+      ],
+      "filePath": "deploy/launch/pi05_picotele_mux.launch.py"
+    },
+    {
+      "id": "file:deploy/service/README.md",
+      "type": "file",
+      "name": "README.md",
+      "summary": "README.md component",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/service/README.md"
+    },
+    {
+      "id": "file:deploy-pkg",
+      "type": "module",
+      "name": "pi05.deploy",
+      "summary": "pi05.deploy component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:deploy-cli-pkg",
+      "type": "module",
+      "name": "pi05.deploy.cli",
+      "summary": "pi05.deploy.cli component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:deploy-config-pkg",
+      "type": "module",
+      "name": "pi05.deploy.config",
+      "summary": "pi05.deploy.config component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:deploy-models-pkg",
+      "type": "module",
+      "name": "pi05.deploy.models",
+      "summary": "pi05.deploy.models component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:deploy-ros-nodes-pkg",
+      "type": "module",
+      "name": "pi05.deploy.ros_nodes",
+      "summary": "pi05.deploy.ros_nodes component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:deploy-ros-pkg",
+      "type": "module",
+      "name": "pi05.deploy.ros",
+      "summary": "pi05.deploy.ros component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:deploy-runtime-pkg",
+      "type": "module",
+      "name": "pi05.deploy.runtime",
+      "summary": "pi05.deploy.runtime component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:DeployConfig",
+      "type": "class",
+      "name": "DeployConfig",
+      "summary": "DeployConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:BundleConfig",
+      "type": "class",
+      "name": "BundleConfig",
+      "summary": "BundleConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:RuntimeConfig",
+      "type": "class",
+      "name": "RuntimeConfig",
+      "summary": "RuntimeConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:ImageConfig",
+      "type": "class",
+      "name": "ImageConfig",
+      "summary": "ImageConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:TopicsConfig",
+      "type": "class",
+      "name": "TopicsConfig",
+      "summary": "TopicsConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:ObservationTopicsConfig",
+      "type": "class",
+      "name": "ObservationTopicsConfig",
+      "summary": "ObservationTopicsConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:CommandTopicsConfig",
+      "type": "class",
+      "name": "CommandTopicsConfig",
+      "summary": "CommandTopicsConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:BridgeTopicsConfig",
+      "type": "class",
+      "name": "BridgeTopicsConfig",
+      "summary": "BridgeTopicsConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:MuxTopicsConfig",
+      "type": "class",
+      "name": "MuxTopicsConfig",
+      "summary": "MuxTopicsConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:SafetyConfig",
+      "type": "class",
+      "name": "SafetyConfig",
+      "summary": "SafetyConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:JointLimitsConfig",
+      "type": "class",
+      "name": "JointLimitsConfig",
+      "summary": "JointLimitsConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:BridgeConfig",
+      "type": "class",
+      "name": "BridgeConfig",
+      "summary": "BridgeConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:MuxConfig",
+      "type": "class",
+      "name": "MuxConfig",
+      "summary": "MuxConfig component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:DeployConfigError",
+      "type": "class",
+      "name": "DeployConfigError",
+      "summary": "DeployConfigError component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:load_deploy_config",
+      "type": "function",
+      "name": "load_deploy_config()",
+      "summary": "load_deploy_config() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:_deploy_from_mapping",
+      "type": "function",
+      "name": "_deploy_from_mapping()",
+      "summary": "_deploy_from_mapping() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:Pi05PolicyRuntime",
+      "type": "class",
+      "name": "Pi05PolicyRuntime",
+      "summary": "Pi05PolicyRuntime component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:load_policy_runtime",
+      "type": "function",
+      "name": "load_policy_runtime()",
+      "summary": "load_policy_runtime() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:Pi05VlaDeployNode",
+      "type": "class",
+      "name": "Pi05VlaDeployNode",
+      "summary": "Pi05VlaDeployNode component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:Pi05BridgeNode",
+      "type": "class",
+      "name": "Pi05BridgeNode",
+      "summary": "Pi05BridgeNode component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:CommandMuxNode",
+      "type": "class",
+      "name": "CommandMuxNode",
+      "summary": "CommandMuxNode component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:ControlLoop",
+      "type": "class",
+      "name": "ControlLoop",
+      "summary": "ControlLoop component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:ControlCommand",
+      "type": "class",
+      "name": "ControlCommand",
+      "summary": "ControlCommand component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:InferenceWorker",
+      "type": "class",
+      "name": "InferenceWorker",
+      "summary": "InferenceWorker component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:ObservationCollector",
+      "type": "class",
+      "name": "ObservationCollector",
+      "summary": "ObservationCollector component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:SafetyGuard",
+      "type": "class",
+      "name": "SafetyGuard",
+      "summary": "SafetyGuard component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:SafetyResult",
+      "type": "class",
+      "name": "SafetyResult",
+      "summary": "SafetyResult component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:SharedBuffer",
+      "type": "class",
+      "name": "SharedBuffer",
+      "summary": "SharedBuffer component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:ObservationSnapshot",
+      "type": "class",
+      "name": "ObservationSnapshot",
+      "summary": "ObservationSnapshot component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:ActionChunk",
+      "type": "class",
+      "name": "ActionChunk",
+      "summary": "ActionChunk component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:InferenceRequest",
+      "type": "class",
+      "name": "InferenceRequest",
+      "summary": "InferenceRequest component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:LatestQueue",
+      "type": "class",
+      "name": "LatestQueue",
+      "summary": "LatestQueue component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:RuntimeMetrics",
+      "type": "class",
+      "name": "RuntimeMetrics",
+      "summary": "RuntimeMetrics component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:smoothstep_alpha",
+      "type": "function",
+      "name": "smoothstep_alpha()",
+      "summary": "smoothstep_alpha() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:is_action_chunk_usable",
+      "type": "function",
+      "name": "is_action_chunk_usable()",
+      "summary": "is_action_chunk_usable() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:_decode_image",
+      "type": "function",
+      "name": "_decode_image()",
+      "summary": "_decode_image() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:_joint_msg",
+      "type": "function",
+      "name": "_joint_msg()",
+      "summary": "_joint_msg() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:main-deploy-ros",
+      "type": "function",
+      "name": "deploy_ros.main()",
+      "summary": "deploy_ros.main() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:main-bridge-ros",
+      "type": "function",
+      "name": "bridge_ros.main()",
+      "summary": "bridge_ros.main() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:main-command-mux-ros",
+      "type": "function",
+      "name": "command_mux_ros.main()",
+      "summary": "command_mux_ros.main() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:policy_node-main",
+      "type": "function",
+      "name": "policy_node.main()",
+      "summary": "policy_node.main() component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:test_deploy_config",
+      "type": "file",
+      "name": "test_deploy_config.py",
+      "summary": "test_deploy_config.py component",
+      "tags": [
+        "file"
+      ]
+    },
+    {
+      "id": "file:test_train_config",
+      "type": "file",
+      "name": "test_config.py",
+      "summary": "test_config.py component",
+      "tags": [
+        "file"
+      ]
+    },
+    {
+      "id": "file:train-pkg",
+      "type": "module",
+      "name": "pi05.train",
+      "summary": "pi05.train component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:README",
+      "type": "document",
+      "name": "README.md",
+      "summary": "README.md component",
+      "tags": [
+        "document"
+      ]
+    },
+    {
+      "id": "file:train-cli-pkg",
+      "type": "module",
+      "name": "pi05.train.cli",
+      "summary": "pi05.train.cli component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:train-data-pkg",
+      "type": "module",
+      "name": "pi05.train.data",
+      "summary": "pi05.train.data component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:train-engine-pkg",
+      "type": "module",
+      "name": "pi05.train.engine",
+      "summary": "pi05.train.engine component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:train-utils-pkg",
+      "type": "module",
+      "name": "pi05.train.utils",
+      "summary": "pi05.train.utils component",
+      "tags": [
+        "module"
+      ]
+    },
+    {
+      "id": "file:train/src/pi05/train/cli/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "summary": "Package init for pi05.train.cli.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/cli/__init__.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/cli/export_bundle.py",
+      "type": "file",
+      "name": "export_bundle.py",
+      "summary": "CLI for exporting a deployment-ready PI05 bundle from training artifacts.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/cli/export_bundle.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/cli/train.py",
+      "type": "file",
+      "name": "train.py",
+      "summary": "CLI for Pi0.5 LoRA training.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/cli/train.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/data/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "summary": "Package init for pi05.train.data.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/data/__init__.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/data/dataset.py",
+      "type": "file",
+      "name": "dataset.py",
+      "summary": "Dataset wrapper for Pi0.5-style LeRobot offline training.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/data/dataset.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "summary": "Package init for pi05.train.engine.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/engine/__init__.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/batches.py",
+      "type": "file",
+      "name": "batches.py",
+      "summary": "Batch adapters between the local dataset and LeRobot PI0.5 preprocessor.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/engine/batches.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/builders.py",
+      "type": "file",
+      "name": "builders.py",
+      "summary": "Builders for datasets, dataloaders, optimizers, and schedulers.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/engine/builders.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/checkpoints.py",
+      "type": "file",
+      "name": "checkpoints.py",
+      "summary": "Checkpoint and final adapter export helpers.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/engine/checkpoints.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/engine/trainer.py",
+      "type": "file",
+      "name": "trainer.py",
+      "summary": "Main training loop for Pi0.5 LoRA fine-tuning.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/engine/trainer.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/utils/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "summary": "Package init for pi05.train.utils.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/utils/__init__.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/utils/logging.py",
+      "type": "file",
+      "name": "logging.py",
+      "summary": "Logging setup that plays well with Accelerate main-process output.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/utils/logging.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/utils/seed.py",
+      "type": "file",
+      "name": "seed.py",
+      "summary": "Reproducibility helpers.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/utils/seed.py"
+    },
+    {
+      "id": "file:train/src/pi05/train/utils/tensorboard.py",
+      "type": "file",
+      "name": "tensorboard.py",
+      "summary": "TensorBoard launch helpers used by the training entrypoint.",
+      "tags": [
+        "file"
+      ],
+      "filePath": "train/src/pi05/train/utils/tensorboard.py"
+    },
+    {
+      "id": "module:pi05.train.cli.export_bundle",
+      "type": "module",
+      "name": "pi05.train.cli.export_bundle",
+      "summary": "CLI module: parses args, loads experiment config, calls export_deploy_bundle to package a trained LoRA adapter into a deploy bundle.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/cli/export_bundle.py"
+    },
+    {
+      "id": "module:pi05.train.cli.train",
+      "type": "module",
+      "name": "pi05.train.cli.train",
+      "summary": "CLI module: parses args, loads experiment config, calls train_from_config to launch Pi0.5 LoRA fine-tuning.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/cli/train.py"
+    },
+    {
+      "id": "module:pi05.train.data.dataset",
+      "type": "module",
+      "name": "pi05.train.data.dataset",
+      "summary": "Provides Pi05LeRobotDataset, a torch Dataset wrapping LeRobotDataset with action chunking, image preprocessing, and optional color jitter.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/data/dataset.py"
+    },
+    {
+      "id": "module:pi05.train.engine.batches",
+      "type": "module",
+      "name": "pi05.train.engine.batches",
+      "summary": "Provides to_lerobot_pi05_batch() adapter that maps local dataset keys (state, action_chunk, image_*) to the official PI0.5 processor input schema.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/engine/batches.py"
+    },
+    {
+      "id": "module:pi05.train.engine.builders",
+      "type": "module",
+      "name": "pi05.train.engine.builders",
+      "summary": "Provides builder functions for dataloader, optimizer (AdamW), and LR scheduler (cosine with warmup) for Pi0.5 training.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/engine/builders.py"
+    },
+    {
+      "id": "module:pi05.train.engine.checkpoints",
+      "type": "module",
+      "name": "pi05.train.engine.checkpoints",
+      "summary": "Provides checkpoint resume, epoch-level adapter saving, and final adapter export helpers using Accelerate.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/engine/checkpoints.py"
+    },
+    {
+      "id": "module:pi05.train.engine.trainer",
+      "type": "module",
+      "name": "pi05.train.engine.trainer",
+      "summary": "Main training loop: Pi05LoraTrainer class orchestrates Accelerate, model/data builders, preprocessing, and the epoch-step loop with logging and checkpointing.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/engine/trainer.py"
+    },
+    {
+      "id": "module:pi05.train.utils.logging",
+      "type": "module",
+      "name": "pi05.train.utils.logging",
+      "summary": "Provides configure_logging() and log_run_summary() for consistent Accelerate-compatible logging output.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/utils/logging.py"
+    },
+    {
+      "id": "module:pi05.train.utils.seed",
+      "type": "module",
+      "name": "pi05.train.utils.seed",
+      "summary": "Provides set_training_seed() wrapper around accelerate.utils.set_seed for reproducibility.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/utils/seed.py"
+    },
+    {
+      "id": "module:pi05.train.utils.tensorboard",
+      "type": "module",
+      "name": "pi05.train.utils.tensorboard",
+      "summary": "Provides launch_tensorboard() with port conflict detection, reuse of existing TensorBoard instances, and fallback executable resolution.",
+      "tags": [
+        "module"
+      ],
+      "filePath": "train/src/pi05/train/utils/tensorboard.py"
+    },
+    {
+      "id": "class:__nofilepath__:Pi05LeRobotDataset",
+      "type": "class",
+      "name": "Pi05LeRobotDataset",
+      "summary": "Pi05LeRobotDataset component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset.__init__",
+      "type": "function",
+      "name": "Pi05LeRobotDataset.__init__",
+      "summary": "Pi05LeRobotDataset.__init__ component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset.__len__",
+      "type": "function",
+      "name": "Pi05LeRobotDataset.__len__",
+      "summary": "Pi05LeRobotDataset.__len__ component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset.__getitem__",
+      "type": "function",
+      "name": "Pi05LeRobotDataset.__getitem__",
+      "summary": "Pi05LeRobotDataset.__getitem__ component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._resolve_image_keys",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._resolve_image_keys",
+      "summary": "Pi05LeRobotDataset._resolve_image_keys component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._validate_vector_features",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._validate_vector_features",
+      "summary": "Pi05LeRobotDataset._validate_vector_features component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._build_episode_ranges",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._build_episode_ranges",
+      "summary": "Pi05LeRobotDataset._build_episode_ranges component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._get_action_chunk",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._get_action_chunk",
+      "summary": "Pi05LeRobotDataset._get_action_chunk component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._prepare_image",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._prepare_image",
+      "summary": "Pi05LeRobotDataset._prepare_image component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._normalize_cameras",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._normalize_cameras",
+      "summary": "Pi05LeRobotDataset._normalize_cameras component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._dataset_image_key",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._dataset_image_key",
+      "summary": "Pi05LeRobotDataset._dataset_image_key component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._output_image_key",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._output_image_key",
+      "summary": "Pi05LeRobotDataset._output_image_key component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._camera_from_output_key",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._camera_from_output_key",
+      "summary": "Pi05LeRobotDataset._camera_from_output_key component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._resolve_task",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._resolve_task",
+      "summary": "Pi05LeRobotDataset._resolve_task component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._task_from_index",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._task_from_index",
+      "summary": "Pi05LeRobotDataset._task_from_index component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._to_image_tensor",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._to_image_tensor",
+      "summary": "Pi05LeRobotDataset._to_image_tensor component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._to_int",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._to_int",
+      "summary": "Pi05LeRobotDataset._to_int component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._apply_normalizer",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._apply_normalizer",
+      "summary": "Pi05LeRobotDataset._apply_normalizer component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._feature_dim",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._feature_dim",
+      "summary": "Pi05LeRobotDataset._feature_dim component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LeRobotDataset._warn_if_stale_expected_dim",
+      "type": "function",
+      "name": "Pi05LeRobotDataset._warn_if_stale_expected_dim",
+      "summary": "Pi05LeRobotDataset._warn_if_stale_expected_dim component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:DEFAULT_CAMERAS",
+      "type": "concept",
+      "name": "DEFAULT_CAMERAS",
+      "summary": "DEFAULT_CAMERAS component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:TACTILE_CAMERAS",
+      "type": "concept",
+      "name": "TACTILE_CAMERAS",
+      "summary": "TACTILE_CAMERAS component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:DEFAULT_IMAGE_SIZE",
+      "type": "concept",
+      "name": "DEFAULT_IMAGE_SIZE",
+      "summary": "DEFAULT_IMAGE_SIZE component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:IMAGE_NORMALIZE_MEAN",
+      "type": "concept",
+      "name": "IMAGE_NORMALIZE_MEAN",
+      "summary": "IMAGE_NORMALIZE_MEAN component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:IMAGE_NORMALIZE_STD",
+      "type": "concept",
+      "name": "IMAGE_NORMALIZE_STD",
+      "summary": "IMAGE_NORMALIZE_STD component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:to_lerobot_pi05_batch",
+      "type": "function",
+      "name": "to_lerobot_pi05_batch",
+      "summary": "to_lerobot_pi05_batch component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:build_train_dataloader",
+      "type": "function",
+      "name": "build_train_dataloader",
+      "summary": "build_train_dataloader component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:count_training_steps",
+      "type": "function",
+      "name": "count_training_steps",
+      "summary": "count_training_steps component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:build_optimizer",
+      "type": "function",
+      "name": "build_optimizer",
+      "summary": "build_optimizer component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:build_lr_scheduler",
+      "type": "function",
+      "name": "build_lr_scheduler",
+      "summary": "build_lr_scheduler component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:maybe_resume",
+      "type": "function",
+      "name": "maybe_resume",
+      "summary": "maybe_resume component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:save_epoch_adapter_checkpoint",
+      "type": "function",
+      "name": "save_epoch_adapter_checkpoint",
+      "summary": "save_epoch_adapter_checkpoint component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:export_final_adapter",
+      "type": "function",
+      "name": "export_final_adapter",
+      "summary": "export_final_adapter component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:_AverageMeter",
+      "type": "class",
+      "name": "_AverageMeter",
+      "summary": "_AverageMeter component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:_LogWindow",
+      "type": "class",
+      "name": "_LogWindow",
+      "summary": "_LogWindow component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "class:__nofilepath__:Pi05LoraTrainer",
+      "type": "class",
+      "name": "Pi05LoraTrainer",
+      "summary": "Pi05LoraTrainer component",
+      "tags": [
+        "class"
+      ]
+    },
+    {
+      "id": "file:Pi05LoraTrainer.__init__",
+      "type": "function",
+      "name": "Pi05LoraTrainer.__init__",
+      "summary": "Pi05LoraTrainer.__init__ component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LoraTrainer.run",
+      "type": "function",
+      "name": "Pi05LoraTrainer.run",
+      "summary": "Pi05LoraTrainer.run component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LoraTrainer._build_accelerator",
+      "type": "function",
+      "name": "Pi05LoraTrainer._build_accelerator",
+      "summary": "Pi05LoraTrainer._build_accelerator component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LoraTrainer._init_trackers",
+      "type": "function",
+      "name": "Pi05LoraTrainer._init_trackers",
+      "summary": "Pi05LoraTrainer._init_trackers component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LoraTrainer._train_loop",
+      "type": "function",
+      "name": "Pi05LoraTrainer._train_loop",
+      "summary": "Pi05LoraTrainer._train_loop component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LoraTrainer._maybe_export_deploy_bundle",
+      "type": "function",
+      "name": "Pi05LoraTrainer._maybe_export_deploy_bundle",
+      "summary": "Pi05LoraTrainer._maybe_export_deploy_bundle component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:Pi05LoraTrainer._flush_log_window",
+      "type": "function",
+      "name": "Pi05LoraTrainer._flush_log_window",
+      "summary": "Pi05LoraTrainer._flush_log_window component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:train_from_config",
+      "type": "function",
+      "name": "train_from_config",
+      "summary": "train_from_config component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:parse_args@train.cli.export_bundle",
+      "type": "function",
+      "name": "export_bundle.parse_args",
+      "summary": "export_bundle.parse_args component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:main@train.cli.export_bundle",
+      "type": "function",
+      "name": "export_bundle.main",
+      "summary": "export_bundle.main component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:parse_args@train.cli.train",
+      "type": "function",
+      "name": "train.parse_args",
+      "summary": "train.parse_args component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:main@train.cli.train",
+      "type": "function",
+      "name": "train.main",
+      "summary": "train.main component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "file:LOG_FORMAT",
+      "type": "concept",
+      "name": "LOG_FORMAT",
+      "summary": "LOG_FORMAT component",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:configure_logging",
+      "type": "function",
+      "name": "configure_logging",
+      "summary": "configure_logging component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:log_run_summary",
+      "type": "function",
+      "name": "log_run_summary",
+      "summary": "log_run_summary component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:set_training_seed",
+      "type": "function",
+      "name": "set_training_seed",
+      "summary": "set_training_seed component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "function:__nofilepath__:launch_tensorboard",
+      "type": "function",
+      "name": "launch_tensorboard",
+      "summary": "launch_tensorboard component",
+      "tags": [
+        "function"
+      ]
+    },
+    {
+      "id": "concept:train_cli_interface",
+      "type": "concept",
+      "name": "Train CLI interface",
+      "summary": "Two CLI entry points (train and export_bundle) both following the same pattern: argparse -> load_experiment_config -> bootstrap_project_paths -> call engine function. Both invoked via python -m from shell scripts.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:training_pipeline",
+      "type": "concept",
+      "name": "Training pipeline",
+      "summary": "End-to-end training pipeline: CLI -> config -> dataloader (Pi05LeRobotDataset + normalizers) -> model (build_pi05_with_lora) -> optimizer/scheduler -> Accelerate prepare -> train loop -> checkpoint -> final adapter -> deploy bundle export.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:action_chunking",
+      "type": "concept",
+      "name": "Action chunking (chunk_size=30)",
+      "summary": "Training dataset extracts chunk_size-length action sequences (default 30). The chunk is padded at episode boundaries by repeating the last valid action. This is the train-side counterpart of the deploy-side chunked prediction.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:lerobot_pi05_batch_schema",
+      "type": "concept",
+      "name": "LeRobot PI0.5 processor batch schema",
+      "summary": "The official PI0.5 preprocessor expects: observation.state (B, state_dim), action (B, chunk_size, action_dim), observation.images.<camera> (B, C, H, W), task (list[str]). The to_lerobot_pi05_batch adapter maps local keys to this schema.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "concept:tensorboard_launch_flow",
+      "type": "concept",
+      "name": "TensorBoard auto-launch flow",
+      "summary": "Pi05LoraTrainer optionally auto-launches TensorBoard via launch_tensorboard() which: (1) checks for existing TensorBoard on the same logdir to reuse, (2) detects port conflicts and finds alternatives, (3) falls back from tensorboard binary to python -m tensorboard.main.",
+      "tags": [
+        "concept"
+      ]
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/models/policy_loader.py",
+      "type": "file",
+      "name": "policy_loader.py",
+      "summary": "File: deploy/src/pi05/deploy/models/policy_loader.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/models/policy_loader.py"
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "type": "file",
+      "name": "shared_buffer.py",
+      "summary": "File: deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/runtime/shared_buffer.py"
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/runtime/inference_worker.py",
+      "type": "file",
+      "name": "inference_worker.py",
+      "summary": "File: deploy/src/pi05/deploy/runtime/inference_worker.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/runtime/inference_worker.py"
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/runtime/control_loop.py",
+      "type": "file",
+      "name": "control_loop.py",
+      "summary": "File: deploy/src/pi05/deploy/runtime/control_loop.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/runtime/control_loop.py"
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/runtime/observation_collector.py",
+      "type": "file",
+      "name": "observation_collector.py",
+      "summary": "File: deploy/src/pi05/deploy/runtime/observation_collector.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/runtime/observation_collector.py"
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/runtime/safety_guard.py",
+      "type": "file",
+      "name": "safety_guard.py",
+      "summary": "File: deploy/src/pi05/deploy/runtime/safety_guard.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/runtime/safety_guard.py"
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "type": "file",
+      "name": "pi05_vla_deploy_node.py",
+      "summary": "File: deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py"
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+      "type": "file",
+      "name": "pi05_bridge_node.py",
+      "summary": "File: deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py"
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/ros_nodes/command_mux_node.py",
+      "type": "file",
+      "name": "command_mux_node.py",
+      "summary": "File: deploy/src/pi05/deploy/ros_nodes/command_mux_node.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py"
+    },
+    {
+      "id": "file:deploy/src/pi05/deploy/ros/policy_node.py",
+      "type": "file",
+      "name": "policy_node.py",
+      "summary": "File: deploy/src/pi05/deploy/ros/policy_node.py",
+      "tags": [
+        "file"
+      ],
+      "filePath": "deploy/src/pi05/deploy/ros/policy_node.py"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:deploy/scripts/run_bridge.sh",
+      "target": "file:pattern:deploy_scripts/pythonpath_setup",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_command_mux.sh",
+      "target": "file:pattern:deploy_scripts/pythonpath_setup",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_inference.sh",
+      "target": "file:pattern:deploy_scripts/pythonpath_setup",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_bridge.sh",
+      "target": "file:pattern:deploy_scripts/config_launch",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_command_mux.sh",
+      "target": "file:pattern:deploy_scripts/config_launch",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_inference.sh",
+      "target": "file:pattern:deploy_scripts/config_launch",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_bridge.sh",
+      "target": "module:pi05.deploy.cli.bridge_ros",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_command_mux.sh",
+      "target": "module:pi05.deploy.cli.command_mux_ros",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_inference.sh",
+      "target": "module:pi05.deploy.cli.deploy_ros",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_bridge.sh",
+      "target": "config:deploy/config/deploy.yaml",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_command_mux.sh",
+      "target": "config:deploy/config/deploy.yaml",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/run_inference.sh",
+      "target": "config:deploy/config/deploy.yaml",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy/scripts/package_model.sh",
+      "target": "concept:deploy_bundle",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:pattern:deploy_scripts/config_launch",
+      "target": "file:pattern:deploy_scripts/pythonpath_setup",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/data.yaml",
+      "target": "concept:train_data_schema",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/data.yaml",
+      "target": "concept:camera_setup_3cam",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/data.yaml",
+      "target": "concept:action_dim_constraint",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:lora_hyperparams",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:lora_target_modules_wide",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:training_hyperparams_public",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:logging_config_public",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:train_data_schema",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:model_config_public",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:camera_setup_3cam",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "concept:state_dim_derivation",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:lora_hyperparams",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:lora_target_modules_wide",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:training_hyperparams_public",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:logging_config_public",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:train_data_schema",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:model_config_public",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:camera_setup_5cam_vtla",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "concept:state_dim_derivation",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/train.yaml",
+      "target": "concept:experiment_template",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:train_data_schema",
+      "target": "concept:action_dim_constraint",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:train_data_schema",
+      "target": "concept:state_dim_derivation",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:camera_setup_5cam_vtla",
+      "target": "concept:camera_setup_3cam",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "config:train/config/lora.yaml",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora.yaml",
+      "target": "config:train/config/data.yaml",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/lora_vtla_stage1.yaml",
+      "target": "config:train/config/data.yaml",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:training_hyperparams_public",
+      "target": "concept:model_config_public",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "config:train/config/train.yaml",
+      "target": "config:train/config/lora.yaml",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:lora_target_modules_wide",
+      "target": "concept:lora_hyperparams",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:common/src/pi05/common/config/schema.py",
+      "target": "file:common/src/pi05/common/utils/paths.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:LoraConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:DataConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:ModelConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:TrainingConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "class:LoggingConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:load_experiment_config",
+      "target": "class:ExperimentConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:LoraConfig",
+      "target": "function:schema:from_mapping",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:DataConfig",
+      "target": "function:schema:from_mapping",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:ModelConfig",
+      "target": "function:schema:from_mapping",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:TrainingConfig",
+      "target": "function:schema:from_mapping",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:LoggingConfig",
+      "target": "function:schema:from_mapping",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:ExperimentConfig",
+      "target": "function:schema:from_mapping",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:schema:validators",
+      "target": "class:ConfigError",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/config/__init__.py",
+      "target": "file:common/src/pi05/common/config/schema.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/data/action_codec.py",
+      "target": "file:common/src/pi05/common/robot/action_spec.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:ensure_action_vector",
+      "target": "file:const:ACTION_DIM",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:split_action",
+      "target": "function:split_bimanual_action",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/data/state_codec.py",
+      "target": "file:common/src/pi05/common/robot/action_spec.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:encode_bimanual_state",
+      "target": "file:const:STATE_DIM",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:encode_bimanual_state",
+      "target": "file:const:ARM_DOF",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:decode_picotele_proprioception",
+      "target": "file:const:ARM_DOF",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/joint_limits.py",
+      "target": "file:common/src/pi05/common/robot/action_spec.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:JointLimitSpec",
+      "target": "file:const:ARM_DOF",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/model/builder.py",
+      "target": "file:common/src/pi05/common/config/schema.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:build_pi05_with_lora",
+      "target": "class:ExperimentConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:build_pi05_with_lora",
+      "target": "class:LoraConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:build_pi05_with_lora",
+      "target": "class:ModelConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:build_pi05_with_lora",
+      "target": "function:ensure_pi05_feature_specs",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:build_pi05_with_lora",
+      "target": "function:resize_pi05_action_projections",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:build_pi05_with_lora",
+      "target": "function:force_pi05_attention_implementation",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:build_pi05_with_lora",
+      "target": "function:image_keys_from_cameras",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:build_pi05_with_lora",
+      "target": "function:resolve_peft_target_modules",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:ensure_pi05_feature_specs",
+      "target": "file:const:STATE_DIM",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "function:ensure_pi05_feature_specs",
+      "target": "file:const:ACTION_DIM",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "file:common/src/pi05/common/runtime/bundle.py",
+      "target": "file:common/src/pi05/common/config/schema.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/runtime/bundle.py",
+      "target": "file:common/src/pi05/common/data/normalization.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:export_deploy_bundle",
+      "target": "class:ExperimentConfig",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:export_deploy_bundle",
+      "target": "class:ActionStateNormalizer",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:export_deploy_bundle",
+      "target": "function:build_state_action_normalizers",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:load_bundle_normalizers",
+      "target": "class:ActionStateNormalizer",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/runtime/__init__.py",
+      "target": "file:common/src/pi05/common/runtime/bundle.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/utils/__init__.py",
+      "target": "file:common/src/pi05/common/utils/paths.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:const:PROJECT_ROOT",
+      "target": "file:common/src/pi05/common/utils/paths.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:const:PROJECT_ROOT",
+      "target": "file:const:COMMON_SRC_ROOT",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:const:PROJECT_ROOT",
+      "target": "file:const:TRAIN_SRC_ROOT",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:const:PROJECT_ROOT",
+      "target": "file:const:DEPLOY_SRC_ROOT",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:const:PROJECT_ROOT",
+      "target": "file:const:WORKSPACE_ROOT",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "function:default_deploy_config_path",
+      "target": "file:deploy/config/deploy.yaml",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:DEPLOY_REPRODUCE.md",
+      "target": "file:deploy/config/deploy.yaml",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "config:deploy.yaml:bundle",
+      "target": "config:paths.yaml:models",
+      "type": "related",
+      "weight": 0.7
+    },
+    {
+      "source": "config:deploy.yaml:runtime",
+      "target": "config:runtime.yaml:runtime",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "config:deploy.yaml:image",
+      "target": "class:ImagePreprocessConfig",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "config:deploy.yaml:topics",
+      "target": "class:Pi05CommandTopics",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "config:deploy.yaml:topics",
+      "target": "class:Pi05ObservationTopics",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "config:deploy.yaml:safety",
+      "target": "class:JointLimitSpec",
+      "type": "related",
+      "weight": 0.8
+    },
+    {
+      "source": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "target": "file:deploy/config/deploy.yaml",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "config:deploy.yaml:topics",
+      "target": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "config:deploy.yaml:mux",
+      "target": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "config:deploy.yaml:bridge",
+      "target": "file:deploy/launch/pi05_picotele_mux.launch.py",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "function:generate_launch_description",
+      "target": "class:Pi05CommandTopics",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/action_spec.py",
+      "target": "file:common/src/pi05/common/data/action_codec.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/action_spec.py",
+      "target": "file:common/src/pi05/common/data/state_codec.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/action_spec.py",
+      "target": "file:common/src/pi05/common/robot/joint_limits.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/robot/action_spec.py",
+      "target": "file:common/src/pi05/common/model/builder.py",
+      "type": "related",
+      "weight": 0.8
+    },
+    {
+      "source": "file:common/src/pi05/common/config/schema.py",
+      "target": "file:common/src/pi05/common/model/builder.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/config/schema.py",
+      "target": "file:common/src/pi05/common/runtime/bundle.py",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:ActionStateNormalizer",
+      "target": "file:const:STATE_DIM",
+      "type": "related",
+      "weight": 0.8
+    },
+    {
+      "source": "class:ActionStateNormalizer",
+      "target": "file:const:ACTION_DIM",
+      "type": "related",
+      "weight": 0.8
+    },
+    {
+      "source": "class:BimanualAction",
+      "target": "file:const:ARM_DOF",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "class:BimanualState",
+      "target": "file:const:ARM_DOF",
+      "type": "related",
+      "weight": 1.0
+    },
+    {
+      "source": "file:common/src/pi05/common/data/normalization.py",
+      "target": "file:common/src/pi05/common/data/action_codec.py",
+      "type": "related",
+      "weight": 0.7
+    },
+    {
+      "source": "file:common/src/pi05/common/data/normalization.py",
+      "target": "file:common/src/pi05/common/data/state_codec.py",
+      "type": "related",
+      "weight": 0.7
+    },
+    {
+      "source": "file:common/src/pi05/common/ros/topics.py",
+      "target": "config:deploy.yaml:topics",
+      "type": "related",
+      "weight": 0.9
+    },
+    {
+      "source": "file:deploy/service/README.md",
+      "target": "file:common/src/pi05/common/runtime/bundle.py",
+      "type": "related",
+      "weight": 0.7
+    },
+    {
+      "source": "file:deploy-config-pkg",
+      "target": "class:__nofilepath__:DeployConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy-config-pkg",
+      "target": "class:__nofilepath__:DeployConfigError",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy-config-pkg",
+      "target": "function:__nofilepath__:load_deploy_config",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy-models-pkg",
+      "target": "class:__nofilepath__:Pi05PolicyRuntime",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:deploy-models-pkg",
+      "target": "function:__nofilepath__:load_policy_runtime",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:main-deploy-ros",
+      "target": "class:__nofilepath__:Pi05VlaDeployNode",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:main-bridge-ros",
+      "target": "class:__nofilepath__:Pi05BridgeNode",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:main-command-mux-ros",
+      "target": "class:__nofilepath__:CommandMuxNode",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:policy_node-main",
+      "target": "class:__nofilepath__:Pi05VlaDeployNode",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "class:__nofilepath__:DeployConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "class:__nofilepath__:ObservationCollector",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "class:__nofilepath__:SharedBuffer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "class:__nofilepath__:SafetyGuard",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "class:__nofilepath__:ControlLoop",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "class:__nofilepath__:InferenceWorker",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "function:__nofilepath__:load_policy_runtime",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "function:__nofilepath__:load_deploy_config",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "function:__nofilepath__:_decode_image",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05VlaDeployNode",
+      "target": "function:__nofilepath__:_joint_msg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05BridgeNode",
+      "target": "class:__nofilepath__:DeployConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05BridgeNode",
+      "target": "function:__nofilepath__:load_deploy_config",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:CommandMuxNode",
+      "target": "class:__nofilepath__:DeployConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:CommandMuxNode",
+      "target": "function:__nofilepath__:load_deploy_config",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ControlLoop",
+      "target": "class:__nofilepath__:SharedBuffer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ControlLoop",
+      "target": "class:__nofilepath__:SafetyGuard",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ControlLoop",
+      "target": "class:__nofilepath__:LatestQueue",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ControlLoop",
+      "target": "class:__nofilepath__:ObservationSnapshot",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ControlLoop",
+      "target": "class:__nofilepath__:ActionChunk",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ControlLoop",
+      "target": "class:__nofilepath__:InferenceRequest",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ControlLoop",
+      "target": "class:__nofilepath__:ControlCommand",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ControlLoop",
+      "target": "function:__nofilepath__:smoothstep_alpha",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ControlLoop",
+      "target": "function:__nofilepath__:is_action_chunk_usable",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:InferenceWorker",
+      "target": "class:__nofilepath__:LatestQueue",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:InferenceWorker",
+      "target": "class:__nofilepath__:SharedBuffer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:InferenceWorker",
+      "target": "class:__nofilepath__:Pi05PolicyRuntime",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:InferenceWorker",
+      "target": "class:__nofilepath__:ActionChunk",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:ObservationCollector",
+      "target": "class:__nofilepath__:ObservationSnapshot",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:SafetyGuard",
+      "target": "class:__nofilepath__:SafetyConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:SafetyGuard",
+      "target": "class:__nofilepath__:SafetyResult",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:SafetyGuard",
+      "target": "class:__nofilepath__:ObservationSnapshot",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:SharedBuffer",
+      "target": "class:__nofilepath__:ObservationSnapshot",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:SharedBuffer",
+      "target": "class:__nofilepath__:LatestQueue",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:SharedBuffer",
+      "target": "class:__nofilepath__:RuntimeMetrics",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05PolicyRuntime",
+      "target": "class:__nofilepath__:ObservationSnapshot",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05PolicyRuntime",
+      "target": "class:__nofilepath__:DeployConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05PolicyRuntime",
+      "target": "class:__nofilepath__:ActionChunk",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:DeployConfig",
+      "target": "class:__nofilepath__:BundleConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:DeployConfig",
+      "target": "class:__nofilepath__:RuntimeConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:DeployConfig",
+      "target": "class:__nofilepath__:ImageConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:DeployConfig",
+      "target": "class:__nofilepath__:TopicsConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:DeployConfig",
+      "target": "class:__nofilepath__:SafetyConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:DeployConfig",
+      "target": "class:__nofilepath__:BridgeConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:DeployConfig",
+      "target": "class:__nofilepath__:MuxConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:TopicsConfig",
+      "target": "class:__nofilepath__:ObservationTopicsConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:TopicsConfig",
+      "target": "class:__nofilepath__:CommandTopicsConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:TopicsConfig",
+      "target": "class:__nofilepath__:BridgeTopicsConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:TopicsConfig",
+      "target": "class:__nofilepath__:MuxTopicsConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:SafetyConfig",
+      "target": "class:__nofilepath__:JointLimitsConfig",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:load_deploy_config",
+      "target": "function:__nofilepath__:_deploy_from_mapping",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:test_deploy_config",
+      "target": "function:__nofilepath__:load_deploy_config",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:test_deploy_config",
+      "target": "class:__nofilepath__:DeployConfigError",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:test_deploy_config",
+      "target": "class:__nofilepath__:ControlLoop",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:test_deploy_config",
+      "target": "function:__nofilepath__:is_action_chunk_usable",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:test_deploy_config",
+      "target": "function:__nofilepath__:smoothstep_alpha",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:test_deploy_config",
+      "target": "class:__nofilepath__:SafetyGuard",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:test_deploy_config",
+      "target": "class:__nofilepath__:ActionChunk",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:test_deploy_config",
+      "target": "class:__nofilepath__:LatestQueue",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:test_deploy_config",
+      "target": "class:__nofilepath__:SharedBuffer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:train-cli-pkg",
+      "target": "file:train-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:train-data-pkg",
+      "target": "file:train-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:train-engine-pkg",
+      "target": "file:train-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:train-utils-pkg",
+      "target": "file:train-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:train/src/pi05/train/cli/__init__.py",
+      "target": "file:train-cli-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:train/src/pi05/train/data/__init__.py",
+      "target": "file:train-data-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:train/src/pi05/train/engine/__init__.py",
+      "target": "file:train-engine-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:train/src/pi05/train/utils/__init__.py",
+      "target": "file:train-utils-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.cli.export_bundle",
+      "target": "file:train/src/pi05/train/cli/export_bundle.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.cli.train",
+      "target": "file:train/src/pi05/train/cli/train.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.data.dataset",
+      "target": "file:train/src/pi05/train/data/dataset.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.batches",
+      "target": "file:train/src/pi05/train/engine/batches.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.builders",
+      "target": "file:train/src/pi05/train/engine/builders.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.checkpoints",
+      "target": "file:train/src/pi05/train/engine/checkpoints.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "file:train/src/pi05/train/engine/trainer.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.utils.logging",
+      "target": "file:train/src/pi05/train/utils/logging.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.utils.seed",
+      "target": "file:train/src/pi05/train/utils/seed.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.utils.tensorboard",
+      "target": "file:train/src/pi05/train/utils/tensorboard.py",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.cli.export_bundle",
+      "target": "file:train-cli-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.cli.train",
+      "target": "file:train-cli-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.data.dataset",
+      "target": "file:train-data-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.batches",
+      "target": "file:train-engine-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.builders",
+      "target": "file:train-engine-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.checkpoints",
+      "target": "file:train-engine-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "file:train-engine-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.utils.logging",
+      "target": "file:train-utils-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.utils.seed",
+      "target": "file:train-utils-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.utils.tensorboard",
+      "target": "file:train-utils-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05LeRobotDataset",
+      "target": "module:pi05.train.data.dataset",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:DEFAULT_CAMERAS",
+      "target": "module:pi05.train.data.dataset",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:TACTILE_CAMERAS",
+      "target": "module:pi05.train.data.dataset",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:DEFAULT_IMAGE_SIZE",
+      "target": "module:pi05.train.data.dataset",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:IMAGE_NORMALIZE_MEAN",
+      "target": "module:pi05.train.data.dataset",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:IMAGE_NORMALIZE_STD",
+      "target": "module:pi05.train.data.dataset",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:to_lerobot_pi05_batch",
+      "target": "module:pi05.train.engine.batches",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:build_train_dataloader",
+      "target": "module:pi05.train.engine.builders",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:count_training_steps",
+      "target": "module:pi05.train.engine.builders",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:build_optimizer",
+      "target": "module:pi05.train.engine.builders",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:build_lr_scheduler",
+      "target": "module:pi05.train.engine.builders",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:maybe_resume",
+      "target": "module:pi05.train.engine.checkpoints",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:save_epoch_adapter_checkpoint",
+      "target": "module:pi05.train.engine.checkpoints",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:export_final_adapter",
+      "target": "module:pi05.train.engine.checkpoints",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:Pi05LoraTrainer",
+      "target": "module:pi05.train.engine.trainer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:_AverageMeter",
+      "target": "module:pi05.train.engine.trainer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "class:__nofilepath__:_LogWindow",
+      "target": "module:pi05.train.engine.trainer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:train_from_config",
+      "target": "module:pi05.train.engine.trainer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:configure_logging",
+      "target": "module:pi05.train.utils.logging",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:log_run_summary",
+      "target": "module:pi05.train.utils.logging",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:LOG_FORMAT",
+      "target": "module:pi05.train.utils.logging",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:set_training_seed",
+      "target": "module:pi05.train.utils.seed",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:launch_tensorboard",
+      "target": "module:pi05.train.utils.tensorboard",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:main@train.cli.train",
+      "target": "function:__nofilepath__:train_from_config",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "function:__nofilepath__:configure_logging",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "function:__nofilepath__:set_training_seed",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "function:__nofilepath__:build_train_dataloader",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "function:__nofilepath__:count_training_steps",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "function:__nofilepath__:build_optimizer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "function:__nofilepath__:build_lr_scheduler",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "function:__nofilepath__:maybe_resume",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "function:__nofilepath__:log_run_summary",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer._train_loop",
+      "target": "function:__nofilepath__:to_lerobot_pi05_batch",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer._train_loop",
+      "target": "function:__nofilepath__:save_epoch_adapter_checkpoint",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer._train_loop",
+      "target": "function:__nofilepath__:export_final_adapter",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer._train_loop",
+      "target": "file:Pi05LoraTrainer._maybe_export_deploy_bundle",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer._init_trackers",
+      "target": "function:__nofilepath__:launch_tensorboard",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:build_train_dataloader",
+      "target": "class:__nofilepath__:Pi05LeRobotDataset",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.builders",
+      "target": "class:__nofilepath__:Pi05LeRobotDataset",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "function:__nofilepath__:to_lerobot_pi05_batch",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "function:__nofilepath__:build_train_dataloader",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "function:__nofilepath__:export_final_adapter",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "function:__nofilepath__:configure_logging",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "function:__nofilepath__:set_training_seed",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.engine.trainer",
+      "target": "function:__nofilepath__:launch_tensorboard",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:train_cli_interface",
+      "target": "file:train-pkg",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:training_pipeline",
+      "target": "class:__nofilepath__:Pi05LoraTrainer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:training_pipeline",
+      "target": "class:__nofilepath__:Pi05LeRobotDataset",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:action_chunking",
+      "target": "file:Pi05LeRobotDataset._get_action_chunk",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:lerobot_pi05_batch_schema",
+      "target": "function:__nofilepath__:to_lerobot_pi05_batch",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:tensorboard_launch_flow",
+      "target": "function:__nofilepath__:launch_tensorboard",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "concept:tensorboard_launch_flow",
+      "target": "file:Pi05LoraTrainer._init_trackers",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "module:pi05.train.data.dataset",
+      "target": "concept:lerobot_pi05_batch_schema",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset.__getitem__",
+      "target": "file:Pi05LeRobotDataset._prepare_image",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset.__getitem__",
+      "target": "file:Pi05LeRobotDataset._get_action_chunk",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset.__getitem__",
+      "target": "file:Pi05LeRobotDataset._apply_normalizer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset.__getitem__",
+      "target": "file:Pi05LeRobotDataset._resolve_task",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset.__init__",
+      "target": "file:Pi05LeRobotDataset._normalize_cameras",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset.__init__",
+      "target": "file:Pi05LeRobotDataset._resolve_image_keys",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset.__init__",
+      "target": "file:Pi05LeRobotDataset._validate_vector_features",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset.__init__",
+      "target": "file:Pi05LeRobotDataset._build_episode_ranges",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset._get_action_chunk",
+      "target": "file:Pi05LeRobotDataset._to_int",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset._prepare_image",
+      "target": "file:Pi05LeRobotDataset._to_image_tensor",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset._resolve_task",
+      "target": "file:Pi05LeRobotDataset._task_from_index",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset._build_episode_ranges",
+      "target": "file:Pi05LeRobotDataset._to_int",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LeRobotDataset._validate_vector_features",
+      "target": "file:Pi05LeRobotDataset._feature_dim",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:__nofilepath__:train_from_config",
+      "target": "class:__nofilepath__:Pi05LoraTrainer",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "file:Pi05LoraTrainer._build_accelerator",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "file:Pi05LoraTrainer._init_trackers",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:Pi05LoraTrainer.run",
+      "target": "file:Pi05LoraTrainer._train_loop",
+      "type": "related",
+      "weight": 0.5
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:infrastructure",
+      "name": "Infrastructure & Build",
+      "description": "Non-Python project scaffolding: YAML configuration files, shell scripts, ROS 2 launch files, documentation, and CI/packaging assets.",
+      "nodeIds": [
+        "config:paths.yaml:outputs",
+        "config:runtime.yaml:deployment",
+        "config:deploy.yaml:mux",
+        "function:generate_launch_description",
+        "file:deploy/scripts/run_inference.sh",
+        "file:deploy/scripts/run_bridge.sh",
+        "file:deploy/scripts/run_command_mux.sh",
+        "file:deploy/scripts/package_model.sh",
+        "config:train/config/train.yaml",
+        "config:train/config/lora.yaml",
+        "config:train/config/data.yaml",
+        "config:train/config/lora_vtla_stage1.yaml",
+        "file:file-train/scripts/prepare_dataset.sh",
+        "file:file-train/scripts/train_lora.sh",
+        "file:file-train/scripts/export_policy.sh",
+        "file:file-train/scripts/test_dataloader.py",
+        "file:file-train/scripts/smoke_test.py",
+        "file:README",
+        "file:DEPLOY_REPRODUCE.md",
+        "file:deploy/service/README.md",
+        "config:deploy/config/deploy.yaml",
+        "file:file-tools/mcap_to_lerobot_v3.py",
+        "file:config-train/config/lora.yaml",
+        "config:config-default_cameras",
+        "file:common/config/paths.yaml",
+        "config:paths.yaml:workspace_root",
+        "config:paths.yaml:project_root",
+        "config:paths.yaml:datasets",
+        "config:paths.yaml:models",
+        "file:common/config/runtime.yaml",
+        "config:runtime.yaml:runtime",
+        "file:common/src/pi05/common/data/action_codec.py",
+        "file:common/src/pi05/common/data/image_preprocess.py",
+        "file:common/src/pi05/common/data/normalization.py",
+        "file:common/src/pi05/common/data/state_codec.py",
+        "file:common/src/pi05/common/model/builder.py",
+        "file:common/src/pi05/common/robot/action_spec.py",
+        "file:common/src/pi05/common/robot/joint_limits.py",
+        "file:common/src/pi05/common/ros/topics.py",
+        "file:common/src/pi05/common/runtime/bundle.py",
+        "file:common/src/pi05/common/utils/paths.py",
+        "file:deploy/config/deploy.yaml",
+        "config:deploy.yaml:bundle",
+        "config:deploy.yaml:runtime",
+        "config:deploy.yaml:image",
+        "config:deploy.yaml:topics",
+        "config:deploy.yaml:safety",
+        "config:deploy.yaml:bridge",
+        "file:deploy/launch/pi05_picotele_mux.launch.py",
+        "file:train/src/pi05/train/cli/export_bundle.py",
+        "file:train/src/pi05/train/cli/train.py",
+        "file:train/src/pi05/train/data/dataset.py",
+        "file:train/src/pi05/train/engine/batches.py",
+        "file:train/src/pi05/train/engine/builders.py",
+        "file:train/src/pi05/train/engine/checkpoints.py",
+        "file:train/src/pi05/train/engine/trainer.py",
+        "file:train/src/pi05/train/utils/logging.py",
+        "file:train/src/pi05/train/utils/seed.py",
+        "file:train/src/pi05/train/utils/tensorboard.py"
+      ]
+    },
+    {
+      "id": "layer:common-utils",
+      "name": "Common: Utilities",
+      "description": "Project path resolution and sys.path bootstrapping.",
+      "nodeIds": [
+        "file:common/src/pi05/common/utils/__init__.py",
+        "function:default_data_config_path"
+      ]
+    },
+    {
+      "id": "layer:common-config",
+      "name": "Common: Config Schema",
+      "description": "Typed YAML config schema shared by training and deployment.",
+      "nodeIds": [
+        "file:common/src/pi05/common/config/__init__.py",
+        "function:schema:validators"
+      ]
+    },
+    {
+      "id": "layer:common-ros",
+      "name": "Common: ROS Topic Definitions",
+      "description": "Frozen dataclasses defining canonical ROS 2 topic paths.",
+      "nodeIds": [
+        "file:common/src/pi05/common/ros/__init__.py",
+        "class:Pi05ObservationTopics"
+      ]
+    },
+    {
+      "id": "layer:common-robot",
+      "name": "Common: Robot Specification",
+      "description": "Robot action layout contracts shared by training and deployment.",
+      "nodeIds": [
+        "file:common/src/pi05/common/robot/__init__.py",
+        "function:hand_command_to_trigger",
+        "function:broad_joint_limits",
+        "file:common/src/pi05/common/__init__.py",
+        "schema:schema-state_26d_action_14d"
+      ]
+    },
+    {
+      "id": "layer:common-data",
+      "name": "Common: Data Codecs & Normalization",
+      "description": "Shared data pipeline components: action encoding/decoding, state encoding, normalization, image preprocessing.",
+      "nodeIds": [
+        "file:common/src/pi05/common/data/__init__.py",
+        "function:split_action",
+        "function:decode_picotele_proprioception",
+        "function:ensure_vector_stats",
+        "function:resize_crop"
+      ]
+    },
+    {
+      "id": "layer:common-model",
+      "name": "Common: Model Builder",
+      "description": "Pi0.5 policy construction with LoRA adapter wrapping.",
+      "nodeIds": [
+        "file:common/src/pi05/common/model/__init__.py",
+        "function:ensure_pi05_feature_specs"
+      ]
+    },
+    {
+      "id": "layer:common-bundle",
+      "name": "Common: Bundle I/O",
+      "description": "Deploy bundle export and loading - bridges train and deploy.",
+      "nodeIds": [
+        "file:common/src/pi05/common/runtime/__init__.py",
+        "function:resolve_bundle_adapter_dir"
+      ]
+    },
+    {
+      "id": "layer:deploy-config",
+      "name": "Deploy: Config Schema",
+      "description": "Deployment-specific YAML config schema.",
+      "nodeIds": [
+        "file:common/src/pi05/common/config/schema.py"
+      ]
+    },
+    {
+      "id": "layer:deploy-models",
+      "name": "Deploy: Policy Loader",
+      "description": "Bundle-only Pi0.5 policy runtime for deployment.",
+      "nodeIds": [
+        "file:deploy/src/pi05/deploy/models/policy_loader.py"
+      ]
+    },
+    {
+      "id": "layer:deploy-runtime",
+      "name": "Deploy: Runtime Infrastructure",
+      "description": "Core real-time runtime components for VLA inference deployment.",
+      "nodeIds": [
+        "file:deploy/src/pi05/deploy/runtime/shared_buffer.py",
+        "file:deploy/src/pi05/deploy/runtime/inference_worker.py",
+        "file:deploy/src/pi05/deploy/runtime/control_loop.py",
+        "file:deploy/src/pi05/deploy/runtime/observation_collector.py",
+        "file:deploy/src/pi05/deploy/runtime/safety_guard.py"
+      ]
+    },
+    {
+      "id": "layer:deploy-ros-nodes",
+      "name": "Deploy: ROS 2 Nodes",
+      "description": "ROS 2 Jazzy nodes implementing the deployment pipeline.",
+      "nodeIds": [
+        "file:deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+        "file:deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+        "file:deploy/src/pi05/deploy/ros_nodes/command_mux_node.py"
+      ]
+    },
+    {
+      "id": "layer:deploy-ros-compat",
+      "name": "Deploy: ROS Compatibility Wrapper",
+      "description": "Thin backward-compatibility wrapper.",
+      "nodeIds": [
+        "file:deploy/src/pi05/deploy/ros/policy_node.py"
+      ]
+    },
+    {
+      "id": "layer:deploy-cli",
+      "name": "Deploy: CLI Entry Points",
+      "description": "Thin console_scripts entry points that launch ROS 2 nodes.",
+      "nodeIds": [
+        "module:pi05.deploy.cli.deploy_ros",
+        "module:pi05.deploy.cli.bridge_ros",
+        "module:pi05.deploy.cli.command_mux_ros"
+      ]
+    },
+    {
+      "id": "layer:train-utils",
+      "name": "Train: Utilities",
+      "description": "Training support utilities: logging, seed, TensorBoard.",
+      "nodeIds": [
+        "file:train/src/pi05/train/utils/__init__.py",
+        "module:pi05.train.utils.logging",
+        "module:pi05.train.utils.seed",
+        "module:pi05.train.utils.tensorboard"
+      ]
+    },
+    {
+      "id": "layer:train-data",
+      "name": "Train: Dataset",
+      "description": "LeRobot-backed PyTorch Dataset for Pi0.5 offline training.",
+      "nodeIds": [
+        "file:train/src/pi05/train/data/__init__.py",
+        "module:pi05.train.data.dataset"
+      ]
+    },
+    {
+      "id": "layer:train-engine",
+      "name": "Train: Engine",
+      "description": "Core training engine for LoRA fine-tuning.",
+      "nodeIds": [
+        "file:train/src/pi05/train/engine/__init__.py",
+        "module:pi05.train.engine.trainer",
+        "module:pi05.train.engine.builders",
+        "module:pi05.train.engine.batches",
+        "module:pi05.train.engine.checkpoints"
+      ]
+    },
+    {
+      "id": "layer:train-cli",
+      "name": "Train: CLI Entry Points",
+      "description": "Thin console_scripts entry points for training workflows.",
+      "nodeIds": [
+        "file:train/src/pi05/train/cli/__init__.py",
+        "module:pi05.train.cli.train",
+        "module:pi05.train.cli.export_bundle"
+      ]
+    },
+    {
+      "id": "layer:tests",
+      "name": "Tests",
+      "description": "Unit and integration tests.",
+      "nodeIds": [
+        "file:test_deploy_config",
+        "file:test_train_config"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Project Overview and Entry Point",
+      "description": "Start here. The README is the single source of truth for the project's purpose, directory layout, and quick start commands. Reading it first gives you a mental map of where everything lives before you dive into code. Pay special attention to the three-pillar layout: `common/` (shared library), `train/` (LoRA fine-tuning), and `deploy/` (ROS2 inference runtime). Notice how the README's quick start flows from installation \u2192 training \u2192 deployment \u2014 the same arc this tour follows.",
+      "nodeIds": [
+        "file:deploy/service/README.md"
+      ]
+    },
+    {
+      "order": 2,
+      "title": "Configuration Schema: The Contract That Ties Everything Together",
+      "description": "The configuration schema in `common/config/schema.py` is the typed contract shared between training and deployment. If you understand this file, you understand the data that flows through every pipeline stage. The two key classes are `ExperimentConfig` (consumed by the training engine) and `DeployConfig` (consumed by the deployment runtime). Both use Python dataclasses with `@dataclass` decorators and are deserialized via the `from_mapping()` generic factory \u2014 a pattern that appears everywhere in this codebase. The schema defines not just model paths and hyperparameters, but ROS topic names, safety thresholds, action encoding parameters, and normalization statistics. Changes here ripple through every other layer.",
+      "nodeIds": [
+        "file:common/src/pi05/common/config/schema.py"
+      ]
+    },
+    {
+      "order": 3,
+      "title": "Model Builder: Constructing Pi0.5 with LoRA Adapters",
+      "description": "The model builder in `common/model/builder.py` is where the Pi0.5 architecture is instantiated and LoRA adapters are injected. This file bridges the config schema and the actual PyTorch `nn.Module`. It reads the model configuration from `ExperimentConfig`, loads the pretrained Pi0.5 backbone, wraps linear layers with LoRA rank-adaptation matrices, and returns a model ready for either training (with LoRA weights trainable) or deployment (with frozen weights + loaded LoRA checkpoint). Key patterns include: `lora.mark_only_lora_as_trainable()` for parameter-efficient fine-tuning, and the separation of the vision encoder and action head as distinct sub-modules. This is also where device placement (CPU/GPU) and dtype conversion happen.",
+      "nodeIds": [
+        "file:common/src/pi05/common/model/builder.py"
+      ]
+    },
+    {
+      "order": 4,
+      "title": "Training Engine: The Fine-Tuning Loop",
+      "description": "The training engine in `train/engine/trainer.py` is the orchestrator of the LoRA fine-tuning process. It consumes an `ExperimentConfig`, instantiates the model via the builder, sets up dataloaders from the LeRobot dataset, and runs the training loop with logging, checkpointing, and evaluation. This file is where the abstract config meets real data: it reads the dataset path from config, applies normalization from the bundle's normalizers, computes the action/state codec transforms, and iterates over batches. Key patterns: the `train()` function sets up wandb/tensorboard logging, gradient accumulation, learning rate scheduling, and periodic checkpoint saves. The evaluation loop runs at configurable intervals and logs action prediction metrics.",
+      "nodeIds": [
+        "file:train/src/pi05/train/engine/trainer.py"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "Deployment Node: ROS2 Inference Runtime",
+      "description": "The deploy node in `deploy/ros_nodes/pi05_vla_deploy_node.py` is the ROS2 node that runs the VLA inference loop on the robot. It's the production face of the trained model. This node loads the deployment bundle (model weights + normalizers + config), sets up ROS2 topic subscribers for camera images and robot state, runs the model in inference mode, and publishes action commands. The runtime architecture decomposes into five internal components: `InferenceWorker` (GPU-bound model forward pass), `ObservationCollector` (synchronizes multi-camera + state observations), `ControlLoop` (schedules inference at a fixed rate), `SharedBuffer` (thread-safe handoff between collector and worker), and `SafetyGuard` (joint limits, velocity checks, emergency stop). Understanding this node means understanding the full observation \u2192 inference \u2192 action pipeline in a real-time ROS2 context.",
+      "nodeIds": [
+        "file:deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py"
+      ]
+    },
+    {
+      "order": 6,
+      "title": "Deployment Configuration: Connecting Config to Runtime",
+      "description": "The final stop examines `deploy/config/deploy.yaml`, the YAML configuration that drives the deployment runtime. This file is the concrete instantiation of the `DeployConfig` schema you saw in Stop 2. It specifies the model bundle path, ROS topic names for cameras and joint states, inference parameters (model dtype, control frequency), and safety thresholds. Reading this file with the schema in mind reveals how the abstract typed config maps to real hardware: a `camera_topics` list here becomes the `ObservationCollector`'s subscription list; `safety.joint_velocity_max` becomes the `SafetyGuard`'s clipping threshold. The deploy.yaml is the human-accessible control surface for the entire deployment runtime \u2014 change it to swap models, reconfigure cameras, or adjust safety margins without touching code.",
+      "nodeIds": [
+        "config:deploy/config/deploy.yaml"
+      ]
+    }
+  ]
+}

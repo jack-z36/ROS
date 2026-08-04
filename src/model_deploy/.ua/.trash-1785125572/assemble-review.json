@@ -1,0 +1,16 @@
+{
+  "fixedSectionOk": true,
+  "nodesRecovered": 0,
+  "edgesRestored": 1,
+  "crossBatchEdgesAdded": 0,
+  "typesRemapped": 0,
+  "complexityRemapped": 0,
+  "notes": [
+    "Fixed section is reasonable. tested_by linker produced 0 supplemental edges, but the LLM already emitted 191 file->file tested_by edges across batches, so the linker correctly skipped; 53 nodes tagged 'tested' matches the report.",
+    "Complexity distribution is well-balanced (simple 284 / moderate 217 / complex 106) with no unknown values; nothing to remap.",
+    "Mechanical cleanliness verified post-merge: 0 nodes missing id, 0 unknown node types, 0 dangling edges (every edge endpoint resolves), 0 duplicate edges by (source,target,type).",
+    "Dropped documents edge restored: document:rm65_dual_arm/README.md -> config:rm65_dual_arm/config/rm65_dual_arm.yaml (documents, forward, weight 0.5). The merge script dropped it because batch-12 emitted the YAML target under prefix 'file:' while batch-17 canonically typed it as a 'config:' node. README documents the yaml (explicitly listed at line 143 of README.md). Target rewritten to the canonical config: node ID; no new node needed since the config node already exists.",
+    "Cross-batch imports check (Step 3): all 65 import-map relationships where both endpoints exist as file-level nodes already have a corresponding 'imports' edge in the graph. No speculative edges added (per instructions). The 26 import-map source files each have their intra-package imports represented.",
+    "19 orphan nodes retained as acceptable orphans: 16 are 1-line __init__.py package barrels with no project-internal imports, plus elephant_gripper/conftest.py (pytest bootstrap, no internal imports), elephant_gripper/setup.py (setuptools file, external-only imports), and elephant_gripper/resource/elephant_gripper (0-byte ament resource marker). None have import-map entries or a clear parent directory node to link via 'contains'; adding edges would be speculative, so they are left as legitimate low-signal nodes."
+  ]
+}

@@ -31,7 +31,9 @@ Also skip commits whose subject contains:
 
 If the user provides an explicit commit range, use that range instead.
 
-After successful route updates, create a local commit. Do not push.
+After successful route updates, create a local commit on the current branch. Do not push.
+
+本 skill 可在任意分支上运行，包括 `feat/*`、`fix/*` 等三级功能分支——不限定于 `docs_maintaining`。产出 commit 留在当前分支，由调用方随后续 `merge --no-ff` 带入目标分支。
 
 ## Required Rules
 

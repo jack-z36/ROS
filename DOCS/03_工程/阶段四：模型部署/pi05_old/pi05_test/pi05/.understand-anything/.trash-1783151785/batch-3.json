@@ -1,0 +1,729 @@
+{
+  "nodes": [
+    {
+      "id": "file-train/scripts/export_policy.sh",
+      "type": "file",
+      "name": "export_policy.sh",
+      "filePath": "train/scripts/export_policy.sh",
+      "lineStart": 1,
+      "lineEnd": 54,
+      "docString": "Shell script that exports a PI0.5 deploy bundle from a finished training run. Sets up PYTHONPATH (common/src, train/src, deploy/src, third_party/lerobot/src), then invokes `python -m pi05.train.cli.export_bundle --config train/config/lora.yaml`. Supports env overrides for RUN_DIR, ADAPTER_DIR, OUTPUT_DIR, and OVERWRITE."
+    },
+    {
+      "id": "file-train/scripts/prepare_dataset.sh",
+      "type": "file",
+      "name": "prepare_dataset.sh",
+      "filePath": "train/scripts/prepare_dataset.sh",
+      "lineStart": 1,
+      "lineEnd": 77,
+      "docString": "Shell script that wraps tools/mcap_to_lerobot_v3.py to convert ROS2 MCAP recordings into LeRobot v3 datasets. Supports two modes: 'mcap' (single file) and 'mcap-dir' (directory). Discovers the converter script via a 3-tier path search. Configurable via env vars OUT_DIR, REPO_ID, TASK_NAME, FPS, and CONVERTER_SCRIPT."
+    },
+    {
+      "id": "file-train/scripts/smoke_test.py",
+      "type": "file",
+      "name": "smoke_test.py",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 1,
+      "lineEnd": 246,
+      "docString": "End-to-end smoke test for the Pi0.5 LoRA training stack. Validates: (1) model build with LoRA adapters, (2) mock LeRobot-style batch creation, (3) forward pass with finite loss, (4) backward pass with non-zero LoRA gradients. Falls back to synthetic language tokens if the official LeRobot PI0.5 preprocessor is unavailable."
+    },
+    {
+      "id": "file-train/scripts/test_dataloader.py",
+      "type": "file",
+      "name": "test_dataloader.py",
+      "filePath": "train/scripts/test_dataloader.py",
+      "lineStart": 1,
+      "lineEnd": 140,
+      "docString": "Sanity-check script for the Pi0.5 LeRobot dataloader. Loads one batch from a real dataset, configures Pi05LeRobotDataset with state/action normalizers, and prints tensor shapes, dtypes, and value ranges for cameras, 26D state, and 14D action chunks."
+    },
+    {
+      "id": "file-train/scripts/train_lora.sh",
+      "type": "file",
+      "name": "train_lora.sh",
+      "filePath": "train/scripts/train_lora.sh",
+      "lineStart": 1,
+      "lineEnd": 66,
+      "docString": "Shell script that launches Pi0.5 LoRA fine-tuning. Sets PYTHONPATH (common/src, train/src, deploy/src, third_party/lerobot/src), enables PYTHONNOUSERSITE to prevent conda env shadowing, parses --config override, and invokes `python -m pi05.train.cli.train --config <path>`. Passes extra positional args through to the training CLI."
+    },
+    {
+      "id": "module-pi05.train.cli.export_bundle",
+      "type": "module",
+      "name": "pi05.train.cli.export_bundle",
+      "filePath": "train/src/pi05/train/cli/export_bundle.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Python CLI module that bundles a trained LoRA checkpoint into a deployable artifact. Invoked by export_policy.sh via `python -m pi05.train.cli.export_bundle`."
+    },
+    {
+      "id": "module-pi05.train.cli.train",
+      "type": "module",
+      "name": "pi05.train.cli.train",
+      "filePath": "train/src/pi05/train/cli/train.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Python CLI module for the Pi0.5 LoRA fine-tuning engine. Invoked by train_lora.sh via `python -m pi05.train.cli.train`."
+    },
+    {
+      "id": "module-pi05.common.model.builder",
+      "type": "module",
+      "name": "pi05.common.model.builder",
+      "filePath": "common/src/pi05/common/model/builder.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Model builder module providing build_pi05_with_lora() used by smoke_test.py to construct the PI0.5 model with LoRA adapters."
+    },
+    {
+      "id": "module-pi05.common.data.normalization",
+      "type": "module",
+      "name": "pi05.common.data.normalization",
+      "filePath": "common/src/pi05/common/data/normalization.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Normalization module providing build_state_action_normalizers() used by test_dataloader.py to compute q99.5 fixed-scale norm statistics."
+    },
+    {
+      "id": "module-pi05.train.data.dataset",
+      "type": "module",
+      "name": "pi05.train.data.dataset",
+      "filePath": "train/src/pi05/train/data/dataset.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Dataset module providing Pi05LeRobotDataset class used by test_dataloader.py to wrap LeRobot datasets for Pi0.5 training."
+    },
+    {
+      "id": "module-lerobot.policies.pi05.processor_pi05",
+      "type": "module",
+      "name": "lerobot.policies.pi05.processor_pi05",
+      "filePath": "third_party/lerobot/src/lerobot/policies/pi05/processor_pi05.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "LeRobot module providing make_pi05_pre_post_processors() for PI0.5 task tokenization. Used by smoke_test.py in official tokenizer path."
+    },
+    {
+      "id": "module-lerobot.utils.constants",
+      "type": "module",
+      "name": "lerobot.utils.constants",
+      "filePath": "third_party/lerobot/src/lerobot/utils/constants.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "LeRobot constants module providing OBS_LANGUAGE_TOKENS and OBS_LANGUAGE_ATTENTION_MASK used by smoke_test.py for synthetic token fallback."
+    },
+    {
+      "id": "file-tools/mcap_to_lerobot_v3.py",
+      "type": "file",
+      "name": "mcap_to_lerobot_v3.py",
+      "filePath": "tools/mcap_to_lerobot_v3.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Octopus ROS2 .mcap to LeRobot v3 dataset converter (action 14D, state 26D, inspire_hand_v1 tactile). Invoked by prepare_dataset.sh as the core conversion tool."
+    },
+    {
+      "id": "config-train/config/lora.yaml",
+      "type": "file",
+      "name": "lora.yaml",
+      "filePath": "train/config/lora.yaml",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "LoRA fine-tuning YAML configuration. Referenced by export_policy.sh, smoke_test.py, and train_lora.sh as the default training/export config."
+    },
+    {
+      "id": "func-smoke_test.build_pi05_with_lora",
+      "type": "function",
+      "name": "build_pi05_with_lora",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 204,
+      "lineEnd": 206,
+      "docString": "Imported from pi05.common.model.builder. Constructs PI0.5 model with LoRA adapters from config dict and optional pretrained path. Called at line 206 in main()."
+    },
+    {
+      "id": "func-smoke_test.make_mock_batch",
+      "type": "function",
+      "name": "make_mock_batch",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 88,
+      "lineEnd": 111,
+      "docString": "Creates a synthetic LeRobot-style batch with random tensors: observation.state (batch_size x state_dim), action (batch_size x chunk_size x action_dim), task strings, and observation.images.{camera} (batch_size x 3 x 224 x 224)."
+    },
+    {
+      "id": "func-smoke_test.prepare_model_batch",
+      "type": "function",
+      "name": "prepare_model_batch",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 114,
+      "lineEnd": 153,
+      "docString": "Converts raw mock batch into PI0.5 training batch. Attempts official LeRobot preprocessor via make_pi05_pre_post_processors; falls back to synthetic OBS_LANGUAGE_TOKENS and OBS_LANGUAGE_ATTENTION_MASK tensors."
+    },
+    {
+      "id": "func-smoke_test._get_policy_config",
+      "type": "function",
+      "name": "_get_policy_config",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 156,
+      "lineEnd": 166,
+      "docString": "Introspects the model to locate the PI0.5 policy config by checking model.pi05_policy_config, then traversing model, base_model, and base_model.model for a .config attribute."
+    },
+    {
+      "id": "func-smoke_test.find_lora_gradient",
+      "type": "function",
+      "name": "find_lora_gradient",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 169,
+      "lineEnd": 178,
+      "docString": "Iterates model named_parameters to find one LoRA parameter (name containing 'lora_') with requires_grad=True and non-None grad tensor."
+    },
+    {
+      "id": "func-smoke_test.load_yaml",
+      "type": "function",
+      "name": "load_yaml",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 80,
+      "lineEnd": 85,
+      "docString": "Opens a YAML path, calls yaml.safe_load, and validates the root is a mapping."
+    },
+    {
+      "id": "func-smoke_test.parse_args",
+      "type": "function",
+      "name": "parse_args",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 52,
+      "lineEnd": 77,
+      "docString": "Argparse setup for smoke test: config path (default train/config/lora.yaml), pretrained-path, batch-size, chunk-size, state-dim (26), action-dim (14), device (cuda/cpu), tokenizer-mode (auto/official/synthetic)."
+    },
+    {
+      "id": "func-smoke_test.main",
+      "type": "function",
+      "name": "main",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 181,
+      "lineEnd": 237,
+      "docString": "Entry point. Parses args, loads YAML config, builds LoRA model via build_pi05_with_lora(), creates mock batch, runs forward pass validating finite loss, runs backward pass validating non-zero LoRA gradients."
+    },
+    {
+      "id": "func-smoke_test._require_torch",
+      "type": "function",
+      "name": "_require_torch",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 240,
+      "lineEnd": 242,
+      "docString": "Raises ModuleNotFoundError if torch is None (import failed). Called at start of main()."
+    },
+    {
+      "id": "func-smoke_test._bootstrap_import_paths",
+      "type": "function",
+      "name": "_bootstrap_import_paths",
+      "filePath": "train/scripts/smoke_test.py",
+      "lineStart": 35,
+      "lineEnd": 43,
+      "docString": "Inserts common/src, train/src, and third_party/lerobot/src into sys.path at module load time."
+    },
+    {
+      "id": "func-test_dataloader.Pi05LeRobotDataset",
+      "type": "class",
+      "name": "Pi05LeRobotDataset",
+      "filePath": "train/scripts/test_dataloader.py",
+      "lineStart": 95,
+      "lineEnd": 116,
+      "docString": "Imported from pi05.train.data.dataset. LeRobot dataset wrapper configured with chunk_size, color jitter, image_size, state_dim, action_dim, cameras, and optional normalizers."
+    },
+    {
+      "id": "func-test_dataloader.build_state_action_normalizers",
+      "type": "function",
+      "name": "build_state_action_normalizers",
+      "filePath": "train/scripts/test_dataloader.py",
+      "lineStart": 104,
+      "lineEnd": 104,
+      "docString": "Imported from pi05.common.data.normalization. Computes q99.5 fixed-scale normalizers for state (26D) and action (14D) from a LeRobot dataset."
+    },
+    {
+      "id": "func-test_dataloader.describe_tensor",
+      "type": "function",
+      "name": "describe_tensor",
+      "filePath": "train/scripts/test_dataloader.py",
+      "lineStart": 72,
+      "lineEnd": 79,
+      "docString": "Prints name, shape tuple, dtype, min, and max for a given torch.Tensor."
+    },
+    {
+      "id": "func-test_dataloader.parse_args",
+      "type": "function",
+      "name": "parse_args",
+      "filePath": "train/scripts/test_dataloader.py",
+      "lineStart": 29,
+      "lineEnd": 69,
+      "docString": "Argparse setup: dataset-path, chunk-size (30), batch-size (4), num-workers (2), disable-color-jitter, image-size (224), state-dim (26), action-dim (14), cameras (top left_wrist right_wrist)."
+    },
+    {
+      "id": "func-test_dataloader.main",
+      "type": "function",
+      "name": "main",
+      "filePath": "train/scripts/test_dataloader.py",
+      "lineStart": 82,
+      "lineEnd": 136,
+      "docString": "Entry point. Creates Pi05LeRobotDataset with normalizers, wraps in DataLoader with pin_memory, iterates one batch, prints describe_tensor for each camera image, state, and action_chunk."
+    },
+    {
+      "id": "const-OBS_LANGUAGE_TOKENS",
+      "type": "constant",
+      "name": "OBS_LANGUAGE_TOKENS",
+      "filePath": "third_party/lerobot/src/lerobot/utils/constants.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "LeRobot constant key used by smoke_test.py to inject synthetic language token tensors into the model batch during fallback mode."
+    },
+    {
+      "id": "const-OBS_LANGUAGE_ATTENTION_MASK",
+      "type": "constant",
+      "name": "OBS_LANGUAGE_ATTENTION_MASK",
+      "filePath": "third_party/lerobot/src/lerobot/utils/constants.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "LeRobot constant key used by smoke_test.py to inject synthetic attention mask tensors into the model batch during fallback mode."
+    },
+    {
+      "id": "const-make_pi05_pre_post_processors",
+      "type": "function",
+      "name": "make_pi05_pre_post_processors",
+      "filePath": "third_party/lerobot/src/lerobot/policies/pi05/processor_pi05.py",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "LeRobot factory that creates PI0.5 preprocessor and postprocessor for task tokenization. Used by smoke_test.py prepare_model_batch() in official/preferred tokenizer path."
+    },
+    {
+      "id": "pattern-shared_pythonpath_bootstrap",
+      "type": "pattern",
+      "name": "shared_pythonpath_bootstrap",
+      "filePath": "",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Repeated PYTHONPATH construction pattern across export_policy.sh and train_lora.sh: adds PROJECT_DIR/common/src, train/src, deploy/src, then discovers third_party/lerobot/src via 3-tier search (project/parent/grandparent)."
+    },
+    {
+      "id": "pattern-3tier_path_search",
+      "type": "pattern",
+      "name": "3tier_path_search",
+      "filePath": "",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Discovery pattern used by export_policy.sh (for lerobot src) and prepare_dataset.sh (for mcap_to_lerobot_v3.py): checks PROJECT_DIR, PROJECT_DIR/.., PROJECT_DIR/../.. for the target, picks the first match."
+    },
+    {
+      "id": "schema-state_26d_action_14d",
+      "type": "schema",
+      "name": "state_26d_action_14d_schema",
+      "filePath": "",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Canonical Pi0.5 tensor dimensions: state=26D (proprioception), action=14D (bimanual dexterous hand control). Enforced by smoke_test.py (--state-dim 26, --action-dim 14), test_dataloader.py (--state-dim 26, --action-dim 14), and the MCAP converter."
+    },
+    {
+      "id": "config-default_cameras",
+      "type": "config",
+      "name": "default_cameras",
+      "filePath": "",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Default camera tuple (top, left_wrist, right_wrist) shared by smoke_test.py (line 187) and test_dataloader.py (line 66). Used for image observation keys in model batch."
+    },
+    {
+      "id": "pipeline-step-dataset_prep",
+      "type": "concept",
+      "name": "dataset_preparation",
+      "filePath": "train/scripts/prepare_dataset.sh",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "First step in the PI0.5 pipeline: convert raw MCAP recordings to LeRobot dataset via prepare_dataset.sh → mcap_to_lerobot_v3.py."
+    },
+    {
+      "id": "pipeline-step-training",
+      "type": "concept",
+      "name": "lora_training",
+      "filePath": "train/scripts/train_lora.sh",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Second step in the PI0.5 pipeline: fine-tune LoRA adapters via train_lora.sh → pi05.train.cli.train."
+    },
+    {
+      "id": "pipeline-step-export",
+      "type": "concept",
+      "name": "bundle_export",
+      "filePath": "train/scripts/export_policy.sh",
+      "lineStart": 1,
+      "lineEnd": 1,
+      "docString": "Third step in the PI0.5 pipeline: export trained LoRA weights into a deploy bundle via export_policy.sh → pi05.train.cli.export_bundle."
+    }
+  ],
+  "edges": [
+    {
+      "sourceId": "file-train/scripts/export_policy.sh",
+      "targetId": "module-pi05.train.cli.export_bundle",
+      "relation": "runs",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/export_policy.sh",
+      "targetId": "config-train/config/lora.yaml",
+      "relation": "configures",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/export_policy.sh",
+      "targetId": "pattern-shared_pythonpath_bootstrap",
+      "relation": "implements",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/export_policy.sh",
+      "targetId": "pattern-3tier_path_search",
+      "relation": "implements",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/prepare_dataset.sh",
+      "targetId": "file-tools/mcap_to_lerobot_v3.py",
+      "relation": "runs",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/prepare_dataset.sh",
+      "targetId": "pattern-3tier_path_search",
+      "relation": "implements",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/prepare_dataset.sh",
+      "targetId": "pipeline-step-dataset_prep",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/train_lora.sh",
+      "targetId": "module-pi05.train.cli.train",
+      "relation": "runs",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/train_lora.sh",
+      "targetId": "config-train/config/lora.yaml",
+      "relation": "configures",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/train_lora.sh",
+      "targetId": "pattern-shared_pythonpath_bootstrap",
+      "relation": "implements",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/train_lora.sh",
+      "targetId": "pipeline-step-training",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test.build_pi05_with_lora",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test.make_mock_batch",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test.prepare_model_batch",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test._get_policy_config",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test.find_lora_gradient",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test.load_yaml",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test.parse_args",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test.main",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test._require_torch",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "func-smoke_test._bootstrap_import_paths",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.main",
+      "targetId": "func-smoke_test.build_pi05_with_lora",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.main",
+      "targetId": "func-smoke_test.make_mock_batch",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.main",
+      "targetId": "func-smoke_test.prepare_model_batch",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.main",
+      "targetId": "func-smoke_test.find_lora_gradient",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.main",
+      "targetId": "func-smoke_test._require_torch",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.main",
+      "targetId": "func-smoke_test.load_yaml",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.main",
+      "targetId": "config-train/config/lora.yaml",
+      "relation": "reads",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.prepare_model_batch",
+      "targetId": "const-make_pi05_pre_post_processors",
+      "relation": "calls",
+      "confidence": 0.9
+    },
+    {
+      "sourceId": "func-smoke_test.prepare_model_batch",
+      "targetId": "const-OBS_LANGUAGE_TOKENS",
+      "relation": "references",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.prepare_model_batch",
+      "targetId": "const-OBS_LANGUAGE_ATTENTION_MASK",
+      "relation": "references",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.prepare_model_batch",
+      "targetId": "func-smoke_test._get_policy_config",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-smoke_test.build_pi05_with_lora",
+      "targetId": "module-pi05.common.model.builder",
+      "relation": "imports",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/test_dataloader.py",
+      "targetId": "func-test_dataloader.Pi05LeRobotDataset",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/test_dataloader.py",
+      "targetId": "func-test_dataloader.build_state_action_normalizers",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/test_dataloader.py",
+      "targetId": "func-test_dataloader.describe_tensor",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/test_dataloader.py",
+      "targetId": "func-test_dataloader.parse_args",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/test_dataloader.py",
+      "targetId": "func-test_dataloader.main",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-test_dataloader.main",
+      "targetId": "func-test_dataloader.Pi05LeRobotDataset",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-test_dataloader.main",
+      "targetId": "func-test_dataloader.build_state_action_normalizers",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-test_dataloader.main",
+      "targetId": "func-test_dataloader.describe_tensor",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-test_dataloader.main",
+      "targetId": "func-test_dataloader.parse_args",
+      "relation": "calls",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-test_dataloader.Pi05LeRobotDataset",
+      "targetId": "module-pi05.train.data.dataset",
+      "relation": "imports",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "func-test_dataloader.build_state_action_normalizers",
+      "targetId": "module-pi05.common.data.normalization",
+      "relation": "imports",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "pipeline-step-dataset_prep",
+      "targetId": "pipeline-step-training",
+      "relation": "precedes",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "pipeline-step-training",
+      "targetId": "pipeline-step-export",
+      "relation": "precedes",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/train_lora.sh",
+      "targetId": "file-train/scripts/export_policy.sh",
+      "relation": "similar_to",
+      "confidence": 0.9
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "file-train/scripts/test_dataloader.py",
+      "relation": "similar_to",
+      "confidence": 0.8
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "config-default_cameras",
+      "relation": "configures",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/test_dataloader.py",
+      "targetId": "config-default_cameras",
+      "relation": "configures",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "schema-state_26d_action_14d",
+      "relation": "conforms_to",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/test_dataloader.py",
+      "targetId": "schema-state_26d_action_14d",
+      "relation": "conforms_to",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/train_lora.sh",
+      "targetId": "pattern-shared_pythonpath_bootstrap",
+      "relation": "implements",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "pipeline-step-export",
+      "targetId": "file-train/scripts/export_policy.sh",
+      "relation": "defined_by",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "pipeline-step-dataset_prep",
+      "targetId": "file-train/scripts/prepare_dataset.sh",
+      "relation": "defined_by",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "pipeline-step-training",
+      "targetId": "file-train/scripts/train_lora.sh",
+      "relation": "defined_by",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/prepare_dataset.sh",
+      "targetId": "schema-state_26d_action_14d",
+      "relation": "conforms_to",
+      "confidence": 0.7
+    },
+    {
+      "sourceId": "file-train/scripts/export_policy.sh",
+      "targetId": "pipeline-step-export",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/train_lora.sh",
+      "targetId": "pipeline-step-training",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/prepare_dataset.sh",
+      "targetId": "pipeline-step-dataset_prep",
+      "relation": "defines",
+      "confidence": 1.0
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "file-train/scripts/train_lora.sh",
+      "relation": "references",
+      "confidence": 0.6
+    },
+    {
+      "sourceId": "file-train/scripts/smoke_test.py",
+      "targetId": "file-train/scripts/export_policy.sh",
+      "relation": "references",
+      "confidence": 0.6
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "act/ui/act_deploy_node.py", "language": "python", "sizeLines": 796, "fileCategory": "code"},
+    {"path": "act/ui/action_publisher.py", "language": "python", "sizeLines": 814, "fileCategory": "code"},
+    {"path": "act/ui/observation_pipeline.py", "language": "python", "sizeLines": 146, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    "act/ui/act_deploy_node.py": ["act/ui/action_publisher.py", "act/ui/observation_pipeline.py"],
+    "act/ui/action_publisher.py": [],
+    "act/ui/observation_pipeline.py": []
+  }
+}

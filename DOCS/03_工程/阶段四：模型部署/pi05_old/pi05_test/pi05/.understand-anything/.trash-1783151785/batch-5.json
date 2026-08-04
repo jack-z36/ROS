@@ -1,0 +1,968 @@
+{
+  "batch": 5,
+  "project": "PI05 Project",
+  "nodes": [
+    {
+      "id": "deploy-pkg",
+      "label": "pi05.deploy",
+      "type": "package",
+      "source_file": "deploy/src/pi05/deploy/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Deployment package for Pi0.5 VLA."
+    },
+    {
+      "id": "deploy-cli-pkg",
+      "label": "pi05.deploy.cli",
+      "type": "subpackage",
+      "source_file": "deploy/src/pi05/deploy/cli/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Deployment command-line entrypoints."
+    },
+    {
+      "id": "deploy-config-pkg",
+      "label": "pi05.deploy.config",
+      "type": "subpackage",
+      "source_file": "deploy/src/pi05/deploy/config/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Deployment configuration loading."
+    },
+    {
+      "id": "deploy-models-pkg",
+      "label": "pi05.deploy.models",
+      "type": "subpackage",
+      "source_file": "deploy/src/pi05/deploy/models/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Deployment model loading helpers."
+    },
+    {
+      "id": "deploy-ros-nodes-pkg",
+      "label": "pi05.deploy.ros_nodes",
+      "type": "subpackage",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/__init__.py",
+      "source_location": "line:1",
+      "docstring": "ROS 2 nodes for Pi0.5 deployment."
+    },
+    {
+      "id": "deploy-ros-pkg",
+      "label": "pi05.deploy.ros",
+      "type": "subpackage",
+      "source_file": "deploy/src/pi05/deploy/ros/__init__.py",
+      "source_location": "line:1",
+      "docstring": "ROS deployment helpers."
+    },
+    {
+      "id": "deploy-runtime-pkg",
+      "label": "pi05.deploy.runtime",
+      "type": "subpackage",
+      "source_file": "deploy/src/pi05/deploy/runtime/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Deployment runtime components."
+    },
+    {
+      "id": "DeployConfig",
+      "label": "DeployConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:240",
+      "docstring": "Complete Pi0.5 deployment configuration. Aggregates BundleConfig, RuntimeConfig, ImageConfig, TopicsConfig, SafetyConfig, BridgeConfig, MuxConfig."
+    },
+    {
+      "id": "BundleConfig",
+      "label": "BundleConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:22",
+      "docstring": "Runtime model bundle location. Holds bundle_dir with resolved_bundle_dir property."
+    },
+    {
+      "id": "RuntimeConfig",
+      "label": "RuntimeConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:33",
+      "docstring": "Policy runtime scheduling and device settings. Includes mode, device, dtype, inference/control Hz, chunk size, horizon, blend/prefetch steps, fallback policy."
+    },
+    {
+      "id": "ImageConfig",
+      "label": "ImageConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:230",
+      "docstring": "Deployment image preprocessing settings: image_size, resize_mode, transport."
+    },
+    {
+      "id": "TopicsConfig",
+      "label": "TopicsConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:166",
+      "docstring": "All ROS topic names used by deployment: namespace, observation, command, bridge_output, mux."
+    },
+    {
+      "id": "ObservationTopicsConfig",
+      "label": "ObservationTopicsConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:94",
+      "docstring": "ROS input topics consumed by the observation collector: images, proprioception, hand state, EE pose."
+    },
+    {
+      "id": "CommandTopicsConfig",
+      "label": "CommandTopicsConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:118",
+      "docstring": "ROS command and telemetry topics produced by deployment: arm joint targets, hand targets, status, metrics."
+    },
+    {
+      "id": "BridgeTopicsConfig",
+      "label": "BridgeTopicsConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:130",
+      "docstring": "Optional adapter topics for an existing execution stack: arm targets, hand triggers, deadman signals."
+    },
+    {
+      "id": "MuxTopicsConfig",
+      "label": "MuxTopicsConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:142",
+      "docstring": "Topic set used by the teleop/VLA command multiplexer: teleop, VLA, and output topics for arms, hands, deadman, and enable signal."
+    },
+    {
+      "id": "SafetyConfig",
+      "label": "SafetyConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:188",
+      "docstring": "Runtime safety checks applied after policy inference: joint deltas, observation timeout, command timeout, hand limits, joint limits."
+    },
+    {
+      "id": "JointLimitsConfig",
+      "label": "JointLimitsConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:177",
+      "docstring": "Optional arm joint limits in radians for left and right arms (min/max tuples)."
+    },
+    {
+      "id": "BridgeConfig",
+      "label": "BridgeConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:202",
+      "docstring": "Whether and how the bridge forwards Pi0.5 command topics: enabled, publish_to_picotele, forward_commands, speed_scale, publish_deadman."
+    },
+    {
+      "id": "MuxConfig",
+      "label": "MuxConfig",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:217",
+      "docstring": "Runtime behavior for the teleop/VLA command multiplexer: enabled, default_mode, timeouts, deadman thresholds."
+    },
+    {
+      "id": "DeployConfigError",
+      "label": "DeployConfigError",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:18",
+      "docstring": "Raised when deploy YAML is missing required fields or has invalid values."
+    },
+    {
+      "id": "load_deploy_config",
+      "label": "load_deploy_config()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:257",
+      "docstring": "Load a deployment config from YAML path, parse through DeployConfig.from_mapping."
+    },
+    {
+      "id": "_deploy_from_mapping",
+      "label": "_deploy_from_mapping()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:267",
+      "docstring": "Parse raw YAML mapping into DeployConfig with helper validators for each subsection."
+    },
+    {
+      "id": "Pi05PolicyRuntime",
+      "label": "Pi05PolicyRuntime",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/models/policy_loader.py",
+      "source_location": "line:27",
+      "docstring": "Loaded Pi0.5 policy plus preprocessing and normalizer state. Wraps model, preprocessor, state/action normalizers; provides predict_action_chunk()."
+    },
+    {
+      "id": "load_policy_runtime",
+      "label": "load_policy_runtime()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/models/policy_loader.py",
+      "source_location": "line:110",
+      "docstring": "Load a Pi0.5 deployment policy from an exported bundle directory. Validates bundle, loads LoRA adapter, configures policy, returns Pi05PolicyRuntime."
+    },
+    {
+      "id": "Pi05VlaDeployNode",
+      "label": "Pi05VlaDeployNode",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:29",
+      "docstring": "Main ROS2 node. Collects observations, runs policy inference, publishes /pi05_vla/command topics. Owns ObservationCollector, SharedBuffer, SafetyGuard, ControlLoop, InferenceWorker."
+    },
+    {
+      "id": "Pi05BridgeNode",
+      "label": "Pi05BridgeNode",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+      "source_location": "line:20",
+      "docstring": "ROS2 bridge that adapts /pi05_vla/command topics to configured VLA candidate topics for an existing execution stack (picotele)."
+    },
+    {
+      "id": "CommandMuxNode",
+      "label": "CommandMuxNode",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py",
+      "source_location": "line:28",
+      "docstring": "ROS2 command multiplexer that forwards either teleop or VLA candidate commands to picotele. Handles mode switching, deadman arbitration, manual takeover."
+    },
+    {
+      "id": "ControlLoop",
+      "label": "ControlLoop",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:59",
+      "docstring": "High-rate rolling action consumer. Consumes active chunks, prefetches pending chunks, blends at boundaries, and produces ControlCommand via tick()."
+    },
+    {
+      "id": "ControlCommand",
+      "label": "ControlCommand",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:20",
+      "docstring": "One safe command produced by the control loop tick(). Contains BimanualAction, held/fallback flags."
+    },
+    {
+      "id": "InferenceWorker",
+      "label": "InferenceWorker",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/inference_worker.py",
+      "source_location": "line:15",
+      "docstring": "Background daemon thread that consumes InferenceRequests from a queue, runs policy inference, and publishes ActionChunks to the result queue."
+    },
+    {
+      "id": "ObservationCollector",
+      "label": "ObservationCollector",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/observation_collector.py",
+      "source_location": "line:20",
+      "docstring": "Observation assembly from ROS callbacks. Collects images, proprioception, hand state, EE poses; emits ObservationSnapshot when all required fields are ready."
+    },
+    {
+      "id": "SafetyGuard",
+      "label": "SafetyGuard",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/safety_guard.py",
+      "source_location": "line:28",
+      "docstring": "Validate, clamp, and rate-limit policy actions before publication. Checks NaN/Inf, joint limits, delta limits, hand targets."
+    },
+    {
+      "id": "SafetyResult",
+      "label": "SafetyResult",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/safety_guard.py",
+      "source_location": "line:19",
+      "docstring": "Result returned by SafetyGuard.filter_action(): accepted BimanualAction or rejection reason."
+    },
+    {
+      "id": "SharedBuffer",
+      "label": "SharedBuffer",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "source_location": "line:156",
+      "docstring": "Thread-safe shared observation, inference request/result queues, and runtime metrics state. Central handoff between ObservationCollector and ControlLoop/InferenceWorker."
+    },
+    {
+      "id": "ObservationSnapshot",
+      "label": "ObservationSnapshot",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "source_location": "line:22",
+      "docstring": "Frozen policy observation captured at one monotonic timestamp. Contains images dict, BimanualState, encoded_state array."
+    },
+    {
+      "id": "ActionChunk",
+      "label": "ActionChunk",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "source_location": "line:32",
+      "docstring": "One action chunk produced by asynchronous policy inference. Contains actions array, timing metadata, request_id. Provides aligned_index() for time alignment."
+    },
+    {
+      "id": "InferenceRequest",
+      "label": "InferenceRequest",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "source_location": "line:61",
+      "docstring": "Latest observation submitted by the control loop for background inference. Contains observation, obs_time, request_id, trigger_step."
+    },
+    {
+      "id": "LatestQueue",
+      "label": "LatestQueue",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "source_location": "line:71",
+      "docstring": "Small generic bounded queue that keeps only the newest item, dropping older items when full. Used for inference requests and chunk results."
+    },
+    {
+      "id": "RuntimeMetrics",
+      "label": "RuntimeMetrics",
+      "type": "class",
+      "source_file": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "source_location": "line:105",
+      "docstring": "Small set of live counters for deployment monitoring: inference count, errors, latencies, chunk switches, fallbacks, held/rejected actions."
+    },
+    {
+      "id": "smoothstep_alpha",
+      "label": "smoothstep_alpha()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:29",
+      "docstring": "Return smoothstep alpha for a blend step (3s^2 - 2s^3 cubic). Used by ControlLoop for chunk blending."
+    },
+    {
+      "id": "is_action_chunk_usable",
+      "label": "is_action_chunk_usable()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:37",
+      "docstring": "Validate chunk freshness, shape, alignment, and numeric values. Returns (ok, reason_tuple)."
+    },
+    {
+      "id": "_decode_image",
+      "label": "_decode_image()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:221",
+      "docstring": "Decode CompressedImage or raw Image ROS messages to an RGB numpy array using cv2."
+    },
+    {
+      "id": "_joint_msg",
+      "label": "_joint_msg()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:242",
+      "docstring": "Build a JointState ROS message from a joints_rad numpy array using ARM_JOINT_NAMES."
+    },
+    {
+      "id": "main-deploy-ros",
+      "label": "deploy_ros.main()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/cli/deploy_ros.py",
+      "source_location": "line:8",
+      "docstring": "CLI entry-point for ROS2 Pi0.5 VLA deployment. Bootstraps project paths, calls pi05_vla_deploy_node.main()."
+    },
+    {
+      "id": "main-bridge-ros",
+      "label": "bridge_ros.main()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/cli/bridge_ros.py",
+      "source_location": "line:8",
+      "docstring": "CLI entry-point for ROS2 Pi0.5 bridge node. Bootstraps project paths, calls pi05_bridge_node.main()."
+    },
+    {
+      "id": "main-command-mux-ros",
+      "label": "command_mux_ros.main()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/cli/command_mux_ros.py",
+      "source_location": "line:3",
+      "docstring": "CLI entry-point for ROS2 command multiplexer. Directly imports and calls command_mux_node.main()."
+    },
+    {
+      "id": "policy_node-main",
+      "label": "policy_node.main()",
+      "type": "function",
+      "source_file": "deploy/src/pi05/deploy/ros/policy_node.py",
+      "source_location": "line:5",
+      "docstring": "Compatibility wrapper that re-exports pi05_vla_deploy_node.main() for backward compatibility."
+    },
+    {
+      "id": "test_deploy_config",
+      "label": "test_deploy_config.py",
+      "type": "test_file",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:1",
+      "docstring": "10 test functions exercising deploy config loading, schema validation, safety guard, LatestQueue, ActionChunk, control loop, bridge/mux config, smoothstep."
+    },
+    {
+      "id": "test_train_config",
+      "label": "test_config.py",
+      "type": "test_file",
+      "source_file": "tests/train/test_config.py",
+      "source_location": "line:1",
+      "docstring": "5 test functions for ExperimentConfig loading, YAML shape, train_expert_only, string bool rejection, relative path resolution."
+    },
+    {
+      "id": "train-pkg",
+      "label": "pi05.train",
+      "type": "package",
+      "source_file": "train/src/pi05/train/__init__.py",
+      "source_location": "line:1",
+      "docstring": "Training package for Pi0.5 VLA."
+    },
+    {
+      "id": "README",
+      "label": "README.md",
+      "type": "documentation",
+      "source_file": "README.md",
+      "source_location": "line:1",
+      "docstring": "PI05 project README. Documents repo layout, public defaults, quick start, training and deployment commands."
+    }
+  ],
+  "edges": [
+    {
+      "source": "deploy-config-pkg",
+      "target": "DeployConfig",
+      "relation": "EXPORTS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/__init__.py",
+      "source_location": "line:3"
+    },
+    {
+      "source": "deploy-config-pkg",
+      "target": "DeployConfigError",
+      "relation": "EXPORTS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/__init__.py",
+      "source_location": "line:3"
+    },
+    {
+      "source": "deploy-config-pkg",
+      "target": "load_deploy_config",
+      "relation": "EXPORTS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/__init__.py",
+      "source_location": "line:3"
+    },
+    {
+      "source": "deploy-models-pkg",
+      "target": "Pi05PolicyRuntime",
+      "relation": "EXPORTS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/models/__init__.py",
+      "source_location": "line:3"
+    },
+    {
+      "source": "deploy-models-pkg",
+      "target": "load_policy_runtime",
+      "relation": "EXPORTS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/models/__init__.py",
+      "source_location": "line:3"
+    },
+    {
+      "source": "main-deploy-ros",
+      "target": "Pi05VlaDeployNode",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/cli/deploy_ros.py",
+      "source_location": "line:10"
+    },
+    {
+      "source": "main-bridge-ros",
+      "target": "Pi05BridgeNode",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/cli/bridge_ros.py",
+      "source_location": "line:10"
+    },
+    {
+      "source": "main-command-mux-ros",
+      "target": "CommandMuxNode",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/cli/command_mux_ros.py",
+      "source_location": "line:3"
+    },
+    {
+      "source": "policy_node-main",
+      "target": "Pi05VlaDeployNode",
+      "relation": "RE_EXPORTS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros/policy_node.py",
+      "source_location": "line:5"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "DeployConfig",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:32"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "ObservationCollector",
+      "relation": "OWNS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:39"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "SharedBuffer",
+      "relation": "OWNS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:42"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "SafetyGuard",
+      "relation": "OWNS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:46"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "ControlLoop",
+      "relation": "OWNS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:47"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "InferenceWorker",
+      "relation": "OWNS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:73"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "load_policy_runtime",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:69"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "load_deploy_config",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:259"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "_decode_image",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:156"
+    },
+    {
+      "source": "Pi05VlaDeployNode",
+      "target": "_joint_msg",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_vla_deploy_node.py",
+      "source_location": "line:208"
+    },
+    {
+      "source": "Pi05BridgeNode",
+      "target": "DeployConfig",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+      "source_location": "line:23"
+    },
+    {
+      "source": "Pi05BridgeNode",
+      "target": "load_deploy_config",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/pi05_bridge_node.py",
+      "source_location": "line:112"
+    },
+    {
+      "source": "CommandMuxNode",
+      "target": "DeployConfig",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py",
+      "source_location": "line:31"
+    },
+    {
+      "source": "CommandMuxNode",
+      "target": "load_deploy_config",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/ros_nodes/command_mux_node.py",
+      "source_location": "line:254"
+    },
+    {
+      "source": "ControlLoop",
+      "target": "SharedBuffer",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:47"
+    },
+    {
+      "source": "ControlLoop",
+      "target": "SafetyGuard",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:54"
+    },
+    {
+      "source": "ControlLoop",
+      "target": "LatestQueue",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:13"
+    },
+    {
+      "source": "ControlLoop",
+      "target": "ObservationSnapshot",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:13"
+    },
+    {
+      "source": "ControlLoop",
+      "target": "ActionChunk",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:13"
+    },
+    {
+      "source": "ControlLoop",
+      "target": "InferenceRequest",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:13"
+    },
+    {
+      "source": "ControlLoop",
+      "target": "ControlCommand",
+      "relation": "PRODUCES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:138"
+    },
+    {
+      "source": "ControlLoop",
+      "target": "smoothstep_alpha",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:302"
+    },
+    {
+      "source": "ControlLoop",
+      "target": "is_action_chunk_usable",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/control_loop.py",
+      "source_location": "line:156"
+    },
+    {
+      "source": "InferenceWorker",
+      "target": "LatestQueue",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/inference_worker.py",
+      "source_location": "line:9"
+    },
+    {
+      "source": "InferenceWorker",
+      "target": "SharedBuffer",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/inference_worker.py",
+      "source_location": "line:24"
+    },
+    {
+      "source": "InferenceWorker",
+      "target": "Pi05PolicyRuntime",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/inference_worker.py",
+      "source_location": "line:67"
+    },
+    {
+      "source": "InferenceWorker",
+      "target": "ActionChunk",
+      "relation": "PRODUCES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/inference_worker.py",
+      "source_location": "line:75"
+    },
+    {
+      "source": "ObservationCollector",
+      "target": "ObservationSnapshot",
+      "relation": "PRODUCES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/observation_collector.py",
+      "source_location": "line:98"
+    },
+    {
+      "source": "SafetyGuard",
+      "target": "SafetyConfig",
+      "relation": "CONFIGURED_BY",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/safety_guard.py",
+      "source_location": "line:31"
+    },
+    {
+      "source": "SafetyGuard",
+      "target": "SafetyResult",
+      "relation": "PRODUCES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/safety_guard.py",
+      "source_location": "line:65"
+    },
+    {
+      "source": "SafetyGuard",
+      "target": "ObservationSnapshot",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/safety_guard.py",
+      "source_location": "line:80"
+    },
+    {
+      "source": "SharedBuffer",
+      "target": "ObservationSnapshot",
+      "relation": "STORES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "source_location": "line:166"
+    },
+    {
+      "source": "SharedBuffer",
+      "target": "LatestQueue",
+      "relation": "OWNS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "source_location": "line:167"
+    },
+    {
+      "source": "SharedBuffer",
+      "target": "RuntimeMetrics",
+      "relation": "OWNS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/runtime/shared_buffer.py",
+      "source_location": "line:169"
+    },
+    {
+      "source": "Pi05PolicyRuntime",
+      "target": "ObservationSnapshot",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/models/policy_loader.py",
+      "source_location": "line:80"
+    },
+    {
+      "source": "Pi05PolicyRuntime",
+      "target": "DeployConfig",
+      "relation": "USES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/models/policy_loader.py",
+      "source_location": "line:110"
+    },
+    {
+      "source": "Pi05PolicyRuntime",
+      "target": "ActionChunk",
+      "relation": "PRODUCES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/models/policy_loader.py",
+      "source_location": "line:78"
+    },
+    {
+      "source": "DeployConfig",
+      "target": "BundleConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:243"
+    },
+    {
+      "source": "DeployConfig",
+      "target": "RuntimeConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:244"
+    },
+    {
+      "source": "DeployConfig",
+      "target": "ImageConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:245"
+    },
+    {
+      "source": "DeployConfig",
+      "target": "TopicsConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:246"
+    },
+    {
+      "source": "DeployConfig",
+      "target": "SafetyConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:247"
+    },
+    {
+      "source": "DeployConfig",
+      "target": "BridgeConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:248"
+    },
+    {
+      "source": "DeployConfig",
+      "target": "MuxConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:249"
+    },
+    {
+      "source": "TopicsConfig",
+      "target": "ObservationTopicsConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:171"
+    },
+    {
+      "source": "TopicsConfig",
+      "target": "CommandTopicsConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:172"
+    },
+    {
+      "source": "TopicsConfig",
+      "target": "BridgeTopicsConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:173"
+    },
+    {
+      "source": "TopicsConfig",
+      "target": "MuxTopicsConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:174"
+    },
+    {
+      "source": "SafetyConfig",
+      "target": "JointLimitsConfig",
+      "relation": "COMPOSES",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:199"
+    },
+    {
+      "source": "load_deploy_config",
+      "target": "_deploy_from_mapping",
+      "relation": "CALLS",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy/src/pi05/deploy/config/schema.py",
+      "source_location": "line:264"
+    },
+    {
+      "source": "test_deploy_config",
+      "target": "load_deploy_config",
+      "relation": "TESTS",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:11"
+    },
+    {
+      "source": "test_deploy_config",
+      "target": "DeployConfigError",
+      "relation": "TESTS",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:11"
+    },
+    {
+      "source": "test_deploy_config",
+      "target": "ControlLoop",
+      "relation": "TESTS",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:12"
+    },
+    {
+      "source": "test_deploy_config",
+      "target": "is_action_chunk_usable",
+      "relation": "TESTS",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:12"
+    },
+    {
+      "source": "test_deploy_config",
+      "target": "smoothstep_alpha",
+      "relation": "TESTS",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:12"
+    },
+    {
+      "source": "test_deploy_config",
+      "target": "SafetyGuard",
+      "relation": "TESTS",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:13"
+    },
+    {
+      "source": "test_deploy_config",
+      "target": "ActionChunk",
+      "relation": "TESTS",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:14"
+    },
+    {
+      "source": "test_deploy_config",
+      "target": "LatestQueue",
+      "relation": "TESTS",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:14"
+    },
+    {
+      "source": "test_deploy_config",
+      "target": "SharedBuffer",
+      "relation": "TESTS",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/deploy/test_deploy_config.py",
+      "source_location": "line:14"
+    }
+  ]
+}

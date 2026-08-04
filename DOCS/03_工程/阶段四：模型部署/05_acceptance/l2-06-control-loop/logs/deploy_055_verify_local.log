@@ -1,0 +1,46 @@
+=== L2-06 Gate 验收 (scope=local, policy=fake) ===
+=== L2-06 Gate 本地核心 (本地 G01-G09 + 外部闸口契约) ===
+
+[ types / boundary ]
+  PASS  G01  types 纯净 + 无 forbidden token/import，静态边界扫描
+
+[ config / repo ]
+  PASS  G02  default-off、YAML 不能静默启用、arg 仅 2 旗、canonical 资源/spec 身份、loader fail-fast
+
+[ observation / service / publish seam ]
+  PASS  G03  pipeline 干跑 env_blocked、collector->snapshot、service 预测、safety PASS、publisher provenance
+
+[ channel / metrics ]
+  PASS  G04  request 校验、result XOR、LatestQueue 容量 1 close、metrics 不可变快照
+
+[ worker ]
+  PASS  G05  serial success、error 恢复、CLOCK_INVALID 致命闸口
+
+[ scheduling ]
+  PASS  G06  correlation/active chunk、prefetch@horizon、result-id 错配 latch fault
+
+[ fallback / output ]
+  PASS  G07  六 outcome OBSERVED/PUBLISHED/BLOCKED/REJECTED/FAILED/PARTIAL + 观测缺失 fallback
+
+[ UI / lifecycle ]
+  PASS  G08  preflight pass、SPEC_IDENTITY_MISMATCH、PERMIT_SOURCE_MISSING、deny fail-closed、shutdown 收敛
+
+[ local full Gate ]
+  PASS  G09  完整 tracer bullet（真实 worker）：chunk_activated>0、inference_success>0、published>=1、有界 shutdown
+
+[ external gate local-contract proofs ]
+  PASS  G10_LOCAL  dry-run command=0 契约 + ROS 可用标志自检
+  PASS  G11_LOCAL  真实 loader 在空 bundle 下 fail-fast（无法用 fake 伪装 real-policy）
+  PASS  G12_LOCAL  默认 fail-closed：deny permit、YAML 无命令开关、未授权 command=0
+
+[ baseline regression ]
+  PASS  BASELINE_REGRESSION  全量 src/model_deploy/act/tests 0 FAIL
+
+[ 外部 scope（预期 BLOCKED，绝不伪造 PASS）]
+  BLOCKED  G10_ROS_OBSERVE  ROS 2 environment unavailable (BLOCKED_ENV); local/mock dry-run passed, command topics silent by contract
+  BLOCKED  G11_REAL_BUNDLE  no real model bundle/GPU in automated acceptance (BLOCKED_ARTIFACT); local fake-policy gate passed the loader fail-fast contract
+  BLOCKED  G12_REAL_COMMAND  no human authorization / e-stop / driver readiness / ROS evidence in automated acceptance (BLOCKED_HARDWARE_EXPECTED)
+
+────────────────────────────────
+  13 PASS / 0 FAIL / 3 BLOCKED  (共 16 标签)
+  config: src/model_deploy/act/tests/fixtures/l2_06_fake.yaml   policy: fake   scope: local

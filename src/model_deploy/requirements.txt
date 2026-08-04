@@ -1,0 +1,35 @@
+# model_deploy Conda 环境 pip 依赖清单
+#
+# 环境：conda env named `model_deploy`（Python 3.12）
+# 约束来源：DOCS/02_约束/循环工程/behaviors/16_环境依赖配置行为.md
+#
+# 重要：PyTorch 必须用 cu128 索引安装（默认 PyPI 拉到的是 cu13x，不支持 RTX 5080）：
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+# 因 --index-url 不能写入 requirements.txt，torch 行仅作版本记录，实际安装用上述命令。
+#
+# 架构说明：本清单服务于 src/model_deploy/act/ 的推理与测试。
+# act 核心层（types/config/repo/service/runtime）只需 torch+numpy+pyyaml，完全不依赖 ROS。
+# ui 层的 rclpy 为 try/except 懒加载，真机部署时再集成 ROS（见 DEPLOY_REPRODUCE.md）。
+# pi05 子项目的 lerobot/transformers/peft 等重型依赖不在本清单内（pi05 仅作代码参考，不运行）。
+
+# PyTorch（cu128 wheel，RTX 5080 Blackwell sm_120 架构必需，CUDA 12.8+）
+torch>=2.7.0
+torchvision>=0.22.0
+
+# 核心数值与配置
+numpy>=2.0.0,<2.3.0
+pyyaml>=6.0
+
+# 图像预处理（可选：act/service/image_preprocess.py 有 numpy 回退，但装上体验更好）
+opencv-python>=4.9.0
+
+# 内部 Web 服务（debug/monitoring UI）
+fastapi>=0.104.0
+uvicorn>=0.24.0
+# uvicorn 的 WebSocket 协议实现。基础版 uvicorn 不含 ws 库，缺它则所有 /ws/* 端点
+# 返回 404（web_launcher 的 observation/metrics/action 实时推送全部失效）。
+websockets>=12.0
+requests>=2.31.0
+
+# 测试
+pytest>=8.0.0

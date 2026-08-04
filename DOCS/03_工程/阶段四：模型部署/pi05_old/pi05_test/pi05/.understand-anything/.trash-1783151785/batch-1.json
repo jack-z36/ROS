@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "batchIndex": 1,
+    "totalBatches": 6,
+    "project": "PI05 Project",
+    "schemaVersion": 1,
+    "generatedAt": "2026-07-04T00:00:00Z"
+  },
+  "nodes": [
+    {
+      "id": "file:deploy/scripts/package_model.sh",
+      "type": "file",
+      "label": "deploy/scripts/package_model.sh",
+      "file": "deploy/scripts/package_model.sh",
+      "properties": {
+        "language": "Shell",
+        "fileCategory": "script",
+        "sizeLines": 25,
+        "description": "Standalone shell script that archives a model deploy bundle directory into a timestamped tar.gz under outputs/exports/"
+      }
+    },
+    {
+      "id": "file:deploy/scripts/run_bridge.sh",
+      "type": "file",
+      "label": "deploy/scripts/run_bridge.sh",
+      "file": "deploy/scripts/run_bridge.sh",
+      "properties": {
+        "language": "Shell",
+        "fileCategory": "script",
+        "sizeLines": 20,
+        "description": "Launcher script for Pi05BridgeNode: constructs PYTHONPATH from project source dirs and runs python -m pi05.deploy.cli.bridge_ros with deploy config"
+      }
+    },
+    {
+      "id": "file:deploy/scripts/run_command_mux.sh",
+      "type": "file",
+      "label": "deploy/scripts/run_command_mux.sh",
+      "file": "deploy/scripts/run_command_mux.sh",
+      "properties": {
+        "language": "Shell",
+        "fileCategory": "script",
+        "sizeLines": 15,
+        "description": "Launcher script for CommandMuxNode: constructs PYTHONPATH from project source dirs and runs python -m pi05.deploy.cli.command_mux_ros with deploy config"
+      }
+    },
+    {
+      "id": "file:deploy/scripts/run_inference.sh",
+      "type": "file",
+      "label": "deploy/scripts/run_inference.sh",
+      "file": "deploy/scripts/run_inference.sh",
+      "properties": {
+        "language": "Shell",
+        "fileCategory": "script",
+        "sizeLines": 29,
+        "description": "Launcher script for Pi05VlaDeployNode: constructs PYTHONPATH from project source dirs and runs python -m pi05.deploy.cli.deploy_ros with deploy config (overridable via CLI arg)"
+      }
+    },
+    {
+      "id": "pattern:deploy_scripts/pythonpath_setup",
+      "type": "shell_pattern",
+      "label": "PYTHONPATH construction pattern (shared)",
+      "file": null,
+      "properties": {
+        "description": "Common code block shared by the 3 launch scripts that builds PYTHONPATH from common/src, train/src, deploy/src, and probes for third_party/lerobot/src",
+        "linesOfCode": 10,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "pattern:deploy_scripts/config_launch",
+      "type": "shell_pattern",
+      "label": "Config-based python -m launch pattern (shared)",
+      "file": null,
+      "properties": {
+        "description": "Common code structure shared by the 3 launch scripts: resolve CONFIG_PATH (with override), log the launch message, and invoke the python -m module with --config flag",
+        "linesOfCode": 3,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "module:pi05.deploy.cli.bridge_ros",
+      "type": "python_module",
+      "label": "pi05.deploy.cli.bridge_ros",
+      "file": "deploy/src/pi05/deploy/cli/bridge_ros.py",
+      "properties": {
+        "description": "Python CLI entry point for the ROS bridge node (Pi05BridgeNode). Called by run_bridge.sh via python -m.",
+        "batch": 5,
+        "language": "Python",
+        "fileCategory": "code",
+        "crossBatch": true,
+        "exportedSymbols": ["main"]
+      }
+    },
+    {
+      "id": "module:pi05.deploy.cli.command_mux_ros",
+      "type": "python_module",
+      "label": "pi05.deploy.cli.command_mux_ros",
+      "file": "deploy/src/pi05/deploy/cli/command_mux_ros.py",
+      "properties": {
+        "description": "Python CLI entry point for the command multiplexer node (CommandMuxNode). Called by run_command_mux.sh via python -m.",
+        "batch": 5,
+        "language": "Python",
+        "fileCategory": "code",
+        "crossBatch": true,
+        "exportedSymbols": []
+      }
+    },
+    {
+      "id": "module:pi05.deploy.cli.deploy_ros",
+      "type": "python_module",
+      "label": "pi05.deploy.cli.deploy_ros",
+      "file": "deploy/src/pi05/deploy/cli/deploy_ros.py",
+      "properties": {
+        "description": "Python CLI entry point for the main VLA deploy node (Pi05VlaDeployNode). Called by run_inference.sh via python -m.",
+        "batch": 5,
+        "language": "Python",
+        "fileCategory": "code",
+        "crossBatch": true,
+        "exportedSymbols": ["main"]
+      }
+    },
+    {
+      "id": "config:deploy/config/deploy.yaml",
+      "type": "config_file",
+      "label": "deploy/config/deploy.yaml",
+      "file": "deploy/config/deploy.yaml",
+      "properties": {
+        "description": "Central YAML configuration for Pi0.5 deployment: bundle path, safety limits, topic mappings, camera config, joint limits. Consumed by all 3 launch scripts.",
+        "batch": 4,
+        "language": "YAML",
+        "fileCategory": "config",
+        "crossBatch": true,
+        "sizeLines": 80
+      }
+    },
+    {
+      "id": "concept:deploy_bundle",
+      "type": "concept",
+      "label": "Deploy bundle",
+      "file": null,
+      "properties": {
+        "description": "Model deploy bundle directory containing adapter weights, normalizer stats, manifest, and tactile preprocess scripts. Produced by export_policy.sh (train/scripts), consumed by the deployment runtime, and archived by package_model.sh.",
+        "crossBatch": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:deploy/scripts/run_bridge.sh",
+      "target": "pattern:deploy_scripts/pythonpath_setup",
+      "relation": "implements_pattern",
+      "properties": {
+        "confidence": "high",
+        "lines": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22],
+        "detail": "Lines 8-22 build PYTHONPATH from common/src, train/src, deploy/src and probe third_party/lerobot/src"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_command_mux.sh",
+      "target": "pattern:deploy_scripts/pythonpath_setup",
+      "relation": "implements_pattern",
+      "properties": {
+        "confidence": "high",
+        "lines": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22],
+        "detail": "Lines 8-22 build PYTHONPATH from common/src, train/src, deploy/src and probe third_party/lerobot/src"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_inference.sh",
+      "target": "pattern:deploy_scripts/pythonpath_setup",
+      "relation": "implements_pattern",
+      "properties": {
+        "confidence": "high",
+        "lines": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22],
+        "detail": "Lines 8-22 build PYTHONPATH from common/src, train/src, deploy/src and probe third_party/lerobot/src"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_bridge.sh",
+      "target": "pattern:deploy_scripts/config_launch",
+      "relation": "implements_pattern",
+      "properties": {
+        "confidence": "high",
+        "lines": [6, 24, 25],
+        "detail": "Lines 6, 24, 25: config path defaulting, log message, python -m invocation with --config"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_command_mux.sh",
+      "target": "pattern:deploy_scripts/config_launch",
+      "relation": "implements_pattern",
+      "properties": {
+        "confidence": "high",
+        "lines": [6, 24, 25],
+        "detail": "Lines 6, 24, 25: config path defaulting, log message, python -m invocation with --config"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_inference.sh",
+      "target": "pattern:deploy_scripts/config_launch",
+      "relation": "implements_pattern",
+      "properties": {
+        "confidence": "high",
+        "lines": [6, 24, 25, 26, 28, 29],
+        "detail": "Lines 6, 24-26, 28-29: config path defaulting with CLI override, log message, python -m invocation with --config"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_bridge.sh",
+      "target": "module:pi05.deploy.cli.bridge_ros",
+      "relation": "calls_module",
+      "properties": {
+        "confidence": "high",
+        "line": 25,
+        "detail": "python -m pi05.deploy.cli.bridge_ros --config ${CONFIG_PATH}"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_command_mux.sh",
+      "target": "module:pi05.deploy.cli.command_mux_ros",
+      "relation": "calls_module",
+      "properties": {
+        "confidence": "high",
+        "line": 25,
+        "detail": "python -m pi05.deploy.cli.command_mux_ros --config ${CONFIG_PATH}"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_inference.sh",
+      "target": "module:pi05.deploy.cli.deploy_ros",
+      "relation": "calls_module",
+      "properties": {
+        "confidence": "high",
+        "line": 29,
+        "detail": "python -m pi05.deploy.cli.deploy_ros --config ${CONFIG_PATH}"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_bridge.sh",
+      "target": "config:deploy/config/deploy.yaml",
+      "relation": "references_config",
+      "properties": {
+        "confidence": "high",
+        "line": 6,
+        "detail": "CONFIG_PATH defaults to PROJECT_DIR/deploy/config/deploy.yaml (overridable via $1)"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_command_mux.sh",
+      "target": "config:deploy/config/deploy.yaml",
+      "relation": "references_config",
+      "properties": {
+        "confidence": "high",
+        "line": 6,
+        "detail": "CONFIG_PATH defaults to PROJECT_DIR/deploy/config/deploy.yaml (overridable via $1)"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/run_inference.sh",
+      "target": "config:deploy/config/deploy.yaml",
+      "relation": "references_config",
+      "properties": {
+        "confidence": "high",
+        "line": 6,
+        "detail": "CONFIG_PATH hardcoded to PROJECT_DIR/deploy/config/deploy.yaml (overridable via $1 override at line 24-26)"
+      }
+    },
+    {
+      "source": "file:deploy/scripts/package_model.sh",
+      "target": "concept:deploy_bundle",
+      "relation": "packages_artifact",
+      "properties": {
+        "confidence": "high",
+        "lines": [6, 7, 8, 9, 25],
+        "detail": "Lines 6-9 define PACKAGE_DIR=outputs/exports and PACKAGE_PATH=pi05_policy_TIMESTAMP.tar.gz. Line 25 tars the source bundle into this archive."
+      }
+    },
+    {
+      "source": "pattern:deploy_scripts/config_launch",
+      "target": "pattern:deploy_scripts/pythonpath_setup",
+      "relation": "depends_on",
+      "properties": {
+        "confidence": "high",
+        "detail": "The python -m launch (config_launch) depends on PYTHONPATH being set (pythonpath_setup) to resolve the module"
+      }
+    }
+  ]
+}

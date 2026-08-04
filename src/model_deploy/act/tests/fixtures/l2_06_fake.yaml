@@ -1,0 +1,62 @@
+# ============================================================================
+# l2-06-control-loop 验证用 typed fake run config (deploy_055)
+#
+# 设计意图 (04_L2验收机制.md + deploy_055 §6):
+#   - 只替换不可控外部边界 (bundle/GPU/ROS/hardware)；production contracts
+#     全部保留：DeployConfig 走真实 from_mapping 校验，PolicyInputSpec 走真实
+#     冻结构造校验，ActRuntimeResources 走真实 dataclass 校验。
+#   - bundle_dir 故意留空：证明 load_act_runtime_resources 在空 bundle 时
+#     fail-fast (绝不猜测路径)；测试通过显式注入 canonical fake
+#     ActRuntimeResources 来驱动整条 tracer，而不是调用生产 loader。
+#   - image_size 取小值 (32) 仅为本地快速验证，与 [0,1] CHW 契约一致。
+#   - image_shape 可选，设置后覆盖 image_size 的方形默认值；此处注释示例。
+#   - 不出现 enabled / command_output_enabled；本 fixture 固定 dry-run：
+#     命令输出主开关只来自 CLI (--enable-command-output)，永不从 YAML 读取。
+# ============================================================================
+
+bundle: {}
+
+runtime:
+  mode: dry-run
+  device: cpu
+  inference_hz: 100
+  control_hz: 50
+  chunk_size: 8
+  execute_horizon: 4
+  prefetch_steps: 1
+  action_dim: 16
+  state_dim: 16
+  max_action_age_sec: 0.45
+  max_observation_age_sec: 1.0
+  max_inference_requests: 1
+  max_pending_chunks: 1
+  fallback_policy: hold_last_action
+  publish_metrics_hz: 10
+
+image:
+  image_size: 32
+  # image_shape: [24, 32]  # optional non-square override [height, width]
+
+topics:
+  namespace: /act
+  observation:
+    arm_state: /act/observation/arm_state
+    images:
+      left: /act/observation/image/left
+      right: /act/observation/image/right
+    left_tcp_pose: /act/observation/arm/left_tcp_pose
+    right_tcp_pose: /act/observation/arm/right_tcp_pose
+    left_gripper_state: /act/observation/gripper/left_state
+    right_gripper_state: /act/observation/gripper/right_state
+  command:
+    policy_action: /act/policy_action
+    left_arm_target: /act/command/arm/left_target
+    right_arm_target: /act/command/arm/right_target
+    left_gripper_target: /act/command/gripper/left_target
+    right_gripper_target: /act/command/gripper/right_target
+    status: /act/command/status
+    metrics: /act/metrics
+
+safety: {}
+
+command_output: {}

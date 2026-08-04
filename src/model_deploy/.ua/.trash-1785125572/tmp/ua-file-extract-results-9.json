@@ -1,0 +1,77 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 1,
+  "filesSkipped": [
+    "act_system/CMakeLists.txt",
+    "act_system/package.xml"
+  ],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 1,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 1
+    }
+  },
+  "results": [
+    {
+      "path": "act_system/README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 100,
+      "nonEmptyLines": 76,
+      "sections": [
+        {
+          "heading": "act_system — ACT 系统集成包（一键启动）",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "一键启动",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "启动的组件",
+          "level": 2,
+          "line": 34
+        },
+        {
+          "heading": "参数",
+          "level": 2,
+          "line": 46
+        },
+        {
+          "heading": "真机前置条件",
+          "level": 2,
+          "line": 65
+        },
+        {
+          "heading": "故障排查",
+          "level": 2,
+          "line": 71
+        },
+        {
+          "heading": "测试命令与结果",
+          "level": 2,
+          "line": 85
+        },
+        {
+          "heading": "未验证项",
+          "level": 2,
+          "line": 95
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 8
+      }
+    }
+  ]
+}

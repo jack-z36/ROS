@@ -4,7 +4,7 @@
 
 - 阶段：阶段四：模型部署
 - 任务模式：阶段四 L2 / L3 执行、模型部署代码和工程文档协作
-- 适用对象：`model_deploy` 二级长期分支、阶段四三级功能分支、`src/model_deploy/pi05/` 和阶段四工程文档
+- 适用对象：`model_deploy` 二级长期分支、阶段四三级功能分支、`src/model_deploy/act/` 和阶段四工程文档
 - 不适用对象：阶段二数据清洗分支、`main` 稳定分支合并流程
 
 使用本文件前，必须先读取：
@@ -57,9 +57,63 @@ git switch feat/model_deploy/<topic> || git switch -c feat/model_deploy/<topic> 
 git pull --ff-only
 ```
 
+## 多 Agent 并行工作树
+
+阶段四存在两种典型并行场景：Ralph / OpenCode 循环工程主 Agent 在 `model_deploy` 上持续调度 L2/L3，同时用户或另一个 Agent 需要在三级功能分支上开发代码或设计文档。此时**不得**在主工作目录内用 `git switch` 切换分支，必须使用工作树。
+
+具体规则见全局 `DOCS/02_约束/Git协作/Git操作规则.md` 的「工作树」节。以下为阶段四专属约定。
+
+### 触发时机
+
+OpenCode 主 Agent 或用户在以下情况必须使用 worktree：
+
+- 主工作目录已检出 `model_deploy` 且工作区存在 Ralph / OpenCode 循环工程的活跃改动（状态摘要、dispatch、任务文件等）。
+- 需要同时在 `model_deploy` 和某个三级功能分支上工作。
+- 用户明确要求"在其他目录继续开发某个 L2/L3"。
+
+### 阶段四工作树命名
+
+阶段四的工作树目录统一命名为：
+
+```text
+worktrees/<l2-id 或简短用途描述>
+```
+
+示例：
+
+```text
+worktrees/l2-01-external-contract  → feat/model_deploy/l2-01-external-contract-design
+worktrees/l2-03-act-inference      → feat/model_deploy/l2-03-act-inference
+```
+
+### 加载链更新
+
+OpenCode 主 Agent 在`00_status/current_loop_snapshot.md` 的输出中，必须说明当前所在工作树路径、检出分支，以及是否存在其他活跃工作树。格式：
+
+```text
+当前工作树：/home/hit/ROS/worktrees/l2-01-external-contract
+检出分支：feat/model_deploy/l2-01-external-contract-design
+其他活跃工作树：/home/hit/ROS (model_deploy)
+```
+
+### Gate 合入后清理
+
+三级功能分支合入 `model_deploy` 并确认远端同步后，应删除对应工作树：
+
+```bash
+# 回到主工作目录
+cd /home/hit/ROS
+# 删除工作树（必须先确保工作树内无未提交改动）
+git worktree remove worktrees/<l2-id>
+```
+
+合入 `model_deploy` 本身在任一工作树或主工作目录中均可执行——优先在主工作目录执行，除非主工作目录被 Ralph / OpenCode 循环工程占用且有未完成状态无法中断。
+
 ## L3 原子提交流程
 
-Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交：
+Ralph / OpenCode 循环工程中，当单个 L3 验收结论为 `PASS_LOCAL`、`DEFER_TO_GATE`、`BLOCKED_ENV` 或 `BLOCKED_HARDWARE_EXPECTED`，且相关证据已登记后，主 Agent 可以执行 L3 原子提交。
+
+如果验收结论为 `PASS_LOCAL`，提交前必须先把对应 L3 任务文件从 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<new-l2>/` 移动到 `DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<new-l2>/`，并把该归档移动纳入同一个 L3 原子提交。其他可提交终态不是“验收任务执行通过”，默认不触发该归档。
 
 ```bash
 git status --short --branch
@@ -77,41 +131,105 @@ git push -u origin feat/model_deploy/<topic>
 
 ## Gate 后合入流程
 
-当且仅当所属功能 Gate 通过后，AI 可以自动执行以下同步流程：
+当且仅当所属功能 Gate 通过 **且 人类验收签字通过** 后，AI 可以自动执行以下同步流程。
+
+人类验收关卡规则见 `DOCS/02_约束/工作流/阶段四开发工作流/attachments/人类验收关卡规则.md`。合入前必须检查 `05_acceptance/<l2>/验收结果.md` 的「人类验收」段：未填写或勾选「不通过」时，停止合入并向用户报告。
+
+**唯一允许的合入方式为 `git merge --no-ff`**。禁止使用 `git merge --squash`、`git rebase`、`git commit --amend` 将三级分支压成单 commit 合入；禁止 `git push --force`。本节流程按 5 步顺序执行：
+
+### 第 1 步：文档预维护（合入前强制）
+
+在当前三级功能分支上，依次用 subagent 运行两个 docs 维护 skill，确保文档体系与本次代码变更同步、不积压：
+
+1. `update-knowledge-from-commits`（更新 `DOCS/01_知识/`）
+2. `update-routes-from-commits`（更新 `AGENTS.md`、`DOCS/02_约束/上下文加载/`、各 `INDEX.md`）
+
+两个 skill 现均可在任意分支运行（见各自 SKILL.md）。在三级功能分支上为合入前预维护而跑时，**不要求它们执行跨分支 sync / 推送**——只取对 DOCS 的编辑结果，作为 `docs(knowledge)` / `docs(routes)` commit 落在当前功能分支本地。
+
+- 若 skill 判定「无需更新」，跳过该 skill，不阻塞合入。
+- skill 跑完后，工作树必须只剩 docs 相关变更；若出现非 DOCS 的预期外变更，停止合入并报告（见「阻断条件」）。
+
+### 第 2 步：推送功能分支
 
 ```bash
-git status --short --branch
 git push -u origin feat/model_deploy/<topic>
+```
+
+### 第 3 步：合入 model_deploy（`merge --no-ff`，message 带北京日期）
+
+```bash
 git switch model_deploy
 git pull --ff-only
 git merge --no-ff feat/model_deploy/<topic> -m "merge(model_deploy): integrate <topic> 北京时间 YYYY-MM-DD HH:MM"
 git push origin model_deploy
+```
+
+### 第 4 步：归档（合入后强制，见「合入后归档流程」节）
+
+不直接删除三级分支与 worktree，先归档再清理。
+
+### 第 5 步：推送归档 tag
+
+见「合入后归档流程」节。
+
+## 合入后归档流程
+
+三级分支合入 `model_deploy` 并推送成功后，**必须先归档再清理，禁止直接删除**。这是阶段四对全局 `Git操作规则.md`「分支删除与归档」的收紧：全局只要求「未合入分支」归档，阶段四要求所有三级分支合入后都先归档。
+
+```bash
+# (1) 归档 worktree：移动到 worktrees/archive/，不删除
+mkdir -p worktrees/archive/
+mv worktrees/<用途> worktrees/archive/<用途>-<YYYYMMDD>
+#   或用 git 原生命令：git worktree move worktrees/<用途> worktrees/archive/<用途>-<YYYYMMDD>
+
+# (2) 归档分支：打 archive tag（本地 + 远端），保证可恢复
+git tag -a archive/<YYYYMMDD>/<branch-slug> feat/model_deploy/<topic> \
+  -m "Archive feat/model_deploy/<topic> after merge into model_deploy YYYY-MM-DD"
+git push origin archive/<YYYYMMDD>/<branch-slug>
+
+# (3) 删除分支引用（archive tag 已保证可恢复）
 git branch -d feat/model_deploy/<topic>
 git push origin --delete feat/model_deploy/<topic>
 ```
+
+说明：
+
+- `worktrees/archive/` 由 `.gitignore` 覆盖（`worktrees/` 整体已忽略），归档 worktree 不进版本控制。
+- 归档 tag 永久保留，不清理；需要恢复时 `git worktree add <新路径> archive/<日期>/<slug>`。
+- 归档 worktree 的物理目录可随时手动删除，archive tag 是唯一恢复依据。
 
 ## 阻断条件
 
 出现以下任一情况时，停止自动同步并向用户报告：
 
 - 功能 Gate 未通过，或对应验收结果未记录通过结论。
+- 人类验收未签字、勾选「不通过」或缺少用户名/日期（见人类验收关卡规则）。
 - 当前分支不是对应三级功能分支，或该分支不是从 `model_deploy` 开出。
+- 文档预维护（第 1 步）subagent 跑完后，工作树包含非 DOCS 的预期外变更。
 - `model_deploy` 远端领先、本地分叉或 `pull --ff-only` 失败。
 - `git merge --no-ff` 产生冲突。
 - 工作区包含本功能之外的非预期变更。
 - 待提交内容包含超大文件、缓存、私有配置、环境目录或未归档解释的运行产物。
 - 真机相关任务缺少风险确认、急停准备或人工验收记录。
+- 归档 tag 创建或推送失败时，停止删分支。
 
 ## 阶段四提交范围
 
 允许提交：
 
-- `src/model_deploy/pi05/` 下本功能明确允许的源码、配置、脚本或测试。
-- `DOCS/03_工程/阶段四：模型部署/` 下本功能的任务文件、验收结果和工程记录。
+- `src/model_deploy/act/` 下本 L3 明确允许的源码、配置、launch、脚本或测试。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/02_implement/<new-l2>/` 设计文档。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/active/<new-l2>/` 任务文件。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/completed/<new-l2>/` 已通过 L3 任务归档文件。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/task/dispatch/<new-l2>.yaml` dispatch。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/03_tasks/cards/<new-l2>/` 验收卡片。
+- 当前 L2 对应的 `DOCS/03_工程/阶段四：模型部署/05_acceptance/<new-l2>/` 验收结果、脚本和日志。
 - `DOCS/02_约束/` 下本次明确要求维护的约束、模板或工作流文件。
 
 禁止提交：
 
+- `src/model_deploy/pi05/`、`DOCS/03_工程/阶段四：模型部署/pi05_old/` 或其他 Pi0.5 历史源码作为 L3 修改落点；Pi0.5 只能作为只读参考。
+- `DOCS/03_工程/阶段四：模型部署/02_implement/归档/`、`03_tasks/归档/_legacy_layer_based_act/`、`05_acceptance/_legacy_layer_based_act/` 下的旧 layer-based ACT 产物，除非当前任务明确是文档归档、迁移或降权维护。
 - ROS 构建产物：`build/`、`install/`、`log/`
 - Python 缓存和测试缓存：`__pycache__/`、`*.pyc`、`.pytest_cache/`
 - 本地环境、私有配置、下载缓存、模型权重和大型数据产物

@@ -1,0 +1,98 @@
+{
+  "nodes": [
+    {
+      "id": "document:dual_fisheye_camera/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "dual_fisheye_camera/README.md",
+      "summary": "双鱼眼相机 ROS 2 节点包 dual_fisheye_camera 的说明文档：阐述通过 V4L2 持续发布左右鱼眼图像流与相机 HardwareHealth 状态的设计，复用 v4l2_camera_node 而不重写驱动。包含发布/订阅 topic、Health 字段映射、构建运行步骤、关键约束与真机风险清单共 13 个章节。",
+      "tags": ["documentation", "ros", "camera", "entry-point", "v4l2"],
+      "complexity": "moderate",
+      "languageNotes": "README 以中文为主、保留 ROS topic 与 message 等英文术语，采用表格化方式呈现 topic 接口契约与 HardwareHealth 字段语义借用映射。"
+    },
+    {
+      "id": "config:dual_fisheye_camera/package.xml",
+      "type": "config",
+      "name": "package.xml",
+      "filePath": "dual_fisheye_camera/package.xml",
+      "summary": "ROS 2 ament_python 包清单文件，声明 dual_fisheye_camera 的构建类型与依赖：rclpy、sensor_msgs、launch、launch_ros，运行时依赖 v4l2_camera、v4l-utils 与 act_interfaces，并提供 ament_lint/pytest 测试依赖。",
+      "tags": ["configuration", "ros", "package-manifest", "ament-python", "build-system"],
+      "complexity": "simple",
+      "languageNotes": "package.xml format=3，build_type=ament_python；exec_depend 中显式声明 act_interfaces 以表达接口包→相机包的依赖顺序。"
+    },
+    {
+      "id": "config:dual_fisheye_camera/setup.cfg",
+      "type": "config",
+      "name": "setup.cfg",
+      "filePath": "dual_fisheye_camera/setup.cfg",
+      "summary": "Python 包安装脚本路径配置，指定 develop 与 install 阶段的可执行脚本落点为 $base/lib/dual_fisheye_camera，配合 ament_python 的 setup.py 注册入口点。",
+      "tags": ["configuration", "ros", "ament-python", "build-system"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "file:dual_fisheye_camera/launch/dual_fisheye_camera.launch.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "config:dual_fisheye_camera/config/dual_fisheye_camera.yaml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "file:dual_fisheye_camera/setup.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:dual_fisheye_camera/README.md",
+      "target": "config:dual_fisheye_camera/package.xml",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:dual_fisheye_camera/package.xml",
+      "target": "config:dual_fisheye_camera/setup.cfg",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:dual_fisheye_camera/package.xml",
+      "target": "file:dual_fisheye_camera/dual_fisheye_camera/camera_health_node.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:dual_fisheye_camera/package.xml",
+      "target": "file:dual_fisheye_camera/setup.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:dual_fisheye_camera/setup.cfg",
+      "target": "file:dual_fisheye_camera/setup.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

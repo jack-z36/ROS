@@ -1,6 +1,6 @@
 ---
 name: update-knowledge-from-commits
-description: Analyze Git commits in this ROS project and update stable DOCS/01_知识 knowledge documents. Use when the user asks to update the knowledge base from commits, refresh knowledge docs after development, derive knowledge changes from the latest commit, or maintain stage knowledge from Git history. By default, analyze the latest non-maintenance commit, update knowledge docs when stable semantics changed, create a local docs(knowledge) commit, then sync the docs update from docs_maintaining to the repository's long-lived branches when Git preflight is clean.
+description: Analyze Git commits in this ROS project and update stable DOCS/01_知识 knowledge documents. Use when the user asks to update the knowledge base from commits, refresh knowledge docs after development, derive knowledge changes from the latest commit, or maintain stage knowledge from Git history. By default, analyze the latest non-maintenance commit, update knowledge docs when stable semantics changed, and create a local docs(knowledge) commit on the current branch. This skill may run on ANY branch (including feat/*/fix/* feature branches); cross-branch sync is performed only when the caller explicitly requests it (e.g. prompt specifies sync=true), otherwise it stays a local commit with no push.
 ---
 
 # Update Knowledge From Commits
@@ -31,7 +31,9 @@ Also skip commits whose subject contains:
 
 If the user provides an explicit commit range, use that range instead.
 
-After successful knowledge updates, create a local commit, then sync that docs update across long-lived project branches according to `DOCS/02_约束/Git协作/Git操作规则.md`.
+After successful knowledge updates, create a local `docs(knowledge)` commit on the current branch.
+
+本 skill 可在任意分支上运行，包括 `feat/*`、`fix/*` 等三级功能分支——不限定于 `docs_maintaining`。跨分支 sync 仅当调用方显式要求（如 prompt 指定 `sync=true`）时才按 `DOCS/02_约束/Git协作/Git操作规则.md` 执行；默认不 sync、不推送，产出 commit 留在当前分支，由调用方随后续 merge 带入目标分支。
 
 ## Preflight
 
@@ -42,11 +44,11 @@ After successful knowledge updates, create a local commit, then sync that docs u
 5. Stop if the working tree has unrelated uncommitted changes.
    - Allowed pre-existing changes are only files under `skills/update-knowledge-from-commits/` when the user is editing this skill itself.
    - For normal skill use, require a clean working tree before editing knowledge docs.
-6. Before branch sync, also verify:
+6. 仅当将执行跨分支 sync（调用方显式要求）时，才额外校验：
    - remote is `origin`
    - remote URL is `https://github.com/jack-z36/ROS.git`
    - Git user is `jack-z36 <jack-z36@users.noreply.github.com>`
-   - local branch tips are not behind their configured upstreams
+   - 不在 `docs_maintaining` 上跑 sync 时，跳过「local branch tips not behind upstreams」这条针对长期分支的前置。
 
 ## Commit Inspection
 
@@ -116,6 +118,9 @@ docs(knowledge): update from commit <short_sha>
 Use the selected target commit short SHA. For an explicit multi-commit range, use the range end short SHA.
 
 ## Branch Sync
+
+> **本节为可选流程**：仅当调用方显式要求跨分支同步（如 prompt 指定 `sync=true`）时执行。
+> 若未要求 sync（例如在三级功能分支上为合入前预维护而跑），**跳过本节全部步骤**，直接进入 Output 报告，并将 branch sync 结果记为 `skipped (no sync requested)`。产出 commit 留在当前分支，由调用方随后续 `merge --no-ff` 带入目标分支。
 
 After creating the local `docs(knowledge)` commit, sync the resulting docs update from `docs_maintaining` to long-lived project branches.
 

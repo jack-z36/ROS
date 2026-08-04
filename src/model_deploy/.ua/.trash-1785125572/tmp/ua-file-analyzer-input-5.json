@@ -1,0 +1,17 @@
+{
+  "projectRoot": "/home/hit/ROS/src/model_deploy",
+  "batchFiles": [
+    {"path": "act/tests/integration/test_l2_06_gate.py", "language": "python", "sizeLines": 1207, "fileCategory": "code"},
+    {"path": "act/tests/types/__init__.py", "language": "python", "sizeLines": 1, "fileCategory": "code"},
+    {"path": "act/tests/ui/test_act_deploy_main.py", "language": "python", "sizeLines": 225, "fileCategory": "code"},
+    {"path": "act/tests/ui/test_act_deploy_node.py", "language": "python", "sizeLines": 429, "fileCategory": "code"},
+    {"path": "act/tests/ui/test_startup_preflight.py", "language": "python", "sizeLines": 322, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    "act/tests/integration/test_l2_06_gate.py": ["act/tests/types/__init__.py"],
+    "act/tests/types/__init__.py": [],
+    "act/tests/ui/test_act_deploy_main.py": ["act/tests/types/__init__.py"],
+    "act/tests/ui/test_act_deploy_node.py": ["act/tests/types/__init__.py"],
+    "act/tests/ui/test_startup_preflight.py": ["act/tests/types/__init__.py"]
+  }
+}

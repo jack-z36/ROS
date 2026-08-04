@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "PI05 Project",
+    "languages": ["Python", "YAML", "Shell", "Markdown", "JSON", "ROS2 Launch"],
+    "frameworks": ["PyTorch", "LeRobot", "ROS 2 Jazzy", "PEFT", "Accelerate", "safetensors", "NumPy", "PyYAML", "TensorBoard", "picotele", "RealSense"],
+    "description": "Standalone repository for PI0.5 Vision-Language-Action (VLA) dataset preparation, training (LoRA fine-tuning), export, and deployment for bimanual robotic manipulation.",
+    "analyzedAt": "2026-07-04T15:30:00Z",
+    "gitCommitHash": "01ce64c7d80e5ba68f144ca9b7731b0a7b2c3403"
+  },
+  "nodes": [],
+  "edges": [],
+  "layers": [],
+  "tour": []
+}
