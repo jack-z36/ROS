@@ -209,7 +209,7 @@ def run_startup_preflight(
             "PolicyInputSpec image contract is not (CHW, float32, [0.0, 1.0])",
         )
     expected_shapes = tuple(
-        (3, config.image.image_size, config.image.image_size)
+        (3, *config.image.resolved_image_hw)
         for _ in spec.camera_keys
     )
     if spec.image_shapes != expected_shapes:

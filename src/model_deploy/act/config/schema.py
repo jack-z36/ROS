@@ -299,11 +299,43 @@ class SafetyConfig:
 
 @dataclass(frozen=True)
 class ImageConfig:
-    """Deployment image preprocessing settings."""
+    """Deployment image preprocessing settings.
+
+    ``image_shape`` allows non-square image dimensions (height, width).
+    When set it takes precedence over ``image_size``; otherwise
+    ``resolved_image_hw`` derives a square from ``image_size``.
+    """
 
     image_size: int = 224
     resize_mode: str = "resize_pad"
     transport: str = "raw"
+    image_shape: tuple[int, int] | None = None
+
+    @property
+    def resolved_image_hw(self) -> tuple[int, int]:
+        """Return (height, width) for image preprocessing."""
+        if self.image_shape is not None:
+            return self.image_shape
+        return (self.image_size, self.image_size)
+
+    def __post_init__(self) -> None:
+        if self.image_shape is not None:
+            if (
+                not isinstance(self.image_shape, (tuple, list))
+                or len(self.image_shape) != 2
+            ):
+                raise DeployConfigError(
+                    "image.image_shape must be a (height, width) pair, "
+                    f"got {self.image_shape!r}"
+                )
+            h, w = self.image_shape
+            if not isinstance(h, int) or not isinstance(w, int) or h <= 0 or w <= 0:
+                raise DeployConfigError(
+                    "image.image_shape values must be positive integers, "
+                    f"got {self.image_shape!r}"
+                )
+            # Normalise list → tuple for frozen consistency
+            object.__setattr__(self, "image_shape", (h, w))
 
 
 @dataclass(frozen=True)
@@ -501,6 +533,7 @@ def _deploy_from_mapping(
             image_size=_positive_int(image_raw, "image_size", default=224),
             resize_mode=_choice(image_raw, "resize_mode", {"resize_pad", "resize_crop"}, default="resize_pad"),
             transport=_choice(image_raw, "transport", {"raw", "compressed", "both"}, default="raw"),
+            image_shape=_optional_image_shape(image_raw),
         ),
         topics=TopicsConfig(
             namespace=namespace,
@@ -825,6 +858,28 @@ def _float_list(raw: Mapping[str, Any], key: str, default: list[float]) -> list[
     if not isinstance(value, list):
         raise DeployConfigError(f"{key} must be a list of floats")
     return [float(item) for item in value]
+
+
+def _optional_image_shape(raw: Mapping[str, Any]) -> tuple[int, int] | None:
+    """Parse optional ``image_shape`` from YAML (list of two positive ints → tuple).
+
+    Returns ``None`` when the key is absent so ``ImageConfig`` falls back to
+    ``image_size``.  Validation is delegated to ``ImageConfig.__post_init__``.
+    """
+    value = raw.get("image_shape")
+    if value is None:
+        return None
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        raise DeployConfigError(
+            "image.image_shape must be a list/tuple of two positive integers "
+            f"[height, width], got {value!r}"
+        )
+    h, w = int(value[0]), int(value[1])
+    if h <= 0 or w <= 0:
+        raise DeployConfigError(
+            f"image.image_shape values must be positive integers, got [{h}, {w}]"
+        )
+    return (h, w)
 
 
 # ============================================================================

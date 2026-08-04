@@ -41,13 +41,13 @@ def _load_config() -> Any:
 
 def _make_spec(config: Any, camera_keys: tuple[str, ...] | None = None) -> PolicyInputSpec:
     camera_keys = tuple(camera_keys) if camera_keys is not None else config.topics.observation.camera_keys
-    image_size = config.image.image_size
+    img_h, img_w = config.image.resolved_image_hw
     return PolicyInputSpec(
         state_key=config.topics.observation.arm_state,
         state_dim=16,
         image_prefix=config.topics.namespace + "/observation/image/",
         camera_keys=camera_keys,
-        image_shapes=tuple((3, image_size, image_size) for _ in camera_keys),
+        image_shapes=tuple((3, img_h, img_w) for _ in camera_keys),
         image_layout="CHW",
         image_dtype="float32",
         image_value_range=(0.0, 1.0),
@@ -252,9 +252,9 @@ class TestHandleImage:
         adapter.handle_image("left", MockImageMsg(224, 224, "rgb8"))
 
         img = adapter._collector._images["left"]
-        # 尺寸跟随配置的 image_size（真实部署为 640），不硬编码
-        size = config.image.image_size
-        assert img.shape == (3, size, size)  # CHW
+        # 尺寸跟随配置的 resolved_image_hw（真实部署为 640），不硬编码
+        img_h, img_w = config.image.resolved_image_hw
+        assert img.shape == (3, img_h, img_w)  # CHW
         assert img.dtype == np.float32
         assert img.min() >= 0.0
         assert img.max() <= 1.0
@@ -332,10 +332,10 @@ class TestTryPublishObservation:
         snap = adapter._buffer.latest_observation(max_age_s=30.0)
         assert snap is not None
         assert snap.encoded_state.shape == (16,)
-        # CHW images in the snapshot（尺寸跟随配置的 image_size）
-        size = config.image.image_size
-        assert snap.images["left"].shape == (3, size, size)
-        assert snap.images["right"].shape == (3, size, size)
+        # CHW images in the snapshot（尺寸跟随配置的 resolved_image_hw）
+        img_h, img_w = config.image.resolved_image_hw
+        assert snap.images["left"].shape == (3, img_h, img_w)
+        assert snap.images["right"].shape == (3, img_h, img_w)
 
     def test_try_publish_missing_records(self) -> None:
         adapter = _new_adapter()

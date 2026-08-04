@@ -130,3 +130,44 @@ class TestValidConfig:
         assert cfg.runtime.control_hz == 30.0
         assert cfg.runtime.mode == "dry-run"
         assert cfg.runtime.chunk_size == 30
+
+
+# ── image_shape tests ────────────────────────────────────────────
+
+
+def _raw_with_image(**image_overrides) -> dict:
+    """Return a raw mapping with image section overridden."""
+    mapping = _raw()
+    mapping["image"].update(image_overrides)
+    return mapping
+
+
+class TestImageShape:
+    def test_image_shape_non_square(self) -> None:
+        cfg = DeployConfig.from_mapping(
+            _raw_with_image(image_shape=[480, 640]), base_dir=Path("/tmp")
+        )
+        assert cfg.image.image_shape == (480, 640)
+        assert cfg.image.resolved_image_hw == (480, 640)
+        # image_size is still stored independently
+        assert cfg.image.image_size == 224
+
+    def test_image_shape_backward_compat(self) -> None:
+        cfg = DeployConfig.from_mapping(_raw(), base_dir=Path("/tmp"))
+        assert cfg.image.image_shape is None
+        assert cfg.image.resolved_image_hw == (224, 224)
+
+    @pytest.mark.parametrize(
+        "bad_shape",
+        [
+            [-1, 640],       # negative value
+            [480, 0],        # zero value
+            [480],           # length 1
+            [480, 640, 3],   # length 3
+        ],
+    )
+    def test_image_shape_invalid_rejected(self, bad_shape) -> None:
+        with pytest.raises(DeployConfigError, match="image_shape"):
+            DeployConfig.from_mapping(
+                _raw_with_image(image_shape=bad_shape), base_dir=Path("/tmp")
+            )
