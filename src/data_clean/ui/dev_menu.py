@@ -20,7 +20,7 @@ from runtime.scene3_aligned_mcap_write_check import run_scene3_aligned_mcap_writ
 from runtime.scene3_full_flow_check import run_scene3_full_flow_check
 from runtime.scene3_step_timeline_check import run_scene3_step_timeline_check
 from ui.scene1_dev_checks import (
-    run_scene1_arm_base_pose_transform,
+    run_scene1_source_tcp_pose_transform,
     run_scene1_common_pose_transform,
     run_scene1_frame_alignment_config,
     run_scene1_gripper_calibration_config,
@@ -56,8 +56,8 @@ def _run_scene1_frame_alignment_check(args: argparse.Namespace) -> int:
     print("*** [已废弃] scene1_frame_alignment_config ***")
     print()
     print("此检验项已废弃。common_frame / FrameAlignmentConfig 配置生成")
-    print("路线已从主路线移除。新路线改为由用户直接输入 work_frame_")
-    print("in_arm_base_pose，不再需要生成 common_from_left/right_start。")
+    print("路线已从主路线移除。新路线保持原始坐标系，只使用 camera_from_tcp，")
+    print("不再需要生成 common_from_left/right_start。")
     print()
     print("此功能保留仅用于检查既有配置的历史兼容性。")
     print()
@@ -186,8 +186,8 @@ def run_scene2_pose_filter_check(args: argparse.Namespace) -> int:
     print(f"  run_log: {result['run_log_path']}")
     print()
     print("  坐标语义:")
-    print("    input_pose_frame: left_arm_base/right_arm_base")
-    print("    output_pose_frame: left_arm_base/right_arm_base")
+    print("    input_pose_frame: each Baton Mini source frame")
+    print("    output_pose_frame: unchanged source frame")
     print("    common_frame_to_robot_base: not required")
     return 0 if result["status"] == "success" else 1
 
@@ -253,7 +253,7 @@ def run_scene2_mcap_a_writer_check(args: argparse.Namespace) -> int:
     print("    IK: not in current route")
     print("    MCAP_B: not in current route")
     print("    joint_limit_check: not in current route")
-    print("    arm_base_input: arm-base TCP pose topics consumed from cleaned MCAP")
+    print("    pose_input: source-frame TCP pose topics consumed from cleaned MCAP")
     return 0 if result["status"] == "success" else 1
 
 
@@ -324,7 +324,7 @@ def run_scene3_mcap_a_input_check_check(args: argparse.Namespace) -> int:
 
 SCENE1_CHECKS: list[tuple[str, str, MenuRunner]] = [
     ("scene1_frame_alignment_config", "[已废弃] 位姿转换配置生成", _run_scene1_frame_alignment_check),
-    ("scene1_arm_base_pose_transform", "arm-base 位姿转换（新链路，不再依赖 common_frame）", _scene1_runner("scene1_arm_base_pose_transform", run_scene1_arm_base_pose_transform)),
+    ("scene1_source_tcp_pose_transform", "原始坐标系 camera→TCP 单次变换", _scene1_runner("scene1_source_tcp_pose_transform", run_scene1_source_tcp_pose_transform)),
     ("scene1_common_pose_transform", "位姿转换（旧链路，common_frame 兼容）", _scene1_runner("scene1_common_pose_transform", run_scene1_common_pose_transform)),
     ("scene1_gripper_width_extract", "夹爪开合提取", _scene1_runner("scene1_gripper_width_extract", run_scene1_gripper_width_extract)),
     ("scene1_gripper_calibration_config", "夹爪开合配置生成", _scene1_runner("scene1_gripper_calibration_config", run_scene1_gripper_calibration_config)),

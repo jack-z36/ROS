@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -55,7 +54,7 @@ class PoseStreamConfig:
     transform_file: str = ""
     output_camera_pose_common: str = ""
     output_tcp_pose_common: str = ""
-    output_arm_base_tcp_pose: str = ""
+    output_tcp_pose: str = ""
 
 
 @dataclass(frozen=True)
@@ -168,80 +167,6 @@ class FrameAlignmentConfig:
 
 
 @dataclass(frozen=True)
-class WorkFrameInBaseConfig:
-    """User-defined work frame pose in the corresponding arm base coordinate frame.
-
-    This config feeds WorkFrameInArmBasePose from schemas.arm_base_pose.
-    It is the second input to the official Algo.rm_algo_workframe2base() call.
-    """
-
-    hand: str
-    base_frame_id: str
-    position_m: dict[str, float]
-    rotation_euler_rad: dict[str, float] | None = None
-    orientation: dict[str, float] | None = None
-    work_frame_id: str = "work"
-    source: str = "user_input"
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "WorkFrameInBaseConfig":
-        position_mm = data.get("position_mm")
-        if isinstance(position_mm, dict):
-            position_m = {
-                key: float(position_mm.get(key, 0.0)) / 1000.0
-                for key in ("x", "y", "z")
-            }
-        else:
-            position_m = {
-                key: float(data.get("position_m", {}).get(key, 0.0))
-                for key in ("x", "y", "z")
-            }
-        rotation_euler_rad = data.get("rotation_euler_rad")
-        if isinstance(rotation_euler_rad, dict):
-            normalized_euler = {
-                key: float(rotation_euler_rad.get(key, 0.0))
-                for key in ("rx", "ry", "rz")
-            }
-        else:
-            normalized_euler = _quaternion_xyzw_to_euler_rad(data.get("orientation", {}))
-        orientation = data.get("orientation", {})
-        return cls(
-            hand=str(data.get("hand", "")),
-            base_frame_id=str(data.get("base_frame_id", "")),
-            position_m=position_m,
-            rotation_euler_rad=normalized_euler,
-            orientation={
-                "x": float(orientation.get("x", 0.0)),
-                "y": float(orientation.get("y", 0.0)),
-                "z": float(orientation.get("z", 0.0)),
-                "w": float(orientation.get("w", 1.0)),
-            },
-            work_frame_id=str(data.get("work_frame_id", "work")),
-            source=str(data.get("source", "user_input")),
-        )
-
-
-def _quaternion_xyzw_to_euler_rad(data: dict[str, Any]) -> dict[str, float]:
-    x = float(data.get("x", 0.0))
-    y = float(data.get("y", 0.0))
-    z = float(data.get("z", 0.0))
-    w = float(data.get("w", 1.0))
-    norm = (x * x + y * y + z * z + w * w) ** 0.5
-    if norm == 0.0 or abs(norm - 1.0) > 1e-3:
-        raise ConfigError(f'"orientation" must be a unit quaternion, got norm {norm:.6f}')
-    sinr_cosp = 2.0 * (w * x + y * z)
-    cosr_cosp = 1.0 - 2.0 * (x * x + y * y)
-    sinp = 2.0 * (w * y - z * x)
-    siny_cosp = 2.0 * (w * z + x * y)
-    cosy_cosp = 1.0 - 2.0 * (y * y + z * z)
-    return {
-        "rx": math.atan2(sinr_cosp, cosr_cosp),
-        "ry": math.copysign(math.pi / 2.0, sinp) if abs(sinp) >= 1.0 else math.asin(sinp),
-        "rz": math.atan2(siny_cosp, cosy_cosp),
-    }
-
-
-@dataclass(frozen=True)
 class AppConfig:
     batch: BatchConfig
     transform: TransformConfig
@@ -250,7 +175,6 @@ class AppConfig:
     calibration: dict[str, Any]
     frame_alignment: FrameAlignmentConfig | None = None
     camera_from_tcp: dict[str, ExtrinsicConfig] | None = None
-    work_frames: dict[str, WorkFrameInBaseConfig] | None = None
 
     def pose_by_topic(self) -> dict[str, PoseStreamConfig]:
         return {stream.input_topic: stream for stream in self.pose_streams}
@@ -391,15 +315,11 @@ def _build_pose_stream(
 
     output_camera_pose_common = ""
     output_tcp_pose_common = ""
-    output_arm_base_tcp_pose = ""
+    output_tcp_pose = ""
     if fa_pose_stream is not None:
         output_camera_pose_common = str(fa_pose_stream.get("output_camera_pose_common", ""))
         output_tcp_pose_common = str(fa_pose_stream.get("output_tcp_pose_common", ""))
-        output_arm_base_tcp_pose = str(fa_pose_stream.get("output_arm_base_tcp_pose", ""))
-
-    # Also allow output_arm_base_tcp_pose to be set at top-level pose_stream item
-    if not output_arm_base_tcp_pose:
-        output_arm_base_tcp_pose = str(item.get("output_arm_base_tcp_pose", ""))
+    output_tcp_pose = str(item.get("output_tcp_pose", ""))
 
     return PoseStreamConfig(
         input_topic=str(item["input_topic"]),
@@ -409,7 +329,7 @@ def _build_pose_stream(
         transform_file=transform_file,
         output_camera_pose_common=output_camera_pose_common,
         output_tcp_pose_common=output_tcp_pose_common,
-        output_arm_base_tcp_pose=output_arm_base_tcp_pose,
+        output_tcp_pose=output_tcp_pose,
     )
 
 
@@ -597,22 +517,14 @@ def _validate_cross_field_rules(config: AppConfig) -> None:
                 f'"camera_from_tcp.{hand}.rotation_quat_xyzw" must be a unit quaternion, got norm {norm:.6f}'
             )
 
-    expected_base = {"left": "left_arm_base", "right": "right_arm_base"}
-    for hand, work_frame in (config.work_frames or {}).items():
-        if hand not in expected_base:
-            raise ConfigError(f'unsupported work_frames hand "{hand}"')
-        if work_frame.hand != hand:
-            raise ConfigError(f'"work_frames.{hand}.hand" must be "{hand}"')
-        if work_frame.base_frame_id != expected_base[hand]:
-            raise ConfigError(
-                f'"work_frames.{hand}.base_frame_id" must be "{expected_base[hand]}"'
-            )
-        rotation = work_frame.rotation_euler_rad
-        if rotation is None:
-            rotation = _quaternion_xyzw_to_euler_rad(work_frame.orientation or {})
-        for key in ("rx", "ry", "rz"):
-            if not math.isfinite(float(rotation[key])):
-                raise ConfigError(f'"work_frames.{hand}.rotation_euler_rad.{key}" must be finite')
+    tcp_output_topics = [stream.output_tcp_pose for stream in config.pose_streams if stream.output_tcp_pose]
+    _ensure_unique(tcp_output_topics, "TCP pose output topics")
+    _ensure_unique(
+        [stream.output_topic for stream in config.pose_streams]
+        + tcp_output_topics
+        + [stream.output_topic for stream in config.gripper_streams],
+        "all output topics",
+    )
 
 
 def load_app_config(
@@ -665,14 +577,6 @@ def load_app_config(
         frame_alignment = load_frame_alignment(raw_data)
         validate_frame_alignment(frame_alignment)
 
-    work_frames_data = raw_data.get("work_frames")
-    work_frames = None
-    if isinstance(work_frames_data, dict):
-        work_frames = {}
-        for hand_key, wf_data in work_frames_data.items():
-            if isinstance(wf_data, dict):
-                wf_data["hand"] = wf_data.get("hand", hand_key)
-                work_frames[hand_key] = WorkFrameInBaseConfig.from_dict(wf_data)
     camera_from_tcp = _build_camera_from_tcp(raw_data, frame_alignment)
 
     app_config = AppConfig(
@@ -683,7 +587,6 @@ def load_app_config(
         calibration=_build_calibration(raw_data),
         frame_alignment=frame_alignment,
         camera_from_tcp=camera_from_tcp,
-        work_frames=work_frames,
     )
     _validate_cross_field_rules(app_config)
     return app_config

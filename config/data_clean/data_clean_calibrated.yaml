@@ -62,11 +62,11 @@ pose_streams:
 - input_topic: /baton_mini_left/fast_odom
   msg_type: nav_msgs/msg/Odometry
   output_topic: /baton_mini_left/fast_odom
-  output_arm_base_tcp_pose: /left_arm_base_tcp_pose
+  output_tcp_pose: /baton_mini_left/tcp_pose
 - input_topic: /baton_mini_right/fast_odom
   msg_type: nav_msgs/msg/Odometry
   output_topic: /baton_mini_right/fast_odom
-  output_arm_base_tcp_pose: /right_arm_base_tcp_pose
+  output_tcp_pose: /baton_mini_right/tcp_pose
 gripper_streams:
 - image_topic: /gopro_left/image_raw
   image_msg_type: sensor_msgs/msg/Image
@@ -99,33 +99,6 @@ camera_from_tcp:
     - 0
     - 0
     - 145
-work_frames:
-  left:
-    hand: left
-    base_frame_id: left_arm_base
-    work_frame_id: camera_work
-    position_mm:
-      x: -420
-      y: -148
-      z: 190.8
-    rotation_euler_rad:
-      rx: -1.96
-      ry: 0.12
-      rz: 1.393
-    source: user_input
-  right:
-    hand: right
-    base_frame_id: right_arm_base
-    work_frame_id: camera_work
-    position_mm:
-      x: -420
-      y: -148
-      z: 190.8
-    rotation_euler_rad:
-      rx: 1.96
-      ry: 0.118
-      rz: -1.395
-    source: user_input
 web_pipeline:
   schema_version: 1
   scene2:

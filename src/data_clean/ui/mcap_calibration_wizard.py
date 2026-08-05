@@ -1570,7 +1570,7 @@ def _html_page(*, gripper_only: bool = False) -> str:
       </div>
       <div id="commonControls" class="hidden">
         <h4 id="commonTitle"></h4>
-        <p class="muted">【已废弃】common frame 标定不再作为主路线必需项。新路线改为用户直接输入 work_frame_in_arm_base_pose。此功能保留仅用于历史兼容。</p>
+        <p class="muted">【已废弃】common frame 标定不再作为主路线必需项。新路线保持原始坐标系，只使用 camera_from_tcp 固定外参。此功能保留仅用于历史兼容。</p>
         <button class="primary" id="commonSampleBtn" onclick="sampleCommon()">开始采样并保存</button>
         <button onclick="setMode('home')">返回中心</button>
       </div>
@@ -1820,7 +1820,7 @@ def run_calibration_wizard(
     print(f"  标定配置输出: {_short_path(output_path)}")
     print("  夹爪标定订阅: /gopro_left/image_raw, /gopro_right/image_raw")
     print("  common frame 标定订阅: pose_streams 中的左右 Baton Mini odometry topic")
-    print("  [注] common frame 标定已废弃，新路线使用 work_frame_in_arm_base_pose")
+    print("  [注] common frame 标定已废弃，新路线保持原始坐标系并使用 camera_from_tcp")
     print("  交互方式: 浏览器向导，OpenCV 仅做后台 ArUco 检测。")
 
     process = ManagedGoProProcess(None)

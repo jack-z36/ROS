@@ -257,10 +257,10 @@ def _hydrate_trajectory_metadata(summary: dict[str, Any], bridge_mode: str) -> d
     formal = bridge_mode == "formal"
     hydrated.update(
         {
-            "coordinate_frame_profile": "dual_arm_base" if formal else "common_frame_compat",
+            "coordinate_frame_profile": "dual_source_frame" if formal else "common_frame_compat",
             "coordinate_frames": {
-                "left": "left_arm_base" if formal else "common_frame",
-                "right": "right_arm_base" if formal else "common_frame",
+                "left": "left_baton_source_frame" if formal else "common_frame",
+                "right": "right_baton_source_frame" if formal else "common_frame",
             },
             "hand_bounds": {
                 "left": _position_bounds(episodes, ("left",)),
@@ -3568,7 +3568,7 @@ function renderCreate() {
   const readinessBox = ready.ready
     ? (exporterError
       ? `<div class="warnbox" style="margin-top:14px">官方 LeRobot exporter 未就绪：${escapeHtml(exporterError)}</div>`
-      : '<div class="notice" style="margin-top:14px">生产配置与官方 LeRobot 0.5.2 exporter 已就绪：任务将使用左右 arm-base TCP 位姿构建训练数据集。</div>')
+      : '<div class="notice" style="margin-top:14px">生产配置与官方 LeRobot 0.5.2 exporter 已就绪：任务将使用各自原始坐标系下的左右 TCP 位姿构建训练数据集。</div>')
     : `<div class="warnbox" style="margin-top:14px">生产配置未就绪：${(ready.missing_items || []).map(escapeHtml).join('、')}。<br><button onclick="showPage('config')">进入配置中心</button></div>`;
   const freeGb = typeof s.staging_disk_free_gb === 'number' ? s.staging_disk_free_gb : null;
   const diskWarn = (freeGb === null || freeGb >= 20) ? ''
@@ -3794,11 +3794,6 @@ function productionPoseFields(prefix, value) {
   return `<label>固定平移 translation_mm（mm）</label><div class="row">${['x','y','z'].map((axis,i)=>`<input data-production="${prefix}.translation_mm.${i}" value="${escapeHtml(String(t[i] ?? ''))}" placeholder="${axis} (mm)">`).join('')}</div>
   <p class="muted">相机到 TCP 的旋转固定为 0，无需填写。</p>`;
 }
-function productionWorkFields(hand, value) {
-  const p = value?.position_mm || {x:0,y:0,z:0}, r = value?.rotation_euler_rad || {rx:0,ry:0,rz:0};
-  return `<label>工作坐标系原点 position_mm（mm）</label><div class="row">${['x','y','z'].map(axis=>`<input data-production="work_frames.${hand}.position_mm.${axis}" value="${escapeHtml(String(p[axis] ?? ''))}" placeholder="${axis} (mm)">`).join('')}</div>
-  <label>工作坐标系旋转 rotation_euler_rad（欧拉角，rad）</label><div class="row">${['rx','ry','rz'].map(axis=>`<input data-production="work_frames.${hand}.rotation_euler_rad.${axis}" value="${escapeHtml(String(r[axis] ?? ''))}" placeholder="${axis} (rad)">`).join('')}</div>`;
-}
 function productionFilterFields(web) {
   const scene2 = web?.scene2 || {}, pose = scene2.pose_filter || {}, tactile = scene2.tactile_filter || {};
   const field = (label, path, value) => `<label>${label}</label><input data-production="${path}" value="${escapeHtml(String(value ?? ''))}">`;
@@ -3863,12 +3858,12 @@ function productionFileManagementFields(value) {
 }
 function renderProductionConfig() {
   const data = state.productionConfig, ready = data.readiness || {};
-  const camera = data.camera_from_tcp || {}, work = data.work_frames || {}, sdk = ready.sdk || {}, web = data.web_pipeline || {}, fileManagement = data.web_file_management || {};
-  const handCard = hand => `<div class="config-section"><h3>${hand==='left'?'左臂':'右臂'}</h3><p class="muted">目标 base frame：<b>${hand}_arm_base</b></p><h4>相机到夹爪 TCP 外参</h4>${productionPoseFields(`camera_from_tcp.${hand}`, camera[hand])}<h4>工作坐标系在机械臂 base 下的位姿</h4>${productionWorkFields(hand, work[hand])}</div>`;
+  const camera = data.camera_from_tcp || {}, web = data.web_pipeline || {}, fileManagement = data.web_file_management || {};
+  const handCard = hand => `<div class="config-section"><h3>${hand==='left'?'左手':'右手'}</h3><p class="muted">输出保持该 Baton Mini 位姿流的原始参考坐标系。</p><h4>动相机到夹爪 TCP 外参</h4>${productionPoseFields(`camera_from_tcp.${hand}`, camera[hand])}</div>`;
   const gripper = ready.gripper || {};
-  document.getElementById('page-config').innerHTML = `<div class="card"><div class="row"><div><h2>配置中心</h2><p class="path">${escapeHtml(data.config_path || '')}</p></div>${ready.ready?badge('success'):badge('warning')}<span>RealMan SDK：${sdk.ready?'已就绪 '+escapeHtml(sdk.version || ''):'不可用'}</span></div>${ready.ready?'<div class="notice">生产配置已就绪。</div>':`<div class="warnbox">仍需处理：${(ready.missing_items || []).map(escapeHtml).join('、')}</div>`}</div>
+  document.getElementById('page-config').innerHTML = `<div class="card"><div class="row"><div><h2>配置中心</h2><p class="path">${escapeHtml(data.config_path || '')}</p></div>${ready.ready?badge('success'):badge('warning')}</div>${ready.ready?'<div class="notice">生产配置已就绪。</div>':`<div class="warnbox">仍需处理：${(ready.missing_items || []).map(escapeHtml).join('、')}</div>`}</div>
   <div class="card"><div class="row"><div><h3>夹爪开合标定</h3><p class="muted">通过 GoPro 实时画面与 ArUco 自动采样生成，无需手工编辑底层 marker 参数。</p></div><button class="primary right" onclick="openGripperCalibration()">自动生成 / 重新标定</button></div><div class="row">${badge(gripper.left?'success':'warning')} 左手夹爪 ${gripper.left?'已配置':'缺失'} ${badge(gripper.right?'success':'warning')} 右手夹爪 ${gripper.right?'已配置':'缺失'}</div></div>
-  <div class="card"><h3>左右臂 base 位姿转换</h3><p class="muted">人工填写：平移使用 mm，机械臂 base 旋转使用欧拉角 rad。Baton Mini 原始位姿、Runtime 换算结果和最终机械臂 TCP 输出的位置统一使用 m。</p><div class="config-grid">${handCard('left')}${handCard('right')}</div></div>
+  <div class="card"><h3>动相机 → 末端 TCP</h3><p class="muted">每帧只应用一次固定 camera→TCP 平移；不做 common frame、工作坐标系或机械臂 base 转换。人工输入使用 mm，Runtime 与最终 TCP 输出使用 m。</p><div class="config-grid">${handCard('left')}${handCard('right')}</div></div>
   <div class="card"><h3>滤波参数</h3><p class="muted">保存后作为生产默认值影响后续任务；已运行任务保留自己的 config snapshot。</p>${productionFilterFields(web)}</div>
   <div class="card"><h3>批量稳定与文件管理</h3><p class="muted">健康审计在独立页面执行并移动 MCAP，但不限制正式清洗的输入目录；成功和失败原始文件分别归档到配置目录。</p>${productionFileManagementFields(fileManagement)}</div>
   <div class="card"><h3>LeRobot 维度定义</h3><p class="muted">候选字段来自当前 aligned MCAP。TCP pose 为必选；action 固定使用下一帧 t+1 绝对目标。</p>${productionLerobotFields(web)}</div>
@@ -3877,7 +3872,6 @@ function renderProductionConfig() {
 function productionPayload() {
   const result = JSON.parse(JSON.stringify({
     camera_from_tcp: state.productionConfig?.camera_from_tcp || {left:{translation_mm:[]},right:{translation_mm:[]}},
-    work_frames: state.productionConfig?.work_frames || {left:{hand:'left',base_frame_id:'left_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}},right:{hand:'right',base_frame_id:'right_arm_base',work_frame_id:'camera_work',position_mm:{},rotation_euler_rad:{}}},
     web_pipeline: state.productionConfig?.web_pipeline || {},
     web_file_management: state.productionConfig?.web_file_management || {},
   }));
@@ -4092,7 +4086,7 @@ function openConfirm() {
   const conflicts = p.conflicts.map(c => `<li class="path">${escapeHtml(c.type)}: ${escapeHtml(c.path)}</li>`).join('');
   const space = p.space_estimate || {};
   const spaceDetail = `并发峰值 ${escapeHtml(space.active_peak_text || '-')} + 聚合前暂存 ${escapeHtml(space.retained_batch_text || '-')} + safety ${escapeHtml(String(space.safety_gb ?? '-'))} GiB`;
-  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>输入策略：可从任意本机目录直接清洗 MCAP</p><p>中间产物空间：可用 ${escapeHtml(space.available_text || '')}，估算需要 ${escapeHtml(space.required_text || '')}（${spaceDetail}）</p><p>生产链路：左右 arm-base TCP 绝对位姿</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')} -> 实际 ${p.effective_workers}</p>${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div id="submit-status"></div><div class="row"><button id="confirm-submit" class="primary" onclick="submitJob()">确认启动</button><button id="confirm-cancel" onclick="closeConfirm()">取消</button></div>`;
+  document.getElementById('confirm-body').innerHTML = `<h2>确认启动任务</h2><p>输入：<span class="path">${escapeHtml(p.input_dir)}</span></p><p>输出父目录：<span class="path">${escapeHtml(p.output_parent)}</span></p><p>最终 dataset：<span class="path">${escapeHtml(p.dataset_dir)}</span></p><p>sidecar：<span class="path">${escapeHtml(p.sidecar_dir)}</span></p><p>文件：${p.file_count} 个，${p.total_size_text}</p><p>输入策略：可从任意本机目录直接清洗 MCAP</p><p>中间产物空间：可用 ${escapeHtml(space.available_text || '')}，估算需要 ${escapeHtml(space.required_text || '')}（${spaceDetail}）</p><p>生产链路：原始坐标系 camera→TCP 单次变换</p><p>worker：${escapeHtml(document.getElementById('workers').value || 'auto')} -> 实际 ${p.effective_workers}</p>${conflicts ? `<h3>同名目录冲突</h3><ul>${conflicts}</ul><label>冲突策略</label><select id="conflict-policy"><option value="overwrite">覆盖</option><option value="skip">取消启动</option></select>` : '<input id="conflict-policy" type="hidden" value="overwrite">'}<div id="submit-status"></div><div class="row"><button id="confirm-submit" class="primary" onclick="submitJob()">确认启动</button><button id="confirm-cancel" onclick="closeConfirm()">取消</button></div>`;
   document.getElementById('confirm-modal').classList.add('open');
 }
 function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); }
@@ -4143,7 +4137,7 @@ function renderJob() {
     : `<div class="warnbox">官方兼容门禁：${escapeHtml(compatibility.status || '尚未通过')}</div>`;
   const tab = state.jobTab || 'quality';
   const body = tab === 'trajectory' ? renderTrajectoryTab() : tab === 'files' ? renderFilesTab(j) : renderQualityTab(j);
-  document.getElementById('page-job').innerHTML = `<div class="card"><div class="row"><h2>${escapeHtml(j.remark || j.dataset_name || j.job_id)}</h2>${badge(j.status)}<button class="right" onclick="showPage('dashboard')">返回看板</button>${cancelBtn}${resumeBtn}</div><div class="progress"><div style="width:${j.progress}%"></div></div><p><b>Dataset：</b><span class="path">${escapeHtml(j.dataset_dir || '')}</span></p><p><b>Sidecar：</b><span class="path">${escapeHtml(j.sidecar_dir || '')}</span></p><p><b>配置快照：</b><span class="path">${escapeHtml(j.config_snapshot_path || '历史任务无快照')}</span></p><p><b>当前 checkpoint：</b>${escapeHtml(j.current_checkpoint || '-')}；<b>尝试：</b><span class="path">${escapeHtml(JSON.stringify(j.checkpoint_attempts || {}))}</span></p><p><b>heartbeat：</b>${escapeHtml(j.last_heartbeat || '-')}；<b>恢复起点：</b>${escapeHtml(j.recovery_from || '-')}；<b>恢复次数：</b>${j.recovery_count || 0}</p><p class="muted">${j.input_dir} -> ${j.output_parent || j.output_dir}</p><p>${escapeHtml(j.notification || '')}</p><div class="row"><b>纳入 ${included}</b><b>失败 ${j.counts.failed}</b><b>episode ${summary.episodes || 0}</b><b>frame ${summary.frames || 0}</b><b>耗时 ${fmtMs(j.duration_ms)}</b>${visualizer}${failedBtn}</div>${compatibilityBox}<div class="notice">生产任务：左右 arm-base TCP 绝对位姿；官方 LeRobot writer 是唯一生产后端，Forge 仅做业务质量评估。</div></div><div class="grid">${stages}</div><div class="tabs"><button class="${tab==='quality'?'active':''}" onclick="switchJobTab('quality')">评测报告</button><button class="${tab==='trajectory'?'active':''}" onclick="switchJobTab('trajectory')">3D轨迹</button><button class="${tab==='files'?'active':''}" onclick="switchJobTab('files')">逐文件状态</button></div>${body}`;
+  document.getElementById('page-job').innerHTML = `<div class="card"><div class="row"><h2>${escapeHtml(j.remark || j.dataset_name || j.job_id)}</h2>${badge(j.status)}<button class="right" onclick="showPage('dashboard')">返回看板</button>${cancelBtn}${resumeBtn}</div><div class="progress"><div style="width:${j.progress}%"></div></div><p><b>Dataset：</b><span class="path">${escapeHtml(j.dataset_dir || '')}</span></p><p><b>Sidecar：</b><span class="path">${escapeHtml(j.sidecar_dir || '')}</span></p><p><b>配置快照：</b><span class="path">${escapeHtml(j.config_snapshot_path || '历史任务无快照')}</span></p><p><b>当前 checkpoint：</b>${escapeHtml(j.current_checkpoint || '-')}；<b>尝试：</b><span class="path">${escapeHtml(JSON.stringify(j.checkpoint_attempts || {}))}</span></p><p><b>heartbeat：</b>${escapeHtml(j.last_heartbeat || '-')}；<b>恢复起点：</b>${escapeHtml(j.recovery_from || '-')}；<b>恢复次数：</b>${j.recovery_count || 0}</p><p class="muted">${j.input_dir} -> ${j.output_parent || j.output_dir}</p><p>${escapeHtml(j.notification || '')}</p><div class="row"><b>纳入 ${included}</b><b>失败 ${j.counts.failed}</b><b>episode ${summary.episodes || 0}</b><b>frame ${summary.frames || 0}</b><b>耗时 ${fmtMs(j.duration_ms)}</b>${visualizer}${failedBtn}</div>${compatibilityBox}<div class="notice">生产任务：各自原始坐标系下的左右 TCP 绝对位姿；官方 LeRobot writer 是唯一生产后端，Forge 仅做业务质量评估。</div></div><div class="grid">${stages}</div><div class="tabs"><button class="${tab==='quality'?'active':''}" onclick="switchJobTab('quality')">评测报告</button><button class="${tab==='trajectory'?'active':''}" onclick="switchJobTab('trajectory')">3D轨迹</button><button class="${tab==='files'?'active':''}" onclick="switchJobTab('files')">逐文件状态</button></div>${body}`;
   if (tab === 'trajectory') initTrajectoryCanvas();
 }
 function switchJobTab(tab) {
@@ -4242,14 +4236,14 @@ function renderTrajectoryTab() {
   const t = state.trajectory;
   const opts = t ? ['<option value="all">全部 episode</option>'].concat(t.episodes.map(ep => `<option value="${ep.episode_index}" ${String(state.trajectoryEpisode)===String(ep.episode_index)?'selected':''}>Episode ${ep.episode_index} (${ep.frame_count} frames)</option>`)).join('') : '<option>加载中</option>';
   const summary = t ? `<div class="row"><b>episode ${t.episodes.length}</b><b>frame ${t.total_frames}</b><b>契约 ${escapeHtml(t.state_contract)}</b></div><p class="muted">固定工程视角：右手坐标系，显示局部原点固定在左下角。Canvas 只做可视化平移与等比例缩放，不改写原始数据。</p>` : '<p class="muted">正在加载轨迹数据...</p>';
-  const dual = t?.coordinate_frame_profile === 'dual_arm_base';
+  const dual = t?.coordinate_frame_profile === 'dual_source_frame';
   const canvases = dual
-    ? `<div class="trajectory-dual"><div><p class="trajectory-panel-title">左手 TCP · left_arm_base</p><canvas id="trajectory-left" class="trajectory-canvas"></canvas></div><div><p class="trajectory-panel-title">右手 TCP · right_arm_base</p><canvas id="trajectory-right" class="trajectory-canvas"></canvas></div></div>`
+    ? `<div class="trajectory-dual"><div><p class="trajectory-panel-title">左手 TCP · 左 Baton 原始坐标系</p><canvas id="trajectory-left" class="trajectory-canvas"></canvas></div><div><p class="trajectory-panel-title">右手 TCP · 右 Baton 原始坐标系</p><canvas id="trajectory-right" class="trajectory-canvas"></canvas></div></div>`
     : `<div><p class="trajectory-panel-title">左右手 TCP · common_frame</p><canvas id="trajectory-common" class="trajectory-canvas"></canvas></div>`;
   const ep = selectedTrajectoryEpisode();
   const disabled = ep ? '' : 'disabled';
   const maxFrame = Math.max(0, (ep?.frame_count || 1) - 1);
-  return `<div class="card"><h3>3D 手末端轨迹</h3>${summary}${dual ? '<div class="warnbox">formal 数据的左右 TCP 分别属于各自机械臂 base 坐标系，采用双画布同步播放，不比较双手绝对空间位置。</div>' : ''}<div class="trajectory-layout">${canvases}<div class="card"><label>Episode</label><select id="trajectory-episode" onchange="selectTrajectoryEpisode(this.value)">${opts}</select><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showLeft?'checked':''} onchange="state.trajectoryView.showLeft=this.checked; drawTrajectory()"> 显示左手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showRight?'checked':''} onchange="state.trajectoryView.showRight=this.checked; drawTrajectory()"> 显示右手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showMarkers?'checked':''} onchange="state.trajectoryView.showMarkers=this.checked; drawTrajectory()"> 显示起点/当前点和当前姿态短轴</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showAxes?'checked':''} onchange="state.trajectoryView.showAxes=this.checked; drawTrajectory()"> 显示坐标轴/网格</label><button onclick="resetTrajectoryView()">重置缩放</button><div class="trajectory-playback"><div class="row"><button id="trajectory-play" onclick="toggleTrajectoryPlayback()" ${disabled}>播放</button><button onclick="resetTrajectoryPlayback()" ${disabled}>回到起点</button></div><label>播放进度</label><input id="trajectory-progress" type="range" min="0" max="${maxFrame}" value="${Math.min(state.trajectoryPlayback.frameIndex, maxFrame)}" oninput="seekTrajectoryFrame(this.value)" ${disabled}><p id="trajectory-time" class="muted">${ep ? '' : '全部 episode 为静态总览，请选择单个 episode 播放。'}</p><label>播放速度</label><select id="trajectory-speed" onchange="setTrajectoryPlaybackSpeed(this.value)" ${disabled}><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1">1x</option><option value="2">2x</option></select></div><div style="margin-top:14px"><span class="legend-dot" style="background:#60a5fa"></span>左手<br><span class="legend-dot" style="background:#f87171"></span>右手</div><p id="trajectory-info" class="muted"></p></div></div></div>`;
+  return `<div class="card"><h3>3D 手末端轨迹</h3>${summary}${dual ? '<div class="warnbox">formal 数据的左右 TCP 分别保留各自 Baton Mini 的原始参考坐标系，采用双画布同步播放，不比较双手绝对空间位置。</div>' : ''}<div class="trajectory-layout">${canvases}<div class="card"><label>Episode</label><select id="trajectory-episode" onchange="selectTrajectoryEpisode(this.value)">${opts}</select><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showLeft?'checked':''} onchange="state.trajectoryView.showLeft=this.checked; drawTrajectory()"> 显示左手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showRight?'checked':''} onchange="state.trajectoryView.showRight=this.checked; drawTrajectory()"> 显示右手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showMarkers?'checked':''} onchange="state.trajectoryView.showMarkers=this.checked; drawTrajectory()"> 显示起点/当前点和当前姿态短轴</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showAxes?'checked':''} onchange="state.trajectoryView.showAxes=this.checked; drawTrajectory()"> 显示坐标轴/网格</label><button onclick="resetTrajectoryView()">重置缩放</button><div class="trajectory-playback"><div class="row"><button id="trajectory-play" onclick="toggleTrajectoryPlayback()" ${disabled}>播放</button><button onclick="resetTrajectoryPlayback()" ${disabled}>回到起点</button></div><label>播放进度</label><input id="trajectory-progress" type="range" min="0" max="${maxFrame}" value="${Math.min(state.trajectoryPlayback.frameIndex, maxFrame)}" oninput="seekTrajectoryFrame(this.value)" ${disabled}><p id="trajectory-time" class="muted">${ep ? '' : '全部 episode 为静态总览，请选择单个 episode 播放。'}</p><label>播放速度</label><select id="trajectory-speed" onchange="setTrajectoryPlaybackSpeed(this.value)" ${disabled}><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1">1x</option><option value="2">2x</option></select></div><div style="margin-top:14px"><span class="legend-dot" style="background:#60a5fa"></span>左手<br><span class="legend-dot" style="background:#f87171"></span>右手</div><p id="trajectory-info" class="muted"></p></div></div></div>`;
 }
 async function ensureTrajectoryLoaded() {
   if (!state.currentJob || state.trajectory?.job_id === state.currentJob.job_id) return;
@@ -4300,7 +4294,7 @@ function selectedTrajectoryEpisode() {
 function trajectoryCanvasSpecs() {
   const t = state.trajectory;
   if (!t) return [];
-  if (t.coordinate_frame_profile === 'dual_arm_base') {
+  if (t.coordinate_frame_profile === 'dual_source_frame') {
     return [
       {id:'trajectory-left', hands:['left'], bounds:t.hand_bounds.left, frame:t.coordinate_frames.left},
       {id:'trajectory-right', hands:['right'], bounds:t.hand_bounds.right, frame:t.coordinate_frames.right},

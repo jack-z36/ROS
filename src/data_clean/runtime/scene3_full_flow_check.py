@@ -102,8 +102,8 @@ def _ensure_default_target_fields(
         )
 
     if config.pose_source_profile == "formal":
-        left_pose_topic = "/left_arm_base_tcp_pose"
-        right_pose_topic = "/right_arm_base_tcp_pose"
+        left_pose_topic = "/baton_mini_left/tcp_pose"
+        right_pose_topic = "/baton_mini_right/tcp_pose"
     else:
         left_pose_topic = "/baton_mini_left/tcp_common_pose"
         right_pose_topic = "/baton_mini_right/tcp_common_pose"

@@ -217,7 +217,6 @@ def _production_pose_snapshot(path: Path) -> dict[str, Any]:
     return {
         "user_input": {
             "camera_from_tcp": deepcopy(raw.get("camera_from_tcp", {})),
-            "work_frames": deepcopy(raw.get("work_frames", {})),
         },
         "runtime_normalized": {
             "camera_from_tcp": {
@@ -227,13 +226,7 @@ def _production_pose_snapshot(path: Path) -> dict[str, Any]:
                 }
                 for hand, extrinsic in (config.camera_from_tcp or {}).items()
             },
-            "work_frames": {
-                hand: {
-                    "position_m": dict(work_frame.position_m),
-                    "rotation_euler_rad": dict(work_frame.rotation_euler_rad),
-                }
-                for hand, work_frame in (config.work_frames or {}).items()
-            },
+            "coordinate_frame_semantics": "preserve_baton_source_frame",
         },
     }
 

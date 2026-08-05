@@ -230,7 +230,7 @@ def _validate_mode(config: ForgeBridgeConfig) -> None:
     if config.mode != "formal":
         return
     if config.pose_source_profile != "formal":
-        raise ForgeBridgeError("formal_mode_requires_arm_base_pose_source")
+        raise ForgeBridgeError("formal_mode_requires_source_frame_tcp_pose")
     if not config.calibration_ready:
         raise ForgeBridgeError("formal_mode_requires_calibration_ready")
 

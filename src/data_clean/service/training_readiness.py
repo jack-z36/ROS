@@ -256,7 +256,7 @@ def _format_module(
     if bridge_mode and str(bridge_mode) != "formal":
         issues.append("当前不是 formal 导出，不能代表正式训练数据。")
     if job.get("calibration_ready") is False:
-        issues.append("生产标定未就绪，arm-base TCP 位姿不可作为正式训练输入。")
+        issues.append("生产标定未就绪，原始坐标系下的 TCP 位姿不可作为正式训练输入。")
 
     state_dim = _shape_dim(inspect.get("observation_schema", {}).get("observation.state")) or _as_int((job.get("dataset_summary") or {}).get("state_dim"))
     action_dim = _shape_dim(inspect.get("action_schema")) or _as_int((job.get("dataset_summary") or {}).get("action_dim"))
@@ -274,7 +274,7 @@ def _format_module(
         )
 
     status = "block" if issues else "pass"
-    summary = "格式、formal 标定、双目图像、state/action 维度均满足当前 LeRobot 维度配置。" if not issues else issues[0]
+    summary = "格式、camera→TCP 外参、双目图像、state/action 维度均满足当前 LeRobot 维度配置。" if not issues else issues[0]
     risks.extend(issues)
     return {
         "id": "format_input",

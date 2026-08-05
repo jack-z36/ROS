@@ -216,7 +216,7 @@ def scene1_output_contract_validate(
             1 for s in config.pose_streams if s.output_tcp_pose_common
         )
     expected_added += sum(
-        1 for s in config.pose_streams if s.output_arm_base_tcp_pose
+        1 for s in config.pose_streams if s.output_tcp_pose
     )
     expected_output = report.input_topic_count + expected_added
     if report.output_topic_count != expected_output:

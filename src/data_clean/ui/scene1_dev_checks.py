@@ -18,9 +18,11 @@ from config.mcap_process_config import (
 )
 from runtime import mcap_clean_launcher
 from service.gripper_width import GripperExtractionResult, write_gripper_dev_artifacts
-from schemas.arm_base_pose import FrameIdType, HandType, WorkFrameInArmBasePose
-from service.arm_base_transform import compute_arm_base_tcp_pose
-from service.tcp_transform import compute_tcp_in_camera, transform_camera_to_common_tcp, transform_pose_to_common_camera_frame
+from service.tcp_transform import (
+    compute_tcp_pose_in_source_frame,
+    transform_camera_to_common_tcp,
+    transform_pose_to_common_camera_frame,
+)
 from service.validator import (
     FileProcessingReport,
     GripperTopicStats,
@@ -106,7 +108,7 @@ def run_scene1_frame_alignment_config(
 
     This function is preserved for backward compatibility only.
     The common_frame / FrameAlignmentConfig config generation route has been
-    replaced by user-provided work_frame_in_arm_base_pose.
+    replaced by a single camera-to-TCP extrinsic in the original source frame.
     New code should not rely on this function.
 
     When overrides are provided, they replace the corresponding fields.
@@ -115,7 +117,7 @@ def run_scene1_frame_alignment_config(
     """
     print("  *** 注意: frame_alignment 配置生成路线已废弃 ***")
     print("  common_frame/FrameAlignmentConfig 已不再作为主路线必需项。")
-    print("  新路线改为由用户直接输入 work_frame_in_arm_base_pose。")
+    print("  新路线保持原始坐标系，只使用 camera_from_tcp 固定外参。")
     print("  此功能保留仅用于历史兼容检查。")
     print()
     dev_run = create_scene1_dev_run("scene1_frame_alignment_config")
@@ -284,194 +286,70 @@ def run_scene1_common_pose_transform(config_path: str | Path = DEFAULT_CONFIG) -
     )
 
 
-def run_scene1_arm_base_pose_transform(config_path: str | Path = DEFAULT_CONFIG) -> Scene1DevRun:
-    """Run arm-base TCP pose transform dev check.
-
-    This check demonstrates the new arm-base TCP pose pipeline that
-    replaces the legacy common_frame -> robot_base route.
-
-    Pipeline:
-      1. raw pose (Baton Mini odometry)
-      2. TCP in camera frame (via compute_tcp_in_camera)
-      3. TCP in arm base frame (via Algo.rm_algo_workframe2base)
-
-    Output:
-      - Official API name: Algo.rm_algo_workframe2base
-      - Left frame_id: left_arm_base
-      - Right frame_id: right_arm_base
-      - Output topics: /left_arm_base_tcp_pose, /right_arm_base_tcp_pose
-      - common_frame_used: false (FrameAlignmentConfig not required)
-    """
-    dev_run = create_scene1_dev_run("scene1_arm_base_pose_transform")
+def run_scene1_source_tcp_pose_transform(config_path: str | Path = DEFAULT_CONFIG) -> Scene1DevRun:
+    """Check the single camera-to-TCP transform in the original source frame."""
+    dev_run = create_scene1_dev_run("scene1_source_tcp_pose_transform")
     config = _load_config_or_smoke(config_path)
-
-    translation_m = (0.0, 0.0, 0.0)
-    rotation_quat_xyzw = (0.0, 0.0, 0.0, 1.0)
-
-    wf_left = WorkFrameInArmBasePose(
-        hand=HandType.LEFT,
-        base_frame_id=FrameIdType.LEFT_ARM_BASE,
-        position_m={"x": 0.0, "y": 0.0, "z": 0.0},
-        rotation_euler_rad={"rx": 0.0, "ry": 0.0, "rz": 0.0},
-    )
-    wf_right = WorkFrameInArmBasePose(
-        hand=HandType.RIGHT,
-        base_frame_id=FrameIdType.RIGHT_ARM_BASE,
-        position_m={"x": 0.0, "y": 0.0, "z": 0.0},
-        rotation_euler_rad={"rx": 0.0, "ry": 0.0, "rz": 0.0},
-    )
-    if config.work_frames:
-        wf_left_cfg = config.work_frames.get("left")
-        wf_right_cfg = config.work_frames.get("right")
-        if wf_left_cfg:
-            wf_left = WorkFrameInArmBasePose(
-                hand=HandType.LEFT,
-                base_frame_id=FrameIdType.LEFT_ARM_BASE,
-                position_m=dict(wf_left_cfg.position_m),
-                rotation_euler_rad=dict(wf_left_cfg.rotation_euler_rad),
-            )
-        if wf_right_cfg:
-            wf_right = WorkFrameInArmBasePose(
-                hand=HandType.RIGHT,
-                base_frame_id=FrameIdType.RIGHT_ARM_BASE,
-                position_m=dict(wf_right_cfg.position_m),
-                rotation_euler_rad=dict(wf_right_cfg.rotation_euler_rad),
-            )
 
     raw_samples = [
         {"hand": "left", "raw_pose": (0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)},
         {"hand": "right", "raw_pose": (0.2, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0)},
     ]
 
-    official_api = "Algo.rm_algo_workframe2base"
-    _algo = None
-    sdk_error = None
-    try:
-        from Robotic_Arm.rm_robot_interface import Algo, rm_force_type_e, rm_robot_arm_model_e
-        _algo = Algo(rm_robot_arm_model_e.RM_MODEL_RM_65_E, rm_force_type_e.RM_MODEL_RM_B_E)
-    except Exception as exc:
-        sdk_error = f"{type(exc).__name__}: {exc}"
-
     samples = []
-    sdk_used = False
     for item in raw_samples:
         hand = item["hand"]
         raw_pose = item["raw_pose"]
-
-        # Step 1: Compute TCP in camera frame (no SDK needed)
-        tcp_in_camera = compute_tcp_in_camera(
+        extrinsic = (config.camera_from_tcp or {}).get(hand, ExtrinsicConfig.identity())
+        tcp_pose = compute_tcp_pose_in_source_frame(
             *raw_pose,
-            translation_m=translation_m,
-            rotation_quat_xyzw=rotation_quat_xyzw,
+            translation_m=extrinsic.translation_m,
+            rotation_quat_xyzw=extrinsic.rotation_quat_xyzw,
         )
-
-        # Step 2: Compute TCP in arm base (needs SDK)
-        arm_base_pose = None
-        wf = wf_left if hand == "left" else wf_right
-        if _algo is not None:
-            try:
-                result = compute_arm_base_tcp_pose(
-                    tcp_x=tcp_in_camera[0],
-                    tcp_y=tcp_in_camera[1],
-                    tcp_z=tcp_in_camera[2],
-                    tcp_qx=tcp_in_camera[3],
-                    tcp_qy=tcp_in_camera[4],
-                    tcp_qz=tcp_in_camera[5],
-                    tcp_qw=tcp_in_camera[6],
-                    work_frame=wf,
-                    algo=_algo,
-                )
-                arm_base_pose = {
-                    "position_m": dict(result.position_m),
-                    "orientation": dict(result.orientation),
-                    "frame_id": str(result.frame_id.value if hasattr(result.frame_id, 'value') else result.frame_id),
-                }
-                sdk_used = True
-            except Exception as exc:
-                sdk_error = f"{type(exc).__name__} during arm_base transform: {exc}"
-
-        sample = {
+        samples.append({
             "hand": hand,
             "raw_pose": list(raw_pose),
-            "tcp_in_camera_pose": list(tcp_in_camera),
-            "arm_base_tcp_pose": arm_base_pose,
-            "official_api": official_api,
-            "frame_id": "left_arm_base" if hand == "left" else "right_arm_base",
-            "output_topic": "/left_arm_base_tcp_pose" if hand == "left" else "/right_arm_base_tcp_pose",
+            "camera_from_tcp_translation_m": list(extrinsic.translation_m),
+            "tcp_pose_in_source_frame": list(tcp_pose),
+            "frame_semantics": "same_as_raw_pose_source_frame",
             "common_frame_used": False,
-        }
-        samples.append(sample)
+            "arm_base_conversion_used": False,
+        })
 
-    # Determine left/right arm-base frame information from config
-    left_frame_id = "left_arm_base"
-    right_frame_id = "right_arm_base"
-    left_output_topic = "/left_arm_base_tcp_pose"
-    right_output_topic = "/right_arm_base_tcp_pose"
-
-    # Check config for output topic overrides
-    if config.pose_streams:
-        for stream in config.pose_streams:
-            if "left" in stream.input_topic and stream.output_arm_base_tcp_pose:
-                left_output_topic = stream.output_arm_base_tcp_pose
-            elif "right" in stream.input_topic and stream.output_arm_base_tcp_pose:
-                right_output_topic = stream.output_arm_base_tcp_pose
-
-    arm_base_config = {
-        "official_api": official_api,
-        "sdk_available": _algo is not None,
-        "sdk_error": sdk_error,
-        "sdk_used_for_samples": sdk_used,
-        "left_arm_base": {
-            "frame_id": left_frame_id,
-            "output_topic": left_output_topic,
-            "work_frame_position_m": dict(wf_left.position_m),
-            "work_frame_rotation_euler_rad": dict(wf_left.rotation_euler_rad),
-        },
-        "right_arm_base": {
-            "frame_id": right_frame_id,
-            "output_topic": right_output_topic,
-            "work_frame_position_m": dict(wf_right.position_m),
-            "work_frame_rotation_euler_rad": dict(wf_right.rotation_euler_rad),
-        },
-        "common_frame_used": False,
-        "mcap_a_consumption": "arm-base TCP pose topics are consumed by Scene 2 MCAP_A writer",
+    output_topics = {
+        "left": next((s.output_tcp_pose for s in config.pose_streams if "left" in s.input_topic), ""),
+        "right": next((s.output_tcp_pose for s in config.pose_streams if "right" in s.input_topic), ""),
     }
-
-    samples_path = dev_run.artifact_dir / "arm_base_tcp_pose_samples.json"
+    transform_config = {
+        "formula": "T_source_tcp(t) = T_source_camera(t) @ T_camera_tcp",
+        "output_topics": output_topics,
+        "common_frame_used": False,
+        "arm_base_conversion_used": False,
+        "sdk_required": False,
+    }
+    samples_path = dev_run.artifact_dir / "source_tcp_pose_samples.json"
     _write_json(samples_path, {
-        "generated_by": "scene1_arm_base_pose_transform",
+        "generated_by": "scene1_source_tcp_pose_transform",
         "source_config": str(config_path),
-        "arm_base_config": arm_base_config,
+        "transform_config": transform_config,
         "samples": samples,
     })
     with dev_run.effective_config.open("w", encoding="utf-8") as fh:
-        yaml.safe_dump({"arm_base_config": arm_base_config}, fh, allow_unicode=True)
+        yaml.safe_dump({"source_tcp_transform": transform_config}, fh, allow_unicode=True)
 
     print()
-    print("arm-base TCP 位姿转换小样本已生成")
-    print(f"  坐标语义:")
-    print(f"    left.frame_id: {left_frame_id}")
-    print(f"    right.frame_id: {right_frame_id}")
-    print(f"    official_api: {official_api}")
-    print(f"    common_frame_used: false")
-    if _algo is not None:
-        print(f"    SDK: 可用 (用于样本计算: {sdk_used})")
-    else:
-        print(f"    SDK: 不可用 ({sdk_error})")
-    print(f"  MCAP_A 消费状态: arm-base TCP pose topics 被场景二 MCAP_A 写出器消费")
+    print("原始坐标系 camera→TCP 单次变换小样本已生成")
+    print("  坐标语义: 输出保持 raw pose 的原始参考坐标系")
+    print("  common_frame_used: false")
+    print("  arm_base_conversion_used: false")
+    print("  SDK required: false")
     print(f"  样本: {samples_path}")
     print(f"  日志: {dev_run.log_dir / 'run_log.json'}")
     return _update_run_log(
         dev_run,
         status="success",
-        artifacts={
-            "arm_base_tcp_pose_samples.json": str(samples_path),
-        },
-        extra={
-            "arm_base_config": arm_base_config,
-            "sdk_available": _algo is not None,
-            "sdk_error": sdk_error,
-        },
+        artifacts={"source_tcp_pose_samples.json": str(samples_path)},
+        extra={"transform_config": transform_config},
     )
 
 

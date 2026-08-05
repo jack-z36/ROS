@@ -165,7 +165,7 @@ def transform_camera_to_common_tcp(
     return tx, ty, tz, qx_out, qy_out, qz_out, qw_out
 
 
-def compute_tcp_in_camera(
+def compute_tcp_pose_in_source_frame(
     camera_x: float,
     camera_y: float,
     camera_z: float,
@@ -176,15 +176,16 @@ def compute_tcp_in_camera(
     translation_m: tuple[float, float, float],
     rotation_quat_xyzw: tuple[float, float, float, float],
 ) -> tuple[float, float, float, float, float, float, float]:
-    """Compute the dynamic TCP pose in the work frame from a camera pose.
+    """Compute the TCP pose while preserving the camera pose's source frame.
 
-    The Baton Mini camera pose is expressed in the work frame.  The fixed
-    ``T_camera_tcp`` extrinsic is composed with that dynamic pose so the
-    returned TCP pose changes as the Baton Mini moves.
+    Only the fixed ``T_camera_tcp`` extrinsic is composed with the dynamic
+    Baton Mini camera pose::
 
-    The output can be used as ``pose_in_work`` input to
-    ``Algo.rm_algo_workframe2base()``, where the work frame is the
-    camera frame.
+        T_source_tcp(t) = T_source_camera(t) @ T_camera_tcp
+
+    No common-frame, work-frame, or arm-base conversion is applied.  The
+    returned pose therefore remains in the same source reference frame as
+    the input camera pose.
 
     Args:
         camera_x/y/z: Camera position in the source reference frame.
@@ -194,7 +195,7 @@ def compute_tcp_in_camera(
 
     Returns:
         Tuple of (x, y, z, qx, qy, qz, qw) representing the TCP pose
-        expressed in the camera coordinate frame.
+        expressed in the unchanged source reference frame.
 
     Raises:
         ValueError: If the extrinsic rotation quaternion is not a unit
@@ -208,7 +209,7 @@ def compute_tcp_in_camera(
             f"(norm^2={norm_sq:.10f})"
         )
 
-    work_from_camera = _pose_to_matrix(
+    source_from_camera = _pose_to_matrix(
         camera_x,
         camera_y,
         camera_z,
@@ -218,7 +219,7 @@ def compute_tcp_in_camera(
         camera_qw,
     )
     camera_from_tcp = _extrinsic_to_matrix(translation_m, rotation_quat_xyzw)
-    work_from_tcp = work_from_camera @ camera_from_tcp
-    tx, ty, tz = work_from_tcp[:3, 3].tolist()
-    qx_out, qy_out, qz_out, qw_out = R.from_matrix(work_from_tcp[:3, :3]).as_quat()
+    source_from_tcp = source_from_camera @ camera_from_tcp
+    tx, ty, tz = source_from_tcp[:3, 3].tolist()
+    qx_out, qy_out, qz_out, qw_out = R.from_matrix(source_from_tcp[:3, :3]).as_quat()
     return tx, ty, tz, qx_out, qy_out, qz_out, qw_out

@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import os
 import math
-from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 
@@ -35,27 +34,11 @@ DEFAULT_WEB_FILE_MANAGEMENT = {
 }
 
 
-@lru_cache(maxsize=1)
-def realman_sdk_status() -> dict[str, Any]:
-    try:
-        from Robotic_Arm.rm_robot_interface import Algo, rm_force_type_e, rm_robot_arm_model_e
-
-        algo = Algo(
-            rm_robot_arm_model_e.RM_MODEL_RM_65_E,
-            rm_force_type_e.RM_MODEL_RM_B_E,
-        )
-        version = algo.rm_algo_version()
-        return {"ready": True, "version": str(version), "error": None}
-    except Exception as exc:  # noqa: BLE001 - readiness must explain local dependency failures.
-        return {"ready": False, "version": None, "error": f"{type(exc).__name__}: {exc}"}
-
-
 def production_config_view(path: str | Path) -> dict[str, Any]:
     config_path = Path(path)
     raw = _read_yaml(config_path)
     config = load_app_config(config_path)
     camera = config.camera_from_tcp or {}
-    work_frames = config.work_frames or {}
     for hand, extrinsic in camera.items():
         if extrinsic.rotation_quat_xyzw != (0.0, 0.0, 0.0, 1.0):
             raise ProductionConfigError(
@@ -68,20 +51,7 @@ def production_config_view(path: str | Path) -> dict[str, Any]:
             for hand in ("left", "right")
             if hand in camera
         },
-        "work_frames": {
-            hand: {
-                "hand": work_frames[hand].hand,
-                "base_frame_id": work_frames[hand].base_frame_id,
-                "work_frame_id": work_frames[hand].work_frame_id,
-                "position_mm": {
-                    key: value * 1000.0 for key, value in work_frames[hand].position_m.items()
-                },
-                "rotation_euler_rad": dict(work_frames[hand].rotation_euler_rad),
-                "source": work_frames[hand].source,
-            }
-            for hand in ("left", "right")
-            if hand in work_frames
-        },
+        "coordinate_frame_semantics": "preserve_baton_source_frame",
         "web_pipeline": _production_web_pipeline_view(raw.get("web_pipeline")),
         "web_file_management": _production_web_file_management_view(raw.get("web_file_management")),
         "migrated_from_legacy": _uses_legacy_pose_units(raw),
@@ -91,17 +61,12 @@ def production_config_view(path: str | Path) -> dict[str, Any]:
 def validate_production_payload(payload: dict[str, Any]) -> dict[str, Any]:
     errors: list[dict[str, str]] = []
     camera = payload.get("camera_from_tcp")
-    work_frames = payload.get("work_frames")
     if not isinstance(camera, dict):
         errors.append(_error("camera_from_tcp", "必须配置左右手 TCP 外参。"))
         camera = {}
-    if not isinstance(work_frames, dict):
-        errors.append(_error("work_frames", "必须配置左右手工作坐标系。"))
-        work_frames = {}
     web_pipeline = payload.get("web_pipeline")
     web_file_management = payload.get("web_file_management")
 
-    expected_base = {"left": "left_arm_base", "right": "right_arm_base"}
     for hand in ("left", "right"):
         ext = camera.get(hand)
         if not isinstance(ext, dict):
@@ -116,37 +81,6 @@ def validate_production_payload(payload: dict[str, Any]) -> dict[str, Any]:
             except (TypeError, ValueError) as exc:
                 errors.append(_error(f"camera_from_tcp.{hand}", str(exc)))
 
-        work = work_frames.get(hand)
-        if not isinstance(work, dict):
-            errors.append(_error(f"work_frames.{hand}", "必须填写。"))
-            continue
-        if str(work.get("hand", hand)) != hand:
-            errors.append(_error(f"work_frames.{hand}.hand", f"必须是 {hand}。"))
-        if str(work.get("base_frame_id", "")) != expected_base[hand]:
-            errors.append(
-                _error(
-                    f"work_frames.{hand}.base_frame_id",
-                    f"必须是 {expected_base[hand]}。",
-                )
-            )
-        position = work.get("position_mm")
-        if not isinstance(position, dict) or any(key not in position for key in ("x", "y", "z")):
-            errors.append(_error(f"work_frames.{hand}.position_mm", "必须填写 x、y、z，单位为 mm。"))
-        else:
-            try:
-                for key in ("x", "y", "z"):
-                    _finite_float(position[key])
-            except (TypeError, ValueError) as exc:
-                errors.append(_error(f"work_frames.{hand}.position_mm", str(exc)))
-        rotation = work.get("rotation_euler_rad")
-        if not isinstance(rotation, dict) or any(key not in rotation for key in ("rx", "ry", "rz")):
-            errors.append(_error(f"work_frames.{hand}.rotation_euler_rad", "必须填写 rx、ry、rz，单位为 rad。"))
-        else:
-            try:
-                for key in ("rx", "ry", "rz"):
-                    _finite_float(rotation[key])
-            except (TypeError, ValueError) as exc:
-                errors.append(_error(f"work_frames.{hand}.rotation_euler_rad", str(exc)))
     errors.extend(_validate_web_pipeline_payload(web_pipeline))
     errors.extend(_validate_web_file_management_payload(web_file_management))
     return {"valid": not errors, "errors": errors}
@@ -159,13 +93,9 @@ def save_production_config(path: str | Path, payload: dict[str, Any]) -> dict[st
     config_path = Path(path)
     raw = _read_yaml(config_path)
     raw["camera_from_tcp"] = payload["camera_from_tcp"]
-    raw["work_frames"] = payload["work_frames"]
+    raw.pop("work_frames", None)
     raw["web_pipeline"] = _normalize_web_pipeline_payload(payload.get("web_pipeline"))
     raw["web_file_management"] = _normalize_web_file_management_payload(payload.get("web_file_management"))
-    for hand in ("left", "right"):
-        raw["work_frames"][hand]["hand"] = hand
-        raw["work_frames"][hand]["base_frame_id"] = f"{hand}_arm_base"
-        raw["work_frames"][hand]["source"] = "user_input"
     raw.pop("frame_alignment", None)
     calibration = raw.get("calibration")
     if isinstance(calibration, dict):
@@ -177,7 +107,7 @@ def save_production_config(path: str | Path, payload: dict[str, Any]) -> dict[st
         )
         calibration["complete"] = gripper_ready
         calibration["calibrated"] = gripper_ready
-    _ensure_arm_base_topics(raw)
+    _ensure_tcp_pose_topics(raw)
 
     temporary = config_path.with_name(f".{config_path.name}.{os.getpid()}.tmp")
     temporary.write_text(
@@ -195,8 +125,6 @@ def save_production_config(path: str | Path, payload: dict[str, Any]) -> dict[st
 
 def production_readiness(
     path: str | Path,
-    *,
-    sdk_status_provider: Callable[[], dict[str, Any]] = realman_sdk_status,
 ) -> dict[str, Any]:
     config_path = Path(path)
     missing: list[str] = []
@@ -208,7 +136,6 @@ def production_readiness(
             "ready": False,
             "config_path": str(config_path),
             "missing_items": ["正式配置无法读取"],
-            "sdk": {"ready": False, "version": None, "error": None},
             "error": f"{type(exc).__name__}: {exc}",
         }
 
@@ -222,22 +149,15 @@ def production_readiness(
     for hand, label in (("left", "左手"), ("right", "右手")):
         if hand not in (config.camera_from_tcp or {}):
             missing.append(f"{label} camera_from_tcp")
-        if hand not in (config.work_frames or {}):
-            missing.append(f"{label} work_frame_in_arm_base")
-        elif config.work_frames[hand].source != "user_input":
-            missing.append(f"{label} work_frame_in_arm_base 待确认")
-    expected_topics = {"/left_arm_base_tcp_pose", "/right_arm_base_tcp_pose"}
-    actual_topics = {stream.output_arm_base_tcp_pose for stream in config.pose_streams}
+    expected_topics = {"/baton_mini_left/tcp_pose", "/baton_mini_right/tcp_pose"}
+    actual_topics = {stream.output_tcp_pose for stream in config.pose_streams}
     if not expected_topics.issubset(actual_topics):
-        missing.append("左右 arm-base TCP pose 输出 topic")
-    sdk = sdk_status_provider()
-    if not sdk.get("ready"):
-        missing.append("RealMan SDK Algo")
+        missing.append("左右原始坐标系 TCP pose 输出 topic")
     return {
         "ready": not missing,
         "config_path": str(config_path),
         "missing_items": missing,
-        "sdk": sdk,
+        "coordinate_frame_semantics": "preserve_baton_source_frame",
         "gripper": {
             hand: bool(isinstance(gripper, dict) and isinstance(gripper.get(hand), dict) and gripper[hand].get("calibrated"))
             for hand in ("left", "right")
@@ -415,7 +335,7 @@ def _validate_web_file_management_payload(data: Any | None) -> list[dict[str, st
     return []
 
 
-def _ensure_arm_base_topics(raw: dict[str, Any]) -> None:
+def _ensure_tcp_pose_topics(raw: dict[str, Any]) -> None:
     streams = raw.get("pose_streams")
     if not isinstance(streams, list):
         raise ProductionConfigError("pose_streams 必须是列表。")
@@ -425,10 +345,12 @@ def _ensure_arm_base_topics(raw: dict[str, Any]) -> None:
             continue
         topic = str(stream.get("input_topic", ""))
         if "_left" in topic:
-            stream["output_arm_base_tcp_pose"] = "/left_arm_base_tcp_pose"
+            stream.pop("output_arm_base_tcp_pose", None)
+            stream["output_tcp_pose"] = "/baton_mini_left/tcp_pose"
             found.add("left")
         elif "_right" in topic:
-            stream["output_arm_base_tcp_pose"] = "/right_arm_base_tcp_pose"
+            stream.pop("output_arm_base_tcp_pose", None)
+            stream["output_tcp_pose"] = "/baton_mini_right/tcp_pose"
             found.add("right")
     if found != {"left", "right"}:
         raise ProductionConfigError("pose_streams 必须包含左右 Baton Mini 输入 topic。")
@@ -436,12 +358,10 @@ def _ensure_arm_base_topics(raw: dict[str, Any]) -> None:
 
 def _uses_legacy_pose_units(raw: dict[str, Any]) -> bool:
     camera = raw.get("camera_from_tcp", {})
-    work_frames = raw.get("work_frames", {})
     if "camera_from_tcp" not in raw and isinstance(raw.get("frame_alignment"), dict):
         return True
     return any(
         isinstance(camera.get(hand), dict) and "translation_mm" not in camera[hand]
-        or isinstance(work_frames.get(hand), dict) and "position_mm" not in work_frames[hand]
         for hand in ("left", "right")
     )
 

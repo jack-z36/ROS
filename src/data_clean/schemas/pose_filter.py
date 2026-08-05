@@ -35,17 +35,17 @@ class PoseFilterInputSequence:
     input_sequence_ref: str | dict[str, Any]
     input_repair_result_ref: SignalRepairResult | str
     modality: str = "pose"
-    frame_id: str = "arm_base"
+    frame_id: str = "source_frame"
     sample_refs: list[SignalSampleRef] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        """Validate frame_id is arm-base oriented, not common_frame/robot_base."""
-        VALID_FRAME_IDS = {"arm_base", "left_arm_base", "right_arm_base"}
-        if self.frame_id not in VALID_FRAME_IDS:
+        """Reject coordinate-frame semantics removed from the production route."""
+        invalid_patterns = ("common_frame", "arm_base", "robot_base")
+        if any(pattern in self.frame_id.lower() for pattern in invalid_patterns):
             raise ValueError(
                 f"invalid_pose_frame_for_current_route: "
-                f"frame_id={self.frame_id!r} is not a valid "
-                f"arm-base frame. Valid options: {sorted(VALID_FRAME_IDS)}"
+                f"frame_id={self.frame_id!r} must preserve the original "
+                "Baton source frame"
             )
 
 

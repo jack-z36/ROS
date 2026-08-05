@@ -38,7 +38,7 @@ asset/阶段二：数据清洗/dev/full_flow_random_bimanual/
 - `5` 个 raw MCAP 聚合为 `5 episodes / 773 frames`，Forge quality 总分 `8.39/10`，`flagged=0`。
 - 用户选择外部父目录后，已成功发布 `/home/hit/下载/lerobot/20260601_15`，包含 `1 episode / 273 frames`。
 
-阶段二输出左右 arm-base 下的绝对 TCP 目标位姿；训练侧 LeRobot 框架按训练策略负责转换为差分或相对表示。正常 Web 新任务的最终训练格式固定由官方 LeRobot `0.5.2 / v3.0` 写出。
+阶段二输出各自 Baton Mini 原始参考坐标系下的左右绝对 TCP 目标位姿；训练侧 LeRobot 框架按训练策略负责转换为差分或相对表示。正常 Web 新任务的最终训练格式固定由官方 LeRobot `0.5.2 / v3.0` 写出。
 
 ## 2. 分层原则
 
@@ -68,7 +68,7 @@ Schemas -> Config/Repo -> Service -> Runtime -> UI
 | legacy CLI             | `runtime/mcap_clean_launcher.py` | 终端交互/脚本化清洗入口，支持 latest/all/dry-run/workers/calibrate。                 |
 | dev menu               | `ui/dev_menu.py`                 | `./start_data_clean.sh --dev` 的开发者功能检验菜单。                               |
 | 标定向导               | `ui/mcap_calibration_wizard.py`  | 辅助生成 `config/data_clean/data_clean_calibrated.yaml`。                          |
-| 正常 Web 生产配置 Runtime | `runtime/production_config.py` | 读取、校验、原子保存生产配置，并检查夹爪、arm-base topic 与 RealMan SDK readiness。 |
+| 正常 Web 生产配置 Runtime | `runtime/production_config.py` | 读取、校验、原子保存生产配置，并检查夹爪、camera→TCP 外参与输出 topic readiness。 |
 | Web job snapshot Runtime | `runtime/web_pipeline_config.py` | 为任务生成各阶段适配器与可复现 job snapshot；旧 preset 逻辑仅保留历史兼容。 |
 
 常用命令：
@@ -116,7 +116,7 @@ data_clean_calibrated.yaml
 - 读取 Octopus 录制的 raw MCAP。
 - 校验输入 topic/schema。
 - 从 GoPro 图像中检测 ArUco marker，生成左右夹爪宽度 `std_msgs/msg/Float32`。
-- 处理 Baton Mini 到左右 arm-base TCP pose 的正式转换；旧 common payload 只保留兼容读取。
+- 将每帧 Baton Mini 动相机 pose 与固定 `camera_from_tcp` 外参组合为原始参考坐标系下的 TCP pose；旧 common payload 只保留兼容读取。
 - 写出 cleaned MCAP，并保留处理报告。
 
 关键模块：
@@ -124,7 +124,7 @@ data_clean_calibrated.yaml
 | 模块                              | 职责                                                                    |
 | --------------------------------- | ----------------------------------------------------------------------- |
 | `config/mcap_process_config.py` | 兼容 facade；实际解析位于 `repo/config/mcap_process_config.py`。         |
-| `repo/config/mcap_process_config.py` | 解析 batch、pose streams、gripper、`camera_from_tcp`、`work_frames` 和历史兼容配置。 |
+| `repo/config/mcap_process_config.py` | 解析 batch、pose streams、gripper、`camera_from_tcp` 和历史兼容配置。 |
 | `service/mcap_io.py`            | 单文件清洗核心；两遍读取 MCAP，第一遍生成中间 payload，第二遍写出结果。 |
 | `service/validator.py`          | 输入 topic/schema 与输出契约校验。                                      |
 | `schemas/mcap_health_audit.py`  | Web 新建任务前健康审计的数据结构、状态和缺陷分类目录契约。             |
@@ -133,8 +133,7 @@ data_clean_calibrated.yaml
 | `service/gripper_width.py`      | ArUco 夹爪宽度提取、缺失帧插值和归一化。                                |
 | `service/baton_pose_audit.py`   | Baton Mini 左右位姿 topic 采样、单位量级分类；普通 Web 新建任务通过 `service/mcap_health_audit.py` 复用其审计思想。 |
 | `service/training_readiness.py` | 将 Forge quality、LeRobot stats、对齐、夹爪和 bridge feature schema 合成为面向训练前复查的可读摘要；按当前 LeRobot feature contract 判断 state/action 维度。 |
-| `service/tcp_transform.py`      | 将每帧 Baton Mini 动态 pose 与 `camera_from_tcp.translation_mm` 组合为动态 TCP 中间位姿；旧 common-frame helper 仅保留兼容。 |
-| `service/arm_base_transform.py` | arm-base pose 相关转换与契约支持。                                      |
+| `service/tcp_transform.py`      | 执行 `T_source_tcp(t) = T_source_camera(t) @ T_camera_tcp`；保持原始参考坐标系，旧 common-frame helper 仅保留兼容。 |
 | `ui/scene1_dev_checks.py`       | 场景一开发者检验项。                                                    |
 
 典型输出：
@@ -146,8 +145,8 @@ asset/阶段二：数据清洗/dev/mcap_cleaned/*.mcap
 注意：
 
 - 旧 common pose 只能服务 `format-only` 开发烟测。
-- 正式生产需要 arm-base TCP pose、相机到 TCP 平移、work frame 标定和 RealMan SDK readiness。
-- raw pose 保留/可追溯；正式主位姿固定为左右 arm-base TCP pose。
+- 正式生产需要左右相机到 TCP 平移和原始坐标系 TCP pose 输出 topic，不依赖 work frame 或 RealMan SDK。
+- raw pose 保留/可追溯；正式主位姿固定为左右各自原始参考坐标系下的 TCP pose。
 
 ## 5. 场景二：cleaned MCAP -> MCAP_A
 
@@ -247,7 +246,7 @@ tactile 派生值写为 4 维：
 mean, std, min, max
 ```
 
-`scene3_full_flow_check` 默认使用 formal pose source：`/left_arm_base_tcp_pose` 与 `/right_arm_base_tcp_pose`。未完成标定时，可显式使用 `pose_source_profile=format-only` 消费旧 common pose 做结构烟测。
+`scene3_full_flow_check` 默认使用 formal pose source：`/baton_mini_left/tcp_pose` 与 `/baton_mini_right/tcp_pose`。开发兼容检查可显式使用 `pose_source_profile=format-only` 消费旧 common pose 做结构烟测。
 
 ## 7. 标准 bridge 与官方 LeRobot v3 导出
 
@@ -299,7 +298,7 @@ mean, std, min, max
 ### 7.2 format-only 与 formal
 
 - `format-only`：允许旧 common pose 做结构烟测，报告固定 `training_eligible=false`。
-- `formal`：要求 arm-base pose source 与标定就绪；缺字段、非有限值、夹爪超出 `[0,1]`、pose 绝对值超过默认 `10m` 等会阻止导出。
+- `formal`：要求原始坐标系 TCP pose source 与 camera→TCP 外参就绪；缺字段、非有限值、夹爪超出 `[0,1]`、pose 绝对值超过默认 `10m` 等会阻止导出。
 
 Forge quality 分数只表示业务质量，不证明格式可训练；只有官方兼容门禁通过才能发布。
 
@@ -316,12 +315,12 @@ Forge quality 分数只表示业务质量，不证明格式可训练；只有官
 - 最终 dataset 写入 `<output_parent>/<dataset_name>/`，sidecar 和中间产物写入 `asset/阶段二：数据清洗/dev/debug/web_jobs/<dataset_name>_data_clean_sidecar/`。
 - 当前调度真实主链路：场景一 cleaned MCAP、场景二 MCAP_A、场景三 aligned MCAP、标准 bridge、官方 LeRobot 聚合与阻断门禁、Forge 非阻断业务质量评估。
 - 结果页提供三个视图：评测报告分数可视化、从最终 LeRobot v3 `observation.state` 读取的左右 TCP 3D 轨迹、逐文件状态；轨迹 API 为 `GET /api/jobs/{job_id}/trajectory`。
-- 3D 轨迹使用固定右手坐标系工程视角，显示局部原点固定在画布左下角；局部原点取当前视图 `bounds.min`，不是物理坐标 `(0, 0, 0)`，原始坐标值不会被改写。单个 episode 按原始时间戳播放，全部 episode 仅做静态总览。普通 Web 使用左右 `arm_base` 数据，必须分屏或明确标注不同物理坐标系，不能暗示双手位于同一世界坐标；`format-only/common_frame` 叠加仅用于开发 smoke。
-- 普通网页固定使用左右 arm-base pose 的生产链路，不向普通用户暴露 `format-only/formal`；开发 smoke 仍可显式使用 `format-only`。
+- 3D 轨迹使用固定右手坐标系工程视角，显示局部原点固定在画布左下角；局部原点取当前视图 `bounds.min`，不是物理坐标 `(0, 0, 0)`，原始坐标值不会被改写。单个 episode 按原始时间戳播放，全部 episode 仅做静态总览。普通 Web 使用左右各自的 Baton source-frame 数据，必须分屏或明确标注不同物理坐标系，不能暗示双手位于同一世界坐标；`format-only/common_frame` 叠加仅用于开发 smoke。
+- 普通网页固定使用左右 source-frame TCP pose 的生产链路，不向普通用户暴露 `format-only/formal`；开发 smoke 仍可显式使用 `format-only`。
 - 单个 MCAP 失败不会阻止其他成功 bridge episodes 进入最终 dataset；至少一个 MCAP 成功时批次可发布为 `partial_failed`。
 - 用户主动取消会持久化，在当前安全边界停止；有效 checkpoint 和未发布 staging 保留，重启后不会自动恢复。历史删除只删除任务记录，不删除真实产物。
-- 独立配置中心展示左右夹爪标定状态、`camera_from_tcp.translation_mm`、`work_frames`、场景二 pose/tactile 滤波生产默认参数和 LeRobot v3 feature 段落。夹爪配置由 gripper-only GoPro 向导自动生成；人工平移输入明确标注 `mm`，机械臂 base 旋转使用 Euler `rad`。Parser 在进入 Runtime 前统一换算为位置 `m`，最终 cleaned MCAP 的 arm-base TCP 位置也保持 `m`。
-- 每个 job 必须写出可复现 snapshot；生产配置缺失或 RealMan SDK 不可用时禁止启动。
+- 独立配置中心展示左右夹爪标定状态、`camera_from_tcp.translation_mm`、场景二 pose/tactile 滤波生产默认参数和 LeRobot v3 feature 段落。夹爪配置由 gripper-only GoPro 向导自动生成；人工平移输入明确标注 `mm`，Parser 在进入 Runtime 前统一换算为 `m`，最终 cleaned MCAP 的 TCP 位置也保持 `m`。
+- 每个 job 必须写出可复现 snapshot；生产配置缺少夹爪标定、camera→TCP 外参或正式输出 topic 时禁止启动。
 
 Web UI 的批次处理模型：
 
@@ -353,9 +352,9 @@ Web JSON API：
 | `GET`    | `/api/dashboard`                     | 看板、最近任务、默认设置和标定状态。            |
 | `GET`    | `/api/history`                       | 历史任务摘要。                                  |
 | `GET`    | `/api/production-config`             | 读取普通 Web 生产配置。                         |
-| `POST`   | `/api/production-config/validate`    | 校验左右 arm-base 位姿配置、滤波生产默认参数和 LeRobot feature 白名单并返回字段错误。 |
+| `POST`   | `/api/production-config/validate`    | 校验左右 camera→TCP 外参、滤波生产默认参数和 LeRobot feature 白名单并返回字段错误。 |
 | `POST`   | `/api/production-config`             | 原子保存正式生产配置；保存后影响后续任务，已运行任务保留自己的 snapshot。 |
-| `GET`    | `/api/production-readiness`          | 检查夹爪、外参、topic 与 RealMan SDK。           |
+| `GET`    | `/api/production-readiness`          | 检查夹爪、camera→TCP 外参与正式输出 topic。      |
 | `GET`    | `/api/calibration/gripper/status`    | 获取夹爪向导状态。                              |
 | `POST`   | `/api/calibration/gripper/open`      | 启动或复用 gripper-only GoPro 向导。             |
 | `GET`    | `/api/filesystem?path=...`           | 浏览本机目录。                                  |
@@ -393,7 +392,7 @@ Web JSON API：
 轨迹 API 从最终 dataset 的 `data/chunk-*/file-*.parquet` 读取 `episode_index`、`frame_index`、`timestamp` 和 `observation.state`。它优先根据 job snapshot / LeRobot feature schema 查找左右 TCP pose offset，旧任务回退 32 维默认 offset。响应除原始轨迹样本外，还包含：
 
 ```text
-coordinate_frame_profile    # common_frame_compat | dual_arm_base
+coordinate_frame_profile    # common_frame_compat | dual_source_frame
 coordinate_frames           # left/right 实际坐标系名称
 hand_bounds                 # 左右轨迹独立 min/max/center
 projection_hint             # right-handed + local_bounds_min
