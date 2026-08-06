@@ -3797,7 +3797,12 @@ function productionPoseFields(prefix, value) {
 function productionFilterFields(web) {
   const scene2 = web?.scene2 || {}, pose = scene2.pose_filter || {}, tactile = scene2.tactile_filter || {};
   const field = (label, path, value) => `<label>${label}</label><input data-production="${path}" value="${escapeHtml(String(value ?? ''))}">`;
+  const streams = (scene2.streams || []).map(item => `<tr><td class="path">${escapeHtml(item.topic)}</td><td>${escapeHtml(item.modality)}</td><td>${item.required?'必需':'可选'}</td></tr>`).join('');
   return `<div class="config-grid">
+    <div class="config-section"><h3>Scene2 输入白名单（只读）</h3>
+      <table><thead><tr><th>Topic</th><th>模态</th><th>要求</th></tr></thead><tbody>${streams}</tbody></table>
+      <p class="muted">单次任务只处理这里列出的 stream，任务覆盖不会扩张范围。</p>
+    </div>
     <div class="config-section"><h3>Pose filter</h3>
       ${field('窗口时长 ms', 'web_pipeline.scene2.pose_filter.window_duration_ms', pose.window_duration_ms)}
       ${field('Polyorder', 'web_pipeline.scene2.pose_filter.polyorder', pose.polyorder)}

@@ -1,47 +1,15 @@
-# RepairDecisionStatus
+# RepairDecisionStatus 与 RepairDisposition
 
-## 定义
+> 消费对象：Scene2 Service/Runtime Agent。权威性：新运行的处置—计算状态机契约。上游来源：`schemas/repair.py`、`service/repair_run.py`。不负责：异常检测事实。读取时机：修改修复策略或报告前。冲突处理：禁止从 `suggested_action` 推断可改值权限。
 
-`RepairDecisionStatus` 是数据补全器对样本或 repair run 的处理状态枚举。
+检测事实先转换为字段级 `RepairDisposition`：
 
-## 所属位置
-
-阶段二 Service 场景二，来源能力模块：[[数据补全器]]。
-
-## 现实语义
-
-它回答“补全器最终对这个样本或连续异常 run 做了什么”。
-
-## 字段或取值
-
-| 取值 | 现实含义 |
+| 处置 | 含义 |
 |---|---|
-| `repaired` | 已自动修复已有样本值 |
-| `unrepaired` | 本来属于可处理对象，但因策略、邻居、混合可修复性等原因拒绝修复 |
-| `skipped` | 按规则不处理，例如 `mark_only`、`drop_or_mask_candidate`、`inspect_required` 或缺失区间 |
+| `AUTO_REPAIR` | 已批准按预定方法修改已有样本值 |
+| `MASK_ONLY` | 只形成 mask/边界 |
+| `MANUAL_REVIEW` | 等待人工判断 |
+| `UNRECOVERABLE` | 已知无法恢复 |
+| `NO_ACTION` | 不需要数值动作 |
 
-## 有效性规则
-
-- 每个 [[SignalRepairRun]] 和 [[SignalRepairSampleRecord]] 必须有一个状态。
-- `repaired` 必须有实际 [[RepairMethod]] 和修复前后值或摘要。
-- `unrepaired` 和 `skipped` 必须写明 reason。
-
-## 上游来源
-
-- [[SignalReliabilityDetectionResult]]
-- [[SignalRepairPolicyConfig]]
-
-## 下游消费者
-
-- [[SignalRepairResult]]
-- Parquet 标注与验证报告生成器。
-
-## 不负责
-
-- 不表达上游建议；上游建议使用 [[SuggestedRepairAction]]。
-- 不表达具体修复算法；具体算法使用 [[RepairMethod]]。
-
-## 相关链接
-
-- [[SignalRepairResult]]
-- [[RepairMethod]]
+计算状态为 `pending / repaired / unrepairable / skipped`。只有 `AUTO_REPAIR + pending` 能进入数值计算；缺邻居、时间不递增、四元数无效或 tactile shape 不兼容只能从 `pending` 变为 `unrepairable`，不得改变上游处置。非自动处置产生 `skipped` 或 `unrepairable` 记录，不调用修复函数。

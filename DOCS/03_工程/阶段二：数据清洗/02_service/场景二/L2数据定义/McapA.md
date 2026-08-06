@@ -17,7 +17,7 @@
 | 内容 | 契约 |
 |---|---|
 | 来源 | [[CleanedMcap]] |
-| 位姿 topic | 保留 cleaned MCAP 的 topic 结构，写入补全/滤波后的 arm-base TCP pose 值（topic = `arm_base_tcp_pose`，frame_id 对应 RM65 base） |
+| 位姿 topic | 只处理 `/baton_mini_left/tcp_pose`、`/baton_mini_right/tcp_pose`，保持 Baton source-frame 语义，不做坐标转换 |
 | 触觉 topic | 保留 cleaned MCAP 的触觉 topic 结构，写入补全/滤波后的触觉值 |
 | 夹爪 topic | 保留 cleaned MCAP 的夹爪 topic 结构，必要时写入补全后的夹爪值 |
 | 时间结构 | 不改变 topic 名称和时间戳结构 |
@@ -34,6 +34,8 @@
 - 默认不新增 processed topic、audit topic 或 MCAP metadata 审计块。
 - MCAP_A 的 topic 名称、消息类型、时间戳排序和样本数必须与来源 [[CleanedMcap]] 对齐。
 - 缺少 [[SignalRepairResult]]、[[PoseFilterResult]] 或 [[TactileFilterResult]] 时不得生成 MCAP_A。
+- Scene2 输入固定来自 `web_pipeline.scene2.streams` 显式白名单：2 路 pose 和 2 路 gripper 必需，4 路 `/pressure/...` tactile 默认可选；未声明 topic 只复制。
+- 写回按 [[SignalSampleRef]] 精确定位并校验，成功修复的 gripper 必须与 pose/tactile 一同写回。
 
 ## 上游来源
 

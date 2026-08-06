@@ -7,20 +7,20 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from mcap.reader import make_reader
-
+from repo.config.mcap_process_config import load_app_config
 from repo.mcap_a_writer import MCAP_A_Writer
-from repo.ros2_codec import Ros2DynamicCodec, inject_pose_fields, inject_tactile_fields
-from schemas.mcap_a_writer import MCAP_A_WritePlan, MCAP_A_WriterConfig
-from schemas.pose_filter import PoseFilterConfig
-from schemas.tactile_filter import TactileFilterConfig
+from schemas.mcap_a_writer import MCAP_A_MessageReplacement, MCAP_A_WritePlan, MCAP_A_WriterConfig
+from schemas.pose_filter import PoseFilterConfig, PoseFilterSampleStatus
+from schemas.repair import RepairDecisionStatus
+from schemas.scene2_streams import Scene2RunContext
+from schemas.tactile_filter import TactileFilterConfig, TactileFilterSampleStatus
 from service.detectors import ReliabilityDetectionConfig
 
 from .run_directory_creator import create_run_directory
-from .scene2_pose_filter import run_scene2_pose_filter
-from .scene2_signal_reliability import SampleLoader, run_scene2_signal_reliability_detection
-from .scene2_signal_repair import run_scene2_signal_repair
-from .scene2_tactile_filter import run_scene2_tactile_filter
+from .scene2_pose_filter import compute_pose_filter
+from .scene2_signal_reliability import SampleLoader, load_scene2_signal_samples
+from .scene2_signal_repair import _run_detection, compute_signal_repair
+from .scene2_tactile_filter import compute_tactile_filter
 
 
 def run_scene2_mcap_a_writer(
@@ -36,90 +36,119 @@ def run_scene2_mcap_a_writer(
 ) -> dict[str, Any]:
     cleaned_mcap = Path(cleaned_mcap_path)
     config_path = Path(config_path)
-    run_root = Path(run_root)
-    run_directory = create_run_directory(
-        run_root=run_root,
-        run_date=date.today(),
-        target_scenes=["scene2"],
-    )
+    detection_config = detection_config or ReliabilityDetectionConfig()
+    pose_filter_config = pose_filter_config or PoseFilterConfig()
+    tactile_filter_config = tactile_filter_config or TactileFilterConfig()
+    app_config = load_app_config(config_path)
+    run_directory = create_run_directory(run_root=Path(run_root), run_date=date.today(), target_scenes=["scene2"])
     outputs_dir = Path(run_directory.layout.outputs_dir.path)
     artifacts_dir = outputs_dir / "artifacts"
     mcap_a_dir = artifacts_dir / "mcap_a"
     mcap_a_path = mcap_a_dir / f"{cleaned_mcap.stem}_mcap_a.mcap"
     summary_path = artifacts_dir / "mcap_a_write_summary.json"
     run_log_path = Path(run_directory.layout.run_log_path.path)
+    detection_path = outputs_dir / "signal_reliability_detection_result.json"
+    repair_path = outputs_dir / "signal_repair_result.json"
+    pose_path = outputs_dir / "pose_filter_result.json"
+    tactile_path = outputs_dir / "tactile_filter_result.json"
     steps = ["create_run_directory"]
     errors: list[dict[str, str]] = []
-
-    detection_result: dict[str, Any] | None = None
-    repair_result: dict[str, Any] | None = None
-    pose_result: dict[str, Any] | None = None
-    tactile_result: dict[str, Any] | None = None
     writer_result = None
 
-    try:
-        detection_result = run_scene2_signal_reliability_detection(
-            cleaned_mcap_path=cleaned_mcap,
-            config_path=config_path,
-            run_root=run_root,
-            detection_config=detection_config,
-            sample_loader=sample_loader,
-        )
-        steps.append("run_signal_reliability_detection")
-        _raise_if_failed(detection_result, "signal_reliability_detection_failed")
-
-        repair_result = run_scene2_signal_repair(
-            cleaned_mcap_path=cleaned_mcap,
-            config_path=config_path,
-            run_root=run_root,
-            detection_config=detection_config,
-            sample_loader=sample_loader,
-        )
-        steps.append("run_signal_repair")
-        _raise_if_failed(repair_result, "signal_repair_failed")
-
-        pose_result = run_scene2_pose_filter(
-            cleaned_mcap_path=cleaned_mcap,
-            config_path=config_path,
-            run_root=run_root,
-            detection_config=detection_config,
-            pose_filter_config=pose_filter_config,
-            sample_loader=sample_loader,
-        )
-        steps.append("run_pose_filter")
-        _raise_if_failed(pose_result, "pose_filter_failed")
-
-        tactile_result = run_scene2_tactile_filter(
-            cleaned_mcap_path=cleaned_mcap,
-            config_path=config_path,
-            run_root=run_root,
-            detection_config=detection_config,
-            tactile_filter_config=tactile_filter_config,
-            sample_loader=sample_loader,
-        )
-        steps.append("run_tactile_filter")
-        _raise_if_failed(tactile_result, "tactile_filter_failed")
-
-        plan, replacement_content = _build_write_plan_and_replacements(
-            cleaned_mcap=cleaned_mcap,
-            mcap_a_path=mcap_a_path,
-            pose_result=pose_result,
-            tactile_result=tactile_result,
-        )
-        plan.output_sequence_refs = {
-            "signal_repair_result_ref": repair_result["outputs"]["signal_repair_result_json"],
-            "pose_filter_result_ref": pose_result["outputs"]["pose_filter_result_json"],
-            "tactile_filter_result_ref": tactile_result["outputs"]["tactile_filter_result_json"],
+    snapshot = {
+        "scene2": {
+            "streams": [_jsonable(stream) for stream in app_config.scene2_streams],
+            "detection": _jsonable(detection_config),
+            "pose_filter": _jsonable(pose_filter_config),
+            "tactile_filter": _jsonable(tactile_filter_config),
         }
+    }
+    stat = cleaned_mcap.stat() if cleaned_mcap.exists() else None
+    context = Scene2RunContext(
+        run_id=run_directory.run_id,
+        input_cleaned_mcap=str(cleaned_mcap),
+        input_identity={
+            "size_bytes": stat.st_size if stat else None,
+            "mtime_ns": stat.st_mtime_ns if stat else None,
+        },
+        config_snapshot=snapshot,
+    )
+
+    try:
+        samples = (sample_loader or load_scene2_signal_samples)(cleaned_mcap, app_config)
+        context.stream_inventory = getattr(samples, "inventory", None)
+        steps.append("load_scene2_inventory_and_samples_once")
+
+        detection_result = _run_detection(
+            samples=samples,
+            cleaned_mcap=cleaned_mcap,
+            config_path=config_path,
+            detection_config=detection_config,
+            run_id=run_directory.run_id,
+        )
+        detection_result.run_context = context
+        _write_json(detection_path, detection_result)
+        steps.append("detect_once")
+
+        repair_result = compute_signal_repair(
+            samples=samples,
+            detection_result=detection_result,
+            config_path=config_path,
+            run_id=run_directory.run_id,
+        )
+        repair_result.run_context = context
+        _write_json(repair_path, repair_result)
+        steps.append("repair_once")
+
+        pose_result = compute_pose_filter(
+            samples=samples,
+            detection_result=detection_result,
+            repair_result=repair_result,
+            pose_filter_config=pose_filter_config,
+            repair_result_ref=repair_path,
+            run_id=run_directory.run_id,
+        )
+        pose_result.run_context = context
+        _write_json(pose_path, pose_result)
+        steps.append("filter_pose")
+
+        tactile_result = compute_tactile_filter(
+            samples=samples,
+            detection_result=detection_result,
+            repair_result=repair_result,
+            tactile_filter_config=tactile_filter_config,
+            repair_result_ref=repair_path,
+            run_id=run_directory.run_id,
+        )
+        tactile_result.run_context = context
+        _write_json(tactile_path, tactile_result)
+        steps.append("filter_tactile")
+
+        replacements = _build_stable_replacements(repair_result, pose_result, tactile_result)
+        replacement_topics = sorted({item.sample_ref.topic for item in replacements})
+        plan = MCAP_A_WritePlan(
+            source_mcap=str(cleaned_mcap),
+            output_mcap=str(mcap_a_path),
+            operations=[
+                {"operation": "replace", "topic": topic, "sequence_ref": f"stable-ref://{topic}"}
+                for topic in replacement_topics
+            ],
+            output_sequence_refs={
+                "signal_repair_result_ref": str(repair_path),
+                "pose_filter_result_ref": str(pose_path),
+                "tactile_filter_result_ref": str(tactile_path),
+            },
+            run_id=run_directory.run_id,
+            run_context=context,
+        )
         writer = MCAP_A_Writer(MCAP_A_WriterConfig(output_path=str(mcap_a_path), compression="none"), plan)
-        writer_result = writer.execute_write_plan(plan, replacement_content=replacement_content)
+        writer_result = writer.execute_write_plan(plan, replacements=replacements)
         if not writer_result.success:
             raise RuntimeError("; ".join(writer_result.error_log))
-        mcap_a_summary = mcap_a_path.parent / "mcap_a_write_summary.json"
+        generated_summary = mcap_a_path.parent / "mcap_a_write_summary.json"
         artifacts_dir.mkdir(parents=True, exist_ok=True)
-        if mcap_a_summary != summary_path:
-            summary_path.write_text(mcap_a_summary.read_text(encoding="utf-8"), encoding="utf-8")
-        steps.append("write_mcap_a")
+        summary_path.write_text(generated_summary.read_text(encoding="utf-8"), encoding="utf-8")
+        steps.append("stream_copy_write_and_validate")
     except Exception as exc:
         errors.append({"type": type(exc).__name__, "message": str(exc)})
 
@@ -128,27 +157,18 @@ def run_scene2_mcap_a_writer(
         "artifacts_dir": str(artifacts_dir),
         "mcap_a": str(mcap_a_path),
         "mcap_a_write_summary_json": str(summary_path),
-        "signal_reliability_detection_result_json": _output(detection_result, "signal_reliability_detection_result_json"),
-        "signal_repair_result_json": _output(repair_result, "signal_repair_result_json"),
-        "pose_filter_result_json": _output(pose_result, "pose_filter_result_json"),
-        "tactile_filter_result_json": _output(tactile_result, "tactile_filter_result_json"),
+        "signal_reliability_detection_result_json": str(detection_path),
+        "signal_repair_result_json": str(repair_path),
+        "pose_filter_result_json": str(pose_path),
+        "tactile_filter_result_json": str(tactile_path),
     }
     run_log = {
         "run_id": run_directory.run_id,
         "check_id": "scene2_mcap_a_writer",
         "status": "failed" if errors else "success",
-        "input": {
-            "cleaned_mcap": str(cleaned_mcap),
-            "signal_repair_result": outputs["signal_repair_result_json"],
-            "pose_filter_result": outputs["pose_filter_result_json"],
-            "tactile_filter_result": outputs["tactile_filter_result_json"],
-        },
-        "config": {
-            "rule_config_ref": str(config_path),
-            "writer_output_dir": str(mcap_a_dir),
-            "compression": compression,
-            "temporary_override_saved": False,
-        },
+        "input": {"cleaned_mcap": str(cleaned_mcap)},
+        "config": {"config_snapshot": snapshot, "compression": compression, "temporary_override_saved": False},
+        "stream_inventory": _jsonable(context.stream_inventory),
         "steps": steps + ["write_run_log"],
         "stats": {
             "writer_success": bool(writer_result and writer_result.success),
@@ -158,20 +178,46 @@ def run_scene2_mcap_a_writer(
         "outputs": outputs,
         "created_at": datetime.now().isoformat(),
     }
-    run_log_path.write_text(json.dumps(_jsonable(run_log), ensure_ascii=False, indent=2), encoding="utf-8")
+    _write_json(run_log_path, run_log)
     return {**run_log, "run_log_path": str(run_log_path)}
 
 
-def _raise_if_failed(result: dict[str, Any], reason: str) -> None:
-    if result["status"] != "success":
-        raise RuntimeError(reason)
+def _build_stable_replacements(repair_result: Any, pose_result: Any, tactile_result: Any) -> list[MCAP_A_MessageReplacement]:
+    repaired_keys = {
+        (record.sample_ref.topic, record.sample_ref.message_index)
+        for run in repair_result.repair_runs
+        for record in run.sample_records
+        if record.status is RepairDecisionStatus.REPAIRED
+    }
+    replacements: dict[tuple[str, int], MCAP_A_MessageReplacement] = {}
+    for record in pose_result.sample_records:
+        key = (record.sample_ref.topic, record.sample_ref.message_index)
+        if record.status is PoseFilterSampleStatus.FILTERED or key in repaired_keys:
+            replacements[key] = MCAP_A_MessageReplacement(record.sample_ref, "pose", record.final_value)
+    for topic_entries in tactile_result.output_sequence_refs.values():
+        for entry in topic_entries:
+            ref = entry["sample_ref"]
+            key = (ref.topic, ref.message_index)
+            if entry.get("filtered_matrix") is not None and (
+                entry.get("status") in {TactileFilterSampleStatus.FILTERED.value, TactileFilterSampleStatus.EMA_RESET.value}
+                or key in repaired_keys
+            ):
+                replacements[key] = MCAP_A_MessageReplacement(ref, "tactile.frame", entry["filtered_matrix"])
+    for run in repair_result.repair_runs:
+        if run.replacement_unit != "gripper.value":
+            continue
+        for record in run.sample_records:
+            if record.status is RepairDecisionStatus.REPAIRED:
+                value = record.value_summary.get("value")
+                replacements[(record.sample_ref.topic, record.sample_ref.message_index)] = MCAP_A_MessageReplacement(
+                    record.sample_ref, "gripper.value", value
+                )
+    return list(replacements.values())
 
 
-def _output(result: dict[str, Any] | None, key: str) -> str | None:
-    if result is None:
-        return None
-    value = result.get("outputs", {}).get(key)
-    return str(value) if value is not None else None
+def _write_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(_jsonable(value), ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _jsonable(value: Any) -> Any:
@@ -186,97 +232,3 @@ def _jsonable(value: Any) -> Any:
     if isinstance(value, Path):
         return str(value)
     return value
-
-
-def _build_write_plan_and_replacements(
-    cleaned_mcap: Path,
-    mcap_a_path: Path,
-    pose_result: dict[str, Any],
-    tactile_result: dict[str, Any],
-) -> tuple[MCAP_A_WritePlan, dict[str, list[bytes]]]:
-    """Read filter results, serialize filtered values to CDR, and build the write plan."""
-    # 1. Load filter result JSONs
-    pose_filter_path = Path(pose_result["outputs"]["pose_filter_result_json"])
-    tactile_filter_path = Path(tactile_result["outputs"]["tactile_filter_result_json"])
-    pose_filter_data = json.loads(pose_filter_path.read_text(encoding="utf-8"))
-    tactile_filter_data = json.loads(tactile_filter_path.read_text(encoding="utf-8"))
-
-    # 2. Build (topic, message_index) -> filtered value lookups
-    pose_by_key: dict[tuple[str, int], dict] = {}
-    for topic, entries in pose_filter_data.get("output_sequence_refs", {}).items():
-        for entry in entries:
-            ref = entry["sample_ref"]
-            pose_by_key[(topic, ref["message_index"])] = entry
-
-    tactile_by_key: dict[tuple[str, int], list[list[float]]] = {}
-    for topic, entries in tactile_filter_data.get("output_sequence_refs", {}).items():
-        for entry in entries:
-            ref = entry["sample_ref"]
-            matrix = entry.get("filtered_matrix")
-            if matrix is not None:
-                tactile_by_key[(topic, ref["message_index"])] = matrix
-
-    pose_topics = {topic for topic, _ in pose_by_key}
-    tactile_topics = {topic for topic, _ in tactile_by_key}
-    replace_topics = pose_topics | tactile_topics
-
-    if not replace_topics:
-        plan = MCAP_A_WritePlan(
-            source_mcap=str(cleaned_mcap),
-            output_mcap=str(mcap_a_path),
-            operations=[],
-        )
-        return plan, {}
-
-    # 3. Read source MCAP, decode → inject → re-encode per replacement topic
-    codec = Ros2DynamicCodec()
-    replacement_content: dict[str, list[bytes]] = {topic: [] for topic in replace_topics}
-    message_indexes: dict[str, int] = {}
-
-    with cleaned_mcap.open("rb") as fh:
-        reader = make_reader(fh)
-        for schema, channel, message in reader.iter_messages(log_time_order=False):
-            topic = channel.topic
-            if topic not in replace_topics:
-                continue
-            if schema is None:
-                raise RuntimeError(f"schema missing for replacement topic {topic}")
-
-            index = message_indexes.get(topic, 0)
-            message_indexes[topic] = index + 1
-            decoded = codec.decode(schema, message)
-
-            if topic in pose_topics:
-                pose_entry = pose_by_key.get((topic, index))
-                if pose_entry is not None:
-                    pos = pose_entry["position"]
-                    ori = pose_entry["orientation"]
-                    injected = inject_pose_fields(
-                        decoded,
-                        schema.name,
-                        (pos["x"], pos["y"], pos["z"], ori["x"], ori["y"], ori["z"], ori["w"]),
-                    )
-                    replacement_content[topic].append(codec.encode(schema, injected))
-                else:
-                    replacement_content[topic].append(message.data)
-
-            elif topic in tactile_topics:
-                matrix = tactile_by_key.get((topic, index))
-                if matrix is not None:
-                    injected = inject_tactile_fields(decoded, matrix)
-                    replacement_content[topic].append(codec.encode(schema, injected))
-                else:
-                    replacement_content[topic].append(message.data)
-
-    # 4. Build operations list
-    operations = [
-        {"operation": "replace", "topic": topic, "sequence_ref": f"filter://{topic}"}
-        for topic in sorted(replace_topics)
-    ]
-
-    plan = MCAP_A_WritePlan(
-        source_mcap=str(cleaned_mcap),
-        output_mcap=str(mcap_a_path),
-        operations=operations,
-    )
-    return plan, replacement_content

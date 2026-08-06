@@ -20,6 +20,7 @@
 | `source_topic` | string | 来源触觉 topic |
 | `start_sample_ref` | [[SignalSampleRef]] | 片段起始样本 |
 | `end_sample_ref` | [[SignalSampleRef]] | 片段结束样本 |
+| `sample_refs` | list[[SignalSampleRef]] | 实际参与计算的完整成员，是滤波成员关系的唯一依据 |
 | `sample_count` | integer | 片段样本数 |
 | `rows` | integer | 触觉矩阵行数 |
 | `cols` | integer | 触觉矩阵列数 |
@@ -35,6 +36,8 @@
 - 片段不得包含 tactile 相关 `unrepaired` / `skipped` 样本。
 - shape 不一致必须切断或失败，不得在同一片段内滤波。
 - `reset_points` 只重置 EMA 状态，不改变样本数量或时间戳。
+- 每个 topic/time_domain 独立分段；缺失区间、未修复样本、shape 变化和 contact reset 都是边界。
+- 每个可滤波 segment 单独初始化 median/EMA 状态；样本记录通过 `segment_id` 反查片段，并用 `filter_state_reset` 记录首帧状态重置事实。
 
 ## 上游来源
 

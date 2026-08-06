@@ -10,7 +10,7 @@
 
 ## 现实语义
 
-它不是被修改后的数据，而是“某个 cleaned MCAP 已有消息样本存在可靠性问题”的结构化判断。数据补全器以它作为主输入，并按同 topic、同样本聚合后决定是否修复。
+它不是被修改后的数据，而是“某个 cleaned MCAP 已有消息样本的某个字段存在可靠性问题”的结构化判断。数据补全器以它作为检测事实输入，再独立计算字段级处置。
 
 ## 字段或取值
 
@@ -29,7 +29,8 @@
 - `sample_ref`、`issue_type`、`severity`、`suggested_action` 必填。
 - `suggested_action` 是建议，不代表异常检测器已经修改数据。
 - 同一样本允许存在多条不同 `field_path` 或 `issue_type` 的记录。
-- 数据补全器必须先按 `source_topic + time_domain + timestamp + message_index + modality` 聚合同一样本问题，再做一次修复决策。
+- issue id 必须纳入 topic、稳定消息序号和 `field_path`，左右 stream 不得同名。
+- repair run 按 `topic + modality + time_domain + replacement_unit` 聚合；同一 pose 样本的 position/orientation 不得互相覆盖。
 
 ## 上游来源
 

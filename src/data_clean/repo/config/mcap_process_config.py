@@ -9,6 +9,8 @@ from typing import Any
 
 import yaml
 
+from schemas.scene2_streams import DEFAULT_SCENE2_STREAMS, Scene2StreamSpec
+
 
 class ConfigError(ValueError):
     """Raised when the YAML configuration is invalid."""
@@ -175,6 +177,7 @@ class AppConfig:
     calibration: dict[str, Any]
     frame_alignment: FrameAlignmentConfig | None = None
     camera_from_tcp: dict[str, ExtrinsicConfig] | None = None
+    scene2_streams: tuple[Scene2StreamSpec, ...] = DEFAULT_SCENE2_STREAMS
 
     def pose_by_topic(self) -> dict[str, PoseStreamConfig]:
         return {stream.input_topic: stream for stream in self.pose_streams}
@@ -361,6 +364,37 @@ def _build_calibration(data: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(calibration, dict):
         raise ConfigError('"calibration" must be a mapping when present')
     return calibration
+
+
+def _build_scene2_streams(data: dict[str, Any]) -> tuple[Scene2StreamSpec, ...]:
+    web_pipeline = data.get("web_pipeline", {})
+    scene2 = web_pipeline.get("scene2", {}) if isinstance(web_pipeline, dict) else {}
+    raw_streams = scene2.get("streams") if isinstance(scene2, dict) else None
+    if raw_streams is None:
+        return DEFAULT_SCENE2_STREAMS
+    if not isinstance(raw_streams, list) or not all(isinstance(item, dict) for item in raw_streams):
+        raise ConfigError('"web_pipeline.scene2.streams" must be a list of mappings')
+    streams = tuple(
+        Scene2StreamSpec(
+            topic=str(item.get("topic", "")),
+            modality=str(item.get("modality", "")),
+            required=bool(item.get("required", False)),
+        )
+        for item in raw_streams
+    )
+    if not streams:
+        raise ConfigError('"web_pipeline.scene2.streams" must not be empty')
+    _ensure_unique([stream.topic for stream in streams], "scene2 stream topics")
+    required_contract = {
+        (stream.topic, stream.modality)
+        for stream in DEFAULT_SCENE2_STREAMS
+        if stream.required
+    }
+    actual_required = {(stream.topic, stream.modality) for stream in streams if stream.required}
+    if not required_contract.issubset(actual_required):
+        missing = sorted(topic for topic, modality in required_contract - actual_required)
+        raise ConfigError(f"scene2 required stream contract missing topics: {', '.join(missing)}")
+    return streams
 
 
 def _build_camera_from_tcp(
@@ -587,6 +621,7 @@ def load_app_config(
         calibration=_build_calibration(raw_data),
         frame_alignment=frame_alignment,
         camera_from_tcp=camera_from_tcp,
+        scene2_streams=_build_scene2_streams(raw_data),
     )
     _validate_cross_field_rules(app_config)
     return app_config

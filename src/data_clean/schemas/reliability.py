@@ -43,15 +43,24 @@ class AnomalySource(str, Enum):
     TIMESTAMP = "timestamp"
 
 
-@dataclass
+@dataclass(frozen=True)
 class SignalSampleRef:
-    """Reference to one existing cleaned MCAP message sample."""
+    """Stable reference to one existing cleaned MCAP message.
+
+    ``message_index`` is always the zero-based occurrence of ``topic`` in the
+    source file's physical message order.  ``timestamp`` remains the signal
+    ordering timestamp and is deliberately not part of that identity rule.
+    """
 
     topic: str
     timestamp: int | float
     message_index: int
     modality: str
     time_domain: str = "log_time"
+    log_time_ns: int | None = None
+    publish_time_ns: int | None = None
+    sequence: int | None = None
+    source_channel_id: int | None = None
 
 
 @dataclass
@@ -114,3 +123,4 @@ class SignalReliabilityDetectionResult:
     summary_by_modality: dict[str, Any] = field(default_factory=dict)
     created_at: str | None = None
     run_id: str | None = None
+    run_context: Any | None = None

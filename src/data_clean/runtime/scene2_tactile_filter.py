@@ -12,19 +12,15 @@ from schemas.reliability import SignalReliabilityDetectionResult, SignalSampleRe
 from schemas.repair import RepairDecisionStatus, SignalRepairResult
 from schemas.tactile_filter import TactileFilterConfig, TactileFilterInputSequence, TactileFilterResult
 from service.detectors import ReliabilityDetectionConfig, TactilePressureFrame
-from service.repair_compute import run_all_repairs
-from service.repair_run import aggregate_sample_issues, build_repair_runs, find_legal_neighbors
-from service.tactile_filter import aggregate_tactile_result, filter_tactile_segment, run_tactile_audit
+from service.tactile_filter import aggregate_tactile_result, filter_tactile_segments, run_tactile_audit
 from service.tactile_segment import split_tactile_segments
 
 from .run_directory_creator import create_run_directory
 from .scene2_signal_reliability import SampleLoader, load_scene2_signal_samples
 from .scene2_signal_repair import (
-    _merge_repair_results,
-    _neighbor_samples,
     _run_detection,
-    _sample_refs,
-    _sample_value_map,
+    _sample_ref_from_sample,
+    compute_signal_repair,
 )
 
 
@@ -95,41 +91,23 @@ def run_scene2_tactile_filter(
         detection_path.write_text(json.dumps(_jsonable(detection_result), ensure_ascii=False, indent=2), encoding="utf-8")
         steps.extend(["detect_pose", "detect_gripper", "detect_tactile", "write_detection_result"])
 
-        issue_groups = aggregate_sample_issues(detection_result.sample_issues)
-        repair_runs = build_repair_runs(issue_groups, detection_result.missing_interval_issues)
-        sample_refs = _sample_refs(samples)
-        sample_values = _sample_value_map(samples)
-        neighbors = {
-            run.repair_run_id: _neighbor_samples(
-                run.replacement_unit,
-                find_legal_neighbors(run.input_window_refs, sample_refs, issue_groups, detection_result.missing_interval_issues),
-                sample_values,
-            )
-            for run in repair_runs
-        }
-        partial_results = run_all_repairs(repair_runs, neighbors)
-        repair_result = _merge_repair_results(
+        repair_result = compute_signal_repair(
+            samples=samples,
             detection_result=detection_result,
             config_path=config_path,
-            partial_results=partial_results,
             run_id=run_directory.run_id,
         )
         repair_path.write_text(json.dumps(_jsonable(repair_result), ensure_ascii=False, indent=2), encoding="utf-8")
         steps.extend(["build_repair_runs", "find_legal_neighbors", "run_signal_repair", "write_repair_result"])
 
-        tactile_sequence = _repaired_tactile_sequence(samples.tactile, repair_result)
-        segments = split_tactile_segments(
-            tactile_sequence,
-            missing_intervals=detection_result.missing_interval_issues,
-            config=tactile_filter_config,
+        filter_result = compute_tactile_filter(
+            samples=samples,
+            detection_result=detection_result,
+            repair_result=repair_result,
+            tactile_filter_config=tactile_filter_config,
+            repair_result_ref=repair_path,
+            run_id=run_directory.run_id,
         )
-        records = run_tactile_audit(filter_tactile_segment(tactile_sequence, tactile_filter_config), tactile_sequence)
-        filter_result = aggregate_tactile_result(segments, records, tactile_sequence)
-        filter_result.input_repair_result_ref = repair_result
-        filter_result.tactile_filter_config_ref = tactile_filter_config
-        filter_result.input_sequence_refs = _input_sequence_refs(tactile_sequence, repair_result, repair_path)
-        filter_result.run_id = run_directory.run_id
-        filter_result.created_at = datetime.now().isoformat()
         filter_path.write_text(json.dumps(_jsonable(filter_result), ensure_ascii=False, indent=2), encoding="utf-8")
         steps.extend(["segment_tactile", "filter_tactile", "write_tactile_filter_result"])
 
@@ -186,18 +164,13 @@ def run_scene2_tactile_filter(
 
 def _repaired_tactile_sequence(frames: list[TactilePressureFrame], repair_result: SignalRepairResult) -> list[dict[str, Any]]:
     repairs = _tactile_repairs_by_key(repair_result)
+    unrepaired = _unrepaired_tactile_keys(repair_result)
     sequence = []
     for frame in frames:
-        sample_ref = SignalSampleRef(
-            topic=frame.topic,
-            timestamp=frame.timestamp_ns,
-            message_index=frame.message_index,
-            modality="tactile",
-            time_domain=frame.time_domain,
-        )
-        matrix = [frame.data[index : index + frame.cols] for index in range(0, len(frame.data), frame.cols)]
-        status = "repaired" if _sample_key(sample_ref) in repairs else "kept_original"
-        value = repairs.get(_sample_key(sample_ref), matrix)
+        sample_ref = _sample_ref_from_sample(frame, "tactile")
+        key = _sample_key(sample_ref)
+        repaired_matrix = repairs.get(key)
+        status = "repaired" if repaired_matrix is not None else "unrepairable" if key in unrepaired else "kept_original"
         sequence.append(
             {
                 "sample_ref": sample_ref,
@@ -209,7 +182,7 @@ def _repaired_tactile_sequence(frames: list[TactilePressureFrame], repair_result
                 "gripper": frame.gripper,
                 "rows": frame.rows,
                 "cols": frame.cols,
-                "data": _flatten_matrix(value),
+                "data": _flatten_matrix(repaired_matrix) if repaired_matrix is not None else list(frame.data),
                 "status": status,
             }
         )
@@ -230,6 +203,16 @@ def _tactile_repairs_by_key(repair_result: SignalRepairResult) -> dict[tuple[str
     return repairs
 
 
+def _unrepaired_tactile_keys(repair_result: SignalRepairResult) -> set[tuple[str, int]]:
+    return {
+        _sample_key(record.sample_ref)
+        for run in repair_result.repair_runs
+        if run.modality == "tactile"
+        for record in run.sample_records
+        if record.status is not RepairDecisionStatus.REPAIRED
+    }
+
+
 def _input_sequence_refs(
     tactile_sequence: list[dict[str, Any]],
     repair_result: SignalRepairResult,
@@ -248,6 +231,32 @@ def _input_sequence_refs(
         )
         for topic, refs in refs_by_topic.items()
     ]
+
+
+def compute_tactile_filter(
+    *,
+    samples: Any,
+    detection_result: SignalReliabilityDetectionResult,
+    repair_result: SignalRepairResult,
+    tactile_filter_config: TactileFilterConfig,
+    repair_result_ref: Path | str,
+    run_id: str,
+) -> TactileFilterResult:
+    tactile_sequence = _repaired_tactile_sequence(samples.tactile, repair_result)
+    segments = split_tactile_segments(
+        tactile_sequence,
+        missing_intervals=detection_result.missing_interval_issues,
+        config=tactile_filter_config,
+    )
+    records = filter_tactile_segments(tactile_sequence, segments, tactile_filter_config)
+    records = run_tactile_audit(records, tactile_sequence)
+    result = aggregate_tactile_result(segments, records, tactile_sequence)
+    result.input_repair_result_ref = repair_result
+    result.tactile_filter_config_ref = tactile_filter_config
+    result.input_sequence_refs = _input_sequence_refs(tactile_sequence, repair_result, Path(repair_result_ref))
+    result.run_id = run_id
+    result.created_at = datetime.now().isoformat()
+    return result
 
 
 def _diff_summary(filter_result: TactileFilterResult) -> dict[str, Any]:

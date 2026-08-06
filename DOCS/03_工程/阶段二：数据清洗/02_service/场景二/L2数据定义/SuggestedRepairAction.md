@@ -10,7 +10,7 @@
 
 ## 现实语义
 
-它描述当前样本级问题或缺失区间在 P0 预处理链路中应该如何被后续模块对待。它是建议而不是已执行动作。
+它描述检测器对当前问题的建议。它不是改值授权，也不是修复计算入口；新运行必须先产生字段级 `RepairDisposition`，只有 `AUTO_REPAIR` 才允许计算。
 
 ## 字段或取值
 
@@ -25,9 +25,9 @@
 ## 有效性规则
 
 - 异常值检测器必须为每条 [[SampleReliabilityIssue]] 和 [[MissingIntervalIssue]] 填写一个建议。
-- 对 [[SampleReliabilityIssue]]，数据补全器只能自动处理 `repairable_interpolate` 和 `repairable_hold`。
+- 对 [[SampleReliabilityIssue]]，任何枚举值都不能绕过字段级 `RepairDisposition`；`inspect_required` 必须成为人工复查/非自动处置。
 - 对 [[MissingIntervalIssue]]，即使建议为 `repairable_interpolate` 或 `repairable_hold`，v1 数据补全器也不得新增消息。
-- `mark_only`、`drop_or_mask_candidate` 和 `inspect_required` 不得被补全器静默改写为修复成功。
+- `mark_only`、`drop_or_mask_candidate` 和 `inspect_required` 不得被补全器静默改写为修复成功；当前实现也不执行 `repairable_hold`。
 - [[RepairMethod]] 记录补全器实际做了什么，不得用本枚举替代。
 
 ## 上游来源

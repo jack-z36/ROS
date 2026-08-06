@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from typing import Iterable
 
 from schemas.reliability import (
@@ -15,38 +14,10 @@ from schemas.reliability import (
     SignalReliabilityDetectionResult,
     SignalSampleRef,
 )
+from schemas.scene2_samples import GripperSample, PoseSample, TactilePressureFrame
 
 
-@dataclass(frozen=True)
-class PoseSample:
-    topic: str
-    timestamp_ns: int
-    message_index: int
-    position: tuple[float, float, float]
-    orientation_xyzw: tuple[float, float, float, float]
-    time_domain: str = "log_time"
-
-
-@dataclass(frozen=True)
-class GripperSample:
-    topic: str
-    timestamp_ns: int
-    message_index: int
-    value: float
-    time_domain: str = "log_time"
-
-
-@dataclass(frozen=True)
-class TactilePressureFrame:
-    topic: str
-    timestamp_ns: int
-    message_index: int
-    hand: str
-    gripper: str
-    rows: int
-    cols: int
-    data: list[int]
-    time_domain: str = "log_time"
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -78,14 +49,15 @@ def detect_pose_reliability(
     rule_config_ref: str = "inline",
 ) -> SignalReliabilityDetectionResult:
     config = config or ReliabilityDetectionConfig()
-    ordered_samples = list(samples)
+    ordered_samples = _ordered_by_stream(samples)
     sample_issues: list[SampleReliabilityIssue] = []
     missing_interval_issues = _detect_timestamp_gaps(ordered_samples, "pose", config)
 
-    previous: PoseSample | None = None
-    for sample in ordered_samples:
-        if not _all_finite(sample.position):
-            sample_issues.append(
+    for stream_samples in _stream_groups(ordered_samples):
+        previous: PoseSample | None = None
+        for sample in stream_samples:
+            if not _all_finite(sample.position):
+                sample_issues.append(
                 _sample_issue(
                     sample=sample,
                     modality="pose",
@@ -96,11 +68,11 @@ def detect_pose_reliability(
                     reason="non_finite_position",
                     evidence={"position": list(sample.position)},
                 )
-            )
+                )
 
-        orientation = sample.orientation_xyzw
-        if not _all_finite(orientation):
-            sample_issues.append(
+            orientation = sample.orientation_xyzw
+            if not _all_finite(orientation):
+                sample_issues.append(
                 _sample_issue(
                     sample=sample,
                     modality="pose",
@@ -111,39 +83,42 @@ def detect_pose_reliability(
                     reason="non_finite_orientation",
                     evidence={"orientation_xyzw": list(orientation)},
                 )
-            )
-        else:
-            norm = math.sqrt(sum(value * value for value in orientation))
-            if abs(norm - 1.0) > config.quaternion_norm_tolerance:
-                sample_issues.append(
-                    _sample_issue(
-                        sample=sample,
-                        modality="pose",
-                        source=AnomalySource.POSE,
-                        issue_type=IssueType.INVALID_ORIENTATION,
-                        field_path="pose.orientation",
-                        message="Pose quaternion norm is outside the configured tolerance",
-                        reason="quaternion_norm_deviation",
-                        evidence={"norm": norm, "tolerance": config.quaternion_norm_tolerance},
-                    )
                 )
+            else:
+                norm = math.sqrt(sum(value * value for value in orientation))
+                if abs(norm - 1.0) > config.quaternion_norm_tolerance:
+                    sample_issues.append(
+                        _sample_issue(
+                            sample=sample,
+                            modality="pose",
+                            source=AnomalySource.POSE,
+                            issue_type=IssueType.INVALID_ORIENTATION,
+                            field_path="pose.orientation",
+                            message="Pose quaternion norm is outside the configured tolerance",
+                            reason="quaternion_norm_deviation",
+                            evidence={"norm": norm, "tolerance": config.quaternion_norm_tolerance},
+                        )
+                    )
 
-        if previous is not None and config.pose_position_jump_threshold is not None:
-            distance = _position_distance(previous.position, sample.position)
-            if distance > config.pose_position_jump_threshold:
-                sample_issues.append(
-                    _sample_issue(
-                        sample=sample,
-                        modality="pose",
-                        source=AnomalySource.POSE,
-                        issue_type=IssueType.POSE_JUMP,
-                        field_path="pose.position",
-                        message="Pose position jump exceeds the configured threshold",
-                        reason="pose_position_jump",
-                        evidence={"distance": distance, "threshold": config.pose_position_jump_threshold},
+            if previous is not None and config.pose_position_jump_threshold is not None:
+                distance = _position_distance(previous.position, sample.position)
+                if distance > config.pose_position_jump_threshold:
+                    evidence = {"distance": distance, "threshold": config.pose_position_jump_threshold}
+                    evidence["previous_sample_ref"] = _ref_dict(previous, "pose")
+                    evidence["current_sample_ref"] = _ref_dict(sample, "pose")
+                    sample_issues.append(
+                        _sample_issue(
+                            sample=sample,
+                            modality="pose",
+                            source=AnomalySource.POSE,
+                            issue_type=IssueType.POSE_JUMP,
+                            field_path="pose.position",
+                            message="Pose position jump exceeds the configured threshold",
+                            reason="pose_position_jump",
+                            evidence=evidence,
+                        )
                     )
-                )
-        previous = sample
+            previous = sample
 
     return _detection_result(
         input_cleaned_mcap=input_cleaned_mcap,
@@ -162,7 +137,7 @@ def detect_tactile_reliability(
     rule_config_ref: str = "inline",
 ) -> SignalReliabilityDetectionResult:
     config = config or ReliabilityDetectionConfig()
-    ordered_frames = list(frames)
+    ordered_frames = _ordered_by_stream(frames)
     sample_issues: list[SampleReliabilityIssue] = []
     missing_interval_issues = _detect_timestamp_gaps(ordered_frames, "tactile", config)
 
@@ -190,12 +165,20 @@ def detect_tactile_reliability(
         else:
             valid_frames.append(frame)
 
-    previous: TactilePressureFrame | None = None
-    for frame in valid_frames:
-        if previous is not None and config.tactile_spike_mean_delta_threshold is not None:
-            mean_delta = _mean_absolute_delta(previous.data, frame.data)
-            if mean_delta > config.tactile_spike_mean_delta_threshold:
-                sample_issues.append(
+    for stream_frames in _stream_groups(valid_frames):
+        previous: TactilePressureFrame | None = None
+        for frame in stream_frames:
+            if (
+                previous is not None
+                and (previous.rows, previous.cols) == (frame.rows, frame.cols)
+                and config.tactile_spike_mean_delta_threshold is not None
+            ):
+                mean_delta = _mean_absolute_delta(previous.data, frame.data)
+                if mean_delta > config.tactile_spike_mean_delta_threshold:
+                    evidence = {"mean_delta": mean_delta, "threshold": config.tactile_spike_mean_delta_threshold}
+                    evidence["previous_sample_ref"] = _ref_dict(previous, "tactile")
+                    evidence["current_sample_ref"] = _ref_dict(frame, "tactile")
+                    sample_issues.append(
                     _sample_issue(
                         sample=frame,
                         modality="tactile",
@@ -204,10 +187,10 @@ def detect_tactile_reliability(
                         field_path="tactile.frame",
                         message="Tactile pressure frame changes abruptly from the previous frame",
                         reason="tactile_spike",
-                        evidence={"mean_delta": mean_delta, "threshold": config.tactile_spike_mean_delta_threshold},
+                        evidence=evidence,
                     )
                 )
-        previous = frame
+            previous = frame
 
     sample_issues.extend(
         _detect_ratio_run_issue(
@@ -256,18 +239,18 @@ def detect_gripper_reliability(
     rule_config_ref: str = "inline",
 ) -> SignalReliabilityDetectionResult:
     config = config or ReliabilityDetectionConfig()
-    ordered_samples = list(samples)
+    ordered_samples = _ordered_by_stream(samples)
     sample_issues: list[SampleReliabilityIssue] = []
     missing_interval_issues = _detect_timestamp_gaps(ordered_samples, "gripper", config)
 
-    previous: GripperSample | None = None
-    stuck_run_start: GripperSample | None = None
-    stuck_run_end: GripperSample | None = None
-    stuck_run_length = 1
-
-    for sample in ordered_samples:
-        if not math.isfinite(sample.value) or not (config.gripper_range_min <= sample.value <= config.gripper_range_max):
-            sample_issues.append(
+    for stream_samples in _stream_groups(ordered_samples):
+        previous: GripperSample | None = None
+        stuck_run_start: GripperSample | None = None
+        stuck_run_end: GripperSample | None = None
+        stuck_run_length = 1
+        for sample in stream_samples:
+            if not math.isfinite(sample.value) or not (config.gripper_range_min <= sample.value <= config.gripper_range_max):
+                sample_issues.append(
                 _sample_issue(
                     sample=sample,
                     modality="gripper",
@@ -282,12 +265,15 @@ def detect_gripper_reliability(
                         "max": config.gripper_range_max,
                     },
                 )
-            )
+                )
 
-        if previous is not None:
-            value_delta = abs(sample.value - previous.value)
-            if config.gripper_jump_threshold is not None and value_delta > config.gripper_jump_threshold:
-                sample_issues.append(
+            if previous is not None:
+                value_delta = abs(sample.value - previous.value)
+                if config.gripper_jump_threshold is not None and value_delta > config.gripper_jump_threshold:
+                    evidence = {"delta": value_delta, "threshold": config.gripper_jump_threshold}
+                    evidence["previous_sample_ref"] = _ref_dict(previous, "gripper")
+                    evidence["current_sample_ref"] = _ref_dict(sample, "gripper")
+                    sample_issues.append(
                     _sample_issue(
                         sample=sample,
                         modality="gripper",
@@ -296,23 +282,35 @@ def detect_gripper_reliability(
                         field_path="gripper.value",
                         message="Gripper value jump exceeds the configured threshold",
                         reason="gripper_value_jump",
-                        evidence={"delta": value_delta, "threshold": config.gripper_jump_threshold},
+                        evidence=evidence,
                     )
                 )
 
-            if math.isfinite(value_delta) and value_delta == 0.0:
-                if stuck_run_start is None:
-                    stuck_run_start = previous
-                    stuck_run_length = 2
+                if math.isfinite(value_delta) and value_delta == 0.0:
+                    if stuck_run_start is None:
+                        stuck_run_start = previous
+                        stuck_run_length = 2
+                    else:
+                        stuck_run_length += 1
+                    stuck_run_end = sample
                 else:
-                    stuck_run_length += 1
-                stuck_run_end = sample
-            else:
-                stuck_run_start = None
-                stuck_run_end = None
-                stuck_run_length = 1
-        previous = sample
+                    _append_stuck_issue(sample_issues, stuck_run_start, stuck_run_end, stuck_run_length, config)
+                    stuck_run_start = None
+                    stuck_run_end = None
+                    stuck_run_length = 1
+            previous = sample
+        _append_stuck_issue(sample_issues, stuck_run_start, stuck_run_end, stuck_run_length, config)
 
+    return _detection_result(
+        input_cleaned_mcap=input_cleaned_mcap,
+        rule_config_ref=rule_config_ref,
+        sample_issues=sample_issues,
+        missing_interval_issues=missing_interval_issues,
+        modality="gripper",
+    )
+
+
+def _append_stuck_issue(sample_issues, stuck_run_start, stuck_run_end, stuck_run_length, config) -> None:
     if stuck_run_start is not None and stuck_run_end is not None:
         stuck_duration = stuck_run_end.timestamp_ns - stuck_run_start.timestamp_ns
         if stuck_run_length >= config.gripper_stuck_min_samples and stuck_duration >= config.gripper_stuck_duration_ns:
@@ -333,40 +331,35 @@ def detect_gripper_reliability(
                 )
             )
 
-    return _detection_result(
-        input_cleaned_mcap=input_cleaned_mcap,
-        rule_config_ref=rule_config_ref,
-        sample_issues=sample_issues,
-        missing_interval_issues=missing_interval_issues,
-        modality="gripper",
-    )
-
-
 def _detect_timestamp_gaps(
     samples: list[PoseSample] | list[GripperSample] | list[TactilePressureFrame],
     modality: str,
     config: ReliabilityDetectionConfig,
 ) -> list[MissingIntervalIssue]:
     issues: list[MissingIntervalIssue] = []
-    for previous, current in zip(samples, samples[1:]):
-        gap_duration = current.timestamp_ns - previous.timestamp_ns
-        if gap_duration > config.max_gap_duration_ns:
-            estimated_missing = max(1, math.floor(gap_duration / config.max_gap_duration_ns) - 1)
-            issues.append(
-                MissingIntervalIssue(
-                    issue_id=f"{modality}-missing-{previous.message_index}-{current.message_index}",
-                    topic=current.topic,
-                    modality=modality,
-                    start_time=previous.timestamp_ns,
-                    end_time=current.timestamp_ns,
-                    expected_count=estimated_missing,
-                    actual_count=0,
-                    severity=IssueSeverity.WARNING,
-                    suggested_action="mark_unhandled_gap",
-                    time_domain=current.time_domain,
-                    reason="missing_segment",
+    for stream_samples in _stream_groups(samples):
+        for previous, current in zip(stream_samples, stream_samples[1:]):
+            gap_duration = current.timestamp_ns - previous.timestamp_ns
+            if gap_duration > config.max_gap_duration_ns:
+                estimated_missing = max(1, math.floor(gap_duration / config.max_gap_duration_ns) - 1)
+                issues.append(
+                    MissingIntervalIssue(
+                        issue_id=(
+                            f"{modality}-missing-{_topic_token(current.topic)}-"
+                            f"{previous.message_index}-{current.message_index}"
+                        ),
+                        topic=current.topic,
+                        modality=modality,
+                        start_time=previous.timestamp_ns,
+                        end_time=current.timestamp_ns,
+                        expected_count=estimated_missing,
+                        actual_count=0,
+                        severity=IssueSeverity.WARNING,
+                        suggested_action="mark_unhandled_gap",
+                        time_domain=current.time_domain,
+                        reason="missing_segment",
+                    )
                 )
-            )
     return issues
 
 
@@ -381,14 +374,20 @@ def _sample_issue(
     reason: str,
     evidence: dict[str, object],
 ) -> SampleReliabilityIssue:
+    if modality == "tactile" and isinstance(sample, TactilePressureFrame):
+        evidence = {**evidence, "rows": sample.rows, "cols": sample.cols, "actual_len": len(sample.data)}
     return SampleReliabilityIssue(
-        issue_id=f"{modality}-{issue_type.value}-{sample.message_index}",
+        issue_id=f"{modality}-{issue_type.value}-{_topic_token(sample.topic)}-{sample.message_index}-{field_path}",
         sample_ref=SignalSampleRef(
             topic=sample.topic,
             timestamp=sample.timestamp_ns,
             message_index=sample.message_index,
             modality=modality,
             time_domain=sample.time_domain,
+            log_time_ns=sample.log_time_ns,
+            publish_time_ns=sample.publish_time_ns,
+            sequence=sample.sequence,
+            source_channel_id=sample.source_channel_id,
         ),
         issue_type=issue_type,
         severity=IssueSeverity.ERROR,
@@ -424,6 +423,36 @@ def _detection_result(
 
 
 def _detect_ratio_run_issue(
+    frames: list[TactilePressureFrame],
+    *,
+    issue_type: IssueType,
+    reason: str,
+    message: str,
+    ratio_name: str,
+    ratio_fn,
+    ratio_threshold: float,
+    min_samples: int,
+    min_duration_ns: int,
+) -> list[SampleReliabilityIssue]:
+    issues: list[SampleReliabilityIssue] = []
+    for stream_frames in _stream_groups(frames):
+        issues.extend(
+            _detect_ratio_run_issue_one_stream(
+                stream_frames,
+                issue_type=issue_type,
+                reason=reason,
+                message=message,
+                ratio_name=ratio_name,
+                ratio_fn=ratio_fn,
+                ratio_threshold=ratio_threshold,
+                min_samples=min_samples,
+                min_duration_ns=min_duration_ns,
+            )
+        )
+    return issues
+
+
+def _detect_ratio_run_issue_one_stream(
     frames: list[TactilePressureFrame],
     *,
     issue_type: IssueType,
@@ -526,3 +555,32 @@ def _position_distance(left: tuple[float, float, float], right: tuple[float, flo
     if not _all_finite(left) or not _all_finite(right):
         return 0.0
     return math.sqrt(sum((right_value - left_value) ** 2 for left_value, right_value in zip(left, right)))
+
+
+def _ordered_by_stream(samples: Iterable):
+    return sorted(list(samples), key=lambda sample: (sample.topic, sample.time_domain, sample.timestamp_ns, sample.message_index))
+
+
+def _stream_groups(samples: Iterable):
+    groups: dict[tuple[str, str], list] = {}
+    for sample in samples:
+        groups.setdefault((sample.topic, sample.time_domain), []).append(sample)
+    return [sorted(group, key=lambda sample: (sample.timestamp_ns, sample.message_index)) for group in groups.values()]
+
+
+def _topic_token(topic: str) -> str:
+    return topic.strip("/").replace("/", "_") or "root"
+
+
+def _ref_dict(sample: PoseSample | GripperSample | TactilePressureFrame, modality: str) -> dict[str, object]:
+    return {
+        "topic": sample.topic,
+        "timestamp": sample.timestamp_ns,
+        "message_index": sample.message_index,
+        "modality": modality,
+        "time_domain": sample.time_domain,
+        "log_time_ns": sample.log_time_ns,
+        "publish_time_ns": sample.publish_time_ns,
+        "sequence": sample.sequence,
+        "source_channel_id": sample.source_channel_id,
+    }

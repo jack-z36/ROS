@@ -102,6 +102,31 @@ camera_from_tcp:
 web_pipeline:
   schema_version: 1
   scene2:
+    streams:
+    - topic: /baton_mini_left/tcp_pose
+      modality: pose
+      required: true
+    - topic: /baton_mini_right/tcp_pose
+      modality: pose
+      required: true
+    - topic: /gopro_left/gripper_width
+      modality: gripper
+      required: true
+    - topic: /gopro_right/gripper_width
+      modality: gripper
+      required: true
+    - topic: /pressure/left_hand/gripper_1
+      modality: tactile
+      required: false
+    - topic: /pressure/left_hand/gripper_2
+      modality: tactile
+      required: false
+    - topic: /pressure/right_hand/gripper_1
+      modality: tactile
+      required: false
+    - topic: /pressure/right_hand/gripper_2
+      modality: tactile
+      required: false
     pose_filter:
       algorithm: savgol
       window_duration_ms: 200

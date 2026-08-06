@@ -4,10 +4,13 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from schemas.reliability import MissingIntervalIssue, SampleReliabilityIssue, SignalSampleRef
-from schemas.repair import RepairDecisionStatus, RepairMethod, SignalRepairRun
-
-
-REPAIRABLE_ACTIONS = {"repairable_interpolate", "repairable_hold"}
+from schemas.repair import (
+    RepairDecisionStatus,
+    RepairDisposition,
+    RepairMethod,
+    SignalIssueDisposition,
+    SignalRepairRun,
+)
 
 
 @dataclass(frozen=True)
@@ -32,7 +35,7 @@ class LegalNeighbors:
 
 
 def aggregate_sample_issues(issues: Iterable[SampleReliabilityIssue]) -> list[SampleIssueGroup]:
-    grouped: dict[tuple[str, str, int | float, int, str], list[SampleReliabilityIssue]] = {}
+    grouped: dict[tuple[str, str, int | float, int, str, str], list[SampleReliabilityIssue]] = {}
     for issue in issues:
         sample_ref = issue.sample_ref
         key = (
@@ -41,6 +44,7 @@ def aggregate_sample_issues(issues: Iterable[SampleReliabilityIssue]) -> list[Sa
             sample_ref.timestamp,
             sample_ref.message_index,
             sample_ref.modality,
+            issue.field_path,
         )
         grouped.setdefault(key, []).append(issue)
 
@@ -50,15 +54,20 @@ def aggregate_sample_issues(issues: Iterable[SampleReliabilityIssue]) -> list[Sa
 def build_repair_runs(
     issue_groups: Iterable[SampleIssueGroup],
     missing_intervals: Iterable[MissingIntervalIssue] = (),
+    dispositions: Iterable[SignalIssueDisposition] | None = None,
 ) -> list[SignalRepairRun]:
+    disposition_by_issue = {
+        disposition.issue_id: disposition
+        for disposition in (dispositions if dispositions is not None else decide_issue_dispositions(issue_groups))
+    }
     ordered_groups = sorted(
         issue_groups,
         key=lambda group: (
             group.sample_ref.topic,
             group.sample_ref.modality,
             _replacement_unit(group),
-            group.sample_ref.message_index,
             group.sample_ref.timestamp,
+            group.sample_ref.message_index,
         ),
     )
     runs: list[SignalRepairRun] = []
@@ -66,12 +75,12 @@ def build_repair_runs(
 
     for group in ordered_groups:
         if current and not _can_extend_run(current[-1], group, missing_intervals):
-            runs.append(_make_repair_run(current, len(runs)))
+            runs.append(_make_repair_run(current, disposition_by_issue))
             current = []
         current.append(group)
 
     if current:
-        runs.append(_make_repair_run(current, len(runs)))
+        runs.append(_make_repair_run(current, disposition_by_issue))
 
     return runs
 
@@ -82,27 +91,38 @@ def find_legal_neighbors(
     dirty_issue_groups: Iterable[SampleIssueGroup],
     missing_intervals: Iterable[MissingIntervalIssue] = (),
     repaired_refs: Iterable[SignalSampleRef] = (),
+    replacement_unit: str | None = None,
 ) -> LegalNeighbors:
-    targets = sorted(target_refs, key=lambda ref: (ref.message_index, ref.timestamp))
+    targets = sorted(target_refs, key=lambda ref: (ref.timestamp, ref.message_index))
     if not targets:
         return LegalNeighbors(previous_ref=None, next_ref=None, reason="missing_target")
 
     first = targets[0]
     last = targets[-1]
-    dirty_keys = {_sample_key(group.sample_ref) for group in dirty_issue_groups}
+    dirty_keys = {
+        _sample_key(group.sample_ref)
+        for group in dirty_issue_groups
+        if replacement_unit is None or _replacement_unit(group) == replacement_unit
+    }
     repaired_keys = {_sample_key(ref) for ref in repaired_refs}
     target_keys = {_sample_key(ref) for ref in targets}
 
     topic_samples = sorted(
-        (sample for sample in samples if sample.topic == first.topic and sample.modality == first.modality),
-        key=lambda ref: (ref.message_index, ref.timestamp),
+        (
+            sample
+            for sample in samples
+            if sample.topic == first.topic
+            and sample.modality == first.modality
+            and sample.time_domain == first.time_domain
+        ),
+        key=lambda ref: (ref.timestamp, ref.message_index),
     )
 
     previous_ref = next(
         (
             sample
             for sample in reversed(topic_samples)
-            if sample.message_index < first.message_index
+            if (sample.timestamp, sample.message_index) < (first.timestamp, first.message_index)
             and _is_clean_neighbor(sample, dirty_keys, repaired_keys, target_keys)
             and not _crosses_missing_interval(sample, first, missing_intervals)
         ),
@@ -112,7 +132,7 @@ def find_legal_neighbors(
         (
             sample
             for sample in topic_samples
-            if sample.message_index > last.message_index
+            if (sample.timestamp, sample.message_index) > (last.timestamp, last.message_index)
             and _is_clean_neighbor(sample, dirty_keys, repaired_keys, target_keys)
             and not _crosses_missing_interval(last, sample, missing_intervals)
         ),
@@ -128,19 +148,62 @@ def find_legal_neighbors(
     return LegalNeighbors(previous_ref=previous_ref, next_ref=next_ref)
 
 
-def _make_repair_run(groups: list[SampleIssueGroup], run_index: int) -> SignalRepairRun:
+def decide_issue_dispositions(
+    issue_groups: Iterable[SampleIssueGroup],
+) -> list[SignalIssueDisposition]:
+    dispositions: list[SignalIssueDisposition] = []
+    method_by_field = {
+        "pose.position": RepairMethod.LINEAR_INTERPOLATE,
+        "pose.orientation": RepairMethod.SLERP_INTERPOLATE,
+        "gripper.value": RepairMethod.LINEAR_INTERPOLATE,
+        "tactile.frame": RepairMethod.LINEAR_INTERPOLATE,
+    }
+    for group in issue_groups:
+        method = method_by_field.get(_replacement_unit(group))
+        for issue in group.issues:
+            action = RepairDisposition.AUTO_REPAIR if method is not None else RepairDisposition.MANUAL_REVIEW
+            dispositions.append(
+                SignalIssueDisposition(
+                    issue_id=issue.issue_id,
+                    action=action,
+                    field_path=issue.field_path,
+                    reason="scene2_auto_repair_policy" if method is not None else "unsupported_replacement_unit",
+                    sample_ref=issue.sample_ref,
+                    planned_method=method,
+                )
+            )
+    return dispositions
+
+
+def _make_repair_run(
+    groups: list[SampleIssueGroup],
+    disposition_by_issue: dict[str, SignalIssueDisposition],
+) -> SignalRepairRun:
     first = groups[0]
-    repairable = all(_is_group_repairable(group) for group in groups)
+    issue_dispositions = [disposition_by_issue[issue_id] for group in groups for issue_id in group.issue_ids]
+    auto_repair = bool(issue_dispositions) and all(
+        disposition.action is RepairDisposition.AUTO_REPAIR for disposition in issue_dispositions
+    )
+    planned_methods = {disposition.planned_method for disposition in issue_dispositions}
+    planned_method = next(iter(planned_methods)) if len(planned_methods) == 1 else None
+    first_ref = first.sample_ref
+    replacement_unit = _replacement_unit(first)
     return SignalRepairRun(
-        repair_run_id=f"repair-run-{run_index + 1:04d}",
+        repair_run_id=(
+            f"repair-{first_ref.topic.strip('/').replace('/', '_')}-"
+            f"{replacement_unit.replace('.', '_')}-{first_ref.message_index}"
+        ),
         source_topic=first.sample_ref.topic,
         modality=first.sample_ref.modality,
         replacement_unit=_replacement_unit(first),
         input_window_refs=[group.sample_ref for group in groups],
         sample_issue_ids=[issue_id for group in groups for issue_id in group.issue_ids],
-        status=RepairDecisionStatus.REPAIRED if repairable else RepairDecisionStatus.UNREPAIRABLE,
-        applied_method=_repair_method(first) if repairable else None,
-        reason="repairable_run_candidate" if repairable else "mixed_repairability_in_run",
+        status=RepairDecisionStatus.PENDING if auto_repair else RepairDecisionStatus.SKIPPED,
+        applied_method=None,
+        reason="auto_repair_approved" if auto_repair else "not_approved_for_auto_repair",
+        disposition=RepairDisposition.AUTO_REPAIR if auto_repair else issue_dispositions[0].action,
+        planned_method=planned_method,
+        replacement_contract=_replacement_contract(first),
         sample_records=[],
     )
 
@@ -156,29 +219,10 @@ def _can_extend_run(
         previous_ref.topic == current_ref.topic
         and previous_ref.modality == current_ref.modality
         and _replacement_unit(previous) == _replacement_unit(current)
-        and _actions_compatible(previous, current)
+        and previous_ref.time_domain == current_ref.time_domain
         and current_ref.message_index == previous_ref.message_index + 1
         and not _crosses_missing_interval(previous_ref, current_ref, missing_intervals)
     )
-
-
-def _is_group_repairable(group: SampleIssueGroup) -> bool:
-    return all(issue.suggested_action in REPAIRABLE_ACTIONS for issue in group.issues)
-
-
-def _actions_compatible(previous: SampleIssueGroup, current: SampleIssueGroup) -> bool:
-    if _is_group_repairable(previous) and _is_group_repairable(current):
-        return _repair_method(previous) == _repair_method(current)
-    return True
-
-
-def _repair_method(group: SampleIssueGroup) -> RepairMethod | None:
-    actions = {issue.suggested_action for issue in group.issues}
-    if actions == {"repairable_interpolate"}:
-        return RepairMethod.INTERPOLATE_LINEAR
-    if actions == {"repairable_hold"}:
-        return RepairMethod.FORWARD_FILL
-    return None
 
 
 def _replacement_unit(group: SampleIssueGroup) -> str:
@@ -193,6 +237,16 @@ def _sample_key(sample_ref: SignalSampleRef) -> tuple[str, str, int | float, int
         sample_ref.message_index,
         sample_ref.modality,
     )
+
+
+def _replacement_contract(group: SampleIssueGroup) -> dict[str, object]:
+    if _replacement_unit(group) != "tactile.frame":
+        return {}
+    for issue in group.issues:
+        for evidence in issue.evidence:
+            if "rows" in evidence and "cols" in evidence:
+                return {"rows": int(evidence["rows"]), "cols": int(evidence["cols"])}
+    return {}
 
 
 def _is_clean_neighbor(

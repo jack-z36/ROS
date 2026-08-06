@@ -22,7 +22,7 @@ L1：service_s2
 
 ## 4. 能力角色
 
-本能力是场景二 P0 主数据链路的 validated MCAP 写出层。它位于 [[数据补全器]]、[[位姿滤波器]]、[[触觉滤波器]] 之后，负责把上游已经计算好的主数据序列落成 [[McapA|MCAP_A]]，供 IK 求解、场景三时间轴对齐和后续标注报告消费。
+本能力是场景二 P0 主数据链路的 validated MCAP 统一 Runtime 与写出层。它创建一个运行上下文，一次加载分析样本并在 RAM 内依次调用检测、处置、修复和滤波阶段，最后把结果落成 [[McapA|MCAP_A]]。
 
 已按 `grill-me` 约束完成意图澄清：MCAP_A 保留 cleaned MCAP 原 topic 结构；默认写入 `asset/阶段二：数据清洗/dev/mcap_validated/`；追溯信息写 sidecar JSON；缺少 [[SignalRepairResult]]、[[PoseFilterResult]] 或 [[TactileFilterResult]] 时严格失败，不生成 MCAP_A。
 
@@ -37,7 +37,7 @@ L1：service_s2
 
 ## 6. 下游关系
 
-- IK 求解与 MCAP_B 生成器从 [[McapA|MCAP_A]] 读取 arm-base TCP pose（当前 IK 求解不在主路径，保留以备未来）。
+- 场景三直接读取 MCAP_A 中保持 source-frame 语义的 TCP pose；未来 IK 如需 arm-base 输入，应在其自身边界显式转换。
 - 场景三时间轴对齐消费 [[McapA|MCAP_A]] 作为 validated 主 MCAP。
 - Parquet 标注与验证报告生成器消费 [[McapAWriteSummary]] 和上游审计结果。
 - 开发者入口 `scene2_mcap_a_writer` 展示 MCAP_A 写出结果、topic 对齐统计和运行日志。
@@ -56,11 +56,10 @@ L1：service_s2
 
 本能力负责：
 
-1. 读取 [[CleanedMcap]]、[[SignalRepairResult]]、[[PoseFilterResult]]、[[TactileFilterResult]] 和 [[McapAWriteConfig]]。
-2. 复制 cleaned MCAP 的 topic 名称、消息类型、时间戳排序和未处理 topic。
-3. 将 pose topic 的消息值替换为滤波后 pose 序列。
-4. 将 tactile topic 的消息值替换为滤波后 tactile 序列。
-5. 将 gripper topic 的消息值替换为补全后 gripper 序列。
+1. 在唯一运行上下文中读取一次 [[CleanedMcap]] 分析样本，产生共享的 [[SignalRepairResult]]、[[PoseFilterResult]] 和 [[TactileFilterResult]]。
+2. 按物理顺序流式复制 cleaned MCAP 的 topic、schema、时间与未处理消息。
+3. 以完整 [[SignalSampleRef]] 精确定位 pose/tactile/gripper 消息，每项替换必须恰好命中一次。
+4. 写出后校验 topic、schema、消息数、log/publish time 和 sequence 与源文件一致。
 6. 写出 [[McapA|MCAP_A]] 和 sidecar [[McapAWriteSummary]]。
 
 本能力不负责：
@@ -113,16 +112,16 @@ L1：service_s2
 | [[PoseFilterResult]] 缺失 | 未提供或无法解析 | strict 失败，不生成 MCAP_A | `missing_pose_filter_result` | 是 |
 | [[TactileFilterResult]] 缺失 | 未提供或无法解析 | strict 失败，不生成 MCAP_A | `missing_tactile_filter_result` | 是 |
 | 时间策略不匹配 | 任一上游 `timestamp_policy != preserve_original` | 失败，不写 MCAP_A | `unsupported_timestamp_policy` | 是 |
-| topic / 样本数不匹配 | 上游序列无法映射回 cleaned topic | 失败，不写 MCAP_A | `topic_or_sample_count_mismatch` | 是 |
+| 稳定引用未命中或重复命中 | topic/index/时间/sequence/channel 不一致 | 删除临时文件，整次写出失败 | `replacement_identity_mismatch` | 是 |
 | 输出目标已存在 | 目标文件已存在且未允许覆盖 | 失败，不覆盖旧文件 | `output_exists` | 是 |
 
 ## 14. 整体完成标准
 
-- [ ] [[McapA]]、[[McapAWriteConfig]] 和 [[McapAWriteSummary]] 已形成或更新为原子数据定义。
-- [ ] 本能力明确只负责复制替换写出，不重新计算异常、补全或滤波。
-- [ ] MCAP_A topic 名称、消息类型、时间戳排序和样本数与 cleaned MCAP 对齐。
-- [ ] 缺少任一必需上游结果时严格失败，不生成误导性 MCAP_A。
-- [ ] 开发者入口能通过场景二功能检验项查看 MCAP_A、写出摘要和运行日志。
+- [x] [[McapA]]、[[McapAWriteConfig]] 和 [[McapAWriteSummary]] 已形成或更新为原子数据定义。
+- [x] 主 Runtime 只执行一次分析读取、检测和修复，独立开发者入口复用相同 RAM 阶段函数。
+- [x] MCAP_A topic、schema、时间、sequence 和样本数与 cleaned MCAP 对齐。
+- [x] 缺少必需流、上游结果或稳定引用合同失配时严格失败。
+- [x] 开发者入口能查看 MCAP_A、写出摘要和运行日志。
 
 ## 15. 开发者验收入口设计
 

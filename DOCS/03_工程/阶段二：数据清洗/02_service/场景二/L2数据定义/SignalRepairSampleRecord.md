@@ -16,18 +16,13 @@
 
 | 字段 | 类型 | 现实含义 |
 |---|---|---|
-| `sample_record_id` | string | 样本修复记录 id |
-| `repair_run_id` | string | 所属 run |
 | `sample_ref` | [[SignalSampleRef]] | 样本定位 |
-| `source_issue_ids` | list[string] | 对应样本级异常 id |
+| `sample_issue_ids` | list[string] | 对应样本级异常 id |
 | `status` | [[RepairDecisionStatus]] | 样本处理状态 |
 | `repair_method` | [[RepairMethod]] | 实际修复方法 |
-| `original_value` | object/string/null | 原始值或摘要 |
-| `repaired_value` | object/string/null | 修复后值或摘要 |
-| `value_summary` | object/null | 触觉等大 payload 的统计摘要 |
-| `clamped` | boolean | gripper 修复后是否发生 clamp |
-| `fallback_reason` | string/null | 插值降级 hold 的原因 |
-| `debug_artifact_ref` | string/null | 可选调试 artifact 引用 |
+| `original_value_ref` | string/null | 原始值引用 |
+| `repaired_value_ref` | string/null | 修复后值引用 |
+| `value_summary` | object | 修复值或大 payload 摘要；gripper 的 `clamped` 事实也记录于此 |
 | `reason` | string | 成功、拒绝或跳过原因 |
 
 ## 有效性规则
@@ -37,6 +32,7 @@
 - tactile 完整矩阵 diff 只在开发者调试模式输出，不进入主结构。
 - `repaired` 状态必须包含实际修复方法和修复后值或摘要。
 - `unrepaired` / `skipped` 必须包含 reason。
+- 不存在 fallback 字段；缺少任一合法邻居时状态为 `unrepairable` 并保留原值。
 
 ## 上游来源
 

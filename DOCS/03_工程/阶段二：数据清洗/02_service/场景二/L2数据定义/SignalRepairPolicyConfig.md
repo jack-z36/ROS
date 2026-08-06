@@ -16,25 +16,23 @@
 
 | 配置块 | 字段 | 现实含义 |
 |---|---|---|
-| `pose` | `default_max_interpolate_gap_sec` / `default_max_hold_gap_sec` | pose 默认 gap 上限 |
-| `pose.position` | `max_interpolate_gap_sec` / `max_hold_gap_sec` | position 替换单位 gap 上限 |
-| `pose.orientation` | `max_interpolate_gap_sec` / `max_hold_gap_sec` | orientation 替换单位 gap 上限 |
+| `pose` | `default_max_interpolate_gap_sec` | pose 默认插值 gap 上限 |
+| `pose.position` | `max_interpolate_gap_sec` | position 替换单位 gap 上限 |
+| `pose.orientation` | `max_interpolate_gap_sec` | orientation 替换单位 gap 上限 |
 | `pose.orientation` | `method` | 固定为 `slerp` |
-| `tactile.frame` | `max_interpolate_gap_sec` / `max_hold_gap_sec` | 触觉整帧替换 gap 上限 |
+| `tactile.frame` | `max_interpolate_gap_sec` | 触觉整帧替换 gap 上限 |
 | `tactile.frame` | `allow_full_frame_interpolate` | 是否允许整帧逐元素插值 |
 | `tactile.frame` | `debug_diff_artifact_enabled` | 是否输出完整矩阵 diff artifact |
-| `gripper.value` | `max_interpolate_gap_sec` / `max_hold_gap_sec` | 夹爪替换 gap 上限 |
+| `gripper.value` | `max_interpolate_gap_sec` | 夹爪替换 gap 上限 |
 | `gripper.value` | `clamp_min` / `clamp_max` | 修复后值域，默认 `[0, 1]` |
-| `fallback` | `allow_interpolate_to_hold_fallback` | 是否允许插值失败时降级 hold |
 | `run_grouping` | `max_run_gap_sec_by_modality` | repair run 聚合时允许的最大相邻间隔 |
 
 ## 有效性规则
 
 - 所有启用的 gap 上限必须为有限非负数。
 - 替换单位级配置优先于模态默认配置。
-- `repairable_hold` 不得通过配置升级为插值。
-- 同一 pose run 中 position 或 orientation 任一替换单位不满足策略，整个 pose run 必须拒绝自动修复。
-- 默认建议关闭 `allow_interpolate_to_hold_fallback`，由开发者显式打开。
+- 当前实现不读取 hold gap，也不允许插值失败降级 hold；历史配置字段即使存在也不能改变该行为。
+- position 与 orientation 是独立 replacement unit；任一失败不得覆盖另一个字段的处置或结果。
 
 ## 上游来源
 

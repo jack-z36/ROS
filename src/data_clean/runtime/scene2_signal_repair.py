@@ -9,7 +9,7 @@ from typing import Any
 
 from repo.config.mcap_process_config import load_app_config
 from schemas.reliability import SignalReliabilityDetectionResult, SignalSampleRef
-from schemas.repair import RepairDecisionStatus, SignalRepairResult
+from schemas.repair import RepairDecisionStatus, SignalIssueDisposition, SignalRepairResult
 from service.detectors import (
     GripperSample,
     ReliabilityDetectionConfig,
@@ -19,7 +19,7 @@ from service.detectors import (
     detect_tactile_reliability,
 )
 from service.repair_compute import NeighborSample, run_all_repairs
-from service.repair_run import aggregate_sample_issues, build_repair_runs, find_legal_neighbors
+from service.repair_run import aggregate_sample_issues, build_repair_runs, decide_issue_dispositions, find_legal_neighbors
 
 from .run_directory_creator import create_run_directory
 from .scene2_signal_reliability import SampleLoader, load_scene2_signal_samples, merge_detection_results
@@ -80,29 +80,13 @@ def run_scene2_signal_repair(
         detection_path.write_text(json.dumps(_jsonable(detection_result), ensure_ascii=False, indent=2), encoding="utf-8")
         steps.extend(["detect_pose", "detect_gripper", "detect_tactile", "write_detection_result"])
 
-        issue_groups = aggregate_sample_issues(detection_result.sample_issues)
-        repair_runs = build_repair_runs(issue_groups, detection_result.missing_interval_issues)
-        steps.append("build_repair_runs")
-
-        sample_refs = _sample_refs(samples)
-        sample_values = _sample_value_map(samples)
-        neighbors = {
-            run.repair_run_id: _neighbor_samples(
-                run.replacement_unit,
-                find_legal_neighbors(run.input_window_refs, sample_refs, issue_groups, detection_result.missing_interval_issues),
-                sample_values,
-            )
-            for run in repair_runs
-        }
-        steps.append("find_legal_neighbors")
-
-        partial_results = run_all_repairs(repair_runs, neighbors)
-        repair_result = _merge_repair_results(
+        repair_result = compute_signal_repair(
+            samples=samples,
             detection_result=detection_result,
             config_path=config_path,
-            partial_results=partial_results,
             run_id=run_directory.run_id,
         )
+        steps.extend(["build_repair_runs", "find_legal_neighbors"])
         repair_path.write_text(json.dumps(_jsonable(repair_result), ensure_ascii=False, indent=2), encoding="utf-8")
         steps.append("write_repair_result")
 
@@ -190,38 +174,67 @@ def _sample_refs(samples: Any) -> list[SignalSampleRef]:
 def _sample_value_map(samples: Any) -> dict[tuple[str, str, int | float, int, str], NeighborSample]:
     values: dict[tuple[str, str, int | float, int, str], NeighborSample] = {}
     for sample in samples.pose:
-        position_ref = _sample_ref(sample.topic, sample.timestamp_ns, sample.message_index, "pose", sample.time_domain)
+        position_ref = _sample_ref_from_sample(sample, "pose")
         values[_value_key(position_ref, "pose.position")] = {"sample_ref": position_ref, "value": list(sample.position)}
-        orientation_ref = _sample_ref(sample.topic, sample.timestamp_ns, sample.message_index, "pose", sample.time_domain)
+        orientation_ref = position_ref
         values[_value_key(orientation_ref, "pose.orientation")] = {"sample_ref": orientation_ref, "value": list(sample.orientation_xyzw)}
     for sample in samples.gripper:
-        sample_ref = _sample_ref(sample.topic, sample.timestamp_ns, sample.message_index, "gripper", sample.time_domain)
+        sample_ref = _sample_ref_from_sample(sample, "gripper")
         values[_value_key(sample_ref, "gripper.value")] = {"sample_ref": sample_ref, "value": sample.value}
     for frame in samples.tactile:
-        sample_ref = _sample_ref(frame.topic, frame.timestamp_ns, frame.message_index, "tactile", frame.time_domain)
+        sample_ref = _sample_ref_from_sample(frame, "tactile")
         values[_value_key(sample_ref, "tactile.frame")] = {"sample_ref": sample_ref, "value": _tactile_matrix(frame)}
     return values
 
 
 def _pose_refs(samples: list[Any]) -> list[SignalSampleRef]:
-    return [_sample_ref(sample.topic, sample.timestamp_ns, sample.message_index, "pose", sample.time_domain) for sample in samples]
+    return [_sample_ref_from_sample(sample, "pose") for sample in samples]
 
 
 def _gripper_refs(samples: list[GripperSample]) -> list[SignalSampleRef]:
-    return [_sample_ref(sample.topic, sample.timestamp_ns, sample.message_index, "gripper", sample.time_domain) for sample in samples]
+    return [_sample_ref_from_sample(sample, "gripper") for sample in samples]
 
 
 def _tactile_refs(frames: list[TactilePressureFrame]) -> list[SignalSampleRef]:
-    return [_sample_ref(frame.topic, frame.timestamp_ns, frame.message_index, "tactile", frame.time_domain) for frame in frames]
+    return [_sample_ref_from_sample(frame, "tactile") for frame in frames]
 
 
-def _sample_ref(topic: str, timestamp: int | float, message_index: int, modality: str, time_domain: str) -> SignalSampleRef:
+def _sample_ref(
+    topic: str,
+    timestamp: int | float,
+    message_index: int,
+    modality: str,
+    time_domain: str,
+    *,
+    log_time_ns: int | None = None,
+    publish_time_ns: int | None = None,
+    sequence: int | None = None,
+    source_channel_id: int | None = None,
+) -> SignalSampleRef:
     return SignalSampleRef(
         topic=topic,
         timestamp=timestamp,
         message_index=message_index,
         modality=modality,
         time_domain=time_domain,
+        log_time_ns=log_time_ns,
+        publish_time_ns=publish_time_ns,
+        sequence=sequence,
+        source_channel_id=source_channel_id,
+    )
+
+
+def _sample_ref_from_sample(sample: Any, modality: str) -> SignalSampleRef:
+    return _sample_ref(
+        sample.topic,
+        sample.timestamp_ns,
+        sample.message_index,
+        modality,
+        sample.time_domain,
+        log_time_ns=getattr(sample, "log_time_ns", None),
+        publish_time_ns=getattr(sample, "publish_time_ns", None),
+        sequence=getattr(sample, "sequence", None),
+        source_channel_id=getattr(sample, "source_channel_id", None),
     )
 
 
@@ -252,6 +265,7 @@ def _merge_repair_results(
     config_path: Path,
     partial_results: list[SignalRepairResult],
     run_id: str,
+    dispositions: list[SignalIssueDisposition] | None = None,
 ) -> SignalRepairResult:
     repair_runs = [run for result in partial_results for run in result.repair_runs]
     output_sequence_refs = {topic: ref for result in partial_results for topic, ref in result.output_sequence_refs.items()}
@@ -261,6 +275,7 @@ def _merge_repair_results(
         input_detection_result_ref=detection_result,
         repair_policy_config_ref=str(config_path),
         repair_runs=repair_runs,
+        dispositions=dispositions or [],
         unhandled_missing_interval_records=list(detection_result.missing_interval_issues),
         output_sequence_refs=output_sequence_refs,
         sample_count_before=sample_count_before,
@@ -290,6 +305,45 @@ def _summary_by_modality(repair_runs: Any) -> dict[str, dict[str, int]]:
         else:
             counts["unrepaired"] += 1
     return summary
+
+
+def compute_signal_repair(
+    *,
+    samples: Any,
+    detection_result: SignalReliabilityDetectionResult,
+    config_path: Path,
+    run_id: str,
+) -> SignalRepairResult:
+    issue_groups = aggregate_sample_issues(detection_result.sample_issues)
+    dispositions = decide_issue_dispositions(issue_groups)
+    repair_runs = build_repair_runs(
+        issue_groups,
+        detection_result.missing_interval_issues,
+        dispositions,
+    )
+    sample_refs = _sample_refs(samples)
+    sample_values = _sample_value_map(samples)
+    neighbors = {
+        run.repair_run_id: _neighbor_samples(
+            run.replacement_unit,
+            find_legal_neighbors(
+                run.input_window_refs,
+                sample_refs,
+                issue_groups,
+                detection_result.missing_interval_issues,
+                replacement_unit=run.replacement_unit,
+            ),
+            sample_values,
+        )
+        for run in repair_runs
+    }
+    return _merge_repair_results(
+        detection_result=detection_result,
+        config_path=config_path,
+        partial_results=run_all_repairs(repair_runs, neighbors),
+        run_id=run_id,
+        dispositions=dispositions,
+    )
 
 
 def _run_stats(detection_result: SignalReliabilityDetectionResult, repair_result: SignalRepairResult) -> dict[str, Any]:

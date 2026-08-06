@@ -50,13 +50,13 @@ def validate_source_frame_data(samples: Iterable[Any]) -> bool:
 def filter_pose_segments(
     pose_sequence: Iterable[Any],
     segment_summaries: Iterable[PoseFilterSegmentSummary],
-    config: PoseFilterConfig | None = None,
+    config: PoseFilterConfig,
     *,
     input_repair_result_ref: Any = "in_memory_pose_sequence",
     input_sequence_refs: list[PoseFilterInputSequence | str] | None = None,
     validate_source_frame: bool = False,
 ) -> PoseFilterResult:
-    active_config = config or PoseFilterConfig()
+    active_config = config
 
     if validate_source_frame:
         validate_source_frame_data(pose_sequence)
@@ -113,6 +113,7 @@ def filter_pose_segments(
                 final_value=final_pose,
                 guard_delta=guard_delta,
                 reason=reason,
+                segment_id=segment.segment_id if segment is not None else None,
             )
         )
         final_by_topic[topic].append({"sample_ref": sample_ref, **final_pose})
@@ -177,6 +178,7 @@ def filter_orientation_segment(samples: Iterable[Any], config: PoseFilterConfig)
                 final_value=original_pose,
                 guard_delta={"position_m": 0.0, "orientation_deg": 0.0},
                 reason="orientation_kept_original",
+                segment_id=None,
             )
         )
     return records
@@ -206,6 +208,7 @@ def run_guard_audit(sample_records: Iterable[PoseFilterSampleRecord], config: Po
 def merge_segment_results(
     segment_summaries: Iterable[PoseFilterSegmentSummary],
     sample_records: Iterable[PoseFilterSampleRecord],
+    config: PoseFilterConfig | None = None,
 ) -> PoseFilterResult:
     records = list(sample_records)
     sample_count_by_topic: dict[str, int] = defaultdict(int)
@@ -218,7 +221,7 @@ def merge_segment_results(
         _increment_topic_summary(summary_by_topic[topic], record.status)
     return PoseFilterResult(
         input_repair_result_ref="in_memory_pose_sequence",
-        pose_filter_config_ref=PoseFilterConfig(),
+        pose_filter_config_ref=config or PoseFilterConfig(),
         input_sequence_refs=[],
         output_sequence_refs=dict(output_by_topic),
         sample_records=records,
@@ -240,8 +243,8 @@ def _candidate_positions_by_key(
     for segment in segments:
         if getattr(segment, "status", "filtered") != "filtered" or segment.actual_window_size_samples is None:
             continue
-        segment_keys = [key for key, key_segment in segment_by_key.items() if key_segment is segment]
-        segment_samples = [samples_by_key[key] for key in sorted(segment_keys, key=lambda item: item[1])]
+        segment_keys = [_sample_key(ref) for ref in segment.sample_refs]
+        segment_samples = [samples_by_key[key] for key in segment_keys if key in samples_by_key]
         if len(segment_samples) <= config.polyorder:
             continue
         window = min(segment.actual_window_size_samples, len(segment_samples))
@@ -280,23 +283,18 @@ def _segment_samples_by_key(
     mapping: dict[tuple[str, int], PoseFilterSegmentSummary] = {}
     refs = [_sample_ref(sample) for sample in samples]
     for segment in segments:
-        start_ref = _coerce_ref(segment.segment_start_ref)
-        end_ref = _coerce_ref(segment.segment_end_ref)
-        for sample_ref in refs:
-            if sample_ref.topic == segment.source_topic and start_ref.message_index <= sample_ref.message_index <= end_ref.message_index:
-                mapping[_sample_key(sample_ref)] = segment
+        for sample_ref in segment.sample_refs:
+            mapping[_sample_key(sample_ref)] = segment
     return mapping
 
 
 def _update_segment_counts(segments: list[PoseFilterSegmentSummary], sample_records: list[PoseFilterSampleRecord]) -> None:
     for segment in segments:
-        start_ref = _coerce_ref(segment.segment_start_ref)
-        end_ref = _coerce_ref(segment.segment_end_ref)
+        member_keys = {_sample_key(ref) for ref in segment.sample_refs}
         records = [
             record
             for record in sample_records
-            if record.sample_ref.topic == segment.source_topic
-            and start_ref.message_index <= record.sample_ref.message_index <= end_ref.message_index
+            if _sample_key(record.sample_ref) in member_keys
         ]
         segment.filtered_count = sum(record.status is PoseFilterSampleStatus.FILTERED for record in records)
         segment.kept_count = sum(record.status is PoseFilterSampleStatus.KEPT_ORIGINAL for record in records)
@@ -319,13 +317,9 @@ def _coerce_ref(ref: Any) -> SignalSampleRef:
     if isinstance(ref, SignalSampleRef):
         return ref
     if isinstance(ref, dict):
-        return SignalSampleRef(
-            topic=str(ref["topic"]),
-            timestamp=ref["timestamp"],
-            message_index=int(ref["message_index"]),
-            modality=str(ref.get("modality", "pose")),
-            time_domain=str(ref.get("time_domain", "log_time")),
-        )
+        values = {key: value for key, value in ref.items() if key in SignalSampleRef.__dataclass_fields__}
+        values.setdefault("modality", "pose")
+        return SignalSampleRef(**values)
     raise TypeError("pose sample must expose a SignalSampleRef as sample_ref")
 
 

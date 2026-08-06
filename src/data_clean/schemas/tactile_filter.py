@@ -58,10 +58,13 @@ class TactileFilterSampleRecord:
     filtered_value_summary: dict[str, Any]
     debug_artifact_ref: str | None = None
     reason: str | None = None
+    segment_id: str | None = None
+    filter_state_reset: bool = False
 
 
 @dataclass
 class TactileFilterSegmentSummary:
+    segment_id: str
     source_topic: str
     segment_start_ref: SignalSampleRef | str
     segment_end_ref: SignalSampleRef | str
@@ -73,6 +76,12 @@ class TactileFilterSegmentSummary:
     invalid_shape_count: int
     median_window: int | None = None
     ema_alpha: float | None = None
+    sample_refs: list[SignalSampleRef] = field(default_factory=list)
+    boundary_reasons: list[str] = field(default_factory=list)
+    status: str = "filtered"
+    reason: str | None = None
+    rows: int = 0
+    cols: int = 0
 
 
 @dataclass
@@ -89,6 +98,7 @@ class TactileFilterResult:
     summary_by_topic: dict[str, Any] = field(default_factory=dict)
     created_at: str | None = None
     run_id: str | None = None
+    run_context: Any | None = None
 
     def __post_init__(self) -> None:
         if self.sample_count_before != self.sample_count_after:

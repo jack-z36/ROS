@@ -22,7 +22,7 @@
 | `topic_policy` | enum string | 固定 `preserve_cleaned_topics` |
 | `strict_required_inputs` | bool | 默认 `true`，缺少必需上游结果则失败 |
 | `write_summary_sidecar` | bool | 默认 `true`，写出 [[McapAWriteSummary]] |
-| `pose_topic` | string | 默认 `arm_base_tcp_pose`，MCAP_A 中位姿 topic 名 |
+| `scene2_streams` | list[object] | 生产配置只读白名单；每项包含 `topic`、`modality`、`required`，单任务不可扩张 |
 | `allow_overwrite` | bool | 默认 `false`，避免覆盖已有 validated 产物 |
 | `temp_file_suffix` | string | 写出半成品临时后缀，例如 `.tmp` |
 
@@ -33,6 +33,7 @@
 - 默认输出目录必须位于 `asset/阶段二：数据清洗/dev/mcap_validated/`，开发者功能检验可临时覆盖到独立 run 输出目录。
 - 默认不得覆盖已有 MCAP_A；如实现允许覆盖，必须显式配置并写入运行日志。
 - 配置不得要求写入 processed topic、audit topic 或 MCAP metadata 审计块。
+- 2 路 `/baton_mini_*/tcp_pose` 和 2 路 `/gopro_*/gripper_width` 必需；4 路 `/pressure/...` tactile 默认可选。
 
 ## 上游来源
 

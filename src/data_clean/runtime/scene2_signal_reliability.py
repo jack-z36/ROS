@@ -3,39 +3,24 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, is_dataclass
+from dataclasses import asdict, is_dataclass
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Iterable, Any
 
-from mcap.reader import make_reader
-
 from repo.config.mcap_process_config import AppConfig, load_app_config
-from repo.ros2_codec import (
-    Ros2DynamicCodec,
-    extract_pose_fields,
-    select_alignment_timestamp,
-)
+from repo.scene2_mcap_reader import load_scene2_signal_samples
 from service.detectors import (
-    GripperSample,
-    PoseSample,
     ReliabilityDetectionConfig,
-    TactilePressureFrame,
     detect_gripper_reliability,
     detect_pose_reliability,
     detect_tactile_reliability,
 )
 from schemas.reliability import SignalReliabilityDetectionResult
+from schemas.scene2_samples import Scene2SignalSamples
 
 from .run_directory_creator import create_run_directory
-
-
-@dataclass(frozen=True)
-class Scene2SignalSamples:
-    pose: list[PoseSample]
-    gripper: list[GripperSample]
-    tactile: list[TactilePressureFrame]
 
 
 SampleLoader = Callable[[Path, AppConfig], Scene2SignalSamples]
@@ -145,87 +130,6 @@ def run_scene2_signal_reliability_detection(
     return {**run_log, "run_log_path": str(run_log_path)}
 
 
-def load_scene2_signal_samples(cleaned_mcap_path: str | Path, config: AppConfig) -> Scene2SignalSamples:
-    cleaned_mcap = Path(cleaned_mcap_path)
-    if not cleaned_mcap.is_file():
-        raise FileNotFoundError(f"cleaned MCAP not found: {cleaned_mcap}")
-
-    pose_topics: dict[str, str] = {}
-    for stream in config.pose_streams:
-        pose_topics[stream.input_topic] = stream.msg_type
-        pose_topics[stream.output_topic] = stream.msg_type
-    gripper_topics = {stream.output_topic for stream in config.gripper_streams}
-    pose_samples: list[PoseSample] = []
-    gripper_samples: list[GripperSample] = []
-    tactile_frames: list[TactilePressureFrame] = []
-    message_indexes: dict[str, int] = {}
-    codec = Ros2DynamicCodec()
-
-    with cleaned_mcap.open("rb") as fh:
-        reader = make_reader(fh)
-        for schema, channel, message in reader.iter_messages(log_time_order=True):
-            topic = channel.topic
-            index = message_indexes.get(topic, 0)
-            message_indexes[topic] = index + 1
-            if schema is None:
-                continue
-            if topic in pose_topics:
-                decoded = codec.decode(schema, message)
-                selected_timestamp = select_alignment_timestamp(
-                    schema,
-                    message,
-                    codec=codec,
-                    decoded_message=decoded,
-                )
-                x, y, z, qx, qy, qz, qw = extract_pose_fields(decoded, pose_topics[topic])
-                pose_samples.append(
-                    PoseSample(
-                        topic=topic,
-                        timestamp_ns=selected_timestamp.timestamp_ns,
-                        message_index=index,
-                        position=(x, y, z),
-                        orientation_xyzw=(qx, qy, qz, qw),
-                        time_domain=selected_timestamp.time_domain,
-                    )
-                )
-            elif topic in gripper_topics:
-                decoded = codec.decode(schema, message)
-                selected_timestamp = select_alignment_timestamp(
-                    schema,
-                    message,
-                    codec=codec,
-                    decoded_message=decoded,
-                )
-                gripper_samples.append(
-                    GripperSample(
-                        topic=topic,
-                        timestamp_ns=selected_timestamp.timestamp_ns,
-                        message_index=index,
-                        value=float(decoded.data),
-                        time_domain=selected_timestamp.time_domain,
-                    )
-                )
-            elif _is_tactile_topic(topic):
-                decoded = codec.decode(schema, message)
-                selected_timestamp = select_alignment_timestamp(
-                    schema,
-                    message,
-                    codec=codec,
-                    decoded_message=decoded,
-                )
-                tactile_frames.append(
-                    _tactile_frame_from_message(
-                        topic,
-                        selected_timestamp.timestamp_ns,
-                        index,
-                        decoded,
-                        selected_timestamp.time_domain,
-                    )
-                )
-
-    return Scene2SignalSamples(pose=pose_samples, gripper=gripper_samples, tactile=tactile_frames)
-
-
 def merge_detection_results(
     *,
     input_cleaned_mcap: str,
@@ -248,35 +152,6 @@ def merge_detection_results(
         summary_by_modality=summary_by_modality,
         created_at=datetime.now().isoformat(),
         run_id=run_id,
-    )
-
-
-def _is_tactile_topic(topic: str) -> bool:
-    lowered = topic.lower()
-    return "pressure" in lowered or "tactile" in lowered
-
-
-def _tactile_frame_from_message(
-    topic: str,
-    timestamp_ns: int,
-    index: int,
-    message: Any,
-    time_domain: str = "log_time",
-) -> TactilePressureFrame:
-    rows = int(getattr(message, "rows", getattr(message, "height", 0)))
-    cols = int(getattr(message, "cols", getattr(message, "width", 0)))
-    data = [int(value) for value in list(getattr(message, "data", []))]
-    parts = [part for part in topic.strip("/").split("/") if part]
-    return TactilePressureFrame(
-        topic=topic,
-        timestamp_ns=timestamp_ns,
-        message_index=index,
-        hand=parts[-2] if len(parts) >= 2 else "unknown",
-        gripper=parts[-1] if parts else "unknown",
-        rows=rows,
-        cols=cols,
-        data=data,
-        time_domain=time_domain,
     )
 
 

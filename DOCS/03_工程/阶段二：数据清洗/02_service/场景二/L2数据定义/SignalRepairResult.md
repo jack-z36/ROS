@@ -19,6 +19,7 @@
 | `input_detection_result_ref` | string / [[SignalReliabilityDetectionResult]] | 输入异常检测结果引用 |
 | `repair_policy_config_ref` | string / [[SignalRepairPolicyConfig]] | 本次修复策略配置引用 |
 | `repair_runs` | list[[SignalRepairRun]] | run 级补全决策记录 |
+| `dispositions` | list[object] | 检测 issue 对应的字段级类型化处置，独立于计算状态 |
 | `unhandled_missing_interval_records` | list[object] | v1 未插消息的缺失区间记录 |
 | `output_sequence_refs` | object/list | 修复后序列 artifact 或内存引用 |
 | `timestamp_policy` | enum string | 固定 `preserve_original` |
@@ -27,6 +28,7 @@
 | `summary_by_modality` | object | 按三模态汇总 repaired/unrepaired/skipped |
 | `created_at` | string/null | 结果创建时间 |
 | `run_id` | string/null | 所属 run id |
+| `run_context` | object/null | 统一输入身份、stream inventory 与配置快照 |
 
 ## 有效性规则
 
@@ -35,6 +37,7 @@
 - 不得在本对象中塞入完整三模态序列。
 - `output_sequence_refs` 只能引用修复后序列 artifact 或内存对象。
 - 所有未处理的 [[MissingIntervalIssue]] 必须可追溯记录。
+- 位姿、触觉和夹爪分支必须消费同一个结果对象；下游不得重新检测或重做处置。
 
 ## 上游来源
 

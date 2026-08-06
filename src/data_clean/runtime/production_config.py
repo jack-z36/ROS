@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import math
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,7 @@ from schemas.lerobot_features import (
 )
 from schemas.pose_filter import PoseFilterAlgorithm, PoseFilterConfig
 from schemas.tactile_filter import TactileFilterAlgorithm, TactileFilterConfig
+from schemas.scene2_streams import DEFAULT_SCENE2_STREAMS, Scene2StreamSpec
 
 
 class ProductionConfigError(ValueError):
@@ -186,15 +188,40 @@ def _normalize_web_pipeline_payload(data: Any | None) -> dict[str, Any]:
     scene2 = source.get("scene2", {}) if isinstance(source.get("scene2", {}), dict) else {}
     pose_filter = _normalize_pose_filter(scene2.get("pose_filter"))
     tactile_filter = _normalize_tactile_filter(scene2.get("tactile_filter"))
+    streams = _normalize_scene2_streams(scene2.get("streams"))
     lerobot_features = normalize_lerobot_features_config(source.get("lerobot_features"))
     return {
         "schema_version": 1,
         "scene2": {
+            "streams": streams,
             "pose_filter": pose_filter,
             "tactile_filter": tactile_filter,
         },
         "lerobot_features": lerobot_features,
     }
+
+
+def _normalize_scene2_streams(data: Any | None) -> list[dict[str, Any]]:
+    source = [asdict(stream) for stream in DEFAULT_SCENE2_STREAMS] if data is None else data
+    if not isinstance(source, list) or not all(isinstance(item, dict) for item in source):
+        raise ValueError("scene2.streams 必须是列表")
+    streams = [
+        Scene2StreamSpec(
+            topic=str(item.get("topic", "")),
+            modality=str(item.get("modality", "")),
+            required=bool(item.get("required", False)),
+        )
+        for item in source
+    ]
+    topics = [stream.topic for stream in streams]
+    duplicates = sorted({topic for topic in topics if topics.count(topic) > 1})
+    if duplicates:
+        raise ValueError(f"scene2.streams topic 不得重复: {duplicates}")
+    required = {(stream.topic, stream.modality) for stream in DEFAULT_SCENE2_STREAMS if stream.required}
+    actual = {(stream.topic, stream.modality) for stream in streams if stream.required}
+    if not required.issubset(actual):
+        raise ValueError("scene2.streams 缺少固定 pose/gripper 必需 topic")
+    return [asdict(stream) for stream in streams]
 
 
 def _normalize_pose_filter(data: Any | None) -> dict[str, Any]:

@@ -17,6 +17,8 @@
 | 字段 | 类型 | 现实含义 |
 |---|---|---|
 | `segment_id` | string | 片段 id |
+| `sample_refs` | list[[SignalSampleRef]] | 实际参与该片段计算的完整成员；是滤波成员关系的唯一依据 |
+| `boundary_reasons` | list[string] | stream 起止、缺失、未修复样本或信号时间边界原因 |
 | `source_topic` | string | 来源 pose topic |
 | `start_sample_ref` | [[SignalSampleRef]] | 片段起点样本 |
 | `end_sample_ref` | [[SignalSampleRef]] | 片段终点样本 |
@@ -36,6 +38,8 @@
 - 片段不得包含 pose 相关 `unrepaired` / `skipped` 样本。
 - `actual_window_size_samples` 必须为奇数，且大于 `polyorder`；无法满足时片段原样保留。
 - `sample_count` 必须等于该片段内样本记录数量。
+- window、短段判断、`polyorder`、summary 和最终结果必须引用调用方传入的同一个 [[PoseFilterConfig]]，业务函数不得重建默认配置。
+- 滤波器不得再用首尾 `message_index` 范围推测成员。
 
 ## 上游来源
 

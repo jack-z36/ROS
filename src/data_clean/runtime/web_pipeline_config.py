@@ -21,6 +21,7 @@ from schemas.runtime_config_types import (
     RuntimeConfigSourceKind,
 )
 from schemas.tactile_filter import TactileFilterAlgorithm, TactileFilterConfig
+from schemas.scene2_streams import DEFAULT_SCENE2_STREAMS, Scene2StreamSpec
 from service.detectors import ReliabilityDetectionConfig
 
 
@@ -57,6 +58,9 @@ class WebPipelineEffectiveConfig:
         values = deepcopy(self.effective_summary["scene2"]["tactile_filter"])
         values["algorithm"] = TactileFilterAlgorithm(values["algorithm"])
         return TactileFilterConfig(**values)
+
+    def scene2_streams(self) -> tuple[Scene2StreamSpec, ...]:
+        return tuple(Scene2StreamSpec(**item) for item in self.effective_summary["scene2"]["streams"])
 
     def alignment_config(self, *, output_dir: str) -> Scene3AlignmentConfig:
         values = self.effective_summary["scene3"]
@@ -302,6 +306,7 @@ def _default_summary(path: Path, bridge_mode: str) -> dict[str, Any]:
             },
         },
         "scene2": {
+            "streams": _scene2_streams(production_scene2.get("streams")),
             "detection": {
                 "max_gap_duration_ms": 100,
                 "quaternion_norm_tolerance": 0.05,
@@ -338,6 +343,19 @@ def _production_filter_config(value: Any, defaults: dict[str, Any]) -> dict[str,
     result = deepcopy(defaults)
     if isinstance(value, dict):
         result.update(value)
+    return result
+
+
+def _scene2_streams(value: Any) -> list[dict[str, Any]]:
+    source = value if isinstance(value, list) else [asdict(stream) for stream in DEFAULT_SCENE2_STREAMS]
+    result = [asdict(Scene2StreamSpec(**item)) for item in source]
+    topics = [item["topic"] for item in result]
+    if len(topics) != len(set(topics)):
+        raise WebPipelineConfigError("scene2.streams topic 不得重复")
+    required = {(stream.topic, stream.modality) for stream in DEFAULT_SCENE2_STREAMS if stream.required}
+    actual = {(item["topic"], item["modality"]) for item in result if item["required"]}
+    if not required.issubset(actual):
+        raise WebPipelineConfigError("scene2.streams 缺少固定 pose/gripper 必需 topic")
     return result
 
 
@@ -397,6 +415,7 @@ def _validate_summary(summary: dict[str, Any]) -> None:
     effective = WebPipelineEffectiveConfig(Path(), Path(), summary, [], False)
     effective.pose_filter_config()
     effective.tactile_filter_config()
+    effective.scene2_streams()
     detection = summary["scene2"]["detection"]
     if float(detection["max_gap_duration_ms"]) <= 0:
         raise WebPipelineConfigError("scene2.detection.max_gap_duration_ms 必须大于 0")

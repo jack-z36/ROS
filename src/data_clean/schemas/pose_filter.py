@@ -59,10 +59,12 @@ class PoseFilterSampleRecord:
     final_value: dict[str, Any]
     guard_delta: dict[str, float]
     reason: str | None = None
+    segment_id: str | None = None
 
 
 @dataclass
 class PoseFilterSegmentSummary:
+    segment_id: str
     source_topic: str
     segment_start_ref: SignalSampleRef | str
     segment_end_ref: SignalSampleRef | str
@@ -71,6 +73,13 @@ class PoseFilterSegmentSummary:
     rejected_count: int
     skipped_boundary_count: int = 0
     actual_window_size_samples: int | None = None
+    sample_refs: list[SignalSampleRef] = field(default_factory=list)
+    boundary_reasons: list[str] = field(default_factory=list)
+    status: str = "filtered"
+    reason: str | None = None
+    median_dt_sec: float | None = None
+    polyorder: int | None = None
+    configured_window_duration_ms: int | None = None
 
 
 @dataclass
@@ -87,6 +96,7 @@ class PoseFilterResult:
     summary_by_topic: dict[str, Any] = field(default_factory=dict)
     created_at: str | None = None
     run_id: str | None = None
+    run_context: Any | None = None
 
     def __post_init__(self) -> None:
         if self.sample_count_before != self.sample_count_after:

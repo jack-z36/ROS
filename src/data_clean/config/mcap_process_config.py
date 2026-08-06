@@ -12,6 +12,7 @@ from repo.config.mcap_process_config import (
     QuaternionConfig,
     TransformConfig,
     Vector3Config,
+    Scene2StreamSpec,
     calibration_item_status,
     calibration_missing_items,
     config_is_calibrated,

@@ -29,6 +29,58 @@ def filter_tactile_cell(series: Iterable[float | int], median_window: int, ema_a
     return filtered
 
 
+def filter_tactile_segments(
+    frames: Iterable[Any],
+    segment_summaries: Iterable[TactileFilterSegmentSummary],
+    config: TactileFilterConfig,
+) -> list[TactileFilterSampleRecord]:
+    """Filter each declared segment with fresh median/EMA state."""
+    frame_by_key = {_sample_key(_sample_ref(frame)): frame for frame in frames}
+    records: list[TactileFilterSampleRecord] = []
+    for segment in segment_summaries:
+        member_frames = [frame_by_key[_sample_key(ref)] for ref in segment.sample_refs]
+        if segment.status == "filtered":
+            segment_records = filter_tactile_segment(member_frames, config)
+            for index, record in enumerate(segment_records):
+                record.segment_id = segment.segment_id
+                record.filter_state_reset = index == 0
+                if index == 0:
+                    record.status = TactileFilterSampleStatus.EMA_RESET
+                    record.reason = "segment_filter_state_reset"
+            records.extend(segment_records)
+            continue
+
+        for frame in member_frames:
+            ref = _sample_ref(frame)
+            rows, cols = _shape(frame)
+            original = [float(value) for value in _field(frame, "data", [])]
+            if segment.status == "invalid_shape":
+                status = TactileFilterSampleStatus.INVALID_SHAPE
+                matrix = None
+            elif segment.status == "skipped_boundary":
+                status = TactileFilterSampleStatus.SKIPPED_BOUNDARY
+                matrix = _matrix(original, rows, cols) if _has_valid_shape(frame) else None
+            else:
+                status = TactileFilterSampleStatus.KEPT_ORIGINAL
+                matrix = _matrix(original, rows, cols)
+            record = TactileFilterSampleRecord(
+                sample_ref=ref,
+                status=status,
+                filtered_value_summary={
+                    "shape": {"rows": rows, "cols": cols, "cell_count": rows * cols},
+                    "original_summary": _summary(original),
+                    "filtered_summary": _summary(original) if matrix is not None else None,
+                    "diff_summary": _diff_summary(original, original) if matrix is not None else None,
+                },
+                reason=segment.reason,
+                segment_id=segment.segment_id,
+                filter_state_reset=True,
+            )
+            record.filtered_matrix = matrix
+            records.append(record)
+    return records
+
+
 def filter_tactile_segment(frames: Iterable[Any], config: TactileFilterConfig) -> list[TactileFilterSampleRecord]:
     ordered_frames = sorted(list(frames), key=lambda frame: (_sample_ref(frame).timestamp, _sample_ref(frame).message_index))
     split_tactile_segments(ordered_frames, missing_intervals=[], config=config)
@@ -284,13 +336,9 @@ def _sample_ref(frame: Any) -> SignalSampleRef:
     if isinstance(ref, SignalSampleRef):
         return ref
     if isinstance(ref, dict):
-        return SignalSampleRef(
-            topic=str(ref["topic"]),
-            timestamp=ref["timestamp"],
-            message_index=int(ref["message_index"]),
-            modality=str(ref.get("modality", "tactile")),
-            time_domain=str(ref.get("time_domain", "log_time")),
-        )
+        values = {key: value for key, value in ref.items() if key in SignalSampleRef.__dataclass_fields__}
+        values.setdefault("modality", "tactile")
+        return SignalSampleRef(**values)
     topic = str(_field(frame, "topic"))
     timestamp = _field(frame, "timestamp_ns", _field(frame, "timestamp"))
     return SignalSampleRef(
@@ -299,6 +347,10 @@ def _sample_ref(frame: Any) -> SignalSampleRef:
         message_index=int(_field(frame, "message_index")),
         modality="tactile",
         time_domain=str(_field(frame, "time_domain", "log_time")),
+        log_time_ns=_field(frame, "log_time_ns", None),
+        publish_time_ns=_field(frame, "publish_time_ns", None),
+        sequence=_field(frame, "sequence", None),
+        source_channel_id=_field(frame, "source_channel_id", None),
     )
 
 

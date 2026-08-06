@@ -18,9 +18,6 @@
 |---|---|
 | `linear_interpolate` | 按时间比例线性插值，用于 position、gripper、触觉整帧矩阵逐元素 |
 | `slerp_interpolate` | 四元数 SLERP 插值，用于 pose orientation |
-| `hold_previous` | 使用前一个合法邻居 |
-| `hold_next` | 使用后一个合法邻居 |
-| `copy_nearest` | 使用时间上最近的合法邻居 |
 | `no_op` | 未修改值，仅记录跳过或拒绝 |
 
 ## 有效性规则
@@ -28,8 +25,8 @@
 - `pose.orientation` 插值固定使用 `slerp_interpolate`，不得使用普通四元数分量线性插值。
 - `pose.position` 和 `gripper.value` 插值使用按时间比例的 `linear_interpolate`。
 - `tactile.frame` v1 只支持整帧矩阵逐元素 `linear_interpolate`。
-- `repairable_hold` 不得升级为插值。
-- `repairable_interpolate` 降级为 hold 类方法必须由 [[SignalRepairPolicyConfig]] 显式允许，并记录 fallback reason。
+- 新运行只使用 `linear_interpolate`、`slerp_interpolate` 和 `no_op`；历史 hold/copy 方法不得由当前 dispatcher 调用。
+- 缺少任一合法邻居时保持原值并记录 `unrepairable`，不得降级。
 
 ## 上游来源
 

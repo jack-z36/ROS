@@ -1,54 +1,15 @@
 # SignalSampleRef
 
-## 定义
+> 消费对象：阶段二 Scene2 开发与验收 Agent。权威性：新运行产物的消息身份契约；与旧 run JSON 冲突时以本文和 `schemas/reliability.py` 为准。上游来源：Scene2 边界修复实现与合同测试。不负责：step/episode 身份。读取时机：修改 Scene2 检测、修复、滤波或 MCAP_A 写回前。冲突处理：停止按列表位置写回，优先修复稳定引用链路。
 
-`SignalSampleRef` 是场景二用于稳定定位 cleaned MCAP 中某个已有消息样本的引用对象。
+`SignalSampleRef` 同时表达信号排序时间和源 MCAP 物理消息身份。
 
-## 所属位置
+| 字段 | 语义 |
+|---|---|
+| `topic` | 显式 Scene2 白名单中的来源 topic |
+| `message_index` | 源 MCAP `log_time_order=False` 物理遍历中，该 topic 从 0 开始的序号；任何分析排序都不得重算 |
+| `timestamp` / `time_domain` | 只用于同 stream 信号排序，支持 `log_time` / `publish_time` / `header_stamp` |
+| `log_time_ns` / `publish_time_ns` / `sequence` / `source_channel_id` | 写回时校验源消息身份 |
+| `modality` | `pose` / `gripper` / `tactile` |
 
-阶段二 Service 场景二，来源能力模块：[[异常值检测器]]。
-
-## 现实语义
-
-它回答“哪一个 topic 的哪一条消息有问题”。异常检测器用它定位已有样本异常；数据补全器用它在原始时间戳结构不变的前提下替换样本值。
-
-## 字段或取值
-
-| 字段 | 类型 | 现实含义 |
-|---|---|---|
-| `source_topic` | string | 来源 MCAP topic |
-| `modality` | enum string | `pose` / `tactile` / `gripper` |
-| `time_domain` | enum string | `log_time` / `publish_time` / `header_stamp` |
-| `timestamp` | integer/float | 当前样本在 `time_domain` 下的时间 |
-| `message_index` | integer | 同一 `source_topic` 内从 0 开始的消息序号 |
-| `field_path` | string/null | 异常字段路径，例如 `pose.position`、`pose.orientation`、`tactile.frame`、`gripper.value` |
-
-## 有效性规则
-
-- `source_topic`、`modality`、`time_domain`、`timestamp` 和 `message_index` 必填。
-- `message_index` 必须在同一 topic 内稳定定位，不能跨 topic 复用。
-- `field_path` 只说明异常发生字段，不代表补全器必须按字段级替换。
-- 同一 `source_topic + message_index + modality` 可对应多个不同 `field_path` 的异常。
-
-## 上游来源
-
-- cleaned MCAP 消息序列。
-- [[异常值检测器]] 的逐 topic 遍历逻辑。
-
-## 下游消费者
-
-- [[SampleReliabilityIssue]]
-- [[SignalRepairRun]]
-- [[SignalRepairSampleRecord]]
-
-## 不负责
-
-- 不表达异常类型或严重程度。
-- 不表达缺失区间，因为缺失区间没有样本可引用。
-- 不定义最终 episode 或 step index。
-
-## 相关链接
-
-- [[SampleReliabilityIssue]]
-- [[MissingIntervalIssue]]
-- [[SignalRepairResult]]
+定位先使用 `topic + message_index`，命中后必须校验其余 MCAP 身份字段和信号时间。相同时间戳或 sequence 重复时仍只能命中一个物理消息。`field_path` 属于 issue/disposition，不属于消息引用；同一引用的 `pose.position` 与 `pose.orientation` 可独立处置。

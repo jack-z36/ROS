@@ -15,17 +15,13 @@ from schemas.repair import RepairDecisionStatus, SignalRepairResult
 from service.detectors import PoseSample, ReliabilityDetectionConfig
 from service.pose_filter import filter_pose_segments
 from service.pose_segment import split_reliable_segments
-from service.repair_compute import run_all_repairs
-from service.repair_run import aggregate_sample_issues, build_repair_runs, find_legal_neighbors
 
 from .run_directory_creator import create_run_directory
 from .scene2_signal_reliability import SampleLoader, load_scene2_signal_samples
 from .scene2_signal_repair import (
-    _merge_repair_results,
-    _neighbor_samples,
     _run_detection,
-    _sample_refs,
-    _sample_value_map,
+    _sample_ref_from_sample,
+    compute_signal_repair,
 )
 
 
@@ -96,42 +92,22 @@ def run_scene2_pose_filter(
         detection_path.write_text(json.dumps(_jsonable(detection_result), ensure_ascii=False, indent=2), encoding="utf-8")
         steps.extend(["detect_pose", "detect_gripper", "detect_tactile", "write_detection_result"])
 
-        issue_groups = aggregate_sample_issues(detection_result.sample_issues)
-        repair_runs = build_repair_runs(issue_groups, detection_result.missing_interval_issues)
-        sample_refs = _sample_refs(samples)
-        sample_values = _sample_value_map(samples)
-        neighbors = {
-            run.repair_run_id: _neighbor_samples(
-                run.replacement_unit,
-                find_legal_neighbors(run.input_window_refs, sample_refs, issue_groups, detection_result.missing_interval_issues),
-                sample_values,
-            )
-            for run in repair_runs
-        }
-        partial_results = run_all_repairs(repair_runs, neighbors)
-        repair_result = _merge_repair_results(
+        repair_result = compute_signal_repair(
+            samples=samples,
             detection_result=detection_result,
             config_path=config_path,
-            partial_results=partial_results,
             run_id=run_directory.run_id,
         )
         repair_path.write_text(json.dumps(_jsonable(repair_result), ensure_ascii=False, indent=2), encoding="utf-8")
         steps.extend(["build_repair_runs", "find_legal_neighbors", "run_signal_repair", "write_repair_result"])
 
-        pose_sequence = _repaired_pose_sequence(samples.pose, repair_result)
-        unrepaired_pose_refs = _unrepaired_pose_refs(repair_result)
-        segments = _split_segments_by_topic(
-            pose_sequence,
-            missing_intervals=detection_result.missing_interval_issues,
-            unrepaired_refs=unrepaired_pose_refs,
-        )
-        input_sequence_refs = _input_sequence_refs(pose_sequence, repair_result, repair_path)
-        filter_result = filter_pose_segments(
-            pose_sequence,
-            segments,
-            pose_filter_config,
-            input_repair_result_ref=repair_result,
-            input_sequence_refs=input_sequence_refs,
+        filter_result = compute_pose_filter(
+            samples=samples,
+            detection_result=detection_result,
+            repair_result=repair_result,
+            pose_filter_config=pose_filter_config,
+            repair_result_ref=repair_path,
+            run_id=run_directory.run_id,
         )
         filter_result.run_id = run_directory.run_id
         filter_result.created_at = datetime.now().isoformat()
@@ -193,6 +169,7 @@ def _split_segments_by_topic(
     pose_sequence: list[dict[str, Any]],
     missing_intervals: list[Any],
     unrepaired_refs: list[SignalSampleRef],
+    config: PoseFilterConfig | None = None,
 ) -> list[PoseFilterSegmentSummary]:
     """Group pose samples by topic and create reliable segments per topic."""
     by_topic: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -210,6 +187,7 @@ def _split_segments_by_topic(
             topic_samples,
             missing_intervals=missing_intervals,
             unrepaired_refs=topic_unrepaired,
+            config=config,
         )
         all_segments.extend(topic_segments)
     return all_segments
@@ -219,13 +197,7 @@ def _repaired_pose_sequence(samples: list[PoseSample], repair_result: SignalRepa
     repairs = _pose_repairs_by_key(repair_result)
     sequence = []
     for sample in samples:
-        sample_ref = SignalSampleRef(
-            topic=sample.topic,
-            timestamp=sample.timestamp_ns,
-            message_index=sample.message_index,
-            modality="pose",
-            time_domain=sample.time_domain,
-        )
+        sample_ref = _sample_ref_from_sample(sample, "pose")
         position = {"x": sample.position[0], "y": sample.position[1], "z": sample.position[2]}
         orientation = {
             "x": sample.orientation_xyzw[0],
@@ -288,6 +260,34 @@ def _input_sequence_refs(
         )
         for topic, refs in refs_by_topic.items()
     ]
+
+
+def compute_pose_filter(
+    *,
+    samples: Any,
+    detection_result: SignalReliabilityDetectionResult,
+    repair_result: SignalRepairResult,
+    pose_filter_config: PoseFilterConfig,
+    repair_result_ref: Path | str,
+    run_id: str,
+) -> PoseFilterResult:
+    pose_sequence = _repaired_pose_sequence(samples.pose, repair_result)
+    segments = _split_segments_by_topic(
+        pose_sequence,
+        missing_intervals=detection_result.missing_interval_issues,
+        unrepaired_refs=_unrepaired_pose_refs(repair_result),
+        config=pose_filter_config,
+    )
+    result = filter_pose_segments(
+        pose_sequence,
+        segments,
+        pose_filter_config,
+        input_repair_result_ref=repair_result,
+        input_sequence_refs=_input_sequence_refs(pose_sequence, repair_result, Path(repair_result_ref)),
+    )
+    result.run_id = run_id
+    result.created_at = datetime.now().isoformat()
+    return result
 
 
 def _diff_summary(filter_result: PoseFilterResult) -> dict[str, Any]:

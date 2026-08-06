@@ -3,8 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from .reliability import SignalSampleRef
+
 
 McapAWriterOperationKind = Literal["copy", "replace"]
+
+
+@dataclass(frozen=True)
+class MCAP_A_MessageReplacement:
+    sample_ref: SignalSampleRef
+    replacement_unit: str
+    value: Any
 
 
 @dataclass
@@ -38,6 +47,8 @@ class MCAP_A_WritePlan:
     operations: list[dict[str, Any]]
     timestamp_policy: str = "preserve_original"
     output_sequence_refs: dict[str, str] | list[Any] = field(default_factory=dict)
+    run_id: str | None = None
+    run_context: Any | None = None
 
     def __post_init__(self) -> None:
         if not self.source_mcap:

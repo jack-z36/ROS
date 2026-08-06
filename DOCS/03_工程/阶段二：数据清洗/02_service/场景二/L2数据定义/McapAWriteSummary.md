@@ -22,7 +22,8 @@
 | `signal_repair_result_ref` | string / [[SignalRepairResult]] | 补全结果引用 |
 | `pose_filter_result_ref` | string / [[PoseFilterResult]] | 位姿滤波结果引用 |
 | `tactile_filter_result_ref` | string / [[TactileFilterResult]] | 触觉滤波结果引用 |
-| `replaced_topic_stats` | object | arm-base TCP pose / tactile / gripper 被替换 topic 的样本统计 |
+| `replaced_topic_stats` | object | source-frame TCP pose / tactile / gripper 被替换 topic 的样本统计 |
+| `replaced_modality_stats` | object | pose / tactile / gripper 实际替换消息数 |
 | `copied_topic_stats` | object | 原样复制 topic 的样本统计 |
 | `timestamp_policy` | enum string | 固定 `preserve_original` |
 | `topic_policy` | enum string | 固定 `preserve_cleaned_topics` |
@@ -30,6 +31,8 @@
 | `failure_reason` | string/null | 失败原因，成功时为空 |
 | `created_at` | string/null | 摘要创建时间 |
 | `run_id` | string/null | 所属 run id |
+| `run_context` | object/null | 与检测、处置、修复和滤波结果一致的输入身份、stream inventory 与配置快照 |
+| `config_snapshot` | object/null | 从统一运行上下文直接引用的 Scene2 配置快照 |
 
 ## 有效性规则
 
@@ -39,6 +42,9 @@
 - `replaced_topic_stats` 必须区分 pose、tactile、gripper。
 - `copied_topic_stats` 必须能说明未处理 topic 原样复制数量。
 - 摘要不得嵌入完整 MCAP 消息或完整样本级审计记录。
+- `run_id` 和三个上游结果引用必须指向同一运行目录与统一上下文。
+- `config_snapshot` 必须与三个上游结果的 `run_context.config_snapshot` 一致。
+- 每个替换引用必须恰好命中一次；任一身份校验或写后 topic/schema/count/time/sequence 合同失败时删除临时文件并使整次写出失败。
 
 ## 上游来源
 

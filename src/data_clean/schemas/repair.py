@@ -21,9 +21,30 @@ class RepairMethod(str, Enum):
 
 
 class RepairDecisionStatus(str, Enum):
+    PENDING = "pending"
     REPAIRED = "repaired"
     UNREPAIRABLE = "unrepairable"
     SKIPPED = "skipped"
+
+
+class RepairDisposition(str, Enum):
+    """Upstream decision about whether a detected field may be modified."""
+
+    AUTO_REPAIR = "auto_repair"
+    MASK_ONLY = "mask_only"
+    MANUAL_REVIEW = "manual_review"
+    UNRECOVERABLE = "unrecoverable"
+    NO_ACTION = "no_action"
+
+
+@dataclass(frozen=True)
+class SignalIssueDisposition:
+    issue_id: str
+    action: RepairDisposition
+    field_path: str
+    reason: str
+    sample_ref: SignalSampleRef | None = None
+    planned_method: RepairMethod | None = None
 
 
 @dataclass
@@ -57,6 +78,9 @@ class SignalRepairRun:
     status: RepairDecisionStatus
     applied_method: RepairMethod | None
     reason: str
+    disposition: RepairDisposition = RepairDisposition.NO_ACTION
+    planned_method: RepairMethod | None = None
+    replacement_contract: dict[str, Any] = field(default_factory=dict)
     sample_records: list[SignalRepairSampleRecord] = field(default_factory=list)
     previous_neighbor_ref: SignalSampleRef | None = None
     next_neighbor_ref: SignalSampleRef | None = None
@@ -67,6 +91,7 @@ class SignalRepairResult:
     input_detection_result_ref: SignalReliabilityDetectionResult | str
     repair_policy_config_ref: SignalRepairPolicyConfig | str
     repair_runs: list[SignalRepairRun] = field(default_factory=list)
+    dispositions: list[SignalIssueDisposition] = field(default_factory=list)
     unhandled_missing_interval_records: list[MissingIntervalIssue | dict[str, Any]] = field(default_factory=list)
     output_sequence_refs: dict[str, str] = field(default_factory=dict)
     timestamp_policy: str = "preserve_original"
@@ -75,3 +100,4 @@ class SignalRepairResult:
     summary_by_modality: dict[str, Any] = field(default_factory=dict)
     created_at: str | None = None
     run_id: str | None = None
+    run_context: Any | None = None

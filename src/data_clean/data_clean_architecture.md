@@ -152,19 +152,35 @@ asset/阶段二：数据清洗/dev/mcap_cleaned/*.mcap
 
 场景二目标是把 cleaned MCAP 中的主信号整理成更可靠的 MCAP_A，供场景三对齐使用。
 
-已实现的 dev check 链路：
+当前 Scene2 固定数据流：
+
+```text
+cleaned MCAP
+  -> 显式 stream 白名单与稳定消息引用
+  -> topic/time_domain 内独立检测
+  -> 字段级处置与严格双邻居修复
+  -> 精确 segment 内独立滤波
+  -> 稳定消息引用写回 MCAP_A
+```
+
+一次 MCAP_A 任务只创建一个运行上下文并读取一次分析样本。pose、gripper、tactile 共用同一份检测与修复结果；最终写文件时再对 cleaned MCAP 做一次物理顺序流式复制。
+
+已实现链路：
 
 | 模块                                                      | 职责                                                           |
 | --------------------------------------------------------- | -------------------------------------------------------------- |
-| `runtime/scene2_signal_reliability.py`                  | 加载样本并检测位姿、夹爪、触觉的缺失、非法值、跳变和异常变化。 |
-| `runtime/scene2_signal_repair.py`                       | 构建 repair run，对可修复异常做插值、copy/hold 等补全。        |
-| `runtime/scene2_pose_filter.py`                         | 对 pose 序列做平滑和 guard 审计。                              |
-| `runtime/scene2_tactile_filter.py`                      | 对 tactile 序列做滤波和差异审计。                              |
-| `runtime/scene2_mcap_a_writer.py`                       | 串联场景二检验链路并写出 MCAP_A。                              |
-| `service/detectors.py`                                  | 位姿/夹爪/触觉样本级异常检测。                                 |
-| `service/repair_run.py`、`service/repair_compute.py`  | repair run 构建与修复值计算。                                  |
-| `service/pose_filter.py`、`service/tactile_filter.py` | 可靠片段滤波与审计。                                           |
-| `repo/mcap_a_writer.py`                                 | MCAP_A 写出。                                                  |
+| `repo/scene2_mcap_reader.py`                            | 按固定白名单、MCAP 物理顺序加载样本并建立稳定消息引用与 stream inventory。 |
+| `runtime/scene2_signal_reliability.py`                  | 复用 Repo 内部对象，编排三模态检测。                            |
+| `runtime/scene2_signal_repair.py`                       | 复用字段级处置与严格双邻居插值阶段。                            |
+| `runtime/scene2_pose_filter.py`                         | 按精确 segment 对 pose 做平滑和 guard 审计。                    |
+| `runtime/scene2_tactile_filter.py`                      | 按 topic/segment 重置 Median/EMA 状态并滤波。                   |
+| `runtime/scene2_mcap_a_writer.py`                       | 建立唯一运行上下文，一次执行检测、修复、两类滤波和写出。       |
+| `service/detectors.py`                                  | 在 `topic + time_domain` 边界内检测异常。                       |
+| `service/repair_run.py`、`service/repair_compute.py`    | 分离检测事实、类型化处置和修复计算；只执行 `AUTO_REPAIR`。     |
+| `service/pose_segment.py`、`service/tactile_segment.py` | 按缺失、未修复异常、时间域、shape/contact 等边界建立精确成员段。 |
+| `repo/mcap_a_writer.py`                                 | 按稳定引用精确替换 pose/tactile/gripper，并验证源文件合同。     |
+
+Scene2 输入不再从 Scene1 `input_topic`/`output_topic` 或 topic 名称猜测。生产配置中的 `web_pipeline.scene2.streams` 固定声明 2 路 source-frame TCP pose、2 路 gripper 和 4 路可选 pressure tactile；必需流缺失、重复声明或 schema 不受支持时 fail-closed，未声明 topic 原样复制。自动修复只修改已有异常样本，不新增消息；position、gripper、tactile 使用双邻居线性插值，orientation 使用 SLERP，失败时保留原值并成为 segment 边界，不启用单邻居 hold。
 
 尚未完成：
 
