@@ -78,6 +78,22 @@ class TestValidConfig:
         assert cfg.raw["bundle"]["bundle_dir"] == "/tmp/test_bundle"
         assert cfg.raw["runtime"]["state_dim"] == 16
 
+    def test_native_checkpoint_source(self) -> None:
+        raw = _valid_raw()
+        raw.pop("bundle")
+        raw["model"] = {"checkpoint_dir": "weights/checkpoints/100000"}
+        cfg = DeployConfig.from_mapping(raw, base_dir=Path("/tmp"))
+        assert cfg.model.resolved_checkpoint_dir == Path(
+            "/tmp/weights/checkpoints/100000"
+        )
+        assert cfg.bundle.bundle_dir is None
+
+    def test_model_and_legacy_bundle_sources_cannot_both_be_set(self) -> None:
+        raw = _valid_raw()
+        raw["model"] = {"checkpoint_dir": "/tmp/checkpoint"}
+        with pytest.raises(DeployConfigError, match="either model.checkpoint_dir"):
+            DeployConfig.from_mapping(raw, base_dir=Path("/tmp"))
+
     def test_frozen(self) -> None:
         cfg = DeployConfig.from_mapping(_valid_raw(), base_dir=Path("/tmp"))
         with pytest.raises(FrozenInstanceError):

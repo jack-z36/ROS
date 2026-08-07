@@ -18,6 +18,7 @@ from model_deploy.act.service.lerobot_policy import (
     QUATERNION_NORM_EPS,
     TRAIN_TO_DEPLOY_ACTION_INDEX,
     LerobotActPolicyWrapper,
+    _load_act_config_compat,
     expand_state_to_model_dim,
     make_lerobot_policy_loader,
     normalize_deploy_action_quaternions,
@@ -302,3 +303,49 @@ def test_make_loader_is_side_effect_free():
         raw, base_dir="/tmp", command_output_enabled=False)
     loader = make_lerobot_policy_loader(config)
     assert callable(loader)
+
+
+def test_act_config_compat_uses_cpu_staging_for_indexed_cuda(tmp_path, monkeypatch):
+    """LeRobot config decoding must not reject the deployment ``cuda:0`` form."""
+    import json
+    import sys
+    from pathlib import Path
+
+    lerobot_src = (
+        Path(__file__).resolve().parents[3]
+        / "third_party"
+        / "lerobot"
+        / "src"
+    )
+    if str(lerobot_src) not in sys.path:
+        monkeypatch.syspath_prepend(str(lerobot_src))
+    pytest.importorskip("lerobot.policies.act.configuration_act")
+
+    (tmp_path / "config.json").write_text(
+        json.dumps(
+            {
+                "type": "act",
+                "input_features": {
+                    "observation.state": {"type": "STATE", "shape": [16]},
+                    "observation.images.left": {
+                        "type": "VISUAL",
+                        "shape": [3, 480, 640],
+                    },
+                    "observation.images.right": {
+                        "type": "VISUAL",
+                        "shape": [3, 480, 640],
+                    },
+                },
+                "output_features": {
+                    "action": {"type": "ACTION", "shape": [16]},
+                },
+                "use_amp": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    config = _load_act_config_compat(tmp_path, runtime_device="cuda:0")
+
+    assert config.device == "cpu"
+    assert config.use_amp is True

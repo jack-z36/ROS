@@ -107,12 +107,16 @@ class RuntimeBridge:
             return getattr(self._permit_provider, "state", "UNKNOWN")
         return "DISABLED"
 
-    def get_bundle_dir(self) -> str:
-        """当前 bundle_dir 路径字符串。
-
-        返回 bundle_dir 的字符串表示；若为 None 则返回空字符串。
-        """
-        bundle_dir = self._config.bundle.bundle_dir
-        if bundle_dir is None:
+    def get_checkpoint_dir(self) -> str:
+        """当前 checkpoint/model source 路径字符串。"""
+        checkpoint_dir = (
+            self._config.model.checkpoint_dir
+            or self._config.bundle.bundle_dir
+        )
+        if checkpoint_dir is None:
             return ""
-        return str(bundle_dir)
+        return str(checkpoint_dir)
+
+    def get_bundle_dir(self) -> str:
+        """Legacy alias for :meth:`get_checkpoint_dir`."""
+        return self.get_checkpoint_dir()

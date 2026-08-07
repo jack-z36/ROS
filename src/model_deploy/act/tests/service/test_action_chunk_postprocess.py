@@ -20,7 +20,7 @@ from model_deploy.act.service.action_chunk_postprocess import (
     to_cpu_float32_array,
     unnormalize_actions,
 )
-from model_deploy.act.types.action_chunk import ActionChunk
+from model_deploy.act.types.relative_action_chunk import RelativeActionChunk
 from model_deploy.act.types.action_spec import ACTION_DIM
 
 # ---------------------------------------------------------------------------
@@ -290,7 +290,7 @@ class TestPostprocessActionChunk:
         norm = _make_normalizer(shift=0.0, scale=1.0)
         raw = torch.full((1, CHUNK_SIZE, ACTION_DIM), 0.25, dtype=torch.float32)
         chunk = postprocess_action_chunk(raw, norm, CHUNK_SIZE)
-        assert isinstance(chunk, ActionChunk)
+        assert isinstance(chunk, RelativeActionChunk)
         assert chunk.actions.shape == (CHUNK_SIZE, ACTION_DIM)
         assert chunk.actions.dtype == np.float32
         np.testing.assert_array_almost_equal(
@@ -348,7 +348,7 @@ class TestPostprocessActionChunk:
         norm = _make_normalizer()
         raw = torch.zeros(1, CHUNK_SIZE, ACTION_DIM)
         chunk = postprocess_action_chunk(raw, norm, CHUNK_SIZE)
-        # ActionChunk must only have `actions` -- no runtime metadata fields
+        # RelativeActionChunk must only have `actions` -- no runtime metadata
         assert not hasattr(chunk, "obs_time")
         assert not hasattr(chunk, "infer_start_time")
         assert not hasattr(chunk, "ready_time")

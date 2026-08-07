@@ -140,6 +140,20 @@ def test_parser_enable_flag_can_be_set():
     assert args.enable_command_output is True
 
 
+def test_parser_accepts_checkpoint_override_and_legacy_bundle_alias():
+    parser = build_arg_parser()
+    args = parser.parse_args(
+        ["--config", "dummy.yaml", "--checkpoint-dir", "/tmp/checkpoint"]
+    )
+    assert args.checkpoint_dir == "/tmp/checkpoint"
+    assert args.bundle_dir is None
+
+    legacy = parser.parse_args(
+        ["--config", "dummy.yaml", "--bundle-dir", "/tmp/bundle"]
+    )
+    assert legacy.bundle_dir == "/tmp/bundle"
+
+
 # ---------------------------------------------------------------------------
 # B11 — main entry / exit codes
 # ---------------------------------------------------------------------------

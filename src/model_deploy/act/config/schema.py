@@ -32,6 +32,7 @@ from model_deploy.act.types.contract_result import (
     BundleContractResult,
     NormalizerContractResult,
 )
+from model_deploy.act.types.action_representation import ActionRepresentationSpec
 
 
 # ---------------------------------------------------------------------------
@@ -65,6 +66,47 @@ class BundleConfig:
         if self.bundle_dir is None:
             return None
         return self.bundle_dir.expanduser().resolve()
+
+
+@dataclass(frozen=True)
+class ModelConfig:
+    """Canonical ACT model source.
+
+    ``checkpoint_dir`` points to a LeRobot checkpoint root containing
+    ``pretrained_model/`` or directly to that directory.  The legacy bundle
+    source remains supported through :class:`BundleConfig`.
+    """
+
+    checkpoint_dir: Path | None = None
+
+    @property
+    def resolved_checkpoint_dir(self) -> Path | None:
+        if self.checkpoint_dir is None:
+            return None
+        return self.checkpoint_dir.expanduser().resolve()
+
+
+@dataclass(frozen=True)
+class ActionRepresentationConfig:
+    """Expected action semantics for the selected deployment bundle."""
+
+    arm_action_type: str = "relative_tcp_pose"
+    chunk_reference: str = "inference_observation"
+    translation_frame: str = "tcp_local"
+    rotation_representation: str = "quaternion_xyzw"
+    gripper_action_type: str = "absolute"
+
+    def to_spec(self) -> ActionRepresentationSpec:
+        try:
+            return ActionRepresentationSpec(
+                arm_action_type=self.arm_action_type,
+                chunk_reference=self.chunk_reference,
+                translation_frame=self.translation_frame,
+                rotation_representation=self.rotation_representation,
+                gripper_action_type=self.gripper_action_type,
+            )
+        except ValueError as exc:
+            raise DeployConfigError(str(exc)) from exc
 
 
 @dataclass(frozen=True)
@@ -400,7 +442,9 @@ class DeployConfig:
     Bridge and mux sections are intentionally absent — ACT does not use them.
     """
 
+    model: ModelConfig
     bundle: BundleConfig
+    action_representation: ActionRepresentationConfig
     runtime: RuntimeConfig
     image: ImageConfig
     topics: TopicsConfig
@@ -409,6 +453,15 @@ class DeployConfig:
     raw: Mapping[str, Any] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
+        if (
+            self.model.resolved_checkpoint_dir is not None
+            and self.bundle.resolved_bundle_dir is not None
+        ):
+            raise DeployConfigError(
+                "Configure either model.checkpoint_dir or legacy "
+                "bundle.bundle_dir, not both."
+            )
+        self.action_representation.to_spec()
         enabled = self.command_output.command_output_enabled
         if self.runtime.mode == "real-run" and not enabled:
             raise DeployConfigError(
@@ -467,15 +520,23 @@ def _deploy_from_mapping(
 ) -> DeployConfig:
     """Assemble a DeployConfig from a raw mapping.
 
-    Assembly order is fixed: bundle → runtime → image → topics → safety →
-    command_output → raw. The command-output master switch is taken only from
+    Assembly order is fixed: model → bundle → action_representation → runtime → image
+    → topics → safety → command_output → raw. The command-output master switch is taken only from
     the explicit *command_output_enabled* argument (default ``False``); it is
     never read from YAML.
     """
     root = _mapping(raw, "<root>")
+    if "model" not in root and "bundle" not in root:
+        raise DeployConfigError(
+            "Missing required model or bundle configuration section"
+        )
     namespace = _str(_mapping(root.get("topics", {}), "topics"), "namespace", default="/act")
 
-    bundle_raw = _required_mapping(root, "bundle")
+    model_raw = _mapping(root.get("model", {}), "model")
+    bundle_raw = _mapping(root.get("bundle", {}), "bundle")
+    representation_raw = _mapping(
+        root.get("action_representation", {}), "action_representation"
+    )
     runtime_raw = _mapping(root.get("runtime", {}), "runtime")
     image_raw = _mapping(root.get("image", {}), "image")
     topics_raw = _mapping(root.get("topics", {}), "topics")
@@ -488,8 +549,34 @@ def _deploy_from_mapping(
     obs_images, obs_left, obs_right = _observation_images_from_raw(obs_raw)
 
     return DeployConfig(
+        model=ModelConfig(
+            checkpoint_dir=_path_or_none(
+                model_raw, "checkpoint_dir", base_dir=base_dir
+            ),
+        ),
         bundle=BundleConfig(
             bundle_dir=_path_or_none(bundle_raw, "bundle_dir", base_dir=base_dir),
+        ),
+        action_representation=ActionRepresentationConfig(
+            arm_action_type=_str(
+                representation_raw, "arm_action_type", default="relative_tcp_pose"
+            ),
+            chunk_reference=_str(
+                representation_raw,
+                "chunk_reference",
+                default="inference_observation",
+            ),
+            translation_frame=_str(
+                representation_raw, "translation_frame", default="tcp_local"
+            ),
+            rotation_representation=_str(
+                representation_raw,
+                "rotation_representation",
+                default="quaternion_xyzw",
+            ),
+            gripper_action_type=_str(
+                representation_raw, "gripper_action_type", default="absolute"
+            ),
         ),
         runtime=RuntimeConfig(
             mode=_choice(runtime_raw, "mode", {"dry-run", "real-run"}, default="dry-run"),

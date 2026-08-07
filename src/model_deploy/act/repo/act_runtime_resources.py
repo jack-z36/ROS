@@ -17,7 +17,7 @@ Design rules (deploy_056, P0-01..04 / P0-06-config / P0-09-config):
 - The ``PolicyInputSpec`` is derived ONCE from the production policy RAM
   metadata (bundle manifest + experiment_config).  Missing or conflicting
   metadata is a startup FAIL; config defaults never plug the hole.
-- An empty / null ``bundle_dir`` fails fast — the loader never guesses a path.
+- An empty / null model source fails fast — the loader never guesses a path.
 - Policy weights are NOT loaded here (that belongs to L2-03).  Production passes
   a ``load_policy`` callback; tests inject a fake / double.  A module-level
   registered loader (``register_policy_loader``) supports the fake-policy-test
@@ -29,18 +29,28 @@ NOTE: ``config.schema`` is imported lazily inside the functions that raise
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Tuple
 
-from model_deploy.act.repo.bundle_reader import check_bundle_files, resolve_checkpoint_path
+from model_deploy.act.repo.bundle_reader import (
+    ModelSourceError,
+    check_bundle_files,
+    resolve_checkpoint_path,
+    resolve_model_source,
+)
+from model_deploy.act.repo.checkpoint_reader import load_checkpoint_metadata
 from model_deploy.act.repo.experiment_config_loader import (
     ExperimentConfigLoadError,
     load_experiment_config,
 )
 from model_deploy.act.repo.manifest_parser import load_bundle_manifest
-from model_deploy.act.repo.normalization import ActionStateNormalizer
+from model_deploy.act.repo.normalization import (
+    ActionStateNormalizer,
+    make_identity_normalizer,
+)
 from model_deploy.act.repo.normalizer_loader import load_bundle_normalizers
+from model_deploy.act.types.action_representation import ActionRepresentationSpec
 
 if TYPE_CHECKING:  # pragma: no cover - typing only, avoids import cycle
     from model_deploy.act.config.schema import DeployConfig
@@ -56,7 +66,7 @@ CANONICAL_CAMERA_KEYS: Tuple[str, ...] = ("left", "right")
 STATE_DIM: int = 16
 ACTION_DIM: int = 16
 
-#: Production policy loader: given a bundle dir, return the loaded policy object.
+#: Production policy loader: given a model source dir, return the loaded policy.
 #: L2-03 owns the real weight-loading implementation; this module only aggregates
 #: the already-loaded policy.  Tests inject a fake / double.
 PolicyLoader = Callable[[Path], Any]
@@ -179,6 +189,16 @@ class ActRuntimeResources:
     policy_input_spec: PolicyInputSpec
     bundle_dir: Path
     cross_check: RuntimeResourceCrossCheck
+    action_representation_spec: ActionRepresentationSpec = field(
+        default_factory=ActionRepresentationSpec.relative_tcp_v1
+    )
+    model_source_dir: Path | None = None
+    model_source_kind: str = "bundle"
+
+    @property
+    def checkpoint_dir(self) -> Path:
+        """Canonical source path, retained as a stable read-only seam."""
+        return self.model_source_dir or self.bundle_dir
 
 
 # ---------------------------------------------------------------------------
@@ -212,10 +232,12 @@ def load_act_runtime_resources(
     """Aggregate the frozen startup resources for L2-02 / L2-03 / L2-06.
 
     Steps:
-    1. Resolve the bundle dir; empty / null -> stable FAIL (never guess a path).
-    2. Verify the bundle structure and resolvable checkpoint.
-    3. Read bundle metadata (manifest + experiment_config) and derive the
-       ``PolicyInputSpec`` dimensions; missing / conflicting metadata -> FAIL.
+    1. Resolve ``model.checkpoint_dir`` or legacy ``bundle.bundle_dir``;
+       empty / null -> stable FAIL (never guess a path).
+    2. Verify either native LeRobot checkpoint metadata or legacy bundle
+       structure and its resolvable checkpoint.
+    3. Derive the ``PolicyInputSpec`` from the selected source metadata;
+       missing / conflicting metadata -> FAIL.
     4. Cross-validate the spec against the config (state/action dim, chunk size).
     5. Load normalizers; verify 16D and match the spec.
     6. Load the policy via the injected / registered ``load_policy`` callback and
@@ -223,37 +245,66 @@ def load_act_runtime_resources(
 
     Args:
         config: A validated ``DeployConfig`` from ``load_deploy_config``.
-        load_policy: Callback ``(bundle_dir) -> policy``.  Required to aggregate
+        load_policy: Callback ``(model_source_dir) -> policy``.  Required to aggregate
             the loaded policy.  If ``None``, the module-level registered loader
             (``register_policy_loader``) is used; if still unavailable, a clear
             ``DeployConfigError`` is raised.
     """
-    if config.bundle.resolved_bundle_dir is None:
+    configured_source = (
+        config.model.resolved_checkpoint_dir
+        or config.bundle.resolved_bundle_dir
+    )
+    if configured_source is None:
         raise _cfg_error(
-            "ActRuntimeResources requires a concrete bundle_dir; the configured "
-            "bundle_dir is empty. Set bundle.bundle_dir before loading runtime "
-            "resources (the loader never guesses a path)."
-        )
-    bundle_dir = config.bundle.resolved_bundle_dir.resolve()
-
-    # 1. bundle structure + checkpoint
-    missing = check_bundle_files(bundle_dir)
-    if missing:
-        raise _cfg_error(
-            f"Bundle incomplete for runtime resources; missing: {', '.join(missing)}"
+            "ActRuntimeResources requires a concrete model.checkpoint_dir or "
+            "legacy bundle.bundle_dir; the configured model source is empty "
+            "(bundle_dir is empty)."
         )
     try:
-        resolve_checkpoint_path(bundle_dir)
-    except Exception as exc:  # noqa: BLE001 - surface any read/resolve failure
-        raise _cfg_error(f"Bundle checkpoint unresolvable: {exc}") from exc
+        source = resolve_model_source(configured_source)
+    except ModelSourceError as exc:
+        raise _cfg_error(str(exc)) from exc
 
-    # 2. metadata -> spec dimensions (config must match; never default-plug)
-    manifest = load_bundle_manifest(bundle_dir)
-    exp = _load_experiment_config_mapping(bundle_dir)
+    bundle_dir = source.requested_path
 
-    state_dim = _metadata_int(manifest, exp, "state_dim")
-    action_dim = _metadata_int(manifest, exp, "action_dim")
-    chunk_size = _metadata_int(manifest, exp, "chunk_size")
+    if source.is_bundle:
+        # 1. Legacy bundle structure + checkpoint.
+        missing = check_bundle_files(bundle_dir)
+        if missing:
+            raise _cfg_error(
+                "Bundle incomplete for runtime resources; missing: "
+                + ", ".join(missing)
+            )
+        try:
+            resolve_checkpoint_path(bundle_dir)
+        except Exception as exc:  # noqa: BLE001 - surface read/resolve failures
+            raise _cfg_error(f"Bundle checkpoint unresolvable: {exc}") from exc
+
+        # Bundle metadata must explicitly declare the action representation.
+        manifest = load_bundle_manifest(bundle_dir)
+        exp = _load_experiment_config_mapping(bundle_dir)
+        representation = _parse_action_representation(manifest)
+        state_dim = _metadata_int(manifest, exp, "state_dim")
+        action_dim = _metadata_int(manifest, exp, "action_dim")
+        chunk_size = _metadata_int(manifest, exp, "chunk_size")
+        metadata_camera_keys = tuple(sorted(config.topics.observation.image_topics))
+        metadata_image_shapes = tuple(
+            (3, *config.image.resolved_image_hw) for _ in metadata_camera_keys
+        )
+    else:
+        # Native checkpoint metadata is self-describing; no bundle manifest is
+        # required.  The deployment config remains authoritative for action
+        # representation because LeRobot config.json does not encode it.
+        try:
+            checkpoint_metadata = load_checkpoint_metadata(source)
+        except ModelSourceError as exc:
+            raise _cfg_error(str(exc)) from exc
+        representation = config.action_representation.to_spec()
+        state_dim = checkpoint_metadata.state_dim
+        action_dim = checkpoint_metadata.action_dim
+        chunk_size = checkpoint_metadata.chunk_size
+        metadata_camera_keys = checkpoint_metadata.camera_keys
+        metadata_image_shapes = checkpoint_metadata.image_shapes
 
     conflict: list[str] = []
     if state_dim != config.runtime.state_dim:
@@ -271,30 +322,40 @@ def load_act_runtime_resources(
             f"metadata chunk_size {chunk_size} != config runtime.chunk_size "
             f"{config.runtime.chunk_size}"
         )
-    # Cross-validate image dimensions against bundle metadata (if available)
-    model_image_hw = exp.get("model_image_hw")
-    if model_image_hw is not None:
-        bundle_h, bundle_w = int(model_image_hw[0]), int(model_image_hw[1])
-        cfg_h, cfg_w = config.image.resolved_image_hw
-        if bundle_h != cfg_h or bundle_w != cfg_w:
-            conflict.append(
-                f"metadata model_image_hw [{bundle_h}, {bundle_w}] != "
-                f"config image.resolved_image_hw ({cfg_h}, {cfg_w})"
-            )
+    expected_camera_keys = tuple(sorted(config.topics.observation.image_topics))
+    if metadata_camera_keys != expected_camera_keys:
+        conflict.append(
+            f"metadata camera_keys {metadata_camera_keys} != config camera_keys "
+            f"{expected_camera_keys}"
+        )
+    expected_image_shapes = tuple(
+        (3, *config.image.resolved_image_hw) for _ in expected_camera_keys
+    )
+    if metadata_image_shapes != expected_image_shapes:
+        conflict.append(
+            f"metadata image_shapes {metadata_image_shapes} != config image_shapes "
+            f"{expected_image_shapes}"
+        )
+    if source.is_bundle:
+        model_image_hw = exp.get("model_image_hw")
+        if model_image_hw is not None:
+            bundle_h, bundle_w = int(model_image_hw[0]), int(model_image_hw[1])
+            cfg_h, cfg_w = config.image.resolved_image_hw
+            if bundle_h != cfg_h or bundle_w != cfg_w:
+                conflict.append(
+                    f"metadata model_image_hw [{bundle_h}, {bundle_w}] != "
+                    f"config image.resolved_image_hw ({cfg_h}, {cfg_w})"
+                )
     if conflict:
         raise _cfg_error("PolicyInputSpec/Config dimension conflict: " + "; ".join(conflict))
 
-    # 3. derive spec (camera / image info from config topics + image size)
-    images = config.topics.observation.image_topics
-    camera_keys = tuple(sorted(images.keys()))
-    img_h, img_w = config.image.resolved_image_hw
-    image_shapes = tuple((3, img_h, img_w) for _ in camera_keys)
+    # 3. derive the canonical spec from the validated metadata/config match.
     spec = PolicyInputSpec(
         state_key=config.topics.observation.arm_state,
         state_dim=state_dim,
         image_prefix=f"{config.topics.namespace}/observation/image/",
-        camera_keys=camera_keys,
-        image_shapes=image_shapes,
+        camera_keys=expected_camera_keys,
+        image_shapes=expected_image_shapes,
         image_layout=IMAGE_LAYOUT,
         image_dtype=IMAGE_DTYPE,
         image_value_range=IMAGE_VALUE_RANGE,
@@ -303,7 +364,11 @@ def load_act_runtime_resources(
     )
 
     # 4. normalizers
-    state_norm, action_norm = load_bundle_normalizers(bundle_dir)
+    if source.is_bundle:
+        state_norm, action_norm = load_bundle_normalizers(bundle_dir)
+    else:
+        state_norm = make_identity_normalizer(state_dim)
+        action_norm = make_identity_normalizer(action_dim)
     norm_conflict: list[str] = []
     if state_norm.vector_dim != state_dim:
         norm_conflict.append(
@@ -332,6 +397,9 @@ def load_act_runtime_resources(
         policy_input_spec=spec,
         bundle_dir=bundle_dir,
         cross_check=RuntimeResourceCrossCheck(passed=True, issues=()),
+        action_representation_spec=representation,
+        model_source_dir=bundle_dir,
+        model_source_kind=source.kind,
     )
 
 
@@ -374,3 +442,34 @@ def _metadata_int(
         raise _cfg_error(
             f"Bundle metadata field '{key}' must be an int, got {value!r}"
         ) from exc
+
+
+def _parse_action_representation(
+    manifest: Mapping[str, Any],
+) -> ActionRepresentationSpec:
+    """Parse the mandatory top-level manifest representation contract."""
+    raw = manifest.get("action_representation")
+    if not isinstance(raw, Mapping):
+        raise _cfg_error(
+            "Bundle manifest missing required 'action_representation'; "
+            "legacy absolute-action bundles are not accepted."
+        )
+    required = (
+        "arm_action_type",
+        "chunk_reference",
+        "translation_frame",
+        "rotation_representation",
+        "gripper_action_type",
+    )
+    missing = [key for key in required if key not in raw]
+    if missing:
+        raise _cfg_error(
+            "Bundle action_representation missing required field(s): "
+            + ", ".join(missing)
+        )
+    try:
+        return ActionRepresentationSpec(
+            **{key: raw[key] for key in required}
+        )
+    except (TypeError, ValueError) as exc:
+        raise _cfg_error(f"Invalid bundle action_representation: {exc}") from exc

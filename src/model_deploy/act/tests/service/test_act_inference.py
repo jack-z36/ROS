@@ -171,7 +171,12 @@ class StubPolicy:
     def predict_action_chunk(self, batch: object) -> torch.Tensor:
         if self._raise_on_predict:
             raise RuntimeError("forced predict_action_chunk failure")
-        return torch.zeros(1, self._chunk_size, self._action_dim)
+        output = torch.zeros(1, self._chunk_size, self._action_dim)
+        output[..., 3] = 0.0
+        output[..., 6] = 1.0
+        output[..., 10] = 0.0
+        output[..., 13] = 1.0
+        return output
 
     def parameters(self) -> Any:
         return iter([self._param])
@@ -401,6 +406,7 @@ class TestInstanceFields:
             "_policy",
             "_input_spec",
             "_device",
+            "_relative_tcp_action_decoder",
         }
         actual = set(vars(svc).keys())
         assert actual == allowed, (

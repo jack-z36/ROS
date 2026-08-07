@@ -104,11 +104,11 @@
         </span>
       </div>
       
-      <!-- 模型权重路径 -->
+      <!-- ACT checkpoint 路径 -->
       <div class="flex items-center gap-3">
-        <span class="text-sm text-gray-600 w-16">权重:</span>
+        <span class="text-sm text-gray-600 w-16">Checkpoint:</span>
         <input v-model="bundleDir" type="text" 
-               placeholder="/home/hit/模型权重/..."
+               placeholder="/home/hit/模型权重/.../checkpoints/100000"
                class="flex-1 border rounded px-2 py-1 text-sm font-mono">
         <button @click="applyBundleDir"
                 class="px-3 py-1 bg-purple-500 text-white text-sm rounded hover:bg-purple-600">
@@ -463,6 +463,10 @@
         logLastSeq: 0,
         // observation 缺数据原因（来自 WS proxy 下发的 _reason/_hint）
         obsReason: '',
+        // 跟踪上一次从服务器同步的 mode / bundle_dir，避免周期性轮询无条件
+        // 覆盖用户在 UI 上的待提交选择（表现为下拉框刚选完就自动弹回旧值）。
+        _lastSyncedMode: '',
+        _lastSyncedBundleDir: '',
       };
     },
     computed: {
@@ -521,8 +525,19 @@
           const wasNodeReady = Boolean(this.status.running && this.status.node_ready);
           const resp = await fetch('/api/status');
           this.status = await resp.json();
-          if (this.status.mode) this.selectedMode = this.status.mode;
-          if (this.status.bundle_dir) this.bundleDir = this.status.bundle_dir;
+          // 仅当服务器端 mode/bundle_dir 确实发生变化时才同步到 UI 下拉框，
+          // 避免周期性轮询无条件覆盖用户在 UI 上已修改但尚未提交的选择。
+          if (this.status.mode && this.status.mode !== this._lastSyncedMode) {
+            this.selectedMode = this.status.mode;
+            this._lastSyncedMode = this.status.mode;
+          }
+          if (this.status.checkpoint_dir || this.status.bundle_dir) {
+            const dir = this.status.checkpoint_dir || this.status.bundle_dir;
+            if (dir !== this._lastSyncedBundleDir) {
+              this.bundleDir = dir;
+              this._lastSyncedBundleDir = dir;
+            }
+          }
           if (this.status.running && this.status.node_ready && !wasNodeReady) {
             this.refreshImageStreams();
           }
@@ -563,7 +578,7 @@
         try {
           const params = new URLSearchParams();
           if (this.selectedMode) params.append('mode', this.selectedMode);
-          if (this.bundleDir) params.append('bundle_dir', this.bundleDir);
+          if (this.bundleDir) params.append('checkpoint_dir', this.bundleDir);
           await fetch(`/api/start?${params.toString()}`, { method: 'POST' });
           await this.fetchStatus();
         } catch (e) {
@@ -594,9 +609,9 @@
       
       async applyBundleDir() {
         if (!this.bundleDir.trim()) return;
-        if (!confirm(`确认切换权重路径？推理进程将重启。\n路径: ${this.bundleDir}`)) return;
+        if (!confirm(`确认切换 checkpoint 路径？推理进程将重启。\n路径: ${this.bundleDir}`)) return;
         try {
-          await fetch(`/api/bundle_dir?bundle_dir=${encodeURIComponent(this.bundleDir)}`, { method: 'POST' });
+          await fetch(`/api/checkpoint_dir?checkpoint_dir=${encodeURIComponent(this.bundleDir)}`, { method: 'POST' });
           await this.fetchStatus();
         } catch (e) {
           alert('切换失败: ' + e.message);

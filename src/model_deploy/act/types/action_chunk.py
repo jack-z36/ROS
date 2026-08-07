@@ -1,6 +1,6 @@
 """ActionChunk frozen value object for ACT model deployment.
 
-Represents a chunk of physical actions output by the ACT inference pipeline.
+Represents a chunk of absolute physical actions output by the ACT inference pipeline.
 Pure data type -- no runtime metadata, no lifecycle management.
 """
 
@@ -22,7 +22,8 @@ class ActionChunk:
 
     Attributes:
         actions: float32 ndarray of shape ``(chunk_size, ACTION_DIM)``.
-            Each row is a complete 16D physical action.
+            Each row is a complete 16D absolute physical action. Relative model
+            output is decoded before this type is constructed.
     """
 
     actions: np.ndarray

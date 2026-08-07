@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+import yaml
 from pathlib import Path
 
 from model_deploy.act.ui import web_launcher
@@ -69,3 +70,27 @@ def test_dashboard_reconnects_image_streams_after_inner_startup():
     assert "@error=\"scheduleImageRetry\"" in html
     assert "imageStreamVersion" in html
     assert "refreshImageStreams" in html
+
+
+def test_web_launcher_materializes_checkpoint_config_without_bundle(tmp_path):
+    config_path = tmp_path / "deploy.yaml"
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                "bundle": {"bundle_dir": "/old/deploy_bundle"},
+                "runtime": {"mode": "dry-run"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    manager = web_launcher.ActProcessManager(
+        str(config_path),
+        default_checkpoint_dir="/models/checkpoints/100000",
+    )
+
+    materialized = Path(manager._materialize_config())
+    payload = yaml.safe_load(materialized.read_text(encoding="utf-8"))
+
+    assert payload["model"]["checkpoint_dir"] == "/models/checkpoints/100000"
+    assert payload["bundle"]["bundle_dir"] is None
+    manager._cleanup_temp_configs()

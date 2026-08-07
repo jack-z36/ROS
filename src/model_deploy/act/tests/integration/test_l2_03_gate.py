@@ -147,11 +147,15 @@ class StubPolicy:
     def predict_action_chunk(self, batch: object) -> torch.Tensor:
         if self._raise_on_predict:
             raise RuntimeError("forced predict_action_chunk failure")
-        return torch.full(
+        output = torch.full(
             (1, self._chunk_size, self._action_dim),
             self._sentinel_value,
             dtype=torch.float32,
         )
+        if self._sentinel_value == 0.0:
+            output[..., 6] = 1.0
+            output[..., 13] = 1.0
+        return output
 
     def parameters(self) -> Any:
         return iter([self._param])
@@ -262,6 +266,8 @@ def _make_snapshot(
 
     if sentinel_value is None:
         encoded_state = np.zeros(16, dtype=np.float32)
+        encoded_state[6] = 1.0
+        encoded_state[13] = 1.0
     else:
         encoded_state = sentinel_value.astype(np.float32).copy()
 
@@ -343,6 +349,8 @@ class TestFullChain:
         result = svc.predict_action_chunk(snapshot)
 
         expected = np.full((_CHUNK_SIZE, _ACTION_DIM), self.SENTINEL, dtype=np.float32)
+        expected[:, 3:7] = 0.5
+        expected[:, 10:14] = 0.5
         np.testing.assert_array_almost_equal(result.actions, expected, decimal=5)
 
     def test_normalizer_call_direction_and_count(self) -> None:

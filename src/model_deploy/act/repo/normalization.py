@@ -128,3 +128,21 @@ class ActionStateNormalizer:
                 )
             mask[idx] = True
         return mask
+
+
+def make_identity_normalizer(vector_dim: int) -> ActionStateNormalizer:
+    """Build a deployment passthrough normalizer for native LeRobot checkpoints.
+
+    LeRobot's MEAN_STD statistics are consumed by the policy wrapper.  The
+    surrounding deployment contract still expects an ``ActionStateNormalizer``
+    object, so this helper makes that boundary explicit without reinterpreting
+    MEAN_STD statistics as min-max values.
+    """
+    if not isinstance(vector_dim, int) or isinstance(vector_dim, bool) or vector_dim <= 0:
+        raise ValueError(f"vector_dim must be a positive integer, got {vector_dim!r}")
+    values = np.arange(vector_dim, dtype=np.int64)
+    return ActionStateNormalizer(
+        min_vals=np.zeros(vector_dim, dtype=np.float32),
+        max_vals=np.ones(vector_dim, dtype=np.float32),
+        identity_indices=values,
+    )

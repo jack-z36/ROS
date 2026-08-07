@@ -1,8 +1,8 @@
-"""ActionChunk post-processing: raw normalized tensor → physical ActionChunk.
+"""ACT action post-processing: raw normalized tensor → relative action chunk.
 
 Implements L2-03 primary stage three: six ordered computation micro-functions
-that transform a raw policy output tensor into an ActionChunk carrying
-only physical actions.
+that transform a raw policy output tensor into a RelativeActionChunk carrying
+physical relative TCP actions and absolute gripper targets.
 
 No clamping, cropping, padding, reordering, quaternion or gripper correction
 is applied at any step. Unnormalized-action fallback is prohibited.
@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 from model_deploy.act.repo.normalization import ActionStateNormalizer
-from model_deploy.act.types.action_chunk import ActionChunk
+from model_deploy.act.types.relative_action_chunk import RelativeActionChunk
 from model_deploy.act.types.action_spec import ACTION_DIM
 
 
@@ -126,8 +126,7 @@ def to_cpu_float32_array(
 ) -> np.ndarray:
     """Convert a tensor or array to contiguous C-order CPU ``float32``.
 
-    This is the final representation boundary: every downstream consumer
-    receives ``np.ndarray`` of ``dtype=float32``.
+    This is the final representation boundary before relative TCP decoding.
 
     Args:
         tensor_or_array:  A ``torch.Tensor`` or ``np.ndarray``.
@@ -154,7 +153,7 @@ def check_final_output_contract(
     array: np.ndarray,
     expected_chunk_size: int,
 ) -> None:
-    """Validate the final physical action array before constructing ActionChunk.
+    """Validate the final physical action array before constructing a relative chunk.
 
     Strictly enforces shape ``(chunk_size, 16)``, ``dtype=float32``, and
     that every element is finite.  This is an output-contract gate -- it
@@ -195,12 +194,12 @@ def check_final_output_contract(
 # ---------------------------------------------------------------------------
 
 
-def postprocess_action_chunk(
+def postprocess_relative_action_chunk(
     raw_chunk: torch.Tensor,
     action_normalizer: ActionStateNormalizer,
     expected_chunk_size: int,
-) -> ActionChunk:
-    """Primary stage three: raw normalized tensor → physical ActionChunk.
+) -> RelativeActionChunk:
+    """Primary stage three: raw normalized tensor → relative action chunk.
 
     Executes six ordered micro-functions inside a single synchronous call:
 
@@ -209,9 +208,9 @@ def postprocess_action_chunk(
     3. ``unnormalize_actions``         -- restore physical scale
     4. ``to_cpu_float32_array``        -- convert to contiguous numpy float32
     5. ``check_final_output_contract`` -- strict output shape/dtype/finite gate
-    6. ``ActionChunk`` construction    -- wrap validated array
+    6. ``RelativeActionChunk`` construction -- wrap validated array
 
-    Any step failure propagates immediately; no partial ``ActionChunk``
+    Any step failure propagates immediately; no partial relative chunk
     is ever returned.
 
     Args:
@@ -220,7 +219,8 @@ def postprocess_action_chunk(
         expected_chunk_size: Required chunk size ``N``.
 
     Returns:
-        ``ActionChunk(actions=…)`` carrying only the physical action array.
+        ``RelativeActionChunk(actions=…)`` carrying physical relative TCP
+        actions and absolute gripper targets.
 
     Raises:
         TypeError / ValueError:  Propagated from any failing micro-function.
@@ -240,5 +240,11 @@ def postprocess_action_chunk(
     # ⑤ Final output contract check
     check_final_output_contract(arr, expected_chunk_size)
 
-    # ⑥ ActionChunk construction
-    return ActionChunk(actions=arr)
+    # ⑥ RelativeActionChunk construction
+    return RelativeActionChunk(actions=arr)
+
+
+# Keep the old import name available to local callers during the migration, but
+# it now deliberately returns a relative chunk.  There is no compatibility path
+# that can accidentally construct an absolute chunk before reference decoding.
+postprocess_action_chunk = postprocess_relative_action_chunk

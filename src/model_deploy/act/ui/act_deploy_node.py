@@ -68,6 +68,7 @@ from model_deploy.act.runtime.runtime_metrics import RuntimeMetrics
 from model_deploy.act.runtime.action_debug_recorder import ActionDebugRecorder
 from model_deploy.act.service.safety_guard import SafetyGuard
 from model_deploy.act.types.action_publish import CommandPermit
+from model_deploy.act.types.action_representation import ActionRepresentationSpec
 
 # Sibling (same-package) public seams — never import back from the
 # ``model_deploy.act.ui`` facade while it is initialising.
@@ -80,6 +81,7 @@ WORKER_SHUTDOWN_TIMEOUT_S = 5.0
 #: Stable startup-contract failure codes surfaced by B12 (deploy_054).
 STARTUP_CONTRACT_CODES = (
     "SPEC_IDENTITY_MISMATCH",
+    "ACTION_REPRESENTATION_MISMATCH",
     "STATE_DIM_MISMATCH",
     "ACTION_DIM_MISMATCH",
     "CHUNK_SIZE_MISMATCH",
@@ -161,6 +163,20 @@ def run_startup_preflight(
             "SPEC_IDENTITY_MISMATCH",
             "ActInferenceService.input_spec is not the canonical "
             "PolicyInputSpec held by the runtime resources",
+        )
+    resource_representation = getattr(
+        resources,
+        "action_representation_spec",
+        ActionRepresentationSpec.relative_tcp_v1(),
+    )
+    service_representation = getattr(
+        inference_service, "action_representation_spec", resource_representation
+    )
+    if service_representation != resource_representation:
+        raise StartupContractError(
+            "ACTION_REPRESENTATION_MISMATCH",
+            "ActInferenceService action representation does not match the "
+            "bundle representation held by the runtime resources",
         )
 
     # --- clock domain ---
@@ -950,8 +966,8 @@ else:
 def build_arg_parser():
     """C21: build the production CLI parser (real-only).
 
-    Only ``--config`` (required) and the startup-only ``--enable-command-output``
-    master switch are accepted.  No ``--mode``/``--policy`` production flags.
+    ``--checkpoint-dir`` is the canonical model override.  ``--bundle-dir`` is
+    retained as a legacy alias for existing launch scripts.
     """
     import argparse
 
@@ -972,9 +988,14 @@ def build_arg_parser():
         "from YAML; must be set explicitly by the operator.",
     )
     parser.add_argument(
+        "--checkpoint-dir",
+        default=None,
+        help="Override model.checkpoint_dir from deploy.yaml with this path.",
+    )
+    parser.add_argument(
         "--bundle-dir",
         default=None,
-        help="Override bundle.bundle_dir from deploy.yaml with this path.",
+        help="Legacy alias for --checkpoint-dir; also accepts deploy_bundle paths.",
     )
     return parser
 
@@ -1014,12 +1035,20 @@ def main(argv: Optional[list] = None) -> int:
         config = load_deploy_config(
             args.config, command_output_enabled=args.enable_command_output
         )
-        if args.bundle_dir:
-            # Override the bundle_dir from config with CLI argument.
-            # BundleConfig is a frozen dataclass, so bypass __setattr__ guard.
+        if args.checkpoint_dir and args.bundle_dir:
+            raise ValueError("Use only one of --checkpoint-dir and --bundle-dir")
+        if args.checkpoint_dir or args.bundle_dir:
+            # Override the configured model source.  Config sections are frozen
+            # after validation, so bypass the guard only at this composition
+            # root, before loading any external resource.
             from pathlib import Path as _Path
-            new_dir = _Path(args.bundle_dir).expanduser().resolve()
-            object.__setattr__(config.bundle, "bundle_dir", new_dir)
+            new_dir = _Path(args.checkpoint_dir or args.bundle_dir).expanduser().resolve()
+            if args.checkpoint_dir:
+                object.__setattr__(config.model, "checkpoint_dir", new_dir)
+                object.__setattr__(config.bundle, "bundle_dir", None)
+            else:
+                object.__setattr__(config.bundle, "bundle_dir", new_dir)
+                object.__setattr__(config.model, "checkpoint_dir", None)
         resources = load_act_runtime_resources(
             config, load_policy=make_lerobot_policy_loader(config)
         )

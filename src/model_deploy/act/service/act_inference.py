@@ -17,7 +17,12 @@ import torch
 from model_deploy.act.config.schema import DeployConfig
 from model_deploy.act.repo.act_runtime_resources import PolicyInputSpec
 from model_deploy.act.repo.normalization import ActionStateNormalizer
-from model_deploy.act.service.action_chunk_postprocess import postprocess_action_chunk
+from model_deploy.act.service.action_chunk_postprocess import (
+    postprocess_relative_action_chunk,
+)
+from model_deploy.act.service.relative_tcp_action_decoder import (
+    RelativeTcpActionDecoder,
+)
 from model_deploy.act.service.observation_batch import prepare_observation_batch
 from model_deploy.act.types.action_chunk import ActionChunk
 from model_deploy.act.types.observation import ObservationSnapshot
@@ -76,6 +81,8 @@ class ActInferenceService:
         action_normalizer: ActionStateNormalizer,
         policy: object,
         input_spec: PolicyInputSpec,
+        *,
+        relative_tcp_action_decoder: RelativeTcpActionDecoder | None = None,
     ) -> None:
         """Create the inference service from four L2-01 injected dependencies
         plus the single canonical ``PolicyInputSpec`` (deploy_056).
@@ -112,6 +119,9 @@ class ActInferenceService:
         self._action_normalizer = action_normalizer
         self._policy = policy
         self._input_spec = input_spec
+        self._relative_tcp_action_decoder = (
+            relative_tcp_action_decoder or RelativeTcpActionDecoder()
+        )
 
         # Resolve inference device from policy parameters
         self._device = self._resolve_device()
@@ -130,6 +140,11 @@ class ActInferenceService:
         ``service.input_spec is resources.policy_input_spec``.
         """
         return self._input_spec
+
+    @property
+    def action_representation_spec(self):
+        """The immutable action representation handled by this service."""
+        return self._relative_tcp_action_decoder.representation_spec
 
     def _resolve_device(self) -> torch.device:
         """Resolve inference device from the loaded policy's parameters.
@@ -197,7 +212,8 @@ class ActInferenceService:
            (deploy_022)
         2. ``run_act_inference``           -- batch -> raw tensor
            (this module)
-        3. ``postprocess_action_chunk``    -- raw tensor -> ActionChunk
+        3. ``postprocess_relative_action_chunk`` -- raw tensor -> relative chunk
+        4. ``RelativeTcpActionDecoder.decode`` -- relative chunk -> ActionChunk
            (deploy_023)
 
         Any stage failure propagates immediately; no partial ActionChunk is
@@ -223,9 +239,15 @@ class ActInferenceService:
         # Stage 2: ACT forward inference
         raw_chunk = run_act_inference(self._policy, batch)
 
-        # Stage 3: post-process to ActionChunk
-        return postprocess_action_chunk(
+        # Stage 3: post-process to an internal relative chunk.
+        relative_chunk = postprocess_relative_action_chunk(
             raw_chunk,
             self._action_normalizer,
             self.input_spec.chunk_size,
+        )
+
+        # Stage 4: decode against the exact observation used for inference.
+        return self._relative_tcp_action_decoder.decode(
+            relative_chunk,
+            observation.state,
         )

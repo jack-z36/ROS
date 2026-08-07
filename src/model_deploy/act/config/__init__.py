@@ -1,5 +1,7 @@
 from .schema import (
     BundleConfig,
+    ModelConfig,
+    ActionRepresentationConfig,
     CommandTopicsConfig,
     CommandOutputConfig,
     DeployConfig,
@@ -16,6 +18,8 @@ from .schema import (
 
 __all__ = [
     "BundleConfig",
+    "ModelConfig",
+    "ActionRepresentationConfig",
     "CommandTopicsConfig",
     "CommandOutputConfig",
     "DeployConfig",

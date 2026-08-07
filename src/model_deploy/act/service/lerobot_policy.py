@@ -25,7 +25,10 @@ while the rest of the pipeline keeps its frozen 16D physical contract:
                    reorders every chunk (verified against the exported
                    normalization statistics: gripper 0..1 range sits at
                    indices 7 and 15 in the training order).
-5. Quaternion norm ACT predicts quaternion components independently.  After
+5. Relative action semantics  arm TCP positions/quaternions are relative to
+   the inference observation; gripper targets remain absolute.  The wrapper
+   only adapts the model boundary and does not decode the reference state.
+6. Quaternion norm ACT predicts quaternion components independently.  After
                    action unnormalization and reordering, each left/right
                    ``xyzw`` quaternion is validated and normalized to unit
                    length before it enters the strict deployment contract.
@@ -163,8 +166,9 @@ class LerobotActPolicyWrapper:
     """Adapts the raw lerobot ACTPolicy to the deployment L2-03 contract.
 
     Exposes exactly the two attributes the pipeline relies on:
-    ``predict_action_chunk(batch) -> (1, chunk_size, 16)`` physical-deploy-order
-    tensor, and ``parameters()`` for device resolution.
+    ``predict_action_chunk(batch) -> (1, chunk_size, 16)`` physical relative-
+    TCP/absolute-gripper tensor in deploy order, and ``parameters()`` for device
+    resolution. Reference-state decoding belongs to ``ActInferenceService``.
     """
 
     def __init__(
@@ -282,15 +286,23 @@ class LerobotActPolicyWrapper:
         return normalize_deploy_action_quaternions(deploy_actions)
 
 
-def _load_normalization_stats(pretrained_dir: Path) -> Dict[str, torch.Tensor]:
-    """Load the exported MEAN_STD statistics safetensors from *pretrained_dir*."""
+def _load_normalization_stats(
+    pretrained_dir: Path,
+    *,
+    stats_file: Path | None = None,
+) -> Dict[str, torch.Tensor]:
+    """Load the exported MEAN_STD statistics safetensors."""
     from safetensors import safe_open
 
-    candidates = sorted(pretrained_dir.glob(STATS_FILE_GLOB))
+    candidates = [stats_file] if stats_file is not None else sorted(
+        pretrained_dir.glob(STATS_FILE_GLOB)
+    )
     if not candidates:
         raise LerobotBundleError(
             f"No normalization statistics file matching {STATS_FILE_GLOB!r} in "
             f"{pretrained_dir}")
+    if not candidates[0].is_file():
+        raise LerobotBundleError(f"Normalization statistics file not found: {candidates[0]}")
     stats = {}
     with safe_open(str(candidates[0]), framework="pt") as fh:
         for key in fh.keys():
@@ -310,7 +322,7 @@ def make_lerobot_policy_loader(config: "DeployConfig") -> Callable[[Path], Any]:
             keys, and the runtime device / chunk size to cross-check).
 
     Returns:
-        ``loader(bundle_dir) -> LerobotActPolicyWrapper``.
+    ``loader(model_source_dir) -> LerobotActPolicyWrapper``.
     """
     state_key = config.topics.observation.arm_state
     image_prefix = f"{config.topics.namespace}/observation/image/"
@@ -318,15 +330,42 @@ def make_lerobot_policy_loader(config: "DeployConfig") -> Callable[[Path], Any]:
     device = config.runtime.device
     expected_chunk_size = config.runtime.chunk_size
 
-    def _load(bundle_dir: Path) -> LerobotActPolicyWrapper:
+    def _load(model_source_dir: Path) -> LerobotActPolicyWrapper:
         from lerobot.policies.act.modeling_act import ACTPolicy
 
-        from model_deploy.act.repo.bundle_reader import resolve_checkpoint_path
+        from model_deploy.act.repo.bundle_reader import (
+            resolve_checkpoint_path,
+            resolve_model_source,
+        )
 
-        checkpoint = resolve_checkpoint_path(bundle_dir)
-        pretrained_dir = checkpoint if checkpoint.is_dir() else checkpoint.parent
+        source = resolve_model_source(model_source_dir)
+        stats_file = None
+        output_stats_file = None
+        if source.is_checkpoint:
+            # Native LeRobot checkpoints expose the deployable policy under
+            # checkpoint/pretrained_model.  No temporary bundle is created.
+            assert source.pretrained_dir is not None
+            pretrained_dir = source.pretrained_dir
+            from model_deploy.act.repo.checkpoint_reader import load_checkpoint_metadata
 
-        policy = ACTPolicy.from_pretrained(str(pretrained_dir))
+            checkpoint_metadata = load_checkpoint_metadata(source)
+            stats_file = checkpoint_metadata.input_stats_path
+            output_stats_file = checkpoint_metadata.output_stats_path
+        else:
+            checkpoint = resolve_checkpoint_path(source.requested_path)
+            pretrained_dir = checkpoint if checkpoint.is_dir() else checkpoint.parent
+
+        # The vendored LeRobot version accepts indexed CUDA devices in its
+        # torch-device check, but its AMP check only accepts the bare string
+        # ``cuda``.  Decode/load on CPU at this boundary, then keep the
+        # deployment device (including an explicit CUDA index) authoritative
+        # when moving the policy below.
+        policy_config = _load_act_config_compat(
+            pretrained_dir, runtime_device=device
+        )
+        policy = ACTPolicy.from_pretrained(
+            str(pretrained_dir), config=policy_config
+        )
         policy.to(device)
         policy.eval()
 
@@ -343,7 +382,16 @@ def make_lerobot_policy_loader(config: "DeployConfig") -> Callable[[Path], Any]:
         first_shape = next(iter(image_features.values())).shape
         image_hw = (int(first_shape[1]), int(first_shape[2]))
 
-        stats = _load_normalization_stats(pretrained_dir)
+        stats = _load_normalization_stats(pretrained_dir, stats_file=stats_file)
+        if output_stats_file is not None:
+            output_stats = _load_normalization_stats(
+                pretrained_dir, stats_file=output_stats_file
+            )
+            # Inputs use the preprocessor statistics; action unnormalization
+            # uses the postprocessor statistics from the same checkpoint.
+            stats.update(
+                {key: value for key, value in output_stats.items() if key.startswith("action.")}
+            )
 
         return LerobotActPolicyWrapper(
             policy,
@@ -355,3 +403,38 @@ def make_lerobot_policy_loader(config: "DeployConfig") -> Callable[[Path], Any]:
         )
 
     return _load
+
+
+def _load_act_config_compat(pretrained_dir: Path, *, runtime_device: str):
+    """Decode ACT config while ignoring newer training-only metadata fields.
+
+    Some LeRobot training checkpoints contain fields such as
+    ``pretrained_revision`` that are not accepted by the vendored ACTConfig.
+    The checkpoint's model architecture fields remain authoritative; only
+    fields known by the installed ACTConfig are passed through.  This avoids
+    editing the checkpoint or creating a deployment bundle.
+    """
+    import json
+    from dataclasses import fields
+
+    import draccus
+    from draccus.parsers.decoding import decode
+    from lerobot.policies.act.configuration_act import ACTConfig
+
+    config_path = pretrained_dir / "config.json"
+    with config_path.open("r", encoding="utf-8") as fh:
+        raw = json.load(fh)
+    allowed = {field.name for field in fields(ACTConfig)}
+    filtered = {key: value for key, value in raw.items() if key in allowed}
+    # Keep LeRobot's configuration parser independent from the CUDA device
+    # spelling.  In this vendored version ``is_amp_available`` accepts
+    # ``cuda`` but rejects ``cuda:0``/``cuda:1``.  CPU staging preserves the
+    # explicit CUDA index; the caller moves the policy to the actual
+    # deployment device after loading.  Non-CUDA devices retain their own
+    # LeRobot-compatible spelling.
+    parsed_device = torch.device(runtime_device)
+    filtered["device"] = (
+        "cpu" if parsed_device.type == "cuda" else str(parsed_device)
+    )
+    with draccus.config_type("json"):
+        return decode(ACTConfig, filtered)

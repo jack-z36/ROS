@@ -13,6 +13,7 @@ import pytest
 from model_deploy.act.config.schema import DeployConfig
 from model_deploy.act.repo.act_runtime_resources import PolicyInputSpec
 from model_deploy.act.runtime.inference_channel import LatestQueue
+from model_deploy.act.types.action_representation import ActionRepresentationSpec
 from model_deploy.act.ui.act_deploy_node import (
     STARTUP_CONTRACT_CODES,
     StartupContractError,
@@ -93,7 +94,10 @@ def _loose_spec(
 
 
 def _inference_service(spec):
-    return SimpleNamespace(input_spec=spec)
+    return SimpleNamespace(
+        input_spec=spec,
+        action_representation_spec=ActionRepresentationSpec.relative_tcp_v1(),
+    )
 
 
 def _pipeline(spec, clock):
@@ -101,7 +105,10 @@ def _pipeline(spec, clock):
 
 
 def _resources(spec):
-    return SimpleNamespace(policy_input_spec=spec)
+    return SimpleNamespace(
+        policy_input_spec=spec,
+        action_representation_spec=ActionRepresentationSpec.relative_tcp_v1(),
+    )
 
 
 def _preflight_ok(*, spec, config, clock, command_output_enabled=False, permit_source=None):
@@ -127,6 +134,7 @@ def _preflight_ok(*, spec, config, clock, command_output_enabled=False, permit_s
 def test_startup_contract_codes_are_stable():
     assert STARTUP_CONTRACT_CODES == (
         "SPEC_IDENTITY_MISMATCH",
+        "ACTION_REPRESENTATION_MISMATCH",
         "STATE_DIM_MISMATCH",
         "ACTION_DIM_MISMATCH",
         "CHUNK_SIZE_MISMATCH",

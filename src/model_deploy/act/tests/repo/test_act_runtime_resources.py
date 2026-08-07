@@ -53,6 +53,14 @@ def _make_bundle(
         (bundle / "checkpoint.pt").write_text("dummy")
 
     manifest = {"schema_version": 1, "model": {}}
+    if "action_representation" not in missing:
+        manifest["action_representation"] = {
+            "arm_action_type": "relative_tcp_pose",
+            "chunk_reference": "inference_observation",
+            "translation_frame": "tcp_local",
+            "rotation_representation": "quaternion_xyzw",
+            "gripper_action_type": "absolute",
+        }
     if "state_dim" not in missing:
         manifest["model"]["state_dim"] = state_dim
     if "action_dim" not in missing:
@@ -224,6 +232,24 @@ class TestLoadActRuntimeResources:
         bundle = _make_bundle(tmp_path, missing={"state_dim"})
         cfg = _config_for_bundle(bundle)
         with pytest.raises(DeployConfigError, match="missing required field"):
+            load_act_runtime_resources(cfg, load_policy=_fake_loader)
+
+    def test_missing_action_representation_fails(self, tmp_path: Path) -> None:
+        bundle = _make_bundle(tmp_path, missing={"action_representation"})
+        cfg = _config_for_bundle(bundle)
+        with pytest.raises(DeployConfigError, match="action_representation"):
+            load_act_runtime_resources(cfg, load_policy=_fake_loader)
+
+    def test_absolute_action_representation_fails(self, tmp_path: Path) -> None:
+        bundle = _make_bundle(tmp_path)
+        import json
+
+        manifest_path = bundle / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["action_representation"]["arm_action_type"] = "absolute_tcp_pose"
+        manifest_path.write_text(json.dumps(manifest))
+        cfg = _config_for_bundle(bundle)
+        with pytest.raises(DeployConfigError, match="Invalid bundle action_representation"):
             load_act_runtime_resources(cfg, load_policy=_fake_loader)
 
     def test_normalizer_dim_mismatch_fails(self, tmp_path: Path) -> None:

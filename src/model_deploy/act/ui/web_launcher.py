@@ -38,6 +38,7 @@ logger = logging.getLogger("act.web_launcher")
 class _StartRequest:
     """Schema for /api/start body."""
     mode: Optional[str] = None
+    checkpoint_dir: Optional[str] = None
     bundle_dir: Optional[str] = None
 
 
@@ -51,7 +52,7 @@ class ActProcessManager:
 
     职责：
       - 启动 / 停止 / 重启 act_deploy_node 子进程
-      - 维护当前 mode / bundle_dir 状态
+      - 维护当前 mode / checkpoint_dir 状态
       - 从内层 Web（端口 8081）轮询 metrics 并通过 WebSocket 广播
       - 记录最近事件供 REST API 查询
     """
@@ -60,14 +61,15 @@ class ActProcessManager:
         self,
         config_path: str,
         default_bundle_dir: Optional[str] = None,
+        default_checkpoint_dir: Optional[str] = None,
     ) -> None:
         self._config_path = config_path
         self._process: Optional[subprocess.Popen] = None
         self._mode = "dry-run"
-        self._bundle_dir = default_bundle_dir or ""
+        self._checkpoint_dir = default_checkpoint_dir or default_bundle_dir or ""
         self._lock = threading.Lock()
         self._event_log: list[dict] = []
-        # 临时 deploy.yaml 路径（覆盖 bundle_dir/mode 时生成），stop 后清理。
+        # 临时 deploy.yaml 路径（覆盖 checkpoint_dir/mode 时生成），stop 后清理。
         self._temp_configs: list[str] = []
 
         # WebSocket 广播相关
@@ -95,6 +97,7 @@ class ActProcessManager:
     def start(
         self,
         mode: Optional[str] = None,
+        checkpoint_dir: Optional[str] = None,
         bundle_dir: Optional[str] = None,
     ) -> dict:
         """启动推理进程（一次拉起全部节点）。
@@ -116,14 +119,18 @@ class ActProcessManager:
 
             if mode:
                 self._mode = mode
-            if bundle_dir:
-                self._bundle_dir = bundle_dir
+            if checkpoint_dir and bundle_dir:
+                return {"ok": False, "error": "Use either checkpoint_dir or bundle_dir"}
+            if checkpoint_dir:
+                self._checkpoint_dir = checkpoint_dir
+            elif bundle_dir:
+                self._checkpoint_dir = bundle_dir
 
             # 1) 解析 ACT 节点用的 Python（需含 torch 的 model_deploy conda 环境）。
             act_python = self._resolve_act_python()
 
-            # 2) 生成（可能的）临时 deploy.yaml：覆盖 bundle_dir / runtime.mode。
-            #    launch 文件只有 act_config（整份 yaml）参数，没有单独的 bundle_dir /
+            # 2) 生成（可能的）临时 deploy.yaml：覆盖 checkpoint_dir / runtime.mode。
+            #    launch 文件只有 act_config（整份 yaml）参数，没有单独的 checkpoint_dir /
             #    mode 参数，所以这里物化一份临时配置交给 launch。
             config_path = self._materialize_config()
 
@@ -211,12 +218,15 @@ class ActProcessManager:
     def restart(
         self,
         mode: Optional[str] = None,
+        checkpoint_dir: Optional[str] = None,
         bundle_dir: Optional[str] = None,
     ) -> dict:
         """重启推理进程（用于模式切换或权重切换）。"""
         self.stop()
         time.sleep(1)  # 等待端口释放
-        return self.start(mode=mode, bundle_dir=bundle_dir)
+        return self.start(
+            mode=mode, checkpoint_dir=checkpoint_dir, bundle_dir=bundle_dir
+        )
 
     def get_status(self) -> dict:
         """获取当前状态摘要。
@@ -239,7 +249,9 @@ class ActProcessManager:
             "running": running,
             "pid": self._process.pid if running else None,
             "mode": self._mode,
-            "bundle_dir": self._bundle_dir,
+            "checkpoint_dir": self._checkpoint_dir,
+            # Compatibility field consumed by older dashboards/scripts.
+            "bundle_dir": self._checkpoint_dir,
             "config_path": self._config_path,
             "events": self._event_log[-20:],
             # 退出诊断：仅在子进程已停止时有意义，供 Dashboard 展示真实原因。
@@ -298,22 +310,22 @@ class ActProcessManager:
         更明确）。临时文件登记到 _temp_configs，stop() 后清理。
 
         覆盖规则：
-          - bundle_dir：非空则覆盖 bundle.bundle_dir。
+          - checkpoint_dir：非空则覆盖 model.checkpoint_dir，并清空旧 bundle。
           - mode：dry-run/real-run 均显式写入 runtime.mode（real-run 才真正下发，
             配合 launch 的 enable_command_output 双闸门）。
         用 PyYAML 安全加载/转储，保留原配置结构；若无 yaml 则回退原路径并告警。
         """
-        # 是否需要物化：有 bundle_dir 覆盖、或当前 mode 与原配置 mode 不一致。
-        need_bundle = bool(self._bundle_dir and self._bundle_dir.strip())
+        # 是否需要物化：有 checkpoint 覆盖、或当前 mode 与原配置 mode 不一致。
+        need_checkpoint = bool(self._checkpoint_dir and self._checkpoint_dir.strip())
         need_mode = self._mode in ("dry-run", "real-run")
-        if not (need_bundle or need_mode):
+        if not (need_checkpoint or need_mode):
             return self._config_path
 
         try:
             import yaml
         except ImportError:
             logger.warning(
-                "PyYAML 不可用，无法生成临时配置；将直接使用 %s（bundle_dir/mode "
+                "PyYAML 不可用，无法生成临时配置；将直接使用 %s（checkpoint_dir/mode "
                 "覆盖不生效）", self._config_path
             )
             return self._config_path
@@ -324,8 +336,9 @@ class ActProcessManager:
             if not isinstance(cfg, dict):
                 logger.warning("配置根不是映射，跳过临时配置生成：%s", self._config_path)
                 return self._config_path
-            if need_bundle:
-                cfg.setdefault("bundle", {})["bundle_dir"] = self._bundle_dir.strip()
+            if need_checkpoint:
+                cfg.setdefault("model", {})["checkpoint_dir"] = self._checkpoint_dir.strip()
+                cfg.setdefault("bundle", {})["bundle_dir"] = None
             if need_mode:
                 cfg.setdefault("runtime", {})["mode"] = self._mode
             # command_output.enabled 绝不写入（schema 禁止，它是 CLI 启动决策）。
@@ -357,8 +370,13 @@ class ActProcessManager:
         self._log_event("mode_switch", f"Switching to {mode}")
         return self.restart(mode=mode)
 
+    def set_checkpoint_dir(self, checkpoint_dir: str) -> dict:
+        """设置 checkpoint 路径并重启。"""
+        self._log_event("checkpoint_change", f"Switching checkpoint to {checkpoint_dir}")
+        return self.restart(checkpoint_dir=checkpoint_dir)
+
     def set_bundle_dir(self, bundle_dir: str) -> dict:
-        """设置 bundle_dir 并重启。"""
+        """Legacy alias for setting the model source path and restarting."""
         self._log_event("bundle_change", f"Switching bundle to {bundle_dir}")
         return self.restart(bundle_dir=bundle_dir)
 
@@ -541,10 +559,13 @@ async def api_status() -> dict:
 @app.post("/api/start")
 async def api_start(
     mode: Optional[str] = None,
+    checkpoint_dir: Optional[str] = None,
     bundle_dir: Optional[str] = None,
 ) -> dict:
     """启动推理进程。"""
-    return _process_manager.start(mode=mode, bundle_dir=bundle_dir)
+    return _process_manager.start(
+        mode=mode, checkpoint_dir=checkpoint_dir, bundle_dir=bundle_dir
+    )
 
 
 @app.post("/api/stop")
@@ -559,9 +580,15 @@ async def api_mode(mode: str) -> dict:
     return _process_manager.set_mode(mode)
 
 
+@app.post("/api/checkpoint_dir")
+async def api_checkpoint_dir(checkpoint_dir: str) -> dict:
+    """切换 checkpoint 路径并重启。"""
+    return _process_manager.set_checkpoint_dir(checkpoint_dir)
+
+
 @app.post("/api/bundle_dir")
 async def api_bundle_dir(bundle_dir: str) -> dict:
-    """切换 bundle_dir 并重启。"""
+    """Legacy alias for switching the model source path."""
     return _process_manager.set_bundle_dir(bundle_dir)
 
 
@@ -886,20 +913,24 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # 从 deploy.yaml 读取默认 bundle_dir（供面板输入框预填）+ 初始 mode。
-    default_bundle = ""
+    # 从 deploy.yaml 读取默认 checkpoint_dir（供面板输入框预填）+ 初始 mode。
+    default_checkpoint = ""
     try:
         import yaml
         with open(args.config, "r", encoding="utf-8") as f:
             cfg = yaml.safe_load(f) or {}
-        default_bundle = str((cfg.get("bundle") or {}).get("bundle_dir") or "")
+        default_checkpoint = str(
+            (cfg.get("model") or {}).get("checkpoint_dir")
+            or (cfg.get("bundle") or {}).get("bundle_dir")
+            or ""
+        )
     except Exception:
-        logger.warning("读取 %s 的 bundle_dir 失败，面板权重输入框将为空", args.config)
+        logger.warning("读取 %s 的 checkpoint_dir 失败，面板权重输入框将为空", args.config)
 
     global _process_manager
     _process_manager = ActProcessManager(
         config_path=args.config,
-        default_bundle_dir=default_bundle,
+        default_checkpoint_dir=default_checkpoint,
     )
 
     if args.auto_start:

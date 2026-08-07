@@ -4,8 +4,15 @@
 # Set bundle.bundle_dir to a real bundle path before running.
 # Action-smoothing fields and legacy bridge/mux sections are intentionally absent.
 
-bundle:
-  bundle_dir: /home/hit/模型权重/UMI_ACT/act_07_29/first_10min/deploy_bundle
+model:
+  checkpoint_dir: /home/hit/模型权重/UMI_ACT/act_07_29/second_overnight/checkpoints/100000
+
+action_representation:
+  arm_action_type: relative_tcp_pose
+  chunk_reference: inference_observation
+  translation_frame: tcp_local
+  rotation_representation: quaternion_xyzw
+  gripper_action_type: absolute
 
 runtime:
   mode: dry-run
@@ -55,8 +62,8 @@ topics:
     # Canonical, read-only logical policy camera key -> ROS topic mapping.
     # Legacy left_image/right_image keys are no longer accepted here.
     images:
-      left: /act/observation/image/left_gripper_fisheye
-      right: /act/observation/image/right_gripper_fisheye
+      left: /act/observation/image/right_gripper_fisheye
+      right: /act/observation/image/left_gripper_fisheye
     left_tcp_pose: /act/observation/arm/left_tcp_pose
     right_tcp_pose: /act/observation/arm/right_tcp_pose
     left_gripper_state: /act/observation/gripper/left_state

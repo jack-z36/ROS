@@ -3,7 +3,10 @@
 import numpy as np
 import pytest
 
-from model_deploy.act.repo.normalization import ActionStateNormalizer
+from model_deploy.act.repo.normalization import (
+    ActionStateNormalizer,
+    make_identity_normalizer,
+)
 
 
 class TestActionStateNormalizer:
@@ -50,6 +53,12 @@ class TestActionStateNormalizer:
         result = n.normalize([5, 5, 7])
         np.testing.assert_allclose(result[:2], [0, 0], atol=1e-6)
         assert result[2] == 7.0  # identity — passed through
+
+    def test_identity_normalizer_is_passthrough(self) -> None:
+        n = make_identity_normalizer(3)
+        values = np.asarray([1.5, -0.2, 7.0], dtype=np.float32)
+        np.testing.assert_allclose(n.normalize(values), values)
+        np.testing.assert_allclose(n.unnormalize(values), values)
 
     def test_call(self) -> None:
         n = ActionStateNormalizer(min_vals=[0], max_vals=[10])
