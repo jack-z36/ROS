@@ -114,6 +114,9 @@ def export_official_lerobot(request: LeRobotExportRequest) -> dict[str, Any]:
                 action_dim=request.action_dim,
                 image_height=request.image_height,
                 image_width=request.image_width,
+                state_names=request.state_names,
+                action_names=request.action_names,
+                feature_contract=request.feature_contract,
             ):
                 dataset.add_frame(
                     {
@@ -139,6 +142,22 @@ def export_official_lerobot(request: LeRobotExportRequest) -> dict[str, Any]:
     finally:
         dataset.finalize()
 
+    feature_contract_path = output_dir / "meta/feature_contract.json"
+    feature_contract_path.parent.mkdir(parents=True, exist_ok=True)
+    feature_contract_path.write_text(
+        json.dumps(
+            request.feature_contract
+            or {
+                "schema_version": "request_compatibility_contract_v1",
+                "observation.state": {"shape": [request.state_dim], "names": list(request.state_names)},
+                "action": {"shape": [request.action_dim], "names": list(request.action_names)},
+                "contract_fingerprint": request.contract_fingerprint,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     compatibility = validate_official_lerobot_dataset(request)
     return {
         "status": "success",
@@ -157,6 +176,10 @@ def export_official_lerobot(request: LeRobotExportRequest) -> dict[str, Any]:
         "stats": compatibility["stats_features"],
         "runtime_fingerprint": fingerprint,
         "official_compatibility": compatibility,
+        "state_names": list(request.state_names),
+        "action_names": list(request.action_names),
+        "feature_contract_path": str(feature_contract_path),
+        "contract_fingerprint": request.contract_fingerprint,
     }
 
 

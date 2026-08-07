@@ -106,6 +106,21 @@ from .tactile_filter import (
     TactileFilterSampleStatus,
     TactileFilterSegmentSummary,
 )
+from .lerobot_features import (
+    CompiledFeatureDimension,
+    CompiledFeatureLayout,
+    CompiledLeRobotFeatureContract,
+    LeRobotFeatureConfigError,
+    LeRobotFeatureSegment,
+    compile_lerobot_feature_contract,
+)
+from .quality import (
+    DatasetQualityReportV2,
+    QualityEvidenceCompleteness,
+    QualityEvidenceContext,
+    QualityMetricResult,
+    QualityTraceRef,
+)
 from .alignment_config import (
     AlignmentModality,
     AlignmentSide,

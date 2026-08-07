@@ -42,6 +42,9 @@ def iter_bridge_frames(
     action_dim: int,
     image_height: int,
     image_width: int,
+    state_names: tuple[str, ...] | list[str] | None = None,
+    action_names: tuple[str, ...] | list[str] | None = None,
+    feature_contract: dict | None = None,
 ) -> Iterator[BridgeFrame]:
     """Yield one decoded frame at a time without retaining an episode in RAM."""
 
@@ -54,6 +57,15 @@ def iter_bridge_frames(
     current_timestamp: int | None = None
     current: dict[str, np.ndarray] = {}
     yielded = 0
+    if feature_contract:
+        state_layout = feature_contract.get("observation.state") or feature_contract.get("state") or {}
+        action_layout = feature_contract.get("action") or {}
+        state_names = state_names or state_layout.get("names")
+        action_names = action_names or action_layout.get("names")
+    expected_names = {
+        "state": list(state_names) if feature_contract is not None and state_names else None,
+        "action": list(action_names) if feature_contract is not None and action_names else None,
+    }
 
     with mcap_path.open("rb") as stream:
         reader = make_reader(stream)
@@ -88,6 +100,11 @@ def iter_bridge_frames(
                 )
             decoded = codec.decode(schema, message)
             if field in {"state", "action"}:
+                names = getattr(decoded, "name", None)
+                if expected_names[field] is not None and list(names or []) != expected_names[field]:
+                    raise BridgeMcapError(
+                        f"{field} names mismatch: expected={expected_names[field]} actual={list(names or [])}"
+                    )
                 current[field] = np.asarray(decoded.position, dtype=np.float32)
             else:
                 current[field] = _decode_image(decoded, schema.name)

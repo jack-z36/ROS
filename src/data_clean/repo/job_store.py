@@ -251,6 +251,10 @@ class JobStore:
                     stage_version TEXT,
                     input_sha256 TEXT,
                     config_sha256 TEXT,
+                    processing_config_fingerprint TEXT,
+                    contract_fingerprint TEXT,
+                    quality_report_version TEXT,
+                    feature_schema_version TEXT,
                     started_at TEXT,
                     finished_at TEXT,
                     output_manifest_json TEXT,
@@ -291,6 +295,18 @@ class JobStore:
                     ON publish_transactions(status, updated_at);
                 """
             )
+            existing_columns = {
+                str(row[1])
+                for row in connection.execute("PRAGMA table_info(stage_checkpoints)").fetchall()
+            }
+            for name in (
+                "processing_config_fingerprint",
+                "contract_fingerprint",
+                "quality_report_version",
+                "feature_schema_version",
+            ):
+                if name not in existing_columns:
+                    connection.execute(f"ALTER TABLE stage_checkpoints ADD COLUMN {name} TEXT")
 
     def import_legacy_jobs(self, jobs_dir: str | Path) -> dict[str, int]:
         """Idempotently import JSON history without inventing checkpoints."""
@@ -781,6 +797,10 @@ class JobStore:
         stage_version: str,
         input_sha256: str,
         config_sha256: str,
+        processing_config_fingerprint: str | None = None,
+        contract_fingerprint: str | None = None,
+        quality_report_version: str | None = None,
+        feature_schema_version: str | None = None,
         max_attempts: int = DEFAULT_MAX_STAGE_ATTEMPTS,
     ) -> int:
         if stage_name not in CHECKPOINT_STAGES:
@@ -805,13 +825,19 @@ class JobStore:
                 INSERT INTO stage_checkpoints(
                     job_id,file_index,stage_name,status,attempts,stage_version,
                     input_sha256,config_sha256,started_at,finished_at,
+                    processing_config_fingerprint,contract_fingerprint,
+                    quality_report_version,feature_schema_version,
                     output_manifest_json,validation_json,error
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(job_id,file_index,stage_name) DO UPDATE SET
                     status='running',attempts=excluded.attempts,
                     stage_version=excluded.stage_version,
                     input_sha256=excluded.input_sha256,
                     config_sha256=excluded.config_sha256,
+                    processing_config_fingerprint=excluded.processing_config_fingerprint,
+                    contract_fingerprint=excluded.contract_fingerprint,
+                    quality_report_version=excluded.quality_report_version,
+                    feature_schema_version=excluded.feature_schema_version,
                     started_at=excluded.started_at,finished_at=NULL,
                     output_manifest_json=NULL,validation_json=NULL,error=NULL
                 """,
@@ -826,6 +852,10 @@ class JobStore:
                     config_sha256,
                     now,
                     None,
+                    processing_config_fingerprint,
+                    contract_fingerprint,
+                    quality_report_version,
+                    feature_schema_version,
                     None,
                     None,
                     None,

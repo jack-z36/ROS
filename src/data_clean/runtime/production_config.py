@@ -12,6 +12,7 @@ import yaml
 
 from repo.config.mcap_process_config import load_app_config
 from schemas.lerobot_features import (
+    compile_lerobot_feature_contract,
     LeRobotFeatureConfigError,
     normalize_lerobot_features_config,
 )
@@ -46,6 +47,8 @@ def production_config_view(path: str | Path) -> dict[str, Any]:
             raise ProductionConfigError(
                 f"camera_from_tcp.{hand} 的历史旋转不是零；普通生产链路不会静默丢弃该旋转，请先人工确认。"
             )
+    features = _production_web_pipeline_view(raw.get("web_pipeline"))
+    contract = compile_lerobot_feature_contract(features.get("lerobot_features"))
     return {
         "config_path": str(config_path),
         "camera_from_tcp": {
@@ -54,7 +57,8 @@ def production_config_view(path: str | Path) -> dict[str, Any]:
             if hand in camera
         },
         "coordinate_frame_semantics": "preserve_baton_source_frame",
-        "web_pipeline": _production_web_pipeline_view(raw.get("web_pipeline")),
+        "web_pipeline": features,
+        "feature_contract_preview": contract.to_dict(),
         "web_file_management": _production_web_file_management_view(raw.get("web_file_management")),
         "migrated_from_legacy": _uses_legacy_pose_units(raw),
     }
@@ -191,7 +195,7 @@ def _normalize_web_pipeline_payload(data: Any | None) -> dict[str, Any]:
     streams = _normalize_scene2_streams(scene2.get("streams"))
     lerobot_features = normalize_lerobot_features_config(source.get("lerobot_features"))
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "scene2": {
             "streams": streams,
             "pose_filter": pose_filter,

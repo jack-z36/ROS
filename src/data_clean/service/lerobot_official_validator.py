@@ -48,6 +48,7 @@ def validate_official_lerobot_dataset(
     if not isinstance(features, dict):
         raise OfficialLeRobotValidationError("info.json features is missing")
     _validate_feature_info(features, request)
+    _validate_contract_sidecar(root, request)
 
     required_meta = (
         root / "meta/tasks.parquet",
@@ -160,6 +161,37 @@ def _validate_feature_info(features: dict[str, Any], request: LeRobotExportReque
         if feature.get("dtype") != dtype or list(feature.get("shape", [])) != shape:
             raise OfficialLeRobotValidationError(
                 f"feature contract mismatch: {key} expected={dtype}{shape} actual={feature}"
+            )
+    for key, expected_names in (
+        ("observation.state", request.state_names),
+        ("action", request.action_names),
+    ):
+        actual_names = features[key].get("names")
+        if list(actual_names or []) != list(expected_names):
+            raise OfficialLeRobotValidationError(
+                f"feature names mismatch: {key} expected={list(expected_names)} actual={actual_names}"
+            )
+
+
+def _validate_contract_sidecar(root: Path, request: LeRobotExportRequest) -> None:
+    path = root / "meta/feature_contract.json"
+    if not path.is_file():
+        raise OfficialLeRobotValidationError(f"feature contract sidecar missing: {path}")
+    data = _read_json(path)
+    expected = request.contract_fingerprint
+    actual = data.get("contract_fingerprint") or data.get("fingerprint")
+    if expected and actual != expected:
+        raise OfficialLeRobotValidationError(
+            f"feature contract fingerprint mismatch: expected={expected} actual={actual}"
+        )
+    for key, expected_names in (
+        ("observation.state", request.state_names),
+        ("action", request.action_names),
+    ):
+        layout = data.get(key) or data.get("state" if key == "observation.state" else "action")
+        if isinstance(layout, dict) and list(layout.get("names", [])) != list(expected_names):
+            raise OfficialLeRobotValidationError(
+                f"feature contract sidecar names mismatch: {key}"
             )
 
 

@@ -141,33 +141,45 @@ web_pipeline:
       contact_reset_threshold: null
       timestamp_policy: preserve_original
   lerobot_features:
-    schema_version: 1
+    schema_version: 2
     state_segments:
     - id: left_tcp_pose
       enabled: true
+      dimension_names: [left_tcp_pose.x, left_tcp_pose.y, left_tcp_pose.z, left_tcp_pose.qx, left_tcp_pose.qy, left_tcp_pose.qz, left_tcp_pose.qw]
     - id: right_tcp_pose
       enabled: true
+      dimension_names: [right_tcp_pose.x, right_tcp_pose.y, right_tcp_pose.z, right_tcp_pose.qx, right_tcp_pose.qy, right_tcp_pose.qz, right_tcp_pose.qw]
     - id: left_gripper_width
       enabled: true
+      dimension_names: [left_gripper_width.width]
     - id: right_gripper_width
       enabled: true
+      dimension_names: [right_gripper_width.width]
     - id: tactile_left_gripper_1
       enabled: false
+      dimension_names: [tactile_left_gripper_1.mean, tactile_left_gripper_1.std, tactile_left_gripper_1.min, tactile_left_gripper_1.max]
     - id: tactile_left_gripper_2
       enabled: false
+      dimension_names: [tactile_left_gripper_2.mean, tactile_left_gripper_2.std, tactile_left_gripper_2.min, tactile_left_gripper_2.max]
     - id: tactile_right_gripper_1
       enabled: false
+      dimension_names: [tactile_right_gripper_1.mean, tactile_right_gripper_1.std, tactile_right_gripper_1.min, tactile_right_gripper_1.max]
     - id: tactile_right_gripper_2
       enabled: false
+      dimension_names: [tactile_right_gripper_2.mean, tactile_right_gripper_2.std, tactile_right_gripper_2.min, tactile_right_gripper_2.max]
     action_segments:
     - id: left_tcp_pose_t_plus_1
       enabled: true
+      dimension_names: [left_tcp_pose_t_plus_1.x, left_tcp_pose_t_plus_1.y, left_tcp_pose_t_plus_1.z, left_tcp_pose_t_plus_1.qx, left_tcp_pose_t_plus_1.qy, left_tcp_pose_t_plus_1.qz, left_tcp_pose_t_plus_1.qw]
     - id: left_gripper_width_t_plus_1
       enabled: true
+      dimension_names: [left_gripper_width_t_plus_1.width]
     - id: right_tcp_pose_t_plus_1
       enabled: true
+      dimension_names: [right_tcp_pose_t_plus_1.x, right_tcp_pose_t_plus_1.y, right_tcp_pose_t_plus_1.z, right_tcp_pose_t_plus_1.qx, right_tcp_pose_t_plus_1.qy, right_tcp_pose_t_plus_1.qz, right_tcp_pose_t_plus_1.qw]
     - id: right_gripper_width_t_plus_1
       enabled: true
+      dimension_names: [right_gripper_width_t_plus_1.width]
 web_file_management:
   health_audited_mcap_dir: /media/hit/D085-8696/已通过健康审计文件
   rejected_mcap_dir: /media/hit/D085-8696/数据清洗缺陷文件

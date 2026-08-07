@@ -11,7 +11,7 @@ from mcap.writer import CompressionType, Writer
 from mcap_ros2.writer import serialize_dynamic
 
 from repo.bridge_mcap_reader import iter_bridge_frames
-from runtime.official_lerobot_export import run_official_exporter
+from runtime.official_lerobot_export import lerobot_python_path, run_official_exporter
 from schemas.lerobot_export import LeRobotExportRequest
 from schemas.ros2_schemas import SENSOR_MSGS_IMAGE, SENSOR_MSGS_JOINT_STATE
 from service.forge_bridge import FORGE_TOPICS
@@ -128,10 +128,8 @@ def test_official_exporter_writes_two_ordered_episodes(
     bridges = [tmp_path / "bridge_0", tmp_path / "bridge_1"]
     _write_bridge(bridges[0], frame_count=4, seed=10)
     _write_bridge(bridges[1], frame_count=5, seed=20)
-    monkeypatch.setenv(
-        "DATA_CLEAN_LEROBOT_PYTHON",
-        "/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python",
-    )
+    lerobot_python = lerobot_python_path()
+    monkeypatch.setenv("DATA_CLEAN_LEROBOT_PYTHON", str(lerobot_python))
     request = LeRobotExportRequest(
         job_id="fixture-job",
         dataset_name="fixture-dataset",
@@ -151,7 +149,7 @@ def test_official_exporter_writes_two_ordered_episodes(
     act_report_path = tmp_path / "act_acceptance.json"
     act_process = subprocess.run(
         [
-            "/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python",
+            str(lerobot_python),
             "-m",
             "service.lerobot_act_acceptance",
             "--root",
@@ -191,7 +189,7 @@ def test_official_exporter_writes_two_ordered_episodes(
     stats_path.write_text(json.dumps(broken_stats), encoding="utf-8")
     negative_gate = subprocess.run(
         [
-            "/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python",
+            str(lerobot_python),
             "-c",
             (
                 "import json,sys;"

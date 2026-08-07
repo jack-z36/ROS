@@ -49,3 +49,5 @@ class ConfigSnapshot:
     written_at: datetime | None = None
     snapshot_format: str = "yaml"
     is_required: bool = True
+    contract_fingerprint: str | None = None
+    processing_config_fingerprint: str | None = None

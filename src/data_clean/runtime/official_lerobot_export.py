@@ -12,7 +12,8 @@ from typing import Any
 from schemas.lerobot_export import LeRobotExportRequest
 
 
-DEFAULT_LEROBOT_PYTHON = Path(
+PREFERRED_LEROBOT_PYTHON = Path("/home/hit/.conda-envs/lerobot-export/bin/python")
+LEGACY_LEROBOT_PYTHON = Path(
     "/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python"
 )
 LEROBOT_PYTHON_ENV = "DATA_CLEAN_LEROBOT_PYTHON"
@@ -23,7 +24,12 @@ class OfficialLeRobotExporterError(RuntimeError):
 
 
 def lerobot_python_path() -> Path:
-    return Path(os.environ.get(LEROBOT_PYTHON_ENV, str(DEFAULT_LEROBOT_PYTHON))).expanduser().resolve()
+    configured = os.environ.get(LEROBOT_PYTHON_ENV)
+    if configured:
+        return Path(configured).expanduser().resolve()
+    if PREFERRED_LEROBOT_PYTHON.is_file():
+        return PREFERRED_LEROBOT_PYTHON.resolve()
+    return LEGACY_LEROBOT_PYTHON.resolve()
 
 
 def preflight_official_exporter(*, report_dir: str | Path) -> dict[str, Any]:

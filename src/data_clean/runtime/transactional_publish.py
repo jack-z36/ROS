@@ -81,8 +81,14 @@ class TransactionalPublisher:
                 error="committed target was missing; restored the complete backup",
             )
             return
-        raise PublishTransactionError(
-            f"committed publish target is missing and has no backup: {target}"
+        error = f"committed publish target is missing and has no backup: {target}"
+        # A historical committed transaction may point to a disk that is no
+        # longer mounted.  It is unrecoverable, but it must not prevent the
+        # Web UI from starting and recovering other transactions.
+        self.store.update_publish_transaction(
+            str(transaction["transaction_id"]),
+            "failed",
+            error=error,
         )
 
     def _recover_one(self, transaction: dict[str, Any]) -> dict[str, Any]:

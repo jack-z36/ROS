@@ -97,7 +97,16 @@ case "${CURRENT_BRANCH}" in
     ;;
 esac
 
-CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV:-${REPO_ROOT}/src/data_clean/.conda-envs/data-clean}"
+ENV_ROOT="${DATA_CLEAN_ENV_ROOT:-/home/hit/.conda-envs}"
+PREFERRED_CONDA_ENV="${ENV_ROOT}/data-clean"
+LEGACY_WORKTREE_CONDA_ENV="${REPO_ROOT}/src/data_clean/.conda-envs/data-clean"
+if [[ -n "${DATA_CLEAN_CONDA_ENV:-}" ]]; then
+  CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV}"
+elif [[ -x "${PREFERRED_CONDA_ENV}/bin/python" ]]; then
+  CONDA_ENV_DIR="${PREFERRED_CONDA_ENV}"
+else
+  CONDA_ENV_DIR="${LEGACY_WORKTREE_CONDA_ENV}"
+fi
 PYTHON_BIN="${DATA_CLEAN_PYTHON:-${CONDA_ENV_DIR}/bin/python}"
 
 [[ -x "${PYTHON_BIN}" ]] || fail "Data clean Python not found or not executable: ${PYTHON_BIN}"

@@ -349,6 +349,27 @@ def test_publish_recovery_discards_backup_left_after_commit(tmp_path: Path) -> N
     assert (target / "version.txt").read_text(encoding="utf-8") == "new"
 
 
+def test_publish_recovery_marks_unrecoverable_commit_failed(tmp_path: Path) -> None:
+    store = JobStore(tmp_path / "data_clean.sqlite3")
+    store.upsert_job(_job())
+    target = tmp_path / "missing-disk" / "dataset"
+    staging = tmp_path / "missing-disk" / ".staging" / "dataset"
+    backup = tmp_path / "missing-disk" / ".backup"
+    transaction_id = store.create_publish_transaction(
+        job_id="job-1",
+        target_path=target,
+        staging_path=staging,
+        backup_path=backup,
+        target_existed=True,
+    )
+    store.update_publish_transaction(transaction_id, "committed")
+
+    assert TransactionalPublisher(store).recover_incomplete() == []
+    transaction = store.publish_transaction(transaction_id)
+    assert transaction["status"] == "failed"
+    assert "missing and has no backup" in transaction["error"]
+
+
 def test_publish_recovery_rolls_back_when_staging_was_lost(tmp_path: Path) -> None:
     store = JobStore(tmp_path / "data_clean.sqlite3")
     store.upsert_job(_job())

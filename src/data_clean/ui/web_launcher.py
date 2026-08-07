@@ -27,7 +27,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from repo.config.mcap_process_config import (
     AppConfig,
@@ -36,6 +36,7 @@ from repo.config.mcap_process_config import (
     load_app_config,
 )
 from runtime.forge_bridge_check import run_forge_bridge_check
+from runtime.config_snapshot import read_config_snapshot_metadata
 from runtime.diagnostic_retention import (
     cleanup_expired_diagnostics,
     cleanup_expired_job_staging,
@@ -57,19 +58,19 @@ from runtime.production_config import (
 from runtime.scene2_mcap_a_writer import run_scene2_mcap_a_writer
 from runtime.scene3_full_flow_check import run_scene3_full_flow_check
 from runtime.transactional_publish import TransactionalPublisher
+from runtime.dataset_quality_pipeline import DatasetQualityPipeline
 from runtime.web_pipeline_config import (
     build_web_job_effective_config,
     load_web_job_effective_config,
 )
 from schemas.alignment_config import Scene3AlignmentConfig
 from schemas.lerobot_export import (
-    DEFAULT_ACTION_DIM,
     DEFAULT_EXPORT_FPS,
     DEFAULT_EXPORT_TASK,
-    DEFAULT_STATE_DIM,
     LeRobotExportRequest,
 )
 from schemas.lerobot_features import (
+    compile_lerobot_feature_contract,
     lerobot_feature_schema,
     tcp_pose_offsets,
 )
@@ -114,13 +115,14 @@ PRESETS_DIR = WORKSPACE_DIR / "config/data_clean/presets"
 BATON_AUDIT_DIRNAME = "baton_pose_audits"
 HEALTH_AUDIT_DIRNAME = "mcap_health_audits"
 DEFAULT_GLOBAL_WORKERS = 6
+TRAJECTORY_VIDEO_SCHEMA_VERSION = 1
 STAGE_VERSIONS = {
-    "scene1": "scene1-clean-v1",
-    "scene2": "scene2-filter-v1",
-    "scene3": "scene3-align-15hz-v1",
-    "bridge": "standard-bridge-v1",
-    "export": "official-lerobot-0.5.2-v1",
-    "gate": "official-compatibility-gate-v1",
+    "scene1": "scene1-clean-v2",
+    "scene2": "scene2-filter-v2",
+    "scene3": "scene3-align-15hz-v2",
+    "bridge": "standard-bridge-contract-v2",
+    "export": "official-lerobot-contract-v2",
+    "gate": "quality-report-v2-gate-v2",
 }
 CLIENT_DISCONNECT_ERRORS = (BrokenPipeError, ConnectionAbortedError, ConnectionResetError)
 
@@ -277,6 +279,146 @@ def _hydrate_trajectory_metadata(summary: dict[str, Any], bridge_mode: str) -> d
     return hydrated
 
 
+def _trajectory_video_label(feature: str) -> tuple[str, str]:
+    stream_id = feature.rsplit(".", 1)[-1]
+    labels = {
+        "left": "左鱼眼 RGB",
+        "right": "右鱼眼 RGB",
+    }
+    return stream_id, labels.get(stream_id, feature)
+
+
+def _trajectory_video_relative_path(
+    dataset_dir: Path,
+    video_path_template: str,
+    feature: str,
+    chunk_index: int,
+    file_index: int,
+) -> Path:
+    if chunk_index < 0 or file_index < 0:
+        raise ValueError("video index must be non-negative")
+    try:
+        relative = Path(
+            video_path_template.format(
+                video_key=feature,
+                chunk_index=chunk_index,
+                file_index=file_index,
+            )
+        )
+    except (KeyError, ValueError) as exc:
+        raise ValueError("invalid video path template") from exc
+    if relative.is_absolute():
+        raise ValueError("video path must be relative to dataset")
+    root = dataset_dir.expanduser().resolve()
+    candidate = (root / relative).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("video path escapes dataset") from exc
+    return candidate
+
+
+def _build_trajectory_video_metadata(dataset_dir: Path, parquet_module: Any) -> dict[str, Any]:
+    info_path = dataset_dir / "meta/info.json"
+    info = _read_json(info_path, {})
+    if not isinstance(info, dict):
+        return {"schema_version": TRAJECTORY_VIDEO_SCHEMA_VERSION, "streams": []}
+    features = info.get("features")
+    if not isinstance(features, dict):
+        return {"schema_version": TRAJECTORY_VIDEO_SCHEMA_VERSION, "streams": []}
+    video_path_template = str(info.get("video_path", ""))
+    if not video_path_template:
+        return {"schema_version": TRAJECTORY_VIDEO_SCHEMA_VERSION, "streams": []}
+
+    episode_files = sorted((dataset_dir / "meta/episodes").glob("chunk-*/file-*.parquet"))
+    episode_tables = [parquet_module.read_table(path) for path in episode_files]
+    streams: list[dict[str, Any]] = []
+    for feature, spec in features.items():
+        if not isinstance(spec, dict) or spec.get("dtype") != "video":
+            continue
+        stream_id, label = _trajectory_video_label(str(feature))
+        info_spec = spec.get("info") if isinstance(spec.get("info"), dict) else {}
+        fps = info_spec.get("video.fps", info.get("fps"))
+        episodes: dict[str, dict[str, Any]] = {}
+        for table in episode_tables:
+            columns = set(table.column_names)
+            keys = {
+                "episode": "episode_index",
+                "chunk": f"videos/{feature}/chunk_index",
+                "file": f"videos/{feature}/file_index",
+                "from": f"videos/{feature}/from_timestamp",
+                "to": f"videos/{feature}/to_timestamp",
+            }
+            if not set(keys.values()).issubset(columns):
+                continue
+            for row_index in range(table.num_rows):
+                episode_index = int(table[keys["episode"]][row_index].as_py())
+                chunk_index = int(table[keys["chunk"]][row_index].as_py())
+                file_index = int(table[keys["file"]][row_index].as_py())
+                try:
+                    video_path = _trajectory_video_relative_path(
+                        dataset_dir,
+                        video_path_template,
+                        str(feature),
+                        chunk_index,
+                        file_index,
+                    )
+                    available = video_path.is_file()
+                except ValueError:
+                    available = False
+                episodes[str(episode_index)] = {
+                    "chunk_index": chunk_index,
+                    "file_index": file_index,
+                    "from_timestamp": float(table[keys["from"]][row_index].as_py()),
+                    "to_timestamp": float(table[keys["to"]][row_index].as_py()),
+                    "available": available,
+                }
+        streams.append(
+            {
+                "stream_id": stream_id,
+                "feature": str(feature),
+                "label": label,
+                "fps": float(fps) if fps is not None else None,
+                "episodes": episodes,
+            }
+        )
+    return {
+        "schema_version": TRAJECTORY_VIDEO_SCHEMA_VERSION,
+        "streams": streams,
+    }
+
+
+def _hydrate_trajectory_video_urls(summary: dict[str, Any], job_id: str) -> dict[str, Any]:
+    hydrated = dict(summary)
+    media = hydrated.get("video_media")
+    if not isinstance(media, dict):
+        return hydrated
+    streams = []
+    for raw_stream in media.get("streams", []):
+        if not isinstance(raw_stream, dict):
+            continue
+        stream = dict(raw_stream)
+        episodes = {}
+        for episode_index, raw_episode in (raw_stream.get("episodes") or {}).items():
+            if not isinstance(raw_episode, dict):
+                continue
+            episode = dict(raw_episode)
+            if episode.get("available"):
+                episode["url"] = (
+                    f"/api/jobs/{quote(job_id, safe='')}/trajectory-video/"
+                    f"{quote(str(stream.get('feature', '')), safe='')}/"
+                    f"{int(episode['chunk_index'])}/{int(episode['file_index'])}"
+                )
+            episodes[str(episode_index)] = episode
+        stream["episodes"] = episodes
+        streams.append(stream)
+    hydrated["video_media"] = {
+        "schema_version": media.get("schema_version", TRAJECTORY_VIDEO_SCHEMA_VERSION),
+        "streams": streams,
+    }
+    return hydrated
+
+
 def _job_lerobot_features(job: dict[str, Any]) -> dict[str, Any] | None:
     summary = job.get("effective_config_summary")
     if isinstance(summary, dict) and isinstance(summary.get("lerobot_features"), dict):
@@ -289,6 +431,25 @@ def _job_lerobot_features(job: dict[str, Any]) -> dict[str, Any] | None:
         except Exception:
             return None
     return None
+
+
+def _job_feature_contract(job: dict[str, Any]):
+    raw = job.get("feature_contract")
+    if isinstance(raw, dict) and isinstance(raw.get("config"), dict):
+        return compile_lerobot_feature_contract(raw["config"])
+    return compile_lerobot_feature_contract(_job_lerobot_features(job))
+
+
+def _stage_config_fingerprint(job: dict[str, Any], stage: str) -> str:
+    if stage in {"scene1", "scene2", "scene3"}:
+        return str(job.get("processing_config_fingerprint") or job.get("processing_config_sha256") or job.get("config_sha256"))
+    return str(job.get("feature_contract_fingerprint") or job.get("contract_fingerprint") or job.get("config_sha256"))
+
+
+def _checkpoint_metadata_matches(actual: Any, expected: Any, required: bool) -> bool:
+    if required:
+        return actual == expected
+    return actual in {None, expected}
 
 
 def _tcp_offsets_or_legacy(lerobot_features: dict[str, Any] | None) -> dict[str, tuple[int, int]]:
@@ -1551,6 +1712,15 @@ class DataCleanWebApp:
             bridge_mode=bridge_mode,
             formal_manual_override_confirmed=True,
         )
+        feature_contract = compile_lerobot_feature_contract(
+            effective.lerobot_features_config()
+        )
+        snapshot_metadata = read_config_snapshot_metadata(effective.snapshot_path)
+        processing_config_sha256 = str(
+            snapshot_metadata.get("processing_config_fingerprint") or ""
+        )
+        if not processing_config_sha256:
+            raise ValueError("config snapshot did not contain processing_config_fingerprint")
         selected_raw_size = sum(path.stat().st_size for path in selected)
         output_available_bytes = shutil.disk_usage(output_parent).free
         output_required_bytes = max(
@@ -1677,6 +1847,12 @@ class DataCleanWebApp:
             "space_estimate": space_estimate,
             "final_output_space": final_output_space,
             "config_sha256": sha256_file(effective.snapshot_path),
+            "processing_config_sha256": processing_config_sha256,
+            "processing_config_fingerprint": processing_config_sha256,
+            "feature_contract": feature_contract.to_dict(),
+            "contract_fingerprint": feature_contract.fingerprint,
+            "feature_contract_fingerprint": feature_contract.fingerprint,
+            "feature_schema_version": feature_contract.schema_version,
             "current_checkpoint": None,
             "checkpoint_attempts": {},
             "last_heartbeat": None,
@@ -1808,7 +1984,7 @@ class DataCleanWebApp:
                     "export",
                     expected_stage_version=STAGE_VERSIONS["export"],
                     expected_input_sha256=export_input_sha,
-                    expected_config_sha256=job["config_sha256"],
+                    expected_config_sha256=_stage_config_fingerprint(job, "export"),
                 )
                 if export_checkpoint.valid:
                     job["recovery_from"] = "export"
@@ -1837,7 +2013,9 @@ class DataCleanWebApp:
                         stage_name="export",
                         stage_version=STAGE_VERSIONS["export"],
                         input_sha256=export_input_sha,
-                        config_sha256=job["config_sha256"],
+                        config_sha256=_stage_config_fingerprint(job, "export"),
+                        contract_fingerprint=job.get("contract_fingerprint"),
+                        feature_schema_version=job.get("feature_schema_version"),
                     )
                     job.setdefault("checkpoint_attempts", {})["export"] = attempt
                     self._mark_stage(
@@ -1903,7 +2081,7 @@ class DataCleanWebApp:
                     "gate",
                     expected_stage_version=STAGE_VERSIONS["gate"],
                     expected_input_sha256=export_input_sha,
-                    expected_config_sha256=job["config_sha256"],
+                    expected_config_sha256=_stage_config_fingerprint(job, "gate"),
                 )
                 gate_record = (
                     self.job_store.checkpoint_record(job_id, -1, "gate")
@@ -1912,8 +2090,37 @@ class DataCleanWebApp:
                 )
                 gate_validation = (gate_record or {}).get("validation") or {}
                 checkpoint_quality = gate_validation.get("quality_summary")
+                gate_metadata_valid = (
+                    _checkpoint_metadata_matches(
+                        gate_validation.get("quality_report_version"),
+                        "dataset_quality_report_v2",
+                        job.get("quality_summary") is not None or job.get("contract_fingerprint") is not None,
+                    )
+                    and _checkpoint_metadata_matches(
+                        gate_validation.get("feature_schema_version"),
+                        job.get("feature_schema_version"),
+                        job.get("feature_schema_version") is not None,
+                    )
+                    and _checkpoint_metadata_matches(
+                        gate_validation.get("contract_fingerprint"),
+                        job.get("contract_fingerprint"),
+                        job.get("contract_fingerprint") is not None,
+                    )
+                )
                 if gate_checkpoint.valid and (
-                    job.get("quality_summary") or isinstance(checkpoint_quality, dict)
+                    gate_metadata_valid
+                    and (
+                    (
+                        isinstance(job.get("quality_summary"), dict)
+                        and job["quality_summary"].get("report_version") == "dataset_quality_report_v2"
+                    )
+                    or (
+                        isinstance(checkpoint_quality, dict)
+                        and checkpoint_quality.get("report_version") == "dataset_quality_report_v2"
+                    )
+                    or job.get("quality_summary")
+                    or isinstance(checkpoint_quality, dict)
+                    )
                 ):
                     self._mark_stage(job, 5, "success", "官方兼容门禁 checkpoint 有效，已跳过重复验收。")
                     quality_summary = job.get("quality_summary") or checkpoint_quality
@@ -1936,7 +2143,10 @@ class DataCleanWebApp:
                         stage_name="gate",
                         stage_version=STAGE_VERSIONS["gate"],
                         input_sha256=export_input_sha,
-                        config_sha256=job["config_sha256"],
+                        config_sha256=_stage_config_fingerprint(job, "gate"),
+                        contract_fingerprint=job.get("contract_fingerprint"),
+                        feature_schema_version=job.get("feature_schema_version"),
+                        quality_report_version="dataset_quality_report_v2",
                     )
                     job.setdefault("checkpoint_attempts", {})["gate"] = attempt
                     self._mark_stage(
@@ -1970,6 +2180,9 @@ class DataCleanWebApp:
                             validation={
                                 "official": job["official_compatibility"],
                                 "quality_summary": quality_summary,
+                                "quality_report_version": quality_summary.get("report_version"),
+                                "feature_schema_version": job.get("feature_schema_version"),
+                                "contract_fingerprint": job.get("contract_fingerprint"),
                                 "forge_warnings": quality_summary.get("warnings", []),
                             },
                         )
@@ -1984,10 +2197,8 @@ class DataCleanWebApp:
                     self._mark_stage(
                         job,
                         5,
-                        "partial_failed" if quality_summary.get("warnings") else "success",
-                        "官方格式与 ACT batch 门禁通过；Forge 仅保留业务质量警告。"
-                        if quality_summary.get("warnings")
-                        else "官方格式、视频、stats 与 ACT batch 门禁全部通过。",
+                        "partial_failed" if quality_summary.get("warnings") or quality_summary.get("decision") in {"review", "block"} else "success",
+                        "官方格式通过；质量报告结论为 " + str(quality_summary.get("decision", "legacy")) + "。",
                     )
 
                 replacements = {
@@ -2344,7 +2555,7 @@ class DataCleanWebApp:
             stage,
             expected_stage_version=STAGE_VERSIONS[stage],
             expected_input_sha256=input_sha256,
-            expected_config_sha256=job["config_sha256"],
+            expected_config_sha256=_stage_config_fingerprint(job, stage),
         )
         if checkpoint.valid:
             record = self.job_store.checkpoint_record(
@@ -2372,7 +2583,10 @@ class DataCleanWebApp:
             stage_name=stage,
             stage_version=STAGE_VERSIONS[stage],
             input_sha256=input_sha256,
-            config_sha256=job["config_sha256"],
+            config_sha256=_stage_config_fingerprint(job, stage),
+            processing_config_fingerprint=job.get("processing_config_fingerprint") if stage in {"scene1", "scene2", "scene3"} else None,
+            contract_fingerprint=job.get("contract_fingerprint") if stage == "bridge" else None,
+            feature_schema_version=job.get("feature_schema_version") if stage == "bridge" else None,
         )
         item.setdefault("checkpoint_attempts", {})[stage] = attempt
         job.setdefault("checkpoint_attempts", {})[f"{file_index}:{stage}"] = attempt
@@ -2563,6 +2777,9 @@ class DataCleanWebApp:
                 "forge_ready_mcap": outputs.get("forge_ready_mcap"),
                 "forge_topic_config": outputs.get("forge_topic_config"),
                 "forge_bridge_report": outputs.get("forge_bridge_report"),
+                "feature_contract_path": outputs.get("feature_contract_path"),
+                "lineage_path": outputs.get("lineage_path"),
+                "contract_fingerprint": outputs.get("contract_fingerprint"),
                 "training_eligible": outputs.get("training_eligible"),
             }
         )
@@ -2705,15 +2922,9 @@ class DataCleanWebApp:
     ) -> dict[str, Any]:
         if int(fps) != DEFAULT_EXPORT_FPS:
             raise ValueError(f"official production export requires {DEFAULT_EXPORT_FPS} fps")
-        feature_schema = lerobot_feature_schema(_job_lerobot_features(job))
-        state_dim = int(feature_schema["observation.state"]["shape"][0])
-        action_dim = int(feature_schema["action"]["shape"][0])
-        if (state_dim, action_dim) != (DEFAULT_STATE_DIM, DEFAULT_ACTION_DIM):
-            raise ValueError(
-                "official production contract requires "
-                f"state/action={DEFAULT_STATE_DIM}/{DEFAULT_ACTION_DIM}, "
-                f"got {state_dim}/{action_dim}"
-            )
+        feature_contract = _job_feature_contract(job)
+        state_dim = feature_contract.state.dim
+        action_dim = feature_contract.action.dim
         return run_official_exporter(
             LeRobotExportRequest(
                 job_id=job["job_id"],
@@ -2724,94 +2935,35 @@ class DataCleanWebApp:
                 fps=int(fps),
                 state_dim=state_dim,
                 action_dim=action_dim,
+                state_names=feature_contract.state.names,
+                action_names=feature_contract.action.names,
+                feature_contract=feature_contract.to_dict(),
+                contract_fingerprint=feature_contract.fingerprint,
             ),
             exchange_dir=exchange_dir,
         )
 
     def run_dataset_quality_checks(self, *, dataset_dir: Path, reports_dir: Path, fps: float, job: dict[str, Any] | None = None) -> dict[str, Any]:
-        reports_dir.mkdir(parents=True, exist_ok=True)
-        forge_bin = Path("/home/hit/forge/.venv/bin/forge")
-        forge = str(forge_bin) if forge_bin.exists() else "forge"
-        inspect_path = reports_dir / "forge_inspect.json"
-        quality_path = reports_dir / "forge_quality.json"
-        flagged_path = reports_dir / "forge_quality_flagged.json"
-        warnings: list[str] = []
-
-        inspect_proc = subprocess.run(
-            [forge, "inspect", str(dataset_dir), "--output", "json", "--deep"],
-            text=True,
-            capture_output=True,
-            check=False,
-            env={**os.environ, "COLUMNS": "100000"},
-        )
-        inspect_path.write_text(
-            inspect_proc.stdout if inspect_proc.stdout else inspect_proc.stderr,
-            encoding="utf-8",
-        )
-        if inspect_proc.returncode != 0:
-            warnings.append(f"forge inspect failed: {inspect_proc.stderr.strip()}")
-
-        quality_proc = subprocess.run(
-            [
-                forge,
-                "quality",
-                str(dataset_dir),
-                "--fps",
-                str(fps),
-                "--export",
-                str(quality_path),
-                "--export-flagged",
-                str(flagged_path),
-            ],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        if quality_proc.returncode != 0:
-            warnings.append(f"forge quality failed: {quality_proc.stderr.strip()}")
-            if not quality_path.exists():
-                quality_path.write_text(quality_proc.stdout + quality_proc.stderr, encoding="utf-8")
-        flagged = _read_json(flagged_path, [])
-        flagged_count = count_flagged_episodes(flagged)
-        if flagged_count:
-            warnings.append(f"quality flagged episodes: {flagged_count}")
-        inspect_data = _read_json(inspect_path, {})
-        quality_data = _read_json(quality_path, {})
-        summary = {
-            "inspect_report": str(inspect_path),
-            "quality_report": str(quality_path),
-            "flagged_report": str(flagged_path) if flagged_path.exists() else None,
-            "num_episodes": inspect_data.get("num_episodes") if isinstance(inspect_data, dict) else None,
-            "total_frames": inspect_data.get("total_frames") if isinstance(inspect_data, dict) else None,
-            "format": inspect_data.get("format") if isinstance(inspect_data, dict) else None,
-            "overall_score": quality_data.get("overall_score") if isinstance(quality_data, dict) else None,
-            "subscores": quality_data.get("subscores", {}) if isinstance(quality_data, dict) else {},
-            "per_episode": quality_data.get("per_episode", []) if isinstance(quality_data, dict) else [],
-            "flags": quality_data.get("flags", []) if isinstance(quality_data, dict) else [],
-            "recommendations": quality_data.get("recommendations", []) if isinstance(quality_data, dict) else [],
-            "flagged_count": flagged_count,
-            "warnings": warnings,
-        }
-        try:
-            summary["training_readiness"] = build_training_readiness_summary(
-                job=job or {},
-                quality_summary=summary,
-                dataset_dir=dataset_dir,
-                reports_dir=reports_dir,
-            )
-        except Exception as exc:  # noqa: BLE001
-            summary["warnings"].append(f"training readiness summary failed: {type(exc).__name__}: {exc}")
-        _write_json_atomic(reports_dir / "quality_visual_summary.json", summary)
-        return summary
+        return DatasetQualityPipeline(
+            dataset_dir=dataset_dir,
+            reports_dir=reports_dir,
+            fps=fps,
+            job=job,
+        ).run()
 
     def _hydrate_quality_summary(self, job: dict[str, Any]) -> None:
         summary = job.get("quality_summary")
+        if isinstance(summary, dict) and summary.get("report_version") == "dataset_quality_report_v2":
+            return
         if isinstance(summary, dict) and "per_episode" in summary:
             self._ensure_training_readiness_summary(job, summary)
             return
         sidecar_dir = Path(job.get("sidecar_dir", ""))
         cache_path = sidecar_dir / "reports" / "quality_visual_summary.json"
         cached = _read_json(cache_path, None)
+        if isinstance(cached, dict) and cached.get("report_version") == "dataset_quality_report_v2":
+            job["quality_summary"] = cached
+            return
         if isinstance(cached, dict) and "per_episode" in cached:
             job["quality_summary"] = cached
             self._ensure_training_readiness_summary(job, cached)
@@ -2828,6 +2980,13 @@ class DataCleanWebApp:
             flagged_path = Path(summary["flagged_report"])
         else:
             flagged_path = sidecar_dir / "reports" / "forge_quality_flagged.json"
+        v2_path = sidecar_dir / "reports" / "dataset_quality_report_v2.json"
+        v2 = _read_json(v2_path, None)
+        if isinstance(v2, dict) and v2.get("report_version") == "dataset_quality_report_v2":
+            job["quality_summary"] = v2
+            if sidecar_dir:
+                _write_json_atomic(cache_path, v2)
+            return
         quality_data = _read_json(quality_path, {})
         inspect_data = _read_json(inspect_path, {})
         flagged = _read_json(flagged_path, [])
@@ -2854,6 +3013,8 @@ class DataCleanWebApp:
             _write_json_atomic(cache_path, hydrated)
 
     def _ensure_training_readiness_summary(self, job: dict[str, Any], summary: dict[str, Any]) -> None:
+        if summary.get("report_version") == "dataset_quality_report_v2":
+            return
         sidecar_dir = Path(job.get("sidecar_dir", ""))
         reports_dir = sidecar_dir / "reports"
         self._refresh_flagged_count(summary, reports_dir)
@@ -2912,8 +3073,13 @@ class DataCleanWebApp:
             lerobot_features = _job_lerobot_features(job)
         cache_path = sidecar_dir / "reports" / "trajectory_summary.json"
         cached = _read_json(cache_path, None)
-        if isinstance(cached, dict):
+        if (
+            isinstance(cached, dict)
+            and cached.get("trajectory_video_schema_version") == TRAJECTORY_VIDEO_SCHEMA_VERSION
+            and isinstance(cached.get("video_media"), dict)
+        ):
             data = _hydrate_trajectory_metadata(cached, bridge_mode)
+            data = _hydrate_trajectory_video_urls(data, job_id)
             if data != cached and sidecar_dir:
                 _write_json_atomic(cache_path, data)
             return data
@@ -2921,6 +3087,7 @@ class DataCleanWebApp:
             self._build_trajectory_summary(dataset_dir, lerobot_features),
             bridge_mode,
         )
+        data = _hydrate_trajectory_video_urls(data, job_id)
         if sidecar_dir:
             _write_json_atomic(cache_path, data)
         return data
@@ -3010,8 +3177,10 @@ class DataCleanWebApp:
         if total_frames == 0:
             raise ValueError("lerobot_data_files_not_found")
         center = [(mins[index] + maxs[index]) / 2 for index in range(3)]
+        video_media = _build_trajectory_video_metadata(dataset_dir, pq)
         return {
             "dataset_dir": str(dataset_dir),
+            "trajectory_video_schema_version": TRAJECTORY_VIDEO_SCHEMA_VERSION,
             "episodes": [episodes[key] for key in sorted(episodes)],
             "total_frames": total_frames,
             "bounds": {
@@ -3021,7 +3190,42 @@ class DataCleanWebApp:
             },
             "state_contract": _state_contract_text(lerobot_features),
             "lerobot_feature_schema": lerobot_feature_schema(lerobot_features),
+            "video_media": video_media,
         }
+
+    def trajectory_video(
+        self,
+        job_id: str,
+        feature: str,
+        chunk_index: int,
+        file_index: int,
+    ) -> Path:
+        with self.lock:
+            job = self.jobs.get(job_id)
+            if job is None:
+                try:
+                    job = self.job_store.load_job(job_id)
+                except KeyError as exc:
+                    raise KeyError(job_id) from exc
+        dataset_dir = Path(str(job.get("dataset_dir", ""))).expanduser().resolve()
+        info = _read_json(dataset_dir / "meta/info.json", {})
+        features = info.get("features") if isinstance(info, dict) else None
+        spec = features.get(feature) if isinstance(features, dict) else None
+        if not isinstance(spec, dict) or spec.get("dtype") != "video":
+            raise ValueError("video_feature_not_declared")
+        template = str(info.get("video_path", "")) if isinstance(info, dict) else ""
+        if not template:
+            raise ValueError("video_path_template_missing")
+        path = _trajectory_video_relative_path(
+            dataset_dir,
+            template,
+            feature,
+            int(chunk_index),
+            int(file_index),
+        )
+        if not path.is_file():
+            raise FileNotFoundError(str(path))
+        return path
 
     def _rewrite_value_paths(self, value: Any, replacements: dict[str, str]) -> Any:
         if isinstance(value, str):
@@ -3262,6 +3466,20 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
             elif parsed.path.startswith("/api/baton-pose-audit/"):
                 audit_id = parsed.path.split("/")[3]
                 self._send_json(self.app_state.get_baton_pose_audit(audit_id))
+            elif "/trajectory-video/" in parsed.path:
+                parts = parsed.path.split("/")
+                if len(parts) != 8 or parts[1] != "api" or parts[2] != "jobs" or parts[4] != "trajectory-video":
+                    self._send_error(HTTPStatus.NOT_FOUND, "not_found")
+                    return
+                job_id = unquote(parts[3])
+                feature = unquote(parts[5])
+                video_path = self.app_state.trajectory_video(
+                    job_id,
+                    feature,
+                    int(parts[6]),
+                    int(parts[7]),
+                )
+                self._send_video(video_path)
             elif parsed.path.startswith("/api/jobs/") and parsed.path.endswith("/trajectory"):
                 job_id = parsed.path.split("/")[3]
                 self._send_json(self.app_state.trajectory(job_id))
@@ -3361,6 +3579,58 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def _send_video(self, path: Path) -> None:
+        size = path.stat().st_size
+        if size <= 0:
+            self._send_error(HTTPStatus.NOT_FOUND, "empty_video")
+            return
+        range_header = self.headers.get("Range", "")
+        start = 0
+        end = max(0, size - 1)
+        status = HTTPStatus.OK
+        if range_header:
+            if not range_header.startswith("bytes=") or "," in range_header:
+                self.send_response(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                self.send_header("Content-Range", f"bytes */{size}")
+                self.end_headers()
+                return
+            try:
+                raw_start, raw_end = range_header[6:].split("-", 1)
+                if raw_start:
+                    start = int(raw_start)
+                    end = int(raw_end) if raw_end else end
+                else:
+                    suffix_length = int(raw_end)
+                    if suffix_length <= 0:
+                        raise ValueError
+                    start = max(0, size - suffix_length)
+                if start < 0 or start >= size or end < start:
+                    raise ValueError
+                end = min(end, size - 1)
+            except ValueError:
+                self.send_response(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                self.send_header("Content-Range", f"bytes */{size}")
+                self.end_headers()
+                return
+            status = HTTPStatus.PARTIAL_CONTENT
+        length = end - start + 1
+        self.send_response(status)
+        self.send_header("Content-Type", "video/mp4")
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(length))
+        if status == HTTPStatus.PARTIAL_CONTENT:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.end_headers()
+        with path.open("rb") as stream:
+            stream.seek(start)
+            remaining = length
+            while remaining:
+                chunk = stream.read(min(1024 * 1024, remaining))
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                remaining -= len(chunk)
 
     def _send_error(self, status: HTTPStatus, message: str) -> None:
         data = json.dumps({"error": message}, ensure_ascii=False).encode("utf-8")
@@ -3462,6 +3732,10 @@ INDEX_HTML = r"""<!doctype html>
     .trajectory-dual { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
     .trajectory-dual .trajectory-canvas { height:620px; }
     .trajectory-panel-title { margin:0 0 8px; color:var(--muted); font-size:13px; }
+    .trajectory-video-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; margin-top:12px; }
+    .trajectory-video-panel { margin-top:12px; }
+    .trajectory-video { width:100%; max-height:320px; border:1px solid var(--line); border-radius:12px; background:#0b1020; display:block; }
+    .trajectory-video-title { margin:0 0 6px; color:var(--muted); font-size:13px; }
     .trajectory-playback { margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
     .trajectory-playback input[type="range"] { padding:0; }
     .legend-dot { display:inline-block; width:10px; height:10px; border-radius:999px; margin-right:6px; }
@@ -3503,7 +3777,7 @@ INDEX_HTML = r"""<!doctype html>
 </div></div>
 <div id="confirm-modal" class="modal"><div class="modal-card" id="confirm-body"></div></div>
 <script>
-let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), auditFiles:[], auditSelected:new Set(), auditPreview:null, auditTask:null, auditMoveTask:null, auditPollTimer:null, currentJob:null, jobTab:'quality', trajectory:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null}, dirTarget:null, dirPath:'/', preview:null, retryDraft:null, productionConfig:null};
+let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), auditFiles:[], auditSelected:new Set(), auditPreview:null, auditTask:null, auditMoveTask:null, auditPollTimer:null, currentJob:null, jobTab:'quality', trajectory:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true, showVideoLeft:false, showVideoRight:false}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null, mediaSyncing:false}, qualityDetailsOpen:{}, jobPollInFlight:false, dirTarget:null, dirPath:'/', preview:null, retryDraft:null, productionConfig:null};
 const statusText = {queued:'排队中', running:'运行中', recovering:'恢复中', succeeded:'成功', partial_failed:'部分失败', failed:'失败', cancelled:'已取消', waiting:'等待', success:'成功', warning:'成功但有警告', skipped:'跳过', moved:'已移动', unchecked:'未审计', eligible:'健康', rejected:'缺陷', unit_consistent_likely:'正常', unit_mismatch_suspected:'单位疑似不统一', missing_pose_topic:'缺少位姿 topic', pose_value_invalid_suspected:'位姿值异常', decode_failed:'读取失败', normal:'正常', unit_mismatch:'单位异常', other_issue:'其他异常'};
 async function api(path, opts={}) {
   const res = await fetch(path, {headers:{'Content-Type':'application/json'}, ...opts});
@@ -3514,6 +3788,20 @@ async function api(path, opts={}) {
 function badge(s) { return `<span class="badge ${s}">${statusText[s] || s}</span>`; }
 function fmtMs(ms) { if (!ms) return '-'; return ms < 1000 ? `${ms} ms` : `${(ms/1000).toFixed(1)} s`; }
 function setNotice(text, kind='notice') { document.getElementById('notice').innerHTML = text ? `<div class="${kind}">${text}</div>` : ''; }
+function captureQualityDetails() {
+  const open = state.qualityDetailsOpen || {};
+  document.querySelectorAll('details[data-detail-key]').forEach(details => {
+    open[details.dataset.detailKey] = details.open;
+  });
+  state.qualityDetailsOpen = open;
+  return open;
+}
+function restoreQualityDetails() {
+  const open = state.qualityDetailsOpen || {};
+  document.querySelectorAll('details[data-detail-key]').forEach(details => {
+    details.open = Boolean(open[details.dataset.detailKey]);
+  });
+}
 function showPage(page) {
   if (page !== 'job') stopTrajectoryPlayback();
   state.page = page;
@@ -3830,18 +4118,25 @@ function lerobotSegmentLabel(id) {
 function lerobotFeatureRows(kind, segments) {
   return (segments || []).map((item, index) => {
     const required = item.id.includes('tcp_pose');
+    const names = item.dimension_names || item.names || [];
+    const nameInputs = names.map((name, nameIndex) => `<input data-feature-name value="${escapeHtml(name)}" title="machine name ${nameIndex}" style="width:150px;margin:2px">`).join('');
     return `<tr data-feature-kind="${kind}" data-feature-id="${escapeHtml(item.id)}">
       <td><input data-feature-enabled type="checkbox" ${item.enabled?'checked':''} ${required?'disabled':''}></td>
-      <td>${escapeHtml(lerobotSegmentLabel(item.id))}<br><span class="path">${escapeHtml(item.id)}</span></td>
+      <td>${escapeHtml(item.display_name || lerobotSegmentLabel(item.id))}<br><span class="path">${escapeHtml(item.id)}</span><br><input data-feature-display value="${escapeHtml(item.display_name || lerobotSegmentLabel(item.id))}" title="display name"></td>
+      <td>${nameInputs}<br><span class="path">${escapeHtml(item.unit || '')} / ${escapeHtml(item.semantic || '')}</span></td>
       <td><input data-feature-order value="${index + 1}" style="width:72px"></td>
     </tr>`;
   }).join('');
 }
 function productionLerobotFields(web) {
   const features = web?.lerobot_features || {};
+  const contract = web?.feature_contract_preview || {};
+  const state = contract['observation.state'] || {};
+  const action = contract.action || {};
+  const preview = `<div class="notice">服务端 contract preview：state shape ${JSON.stringify(state.shape || [])} / action shape ${JSON.stringify(action.shape || [])}；fingerprint <span class="path">${escapeHtml(contract.contract_fingerprint || '-')}</span><br>state: ${escapeHtml((state.names || []).join(', '))}<br>action: ${escapeHtml((action.names || []).join(', '))}</div>`;
   return `<div class="config-grid">
-    <div class="config-section"><h3>observation.state</h3><table><thead><tr><th>启用</th><th>段落</th><th>顺序</th></tr></thead><tbody>${lerobotFeatureRows('state_segments', features.state_segments)}</tbody></table></div>
-    <div class="config-section"><h3>action（固定 t+1 绝对量）</h3><table><thead><tr><th>启用</th><th>段落</th><th>顺序</th></tr></thead><tbody>${lerobotFeatureRows('action_segments', features.action_segments)}</tbody></table></div>
+    ${preview}<div class="config-section"><h3>observation.state</h3><table><thead><tr><th>启用</th><th>字段 / display name</th><th>machine names / unit / semantic</th><th>顺序</th></tr></thead><tbody>${lerobotFeatureRows('state_segments', features.state_segments)}</tbody></table></div>
+    <div class="config-section"><h3>action（t+1 绝对目标）</h3><table><thead><tr><th>启用</th><th>字段 / display name</th><th>machine names / unit / semantic</th><th>顺序</th></tr></thead><tbody>${lerobotFeatureRows('action_segments', features.action_segments)}</tbody></table></div>
   </div>`;
 }
 function productionFileManagementFields(value) {
@@ -3871,7 +4166,7 @@ function renderProductionConfig() {
   <div class="card"><h3>动相机 → 末端 TCP</h3><p class="muted">每帧只应用一次固定 camera→TCP 平移；不做 common frame、工作坐标系或机械臂 base 转换。人工输入使用 mm，Runtime 与最终 TCP 输出使用 m。</p><div class="config-grid">${handCard('left')}${handCard('right')}</div></div>
   <div class="card"><h3>滤波参数</h3><p class="muted">保存后作为生产默认值影响后续任务；已运行任务保留自己的 config snapshot。</p>${productionFilterFields(web)}</div>
   <div class="card"><h3>批量稳定与文件管理</h3><p class="muted">健康审计在独立页面执行并移动 MCAP，但不限制正式清洗的输入目录；成功和失败原始文件分别归档到配置目录。</p>${productionFileManagementFields(fileManagement)}</div>
-  <div class="card"><h3>LeRobot 维度定义</h3><p class="muted">候选字段来自当前 aligned MCAP。TCP pose 为必选；action 固定使用下一帧 t+1 绝对目标。</p>${productionLerobotFields(web)}</div>
+  <div class="card"><h3>LeRobot 维度定义</h3><p class="muted">候选字段来自当前 aligned MCAP。TCP pose 为必选；action 固定使用下一帧 t+1 绝对目标。</p>${productionLerobotFields({...web, feature_contract_preview:data.feature_contract_preview})}</div>
   <div class="card"><div id="production-errors"></div><button class="primary" onclick="saveProductionConfig()">校验并保存正式配置</button></div>`;
 }
 function productionPayload() {
@@ -3887,7 +4182,7 @@ function productionPayload() {
     result.web_pipeline.lerobot_features[kind] = [...document.querySelectorAll(`[data-feature-kind="${kind}"]`)]
       .map(row => ({id:row.dataset.featureId, enabled:row.querySelector('[data-feature-enabled]').checked, order:Number(row.querySelector('[data-feature-order]').value) || 999}))
       .sort((a,b) => a.order - b.order)
-      .map(item => ({id:item.id, enabled:item.enabled}));
+      .map(item => { const row = document.querySelector(`[data-feature-kind="${kind}"][data-feature-id="${item.id}"]`); return {id:item.id, enabled:item.enabled, display_name:row.querySelector('[data-feature-display]')?.value || '', dimension_names:[...row.querySelectorAll('[data-feature-name]')].map(input => input.value)}; });
   });
   return result;
 }
@@ -4115,17 +4410,28 @@ async function submitJob() {
   }
 }
 async function openJob(id) {
+  if (state.jobPollInFlight) return;
+  state.jobPollInFlight = true;
   if (state.currentJob && state.currentJob.job_id !== id) {
     stopTrajectoryPlayback(true);
     state.trajectory = null;
     state.trajectoryEpisode = 'all';
+    state.trajectoryView.showVideoLeft = false;
+    state.trajectoryView.showVideoRight = false;
+    state.qualityDetailsOpen = {};
   }
-  const data = await api(`/api/jobs/${id}`);
-  state.currentJob = data.job;
-  renderJob();
-  showPage('job');
+  try {
+    const data = await api(`/api/jobs/${id}`);
+    const changed = JSON.stringify(state.currentJob) !== JSON.stringify(data.job);
+    state.currentJob = data.job;
+    if (changed || state.page !== 'job') renderJob();
+    showPage('job');
+  } finally {
+    state.jobPollInFlight = false;
+  }
 }
 function renderJob() {
+  captureQualityDetails();
   const j = state.currentJob;
   const active = ['queued','running','recovering'].includes(j.status);
   document.title = active ? `${statusText[j.status]} ${j.progress}% - 数据清洗` : `${statusText[j.status] || j.status} - 数据清洗`;
@@ -4143,6 +4449,7 @@ function renderJob() {
   const tab = state.jobTab || 'quality';
   const body = tab === 'trajectory' ? renderTrajectoryTab() : tab === 'files' ? renderFilesTab(j) : renderQualityTab(j);
   document.getElementById('page-job').innerHTML = `<div class="card"><div class="row"><h2>${escapeHtml(j.remark || j.dataset_name || j.job_id)}</h2>${badge(j.status)}<button class="right" onclick="showPage('dashboard')">返回看板</button>${cancelBtn}${resumeBtn}</div><div class="progress"><div style="width:${j.progress}%"></div></div><p><b>Dataset：</b><span class="path">${escapeHtml(j.dataset_dir || '')}</span></p><p><b>Sidecar：</b><span class="path">${escapeHtml(j.sidecar_dir || '')}</span></p><p><b>配置快照：</b><span class="path">${escapeHtml(j.config_snapshot_path || '历史任务无快照')}</span></p><p><b>当前 checkpoint：</b>${escapeHtml(j.current_checkpoint || '-')}；<b>尝试：</b><span class="path">${escapeHtml(JSON.stringify(j.checkpoint_attempts || {}))}</span></p><p><b>heartbeat：</b>${escapeHtml(j.last_heartbeat || '-')}；<b>恢复起点：</b>${escapeHtml(j.recovery_from || '-')}；<b>恢复次数：</b>${j.recovery_count || 0}</p><p class="muted">${j.input_dir} -> ${j.output_parent || j.output_dir}</p><p>${escapeHtml(j.notification || '')}</p><div class="row"><b>纳入 ${included}</b><b>失败 ${j.counts.failed}</b><b>episode ${summary.episodes || 0}</b><b>frame ${summary.frames || 0}</b><b>耗时 ${fmtMs(j.duration_ms)}</b>${visualizer}${failedBtn}</div>${compatibilityBox}<div class="notice">生产任务：各自原始坐标系下的左右 TCP 绝对位姿；官方 LeRobot writer 是唯一生产后端，Forge 仅做业务质量评估。</div></div><div class="grid">${stages}</div><div class="tabs"><button class="${tab==='quality'?'active':''}" onclick="switchJobTab('quality')">评测报告</button><button class="${tab==='trajectory'?'active':''}" onclick="switchJobTab('trajectory')">3D轨迹</button><button class="${tab==='files'?'active':''}" onclick="switchJobTab('files')">逐文件状态</button></div>${body}`;
+  restoreQualityDetails();
   if (tab === 'trajectory') initTrajectoryCanvas();
 }
 function switchJobTab(tab) {
@@ -4162,6 +4469,8 @@ function fmtScore(value, digits=3) {
 }
 function renderQualityTab(j) {
   const quality = j.quality_summary || {};
+  if (quality.report_version === 'dataset_quality_report_v2') return renderQualityReportV2(quality);
+  const legacyNotice = '<div class="warnbox">这是历史任务的 legacy Training Readiness / Forge 摘要；新任务请重新运行质量报告 v2。</div>';
   const summary = j.dataset_summary || {};
   const readiness = quality.training_readiness || fallbackReadiness(quality, summary);
   const riskItems = (readiness.key_risks || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
@@ -4182,7 +4491,7 @@ function renderQualityTab(j) {
   const flags = (quality.flags || []).map(flag => `<span class="badge failed">${escapeHtml(flag)}</span>`).join('') || '<span class="muted">无</span>';
   const recs = (quality.recommendations || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
   const warnings = (quality.warnings || []).map(w => `<li>${escapeHtml(w)}</li>`).join('');
-  return `<div class="card"><h3>PI0.5 / VLA 训练前技术体检</h3>
+  return `<div class="card">${legacyNotice}<h3>PI0.5 / VLA 训练前技术体检</h3>
     <div class="readiness-hero ${escapeHtml(readiness.level || 'review')}">
       <div class="row"><h3 class="readiness-title">${escapeHtml(readiness.conclusion || '需要复查')}</h3><span class="readiness-status ${escapeHtml(readiness.level || 'review')}">${escapeHtml(readiness.conclusion || '需要复查')}</span></div>
       <p>${escapeHtml(readiness.headline || '')}</p>
@@ -4195,9 +4504,20 @@ function renderQualityTab(j) {
     ${warnings ? `<div class="warnbox"><b>质量警告</b><ul>${warnings}</ul></div>` : ''}
     <h4>我应该看什么</h4><div class="readiness-grid">${modules}</div>
     <h4>逐 episode 风险</h4><table><thead><tr><th>episode</th><th>frames</th><th>score</th><th>flags</th><th>动作贴边</th><th>主要贴边维度</th><th>平滑/夹爪</th><th>复查提示</th></tr></thead><tbody>${episodes || '<tr><td colspan="8" class="muted">暂无逐 episode 数据。</td></tr>'}</tbody></table>
-    <details><summary>技术指标详情（Forge 原始分数）</summary><div class="score-grid" style="margin-top:12px">${subscores || '<p class="muted">暂无 subscores。</p>'}</div><h4>全局 flags</h4><div class="row">${flags}</div>${recs ? `<h4>Forge 建议</h4><ul>${recs}</ul>` : ''}</details>
-    <details><summary>报告文件位置</summary><p><b>训练摘要：</b><span class="path">${escapeHtml(readiness.report_path || '')}</span></p><p><b>Inspect：</b><span class="path">${escapeHtml(quality.inspect_report || '')}</span></p><p><b>Quality：</b><span class="path">${escapeHtml(quality.quality_report || '')}</span></p>${quality.flagged_report ? `<p><b>Flagged：</b><span class="path">${escapeHtml(quality.flagged_report)}</span></p>` : ''}</details>
+    <details data-detail-key="legacy-forge"><summary>技术指标详情（Forge 原始分数）</summary><div class="score-grid" style="margin-top:12px">${subscores || '<p class="muted">暂无 subscores。</p>'}</div><h4>全局 flags</h4><div class="row">${flags}</div>${recs ? `<h4>Forge 建议</h4><ul>${recs}</ul>` : ''}</details>
+    <details data-detail-key="legacy-files"><summary>报告文件位置</summary><p><b>训练摘要：</b><span class="path">${escapeHtml(readiness.report_path || '')}</span></p><p><b>Inspect：</b><span class="path">${escapeHtml(quality.inspect_report || '')}</span></p><p><b>Quality：</b><span class="path">${escapeHtml(quality.quality_report || '')}</span></p>${quality.flagged_report ? `<p><b>Flagged：</b><span class="path">${escapeHtml(quality.flagged_report)}</span></p>` : ''}</details>
   </div>`;
+}
+function renderQualityReportV2(quality) {
+  const metrics = (quality.metrics || []).map(metric => {
+    const status = metric.status || 'warn';
+    const traces = (metric.traces || []).map(trace => `<li><span class="path">${escapeHtml(trace.path || trace.source || '')}</span>${trace.locator ? ` / ${escapeHtml(trace.locator)}` : ''}</li>`).join('');
+    const impact = (metric.impact_scope || []).map(item => `<span class="dim-pill">${escapeHtml(item)}</span>`).join('');
+    const training = (metric.training_impact || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+    const fixes = (metric.remediation || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+    return `<div class="readiness-module ${escapeHtml(status)}"><div class="row"><h4>${escapeHtml(metric.metric_id)}</h4><span class="readiness-status ${escapeHtml(status)}">${escapeHtml(status)}</span></div><p>${escapeHtml(metric.summary || '')}</p><p class="metric-note">${escapeHtml(metric.rationale || '')}</p><div>${impact || '<span class="muted">无影响范围</span>'}</div><details data-detail-key="metric-${escapeHtml(metric.metric_id)}"><summary>训练影响、修复建议与 trace</summary>${training ? `<b>训练影响</b><ul>${training}</ul>` : ''}${fixes ? `<b>修复建议</b><ul>${fixes}</ul>` : ''}<ul>${traces || '<li class="muted">无 trace</li>'}</ul></details></div>`;
+  }).join('');
+  return `<div class="card"><div class="readiness-hero ${escapeHtml(quality.decision || 'review')}"><h3>训练前质量结论：${escapeHtml(quality.decision || 'review')}</h3><p>${escapeHtml(quality.summary || '')}</p><p>contract fingerprint <span class="path">${escapeHtml(quality.contract_fingerprint || '-')}</span></p><p>feature contract <span class="path">${escapeHtml(quality.feature_contract_path || '-')}</span></p><p>质量报告 <span class="path">${escapeHtml(quality.report_path || '')}</span></p></div><div class="readiness-grid">${metrics}</div><details data-detail-key="v2-forge"><summary>Forge / parquet / 视频底层证据</summary><p>Forge inspect: <span class="path">${escapeHtml(quality.inspect_report || '')}</span></p><p>Forge quality: <span class="path">${escapeHtml(quality.quality_report || '')}</span></p><p>Forge flagged: <span class="path">${escapeHtml(quality.flagged_report || '')}</span></p></details></div>`;
 }
 function readinessModule(module) {
   const status = module.status || 'info';
@@ -4242,13 +4562,27 @@ function renderTrajectoryTab() {
   const opts = t ? ['<option value="all">全部 episode</option>'].concat(t.episodes.map(ep => `<option value="${ep.episode_index}" ${String(state.trajectoryEpisode)===String(ep.episode_index)?'selected':''}>Episode ${ep.episode_index} (${ep.frame_count} frames)</option>`)).join('') : '<option>加载中</option>';
   const summary = t ? `<div class="row"><b>episode ${t.episodes.length}</b><b>frame ${t.total_frames}</b><b>契约 ${escapeHtml(t.state_contract)}</b></div><p class="muted">固定工程视角：右手坐标系，显示局部原点固定在左下角。Canvas 只做可视化平移与等比例缩放，不改写原始数据。</p>` : '<p class="muted">正在加载轨迹数据...</p>';
   const dual = t?.coordinate_frame_profile === 'dual_source_frame';
-  const canvases = dual
-    ? `<div class="trajectory-dual"><div><p class="trajectory-panel-title">左手 TCP · 左 Baton 原始坐标系</p><canvas id="trajectory-left" class="trajectory-canvas"></canvas></div><div><p class="trajectory-panel-title">右手 TCP · 右 Baton 原始坐标系</p><canvas id="trajectory-right" class="trajectory-canvas"></canvas></div></div>`
-    : `<div><p class="trajectory-panel-title">左右手 TCP · common_frame</p><canvas id="trajectory-common" class="trajectory-canvas"></canvas></div>`;
   const ep = selectedTrajectoryEpisode();
   const disabled = ep ? '' : 'disabled';
   const maxFrame = Math.max(0, (ep?.frame_count || 1) - 1);
-  return `<div class="card"><h3>3D 手末端轨迹</h3>${summary}${dual ? '<div class="warnbox">formal 数据的左右 TCP 分别保留各自 Baton Mini 的原始参考坐标系，采用双画布同步播放，不比较双手绝对空间位置。</div>' : ''}<div class="trajectory-layout">${canvases}<div class="card"><label>Episode</label><select id="trajectory-episode" onchange="selectTrajectoryEpisode(this.value)">${opts}</select><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showLeft?'checked':''} onchange="state.trajectoryView.showLeft=this.checked; drawTrajectory()"> 显示左手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showRight?'checked':''} onchange="state.trajectoryView.showRight=this.checked; drawTrajectory()"> 显示右手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showMarkers?'checked':''} onchange="state.trajectoryView.showMarkers=this.checked; drawTrajectory()"> 显示起点/当前点和当前姿态短轴</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showAxes?'checked':''} onchange="state.trajectoryView.showAxes=this.checked; drawTrajectory()"> 显示坐标轴/网格</label><button onclick="resetTrajectoryView()">重置缩放</button><div class="trajectory-playback"><div class="row"><button id="trajectory-play" onclick="toggleTrajectoryPlayback()" ${disabled}>播放</button><button onclick="resetTrajectoryPlayback()" ${disabled}>回到起点</button></div><label>播放进度</label><input id="trajectory-progress" type="range" min="0" max="${maxFrame}" value="${Math.min(state.trajectoryPlayback.frameIndex, maxFrame)}" oninput="seekTrajectoryFrame(this.value)" ${disabled}><p id="trajectory-time" class="muted">${ep ? '' : '全部 episode 为静态总览，请选择单个 episode 播放。'}</p><label>播放速度</label><select id="trajectory-speed" onchange="setTrajectoryPlaybackSpeed(this.value)" ${disabled}><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1">1x</option><option value="2">2x</option></select></div><div style="margin-top:14px"><span class="legend-dot" style="background:#60a5fa"></span>左手<br><span class="legend-dot" style="background:#f87171"></span>右手</div><p id="trajectory-info" class="muted"></p></div></div></div>`;
+  const streams = (t?.video_media?.streams || []).filter(stream => stream.episodes?.[String(ep?.episode_index)]?.available);
+  const streamById = new Map(streams.map(stream => [stream.stream_id, stream]));
+  const videoToggle = streamId => {
+    const stream = streamById.get(streamId);
+    const key = streamId === 'left' ? 'showVideoLeft' : 'showVideoRight';
+    return `<label><input type="checkbox" style="width:auto" ${state.trajectoryView[key]?'checked':''} ${stream && ep ? '' : 'disabled'} onchange="setTrajectoryVideoEnabled('${streamId}',this.checked)"> ${escapeHtml(stream?.label || (streamId === 'left' ? '左鱼眼 RGB' : '右鱼眼 RGB'))}</label>`;
+  };
+  const videoPanel = streamId => {
+    const key = streamId === 'left' ? 'showVideoLeft' : 'showVideoRight';
+    const stream = streamById.get(streamId);
+    const media = stream?.episodes?.[String(ep?.episode_index)];
+    return ep && state.trajectoryView[key] && stream && media?.url ? `<div class="trajectory-video-panel"><p class="trajectory-video-title">${escapeHtml(stream.label)}</p><video id="trajectory-video-${streamId}" class="trajectory-video" src="${escapeHtml(media.url)}" preload="metadata" controls muted playsinline></video></div>` : '';
+  };
+  const canvases = dual
+    ? `<div class="trajectory-dual"><div><p class="trajectory-panel-title">左手 TCP · 左 Baton 原始坐标系</p><canvas id="trajectory-left" class="trajectory-canvas"></canvas>${videoPanel('left')}</div><div><p class="trajectory-panel-title">右手 TCP · 右 Baton 原始坐标系</p><canvas id="trajectory-right" class="trajectory-canvas"></canvas>${videoPanel('right')}</div></div>`
+    : `<div><p class="trajectory-panel-title">左右手 TCP · common_frame</p><canvas id="trajectory-common" class="trajectory-canvas"></canvas><div class="trajectory-video-grid">${videoPanel('left')}${videoPanel('right')}</div></div>`;
+  const videoSection = t && ep ? `<div class="trajectory-playback"><b>同步 RGB 视频</b>${videoToggle('left')}${videoToggle('right')}<p class="muted">视频固定显示在对应手部轨迹下方，并与当前 episode 的 3D 轨迹共用时间轴。</p></div>` : '';
+  return `<div class="card"><h3>3D 手末端轨迹</h3>${summary}${dual ? '<div class="warnbox">formal 数据的左右 TCP 分别保留各自 Baton Mini 的原始参考坐标系，采用双画布同步播放，不比较双手绝对空间位置。</div>' : ''}<div class="trajectory-layout">${canvases}<div class="card"><label>Episode</label><select id="trajectory-episode" onchange="selectTrajectoryEpisode(this.value)">${opts}</select><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showLeft?'checked':''} onchange="state.trajectoryView.showLeft=this.checked; drawTrajectory()"> 显示左手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showRight?'checked':''} onchange="state.trajectoryView.showRight=this.checked; drawTrajectory()"> 显示右手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showMarkers?'checked':''} onchange="state.trajectoryView.showMarkers=this.checked; drawTrajectory()"> 显示起点/当前点和当前姿态短轴</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showAxes?'checked':''} onchange="state.trajectoryView.showAxes=this.checked; drawTrajectory()"> 显示坐标轴/网格</label><button onclick="resetTrajectoryView()">重置缩放</button><div class="trajectory-playback"><div class="row"><button id="trajectory-play" onclick="toggleTrajectoryPlayback()" ${disabled}>播放</button><button onclick="resetTrajectoryPlayback()" ${disabled}>回到起点</button></div><label>播放进度</label><input id="trajectory-progress" type="range" min="0" max="${maxFrame}" value="${Math.min(state.trajectoryPlayback.frameIndex, maxFrame)}" oninput="seekTrajectoryFrame(this.value)" ${disabled}><p id="trajectory-time" class="muted">${ep ? '' : '全部 episode 为静态总览，请选择单个 episode 播放。'}</p><label>播放速度</label><select id="trajectory-speed" onchange="setTrajectoryPlaybackSpeed(this.value)" ${disabled}><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1">1x</option><option value="2">2x</option></select></div>${videoSection}<div style="margin-top:14px"><span class="legend-dot" style="background:#60a5fa"></span>左手<br><span class="legend-dot" style="background:#f87171"></span>右手</div><p id="trajectory-info" class="muted"></p></div></div></div>`;
 }
 async function ensureTrajectoryLoaded() {
   if (!state.currentJob || state.trajectory?.job_id === state.currentJob.job_id) return;
@@ -4274,6 +4608,7 @@ function initTrajectoryCanvas() {
     };
     canvas.ondblclick = resetTrajectoryView;
   }
+  initTrajectoryVideos();
   const speed = document.getElementById('trajectory-speed');
   if (speed) speed.value = String(state.trajectoryPlayback.speed);
   drawTrajectory();
@@ -4295,6 +4630,106 @@ function selectedTrajectoryEpisodes() {
 }
 function selectedTrajectoryEpisode() {
   return state.trajectoryEpisode === 'all' ? null : selectedTrajectoryEpisodes()[0] || null;
+}
+function trajectoryVideos() {
+  return ['left', 'right'].map(streamId => document.getElementById(`trajectory-video-${streamId}`)).filter(Boolean);
+}
+function trajectoryVideoMedia(streamId) {
+  const ep = selectedTrajectoryEpisode(), streams = state.trajectory?.video_media?.streams || [];
+  if (!ep) return null;
+  const stream = streams.find(item => item.stream_id === streamId);
+  const media = stream?.episodes?.[String(ep.episode_index)];
+  return media?.available ? media : null;
+}
+function setTrajectoryVideoEnabled(streamId, enabled) {
+  stopTrajectoryPlayback();
+  state.trajectoryView[streamId === 'left' ? 'showVideoLeft' : 'showVideoRight'] = enabled;
+  renderJob();
+}
+function initTrajectoryVideos() {
+  for (const video of trajectoryVideos()) {
+    video.playbackRate = state.trajectoryPlayback.speed;
+    video.onloadedmetadata = () => syncTrajectoryVideos(trajectoryRelativeTime(selectedTrajectoryEpisode(), state.trajectoryPlayback.frameIndex), true);
+    video.onplay = () => {
+      if (state.trajectoryPlayback.mediaSyncing || video._trajectoryProgrammaticPlayUntil > performance.now()) return;
+      if (!state.trajectoryPlayback.playing) toggleTrajectoryPlayback();
+    };
+    video.onpause = () => {
+      if (
+        state.trajectoryPlayback.mediaSyncing
+        || !video.paused
+        || video._trajectoryProgrammaticPauseUntil > performance.now()
+      ) return;
+      if (state.trajectoryPlayback.playing) stopTrajectoryPlayback();
+    };
+    video.onseeking = () => {
+      // `syncTrajectoryVideos()` also changes currentTime. Browsers dispatch
+      // `seeking` asynchronously, after mediaSyncing may already be false;
+      // without this guard a programmatic sync is mistaken for a user seek
+      // and stops the trajectory immediately when playback starts.
+      if (state.trajectoryPlayback.mediaSyncing || video._trajectoryProgrammaticSeekUntil > performance.now()) return;
+      const media = trajectoryVideoMedia(video.id.endsWith('-left') ? 'left' : 'right');
+      if (media) seekTrajectoryRelativeTime(Math.max(0, video.currentTime - Number(media.from_timestamp || 0)));
+    };
+  }
+}
+function syncTrajectoryVideos(relativeTime, force=false) {
+  const ep = selectedTrajectoryEpisode();
+  if (!ep) return;
+  const pb = state.trajectoryPlayback;
+  pb.mediaSyncing = true;
+  try {
+    for (const video of trajectoryVideos()) {
+      const streamId = video.id.endsWith('-left') ? 'left' : 'right';
+      const media = trajectoryVideoMedia(streamId);
+      if (!media) continue;
+      const target = Number(media.from_timestamp || 0) + Math.max(0, relativeTime);
+      video.playbackRate = pb.speed;
+      if (force || Math.abs(Number(video.currentTime || 0) - target) > 0.12) {
+        // Keep the marker long enough for the browser's asynchronous seeking
+        // event to arrive, while still allowing a later user seek to work.
+        video._trajectoryProgrammaticSeekUntil = performance.now() + 1000;
+        video.currentTime = target;
+      }
+    }
+  } finally {
+    pb.mediaSyncing = false;
+  }
+}
+function playTrajectoryVideos() {
+  syncTrajectoryVideos(trajectoryRelativeTime(selectedTrajectoryEpisode(), state.trajectoryPlayback.frameIndex), true);
+  for (const video of trajectoryVideos()) {
+    video.playbackRate = state.trajectoryPlayback.speed;
+    // Ignore a delayed `play` event from an earlier command. The trajectory
+    // playback state is the source of truth for programmatic media control.
+    video._trajectoryProgrammaticPlayUntil = performance.now() + 1000;
+    const result = video.play();
+    if (result?.catch) result.catch(() => {});
+  }
+}
+function pauseTrajectoryVideos() {
+  const pb = state.trajectoryPlayback;
+  pb.mediaSyncing = true;
+  try {
+    for (const video of trajectoryVideos()) {
+      // `pause` is delivered asynchronously. Mark it so a delayed event from
+      // this stop cannot cancel the next user-initiated playback.
+      video._trajectoryProgrammaticPauseUntil = performance.now() + 1000;
+      video.pause();
+    }
+  }
+  finally { pb.mediaSyncing = false; }
+}
+function seekTrajectoryRelativeTime(value) {
+  const ep = selectedTrajectoryEpisode();
+  if (!ep) return;
+  stopTrajectoryPlayback();
+  const target = Math.max(0, Math.min(Number(value) || 0, trajectoryRelativeTime(ep, ep.frame_count-1)));
+  let frame = 0;
+  while (frame + 1 < ep.frame_count && trajectoryRelativeTime(ep, frame + 1) <= target) frame += 1;
+  state.trajectoryPlayback.frameIndex = frame;
+  drawTrajectory();
+  syncTrajectoryVideos(trajectoryRelativeTime(ep, frame), true);
 }
 function trajectoryCanvasSpecs() {
   const t = state.trajectory;
@@ -4433,8 +4868,11 @@ function trajectoryRelativeTime(ep, frameIndex) {
 function stopTrajectoryPlayback(reset=false) {
   const pb = state.trajectoryPlayback;
   if (pb.rafId !== null) cancelAnimationFrame(pb.rafId);
-  pb.playing = false; pb.rafId = null; pb.wallStartedAt = null; pb.mediaStartedAt = null;
+  pb.playing = false;
+  pauseTrajectoryVideos();
+  pb.rafId = null; pb.wallStartedAt = null; pb.mediaStartedAt = null;
   if (reset) pb.frameIndex = 0;
+  if (reset) syncTrajectoryVideos(trajectoryRelativeTime(selectedTrajectoryEpisode(), pb.frameIndex), true);
   updateTrajectoryPlaybackControls();
 }
 function resetTrajectoryPlayback() {
@@ -4453,6 +4891,7 @@ function toggleTrajectoryPlayback() {
   pb.playing = true;
   pb.wallStartedAt = performance.now();
   pb.mediaStartedAt = trajectoryRelativeTime(ep, pb.frameIndex);
+  playTrajectoryVideos();
   pb.rafId = requestAnimationFrame(advanceTrajectoryPlayback);
   updateTrajectoryPlaybackControls();
 }
@@ -4462,6 +4901,7 @@ function advanceTrajectoryPlayback(now) {
   const target = pb.mediaStartedAt + (now-pb.wallStartedAt)/1000*pb.speed;
   while (pb.frameIndex+1 < ep.frame_count && trajectoryRelativeTime(ep, pb.frameIndex+1) <= target) pb.frameIndex += 1;
   drawTrajectory();
+  syncTrajectoryVideos(trajectoryRelativeTime(ep, pb.frameIndex));
   if (pb.frameIndex >= ep.frame_count-1) return stopTrajectoryPlayback();
   pb.rafId = requestAnimationFrame(advanceTrajectoryPlayback);
 }
@@ -4469,6 +4909,7 @@ function seekTrajectoryFrame(value) {
   stopTrajectoryPlayback();
   state.trajectoryPlayback.frameIndex = Number(value) || 0;
   drawTrajectory();
+  syncTrajectoryVideos(trajectoryRelativeTime(selectedTrajectoryEpisode(), state.trajectoryPlayback.frameIndex), true);
 }
 function setTrajectoryPlaybackSpeed(value) {
   const pb = state.trajectoryPlayback;

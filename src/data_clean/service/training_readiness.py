@@ -551,12 +551,15 @@ def _feature_schema_from_job(job: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _contract_fingerprint(schema: dict[str, Any]) -> str:
+    existing = schema.get("contract_fingerprint") or schema.get("fingerprint")
+    if existing:
+        return str(existing)
     relevant = {
         "state": schema.get("observation.state", {}),
         "action": schema.get("action", {}),
     }
     payload = json.dumps(relevant, ensure_ascii=False, sort_keys=True)
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _action_dimensions_from_schema(action_schema: dict[str, Any]) -> list[dict[str, Any]]:

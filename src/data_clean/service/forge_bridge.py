@@ -22,8 +22,8 @@ from mcap_ros2.writer import serialize_dynamic
 
 from repo.ros2_codec import Ros2DynamicCodec
 from schemas.lerobot_features import (
-    enabled_action_segments,
-    enabled_state_segments,
+    CompiledLeRobotFeatureContract,
+    compile_lerobot_feature_contract,
     lerobot_feature_schema,
     normalize_lerobot_features_config,
 )
@@ -67,6 +67,9 @@ class ForgeBridgeResult:
     input_step_count: int
     output_step_count: int
     training_eligible: bool
+    feature_contract_path: str = ""
+    lineage_path: str = ""
+    contract_fingerprint: str = ""
 
 
 @dataclass(frozen=True)
@@ -134,10 +137,9 @@ def write_forge_bridge(
     try:
         _validate_mode(active_config)
         streams = _load_aligned_streams(aligned_path)
-        feature_config = normalize_lerobot_features_config(
-            active_config.lerobot_features
-        )
-        required_fields = _required_stream_fields(feature_config)
+        contract = compile_lerobot_feature_contract(active_config.lerobot_features)
+        feature_config = contract.config
+        required_fields = _required_stream_fields(contract)
         timestamps = _complete_step_timestamps(
             streams,
             required_fields=required_fields,
@@ -153,16 +155,25 @@ def write_forge_bridge(
         _validate_stream_values(streams, timestamps, active_config, required_fields)
 
         forge_ready_path = output_path / "forge_ready.mcap"
-        _write_forge_ready_mcap(forge_ready_path, streams, timestamps, feature_config)
+        lineage_path = output_path / "lineage.jsonl"
+        _write_forge_ready_mcap(
+            forge_ready_path, streams, timestamps, contract, lineage_path
+        )
+
+        feature_contract_path = output_path / "feature_contract.json"
+        feature_contract_path.write_text(
+            json.dumps(contract.to_dict(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
 
         topic_config_path = output_path / "forge_topic_config.yaml"
         topic_config_path.write_text(
-            yaml.safe_dump(_topic_config_dict(feature_config), sort_keys=False),
+            yaml.safe_dump(_topic_config_dict(contract), sort_keys=False),
             encoding="utf-8",
         )
 
         schema_path = output_path / "forge_bridge_schema.json"
-        schema = _schema_dict(feature_config)
+        schema = _schema_dict(contract)
         schema_path.write_text(
             json.dumps(schema, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -187,6 +198,10 @@ def write_forge_bridge(
             "formal_action_semantics": "absolute_tcp_target_pose_for_training_side_relative_conversion",
             "lerobot_features": feature_config,
             "feature_schema": schema,
+            "feature_contract": contract.to_dict(),
+            "contract_fingerprint": contract.fingerprint,
+            "feature_contract_path": str(feature_contract_path),
+            "lineage_path": str(lineage_path),
             "aligned_topics": ALIGNED_TOPICS,
             "forge_topics": FORGE_TOPICS,
         }
@@ -202,6 +217,9 @@ def write_forge_bridge(
             input_step_count=len(timestamps),
             output_step_count=len(timestamps) - 1,
             training_eligible=training_eligible,
+            feature_contract_path=str(feature_contract_path),
+            lineage_path=str(lineage_path),
+            contract_fingerprint=contract.fingerprint,
         )
     except Exception as exc:
         report_path.write_text(
@@ -395,8 +413,11 @@ def _write_forge_ready_mcap(
     output_path: Path,
     streams: dict[str, dict[int, Any]],
     timestamps: list[int],
-    feature_config: dict[str, Any],
+    contract: CompiledLeRobotFeatureContract | dict[str, Any],
+    lineage_path: Path | None = None,
 ) -> None:
+    contract = _ensure_contract(contract)
+    lineage_path = lineage_path or output_path.with_name("lineage.jsonl")
     joint_encoder = serialize_dynamic(
         "sensor_msgs/msg/JointState",
         SENSOR_MSGS_JOINT_STATE,
@@ -430,49 +451,70 @@ def _write_forge_ready_mcap(
                 schema_id,
             )
 
-        for step_index, timestamp_ns in enumerate(timestamps[:-1]):
-            next_timestamp_ns = timestamps[step_index + 1]
-            for image_field in ("image_left", "image_right"):
-                sample = streams[image_field][timestamp_ns]
+        with lineage_path.open("w", encoding="utf-8") as lineage:
+            for step_index, timestamp_ns in enumerate(timestamps[:-1]):
+                next_timestamp_ns = timestamps[step_index + 1]
+                for image_field in ("image_left", "image_right"):
+                    sample = streams[image_field][timestamp_ns]
+                    writer.add_message(
+                        channel_id=channels[image_field],
+                        log_time=timestamp_ns,
+                        publish_time=timestamp_ns,
+                        sequence=step_index,
+                        data=sample.payload,
+                    )
+                state_values = _state_vector(streams, timestamp_ns, contract)
                 writer.add_message(
-                    channel_id=channels[image_field],
+                    channel_id=channels["state"],
                     log_time=timestamp_ns,
                     publish_time=timestamp_ns,
                     sequence=step_index,
-                    data=sample.payload,
+                    data=joint_encoder(
+                        _joint_state_message(
+                            state_values, "observation.state", contract.state.names
+                        )
+                    ),
                 )
-            writer.add_message(
-                channel_id=channels["state"],
-                log_time=timestamp_ns,
-                publish_time=timestamp_ns,
-                sequence=step_index,
-                data=joint_encoder(
-                    _joint_state_message(
-                        _state_vector(streams, timestamp_ns, feature_config), "observation.state"
+                action_values = _action_vector(streams, next_timestamp_ns, contract)
+                writer.add_message(
+                    channel_id=channels["action"],
+                    log_time=timestamp_ns,
+                    publish_time=timestamp_ns,
+                    sequence=step_index,
+                    data=joint_encoder(
+                        _joint_state_message(
+                            action_values, "action", contract.action.names
+                        )
+                    ),
+                )
+                lineage.write(
+                    json.dumps(
+                        {
+                            "episode_index": 0,
+                            "step_index": step_index,
+                            "output_timestamp_ns": timestamp_ns,
+                            "state_timestamp_ns": timestamp_ns,
+                            "action_source_timestamp_ns": next_timestamp_ns,
+                            "action_source_step_index": step_index + 1,
+                            "action_relation": "t+1",
+                            "contract_fingerprint": contract.fingerprint,
+                        },
+                        ensure_ascii=False,
                     )
-                ),
-            )
-            writer.add_message(
-                channel_id=channels["action"],
-                log_time=timestamp_ns,
-                publish_time=timestamp_ns,
-                sequence=step_index,
-                data=joint_encoder(
-                    _joint_state_message(
-                        _action_vector(streams, next_timestamp_ns, feature_config), "action"
-                    )
-                ),
-            )
+                    + "\n"
+                )
         writer.finish()
 
 
-def _joint_state_message(values: list[float], frame_id: str) -> Any:
+def _joint_state_message(
+    values: list[float], frame_id: str, names: tuple[str, ...] | list[str] = ()
+) -> Any:
     return SimpleNamespace(
         header=SimpleNamespace(
             stamp=SimpleNamespace(sec=0, nanosec=0),
             frame_id=frame_id,
         ),
-        name=[f"dim_{index}" for index in range(len(values))],
+        name=list(names),
         position=values,
         velocity=[],
         effort=[],
@@ -482,31 +524,44 @@ def _joint_state_message(values: list[float], frame_id: str) -> Any:
 def _state_vector(
     streams: dict[str, dict[int, Any]],
     timestamp_ns: int,
-    feature_config: dict[str, Any],
+    contract: CompiledLeRobotFeatureContract | dict[str, Any],
 ) -> list[float]:
+    contract = _ensure_contract(contract)
     values: list[float] = []
-    for segment in enabled_state_segments(feature_config):
+    for segment in contract.state.segments:
         values.extend(streams[segment.source_field][timestamp_ns])
+    if len(values) != contract.state.dim:
+        raise ForgeBridgeError(
+            f"compiled state dimension mismatch: expected={contract.state.dim} actual={len(values)}"
+        )
     return values
 
 
 def _action_vector(
     streams: dict[str, dict[int, Any]],
     next_timestamp_ns: int,
-    feature_config: dict[str, Any],
+    contract: CompiledLeRobotFeatureContract | dict[str, Any],
 ) -> list[float]:
+    contract = _ensure_contract(contract)
     values: list[float] = []
-    for segment in enabled_action_segments(feature_config):
+    for segment in contract.action.segments:
         values.extend(streams[segment.source_field][next_timestamp_ns])
+    if len(values) != contract.action.dim:
+        raise ForgeBridgeError(
+            f"compiled action dimension mismatch: expected={contract.action.dim} actual={len(values)}"
+        )
     return values
 
 
-def _schema_dict(feature_config: dict[str, Any]) -> dict[str, Any]:
-    schema = lerobot_feature_schema(feature_config)
+def _schema_dict(contract: CompiledLeRobotFeatureContract | dict[str, Any]) -> dict[str, Any]:
+    contract = _ensure_contract(contract)
+    schema = lerobot_feature_schema(contract.config)
     return {
         "schema_version": "forge_bridge_bimanual_absolute_v1",
         "warning": "Temporary Forge bridge only; not the formal UMI relative action chunk schema.",
         "feature_schema_version": schema["schema_version"],
+        "contract_fingerprint": contract.fingerprint,
+        "feature_contract": contract.to_dict(),
         "observation.state": schema["observation.state"],
         "action": schema["action"],
         "images": {
@@ -516,8 +571,9 @@ def _schema_dict(feature_config: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _topic_config_dict(feature_config: dict[str, Any]) -> dict[str, Any]:
-    schema = lerobot_feature_schema(feature_config)
+def _topic_config_dict(contract: CompiledLeRobotFeatureContract | dict[str, Any]) -> dict[str, Any]:
+    contract = _ensure_contract(contract)
+    schema = lerobot_feature_schema(contract.config)
     return {
         "episodes": {"strategy": "single"},
         "fields": {
@@ -525,11 +581,15 @@ def _topic_config_dict(feature_config: dict[str, Any]) -> dict[str, Any]:
                 "topic": FORGE_TOPICS["state"],
                 "field": "position",
                 "target_shape": schema["observation.state"]["shape"],
+                "names": list(contract.state.names),
+                "contract_fingerprint": contract.fingerprint,
             },
             "action": {
                 "topic": FORGE_TOPICS["action"],
                 "field": "position",
                 "target_shape": schema["action"]["shape"],
+                "names": list(contract.action.names),
+                "contract_fingerprint": contract.fingerprint,
             },
             "observation.images.left": {
                 "topic": FORGE_TOPICS["image_left"],
@@ -546,11 +606,18 @@ def _topic_config_dict(feature_config: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _required_stream_fields(feature_config: dict[str, Any]) -> set[str]:
+def _required_stream_fields(contract: CompiledLeRobotFeatureContract | dict[str, Any]) -> set[str]:
+    contract = _ensure_contract(contract)
     fields = {"image_left", "image_right"}
-    fields.update(segment.source_field for segment in enabled_state_segments(feature_config))
-    fields.update(segment.source_field for segment in enabled_action_segments(feature_config))
+    fields.update(segment.source_field for segment in contract.state.segments)
+    fields.update(segment.source_field for segment in contract.action.segments)
     return fields
+
+
+def _ensure_contract(
+    value: CompiledLeRobotFeatureContract | dict[str, Any],
+) -> CompiledLeRobotFeatureContract:
+    return value if isinstance(value, CompiledLeRobotFeatureContract) else compile_lerobot_feature_contract(value)
 
 
 def _now_iso() -> str:

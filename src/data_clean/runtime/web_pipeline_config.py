@@ -12,7 +12,7 @@ import yaml
 from repo.config.mcap_process_config import load_app_config
 from runtime.config_snapshot import write_config_snapshot
 from schemas.alignment_config import Scene3AlignmentConfig
-from schemas.lerobot_features import normalize_lerobot_features_config
+from schemas.lerobot_features import compile_lerobot_feature_contract, normalize_lerobot_features_config
 from schemas.pose_filter import PoseFilterAlgorithm, PoseFilterConfig
 from schemas.runtime_config_types import (
     ConfigOverrideSet,
@@ -135,6 +135,9 @@ def preview_web_pipeline_config(
             "default_config_path": str(default_config_path),
             "preset_name": preset_name,
             "effective_summary": summary,
+            "feature_contract_preview": compile_lerobot_feature_contract(
+                summary.get("lerobot_features")
+            ).to_dict(),
             "diff": diff,
             "warnings": ["手工覆盖了标定敏感字段，请确认其物理含义。"] if manual else [],
             "errors": errors,

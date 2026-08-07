@@ -6,7 +6,21 @@ set -euo pipefail
 export PYTHONNOUSERSITE=1
 
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV:-${WORKSPACE_DIR}/src/data_clean/.conda-envs/data-clean}"
+ENV_ROOT="${DATA_CLEAN_ENV_ROOT:-/home/hit/.conda-envs}"
+PREFERRED_CONDA_ENV="${ENV_ROOT}/data-clean"
+LEGACY_WORKTREE_CONDA_ENV="${WORKSPACE_DIR}/src/data_clean/.conda-envs/data-clean"
+LEGACY_ROS_CONDA_ENV="/home/hit/ROS/src/data_clean/.conda-envs/data-clean"
+if [[ -n "${DATA_CLEAN_CONDA_ENV:-}" ]]; then
+  CONDA_ENV_DIR="${DATA_CLEAN_CONDA_ENV}"
+elif [[ -n "${DATA_CLEAN_PYTHON:-}" ]]; then
+  CONDA_ENV_DIR="${PREFERRED_CONDA_ENV}"
+elif [[ -x "${PREFERRED_CONDA_ENV}/bin/python" ]]; then
+  CONDA_ENV_DIR="${PREFERRED_CONDA_ENV}"
+elif [[ -x "${LEGACY_WORKTREE_CONDA_ENV}/bin/python" ]]; then
+  CONDA_ENV_DIR="${LEGACY_WORKTREE_CONDA_ENV}"
+else
+  CONDA_ENV_DIR="${LEGACY_ROS_CONDA_ENV}"
+fi
 PYTHON_BIN="${DATA_CLEAN_PYTHON:-${CONDA_ENV_DIR}/bin/python}"
 SMOKE_CONFIG="${WORKSPACE_DIR}/config/data_clean/data_clean_smoke_test.yaml"
 CALIBRATED_CONFIG="${WORKSPACE_DIR}/config/data_clean/data_clean_calibrated.yaml"
@@ -21,7 +35,15 @@ else
   DEFAULT_CONFIG_KIND="smoke test"
 fi
 DATA_CLEAN_SOURCE="${WORKSPACE_DIR}/src/data_clean"
-LEROBOT_PYTHON="${DATA_CLEAN_LEROBOT_PYTHON:-/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python}"
+PREFERRED_LEROBOT_ENV="${ENV_ROOT}/lerobot-export"
+LEGACY_LEROBOT_ENV="/home/hit/ROS/src/data_clean/.conda-envs/lerobot-export"
+if [[ -n "${DATA_CLEAN_LEROBOT_PYTHON:-}" ]]; then
+  LEROBOT_PYTHON="${DATA_CLEAN_LEROBOT_PYTHON}"
+elif [[ -x "${PREFERRED_LEROBOT_ENV}/bin/python" ]]; then
+  LEROBOT_PYTHON="${PREFERRED_LEROBOT_ENV}/bin/python"
+else
+  LEROBOT_PYTHON="${LEGACY_LEROBOT_ENV}/bin/python"
+fi
 WEB_HOST="${DATA_CLEAN_WEB_HOST:-127.0.0.1}"
 WEB_PORT="${DATA_CLEAN_WEB_PORT:-0}"
 # mcap / mcap-ros2-support are installed into the data-clean conda env from the
@@ -62,11 +84,13 @@ Examples:
 
 Environment overrides:
   DATA_CLEAN_CONFIG       Default config file path.
+  DATA_CLEAN_ENV_ROOT     Preferred external environment root. Defaults to
+                          /home/hit/.conda-envs.
   DATA_CLEAN_CONDA_ENV    Conda environment directory.
   DATA_CLEAN_PYTHON       Python executable path.
   DATA_CLEAN_LEROBOT_PYTHON
                           Official LeRobot 0.5.2 exporter Python. Defaults to
-                          /home/hit/ROS/src/data_clean/.conda-envs/lerobot-export/bin/python.
+                          /home/hit/.conda-envs/lerobot-export/bin/python.
   DATA_CLEAN_WEB_HOST     Web bind host. Defaults to 127.0.0.1.
   DATA_CLEAN_WEB_PORT     Web bind port. Defaults to 0 (automatic).
   DATA_CLEAN_FORGE_SOURCE Forge source checkout. Defaults to /home/hit/forge.
