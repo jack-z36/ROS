@@ -104,6 +104,9 @@ from repo.job_store import (
     sha256_file,
     sha256_json,
 )
+from repo.episode_selection_repository import (
+    EpisodeSelectionRepository,
+)
 
 
 WORKSPACE_DIR = Path("/home/hit/ROS")
@@ -3092,6 +3095,49 @@ class DataCleanWebApp:
             _write_json_atomic(cache_path, data)
         return data
 
+    def _episode_selection_repository(self, job_id: str) -> EpisodeSelectionRepository:
+        with self.lock:
+            job = self.jobs.get(job_id)
+            if job is None:
+                job = self.job_store.load_job(job_id)
+                self.jobs[job_id] = job
+        dataset_dir = Path(str(job.get("dataset_dir", "")))
+        if not dataset_dir.is_dir():
+            raise ValueError("dataset_not_found")
+        trajectory = self.trajectory(job_id)
+        return EpisodeSelectionRepository(
+            # Human production annotations belong to the dataset they describe.
+            # The debug sidecar remains available for pipeline diagnostics, but
+            # must not be the authority for the training selection manifest.
+            dataset_dir / "reports",
+            job_id=job_id,
+            dataset_dir=dataset_dir,
+            contract_fingerprint=str(job.get("contract_fingerprint") or job.get("feature_contract_fingerprint") or ""),
+            episode_indices=[int(item["episode_index"]) for item in trajectory.get("episodes", [])],
+        )
+
+    def episode_selection(self, job_id: str) -> dict[str, Any]:
+        repository = self._episode_selection_repository(job_id)
+        return {"manifest": repository.read(), "train_path": str(repository.train_path)}
+
+    def save_episode_selection_draft(self, job_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        repository = self._episode_selection_repository(job_id)
+        manifest = payload.get("manifest", payload)
+        return {"manifest": repository.save_draft(manifest), "train_path": str(repository.train_path)}
+
+    def complete_episode_selection(self, job_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        repository = self._episode_selection_repository(job_id)
+        manifest = payload.get("manifest", payload)
+        result = repository.complete(manifest)
+        response = {"manifest": result, "train_path": str(repository.train_path)}
+        if not result["train_episode_indices"]:
+            response["warning"] = "当前训练合集为空，不可直接启动训练。"
+        return response
+
+    def reopen_episode_selection(self, job_id: str) -> dict[str, Any]:
+        repository = self._episode_selection_repository(job_id)
+        return {"manifest": repository.reopen(), "train_path": str(repository.train_path)}
+
     def _build_trajectory_summary(
         self,
         dataset_dir: Path,
@@ -3483,6 +3529,9 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
             elif parsed.path.startswith("/api/jobs/") and parsed.path.endswith("/trajectory"):
                 job_id = parsed.path.split("/")[3]
                 self._send_json(self.app_state.trajectory(job_id))
+            elif parsed.path.startswith("/api/jobs/") and parsed.path.endswith("/episode-selection"):
+                job_id = parsed.path.split("/")[3]
+                self._send_json(self.app_state.episode_selection(job_id))
             elif parsed.path.startswith("/api/jobs/"):
                 job_id = parsed.path.split("/")[3]
                 self._send_json(self.app_state.get_job(job_id))
@@ -3534,6 +3583,15 @@ class DataCleanRequestHandler(BaseHTTPRequestHandler):
             elif parsed.path.startswith("/api/jobs/") and parsed.path.endswith("/open-visualizer"):
                 job_id = parsed.path.split("/")[3]
                 self._send_json(self.app_state.open_visualizer(job_id))
+            elif parsed.path.startswith("/api/jobs/") and parsed.path.endswith("/episode-selection/draft"):
+                job_id = parsed.path.split("/")[3]
+                self._send_json(self.app_state.save_episode_selection_draft(job_id, payload))
+            elif parsed.path.startswith("/api/jobs/") and parsed.path.endswith("/episode-selection/complete"):
+                job_id = parsed.path.split("/")[3]
+                self._send_json(self.app_state.complete_episode_selection(job_id, payload))
+            elif parsed.path.startswith("/api/jobs/") and parsed.path.endswith("/episode-selection/reopen"):
+                job_id = parsed.path.split("/")[3]
+                self._send_json(self.app_state.reopen_episode_selection(job_id))
             else:
                 self._send_error(HTTPStatus.NOT_FOUND, "not_found")
         except CLIENT_DISCONNECT_ERRORS:
@@ -3777,7 +3835,7 @@ INDEX_HTML = r"""<!doctype html>
 </div></div>
 <div id="confirm-modal" class="modal"><div class="modal-card" id="confirm-body"></div></div>
 <script>
-let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), auditFiles:[], auditSelected:new Set(), auditPreview:null, auditTask:null, auditMoveTask:null, auditPollTimer:null, currentJob:null, jobTab:'quality', trajectory:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true, showVideoLeft:false, showVideoRight:false}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null, mediaSyncing:false}, qualityDetailsOpen:{}, jobPollInFlight:false, dirTarget:null, dirPath:'/', preview:null, retryDraft:null, productionConfig:null};
+let state = {page:'dashboard', dashboard:null, history:null, files:[], selected:new Set(), auditFiles:[], auditSelected:new Set(), auditPreview:null, auditTask:null, auditMoveTask:null, auditPollTimer:null, currentJob:null, jobTab:'quality', trajectory:null, episodeSelection:null, trajectoryEpisode:'all', trajectoryView:{zoom:1, showLeft:true, showRight:true, showMarkers:true, showAxes:true, showVideoLeft:false, showVideoRight:false}, trajectoryPlayback:{playing:false, frameIndex:0, speed:1, rafId:null, wallStartedAt:null, mediaStartedAt:null, mediaSyncing:false}, qualityDetailsOpen:{}, jobPollInFlight:false, dirTarget:null, dirPath:'/', preview:null, retryDraft:null, productionConfig:null};
 const statusText = {queued:'排队中', running:'运行中', recovering:'恢复中', succeeded:'成功', partial_failed:'部分失败', failed:'失败', cancelled:'已取消', waiting:'等待', success:'成功', warning:'成功但有警告', skipped:'跳过', moved:'已移动', unchecked:'未审计', eligible:'健康', rejected:'缺陷', unit_consistent_likely:'正常', unit_mismatch_suspected:'单位疑似不统一', missing_pose_topic:'缺少位姿 topic', pose_value_invalid_suspected:'位姿值异常', decode_failed:'读取失败', normal:'正常', unit_mismatch:'单位异常', other_issue:'其他异常'};
 async function api(path, opts={}) {
   const res = await fetch(path, {headers:{'Content-Type':'application/json'}, ...opts});
@@ -4415,6 +4473,7 @@ async function openJob(id) {
   if (state.currentJob && state.currentJob.job_id !== id) {
     stopTrajectoryPlayback(true);
     state.trajectory = null;
+    state.episodeSelection = null;
     state.trajectoryEpisode = 'all';
     state.trajectoryView.showVideoLeft = false;
     state.trajectoryView.showVideoRight = false;
@@ -4582,7 +4641,12 @@ function renderTrajectoryTab() {
     ? `<div class="trajectory-dual"><div><p class="trajectory-panel-title">左手 TCP · 左 Baton 原始坐标系</p><canvas id="trajectory-left" class="trajectory-canvas"></canvas>${videoPanel('left')}</div><div><p class="trajectory-panel-title">右手 TCP · 右 Baton 原始坐标系</p><canvas id="trajectory-right" class="trajectory-canvas"></canvas>${videoPanel('right')}</div></div>`
     : `<div><p class="trajectory-panel-title">左右手 TCP · common_frame</p><canvas id="trajectory-common" class="trajectory-canvas"></canvas><div class="trajectory-video-grid">${videoPanel('left')}${videoPanel('right')}</div></div>`;
   const videoSection = t && ep ? `<div class="trajectory-playback"><b>同步 RGB 视频</b>${videoToggle('left')}${videoToggle('right')}<p class="muted">视频固定显示在对应手部轨迹下方，并与当前 episode 的 3D 轨迹共用时间轴。</p></div>` : '';
-  return `<div class="card"><h3>3D 手末端轨迹</h3>${summary}${dual ? '<div class="warnbox">formal 数据的左右 TCP 分别保留各自 Baton Mini 的原始参考坐标系，采用双画布同步播放，不比较双手绝对空间位置。</div>' : ''}<div class="trajectory-layout">${canvases}<div class="card"><label>Episode</label><select id="trajectory-episode" onchange="selectTrajectoryEpisode(this.value)">${opts}</select><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showLeft?'checked':''} onchange="state.trajectoryView.showLeft=this.checked; drawTrajectory()"> 显示左手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showRight?'checked':''} onchange="state.trajectoryView.showRight=this.checked; drawTrajectory()"> 显示右手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showMarkers?'checked':''} onchange="state.trajectoryView.showMarkers=this.checked; drawTrajectory()"> 显示起点/当前点和当前姿态短轴</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showAxes?'checked':''} onchange="state.trajectoryView.showAxes=this.checked; drawTrajectory()"> 显示坐标轴/网格</label><button onclick="resetTrajectoryView()">重置缩放</button><div class="trajectory-playback"><div class="row"><button id="trajectory-play" onclick="toggleTrajectoryPlayback()" ${disabled}>播放</button><button onclick="resetTrajectoryPlayback()" ${disabled}>回到起点</button></div><label>播放进度</label><input id="trajectory-progress" type="range" min="0" max="${maxFrame}" value="${Math.min(state.trajectoryPlayback.frameIndex, maxFrame)}" oninput="seekTrajectoryFrame(this.value)" ${disabled}><p id="trajectory-time" class="muted">${ep ? '' : '全部 episode 为静态总览，请选择单个 episode 播放。'}</p><label>播放速度</label><select id="trajectory-speed" onchange="setTrajectoryPlaybackSpeed(this.value)" ${disabled}><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1">1x</option><option value="2">2x</option></select></div>${videoSection}<div style="margin-top:14px"><span class="legend-dot" style="background:#60a5fa"></span>左手<br><span class="legend-dot" style="background:#f87171"></span>右手</div><p id="trajectory-info" class="muted"></p></div></div></div>`;
+  const selection = state.episodeSelection?.manifest;
+  const bad = new Set(selection?.bad_episode_indices || []);
+  const currentBad = ep ? bad.has(Number(ep.episode_index)) : false;
+  const annotation = (selection?.annotations || []).find(item => Number(item.episode_index) === Number(ep?.episode_index)) || {};
+  const selectionPanel = `<div class="card"><h3>人工训练筛选</h3><div class="row"><b>总 episode：${selection?.total_episodes ?? t?.episodes.length ?? 0}</b><b>已标记问题：${bad.size}</b><b>可训练：${selection?.train_episode_indices?.length ?? t?.episodes.length ?? 0}</b></div>${ep ? `<p>${currentBad ? '<span class="badge failed">已标记有问题</span>' : '<span class="badge success">可训练</span>'}</p><label>问题原因（可选）</label><select id="episode-selection-reason"><option value="">不指定</option><option value="trajectory_anomaly" ${annotation.reason_code==='trajectory_anomaly'?'selected':''}>轨迹异常</option><option value="video_anomaly" ${annotation.reason_code==='video_anomaly'?'selected':''}>鱼眼视频异常</option><option value="action_gripper_anomaly" ${annotation.reason_code==='action_gripper_anomaly'?'selected':''}>动作或夹爪异常</option><option value="temporal_sync_anomaly" ${annotation.reason_code==='temporal_sync_anomaly'?'selected':''}>时间同步异常</option><option value="other" ${annotation.reason_code==='other'?'selected':''}>其他</option></select><label>备注（可选）</label><input id="episode-selection-note" value="${escapeHtml(annotation.note || '')}" placeholder="补充人工复查说明">${currentBad ? `<button class="ghost" onclick="unmarkEpisodeIssue()">取消问题标记</button>` : `<button class="danger" onclick="markEpisodeIssue()">标记有问题</button>`}` : '<p class="muted">请选择单个 episode 后进行人工标记。</p>'}<p class="path">筛选清单：${escapeHtml(state.episodeSelection?.train_path || '-')}</p><p class="muted">质量报告风险仅作复查提示，不会自动替你排除 episode。</p><div class="row">${selection ? (selection.selection_status === 'complete' ? '<button onclick="reopenEpisodeSelection()">重新标注</button>' : '<button class="primary" onclick="completeEpisodeSelection()">标注完成</button>') : '<span class="muted">正在加载筛选清单...</span>'}</div>${selection?.train_episode_indices?.length === 0 ? '<div class="warnbox">当前训练合集为空，不可直接启动训练。</div>' : ''}</div>`;
+  return `<div class="card"><h3>3D 手末端轨迹</h3>${summary}${dual ? '<div class="warnbox">formal 数据的左右 TCP 分别保留各自 Baton Mini 的原始参考坐标系，采用双画布同步播放，不比较双手绝对空间位置。</div>' : ''}<div class="trajectory-layout">${canvases}<div class="card"><label>Episode</label><select id="trajectory-episode" onchange="selectTrajectoryEpisode(this.value)">${opts}</select><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showLeft?'checked':''} onchange="state.trajectoryView.showLeft=this.checked; drawTrajectory()"> 显示左手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showRight?'checked':''} onchange="state.trajectoryView.showRight=this.checked; drawTrajectory()"> 显示右手轨迹</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showMarkers?'checked':''} onchange="state.trajectoryView.showMarkers=this.checked; drawTrajectory()"> 显示起点/当前点和当前姿态短轴</label><label><input type="checkbox" style="width:auto" ${state.trajectoryView.showAxes?'checked':''} onchange="state.trajectoryView.showAxes=this.checked; drawTrajectory()"> 显示坐标轴/网格</label><button onclick="resetTrajectoryView()">重置缩放</button><div class="trajectory-playback"><div class="row"><button id="trajectory-play" onclick="toggleTrajectoryPlayback()" ${disabled}>播放</button><button onclick="resetTrajectoryPlayback()" ${disabled}>回到起点</button></div><label>播放进度</label><input id="trajectory-progress" type="range" min="0" max="${maxFrame}" value="${Math.min(state.trajectoryPlayback.frameIndex, maxFrame)}" oninput="seekTrajectoryFrame(this.value)" ${disabled}><p id="trajectory-time" class="muted">${ep ? '' : '全部 episode 为静态总览，请选择单个 episode 播放。'}</p><label>播放速度</label><select id="trajectory-speed" onchange="setTrajectoryPlaybackSpeed(this.value)" ${disabled}><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1">1x</option><option value="2">2x</option></select></div>${videoSection}<div style="margin-top:14px"><span class="legend-dot" style="background:#60a5fa"></span>左手<br><span class="legend-dot" style="background:#f87171"></span>右手</div><p id="trajectory-info" class="muted"></p></div></div></div>${selectionPanel}`;
 }
 async function ensureTrajectoryLoaded() {
   if (!state.currentJob || state.trajectory?.job_id === state.currentJob.job_id) return;
@@ -4592,11 +4656,54 @@ async function ensureTrajectoryLoaded() {
   state.trajectory = data;
   renderJob();
 }
+async function ensureEpisodeSelectionLoaded() {
+  if (!state.currentJob) return;
+  if (state.episodeSelection?.job_id === state.currentJob.job_id) return;
+  const data = await api(`/api/jobs/${state.currentJob.job_id}/episode-selection`);
+  data.job_id = state.currentJob.job_id;
+  state.episodeSelection = data;
+  renderJob();
+}
+function selectionManifestWithEdits() {
+  return JSON.parse(JSON.stringify(state.episodeSelection.manifest));
+}
+async function saveEpisodeSelectionDraft(manifest) {
+  const data = await api(`/api/jobs/${state.currentJob.job_id}/episode-selection/draft`, {method:'POST', body:JSON.stringify({manifest})});
+  data.job_id = state.currentJob.job_id;
+  state.episodeSelection = data;
+  renderJob();
+}
+async function markEpisodeIssue() {
+  const ep = selectedTrajectoryEpisode(); if (!ep) return;
+  const manifest = selectionManifestWithEdits();
+  const index = Number(ep.episode_index);
+  manifest.bad_episode_indices = [...new Set([...(manifest.bad_episode_indices || []), index])];
+  manifest.annotations = (manifest.annotations || []).filter(item => Number(item.episode_index) !== index);
+  manifest.annotations.push({episode_index:index, reason_code:document.getElementById('episode-selection-reason')?.value || null, note:document.getElementById('episode-selection-note')?.value || ''});
+  try { await saveEpisodeSelectionDraft(manifest); } catch (e) { alert(e.message); }
+}
+async function unmarkEpisodeIssue() {
+  const ep = selectedTrajectoryEpisode(); if (!ep) return;
+  const manifest = selectionManifestWithEdits(), index = Number(ep.episode_index);
+  manifest.bad_episode_indices = (manifest.bad_episode_indices || []).filter(item => Number(item) !== index);
+  manifest.annotations = (manifest.annotations || []).filter(item => Number(item.episode_index) !== index);
+  try { await saveEpisodeSelectionDraft(manifest); } catch (e) { alert(e.message); }
+}
+async function completeEpisodeSelection() {
+  const manifest = selectionManifestWithEdits();
+  const text = `总 episode：${manifest.total_episodes}\n已标记问题：${manifest.bad_episode_indices.length}\n可训练 episode：${manifest.total_episodes - manifest.bad_episode_indices.length}\n输出文件：${state.episodeSelection.train_path}`;
+  if (!confirm(text + '\n\n确认生成正式筛选清单？')) return;
+  try { const data = await api(`/api/jobs/${state.currentJob.job_id}/episode-selection/complete`, {method:'POST', body:JSON.stringify({manifest})}); data.job_id = state.currentJob.job_id; state.episodeSelection = data; renderJob(); if (data.warning) alert(data.warning); } catch (e) { alert(e.message); }
+}
+async function reopenEpisodeSelection() {
+  try { const data = await api(`/api/jobs/${state.currentJob.job_id}/episode-selection/reopen`, {method:'POST', body:'{}'}); data.job_id = state.currentJob.job_id; state.episodeSelection = data; renderJob(); } catch (e) { alert(e.message); }
+}
 function initTrajectoryCanvas() {
   ensureTrajectoryLoaded().catch(e => {
     const holder = document.getElementById('trajectory-info');
     if (holder) holder.textContent = e.message;
   });
+  ensureEpisodeSelectionLoaded().catch(e => setNotice(`筛选清单加载失败：${escapeHtml(e.message)}`, 'warnbox'));
   for (const spec of trajectoryCanvasSpecs()) {
     const canvas = document.getElementById(spec.id);
     if (!canvas) continue;
