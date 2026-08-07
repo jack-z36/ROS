@@ -35,13 +35,19 @@ RIGHT_GRIPPER_DIM: int = 1
 
 @dataclass(frozen=True)
 class ActionSpec:
-    """Immutable structured representation of a single 16D action.
+    """Immutable structured representation of a single 16D absolute action.
+
+    The two ``tcp_action`` segments are **absolute base-frame** TCP target
+    poses (``xyz`` position + ``xyzw`` quaternion), consumed as-is by the
+    control loop, the safety guard and the output adapter.
 
     Attributes:
-        left_tcp_action:  7D TCP target for the left arm (xyz + quaternion).
-        right_tcp_action: 7D TCP target for the right arm (xyz + quaternion).
-        left_gripper:     Scalar gripper target for the left hand [0, 1].
-        right_gripper:    Scalar gripper target for the right hand [0, 1].
+        left_tcp_action:  7D absolute TCP target for the left arm
+                          (xyz + quaternion) in the base frame.
+        right_tcp_action: 7D absolute TCP target for the right arm
+                          (xyz + quaternion) in the base frame.
+        left_gripper:     Scalar absolute gripper target for the left hand [0, 1].
+        right_gripper:    Scalar absolute gripper target for the right hand [0, 1].
     """
 
     left_tcp_action: np.ndarray  # shape (7,)

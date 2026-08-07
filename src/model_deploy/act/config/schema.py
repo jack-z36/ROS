@@ -19,7 +19,10 @@ import yaml
 from model_deploy.act.repo.bundle_reader import (
     BUNDLE_SCHEMA_VERSION,
     check_bundle_files,
+    is_bundle_dir,
+    is_checkpoint_dir,
     resolve_checkpoint_path,
+    resolve_pretrained_dir,
 )
 from model_deploy.act.repo.experiment_config_loader import (
     EXPERIMENT_CONFIG_NAME,
@@ -31,6 +34,13 @@ from model_deploy.act.repo.normalizer_loader import load_bundle_normalizers
 from model_deploy.act.types.contract_result import (
     BundleContractResult,
     NormalizerContractResult,
+)
+from model_deploy.act.types.action_representation import (
+    EXPECTED_ARM_ACTION_TYPE,
+    EXPECTED_CHUNK_REFERENCE,
+    EXPECTED_TRANSLATION_FRAME,
+    EXPECTED_ROTATION_REPRESENTATION,
+    EXPECTED_GRIPPER_ACTION_TYPE,
 )
 
 
@@ -50,7 +60,13 @@ class DeployConfigError(ValueError):
 
 @dataclass(frozen=True)
 class BundleConfig:
-    """Runtime model bundle location.
+    """Runtime model source location.
+
+    ``bundle_dir`` accepts either a packaged ``deploy_bundle`` directory
+    (carrying ``manifest.json``) or a raw training checkpoint directory such
+    as ``.../checkpoints/100000`` (carrying ``pretrained_model/config.json``),
+    or the inner ``pretrained_model/`` directory itself.  The layout is
+    auto-detected at load time.
 
     ``bundle_dir`` may be ``None`` to support the default config and a
     controlled fake harness.  A ``None`` bundle means "no production resource
@@ -344,6 +360,51 @@ class CommandOutputConfig:
 
 
 @dataclass(frozen=True)
+class ActionRepresentationConfig:
+    """Deploy-side *expected* action representation declared in deploy.yaml.
+
+    The first-version ACT deployment consumes a relative-action checkpoint, so
+    these defaults encode the canonical relative contract.  The bundle
+    manifest carries its own ``ActionRepresentationSpec`` and the startup
+    preflight cross-validates the two field-by-field; a mismatch (e.g. an old
+    absolute-action bundle) fails fast.
+
+    All fields must be non-empty strings; values are validated field-by-field
+    against the bundle at startup rather than against a closed enum here, so
+    the config layer stays decoupled from the types-layer enums.
+    """
+
+    arm_action_type: str = EXPECTED_ARM_ACTION_TYPE
+    chunk_reference: str = EXPECTED_CHUNK_REFERENCE
+    translation_frame: str = EXPECTED_TRANSLATION_FRAME
+    rotation_representation: str = EXPECTED_ROTATION_REPRESENTATION
+    gripper_action_type: str = EXPECTED_GRIPPER_ACTION_TYPE
+
+    def __post_init__(self) -> None:
+        for name, value in (
+            ("arm_action_type", self.arm_action_type),
+            ("chunk_reference", self.chunk_reference),
+            ("translation_frame", self.translation_frame),
+            ("rotation_representation", self.rotation_representation),
+            ("gripper_action_type", self.gripper_action_type),
+        ):
+            if not isinstance(value, str) or not value.strip():
+                raise DeployConfigError(
+                    f"action_representation.{name} must be a non-empty string"
+                )
+
+    def as_mapping(self) -> dict[str, str]:
+        """Return the five tokens as a plain ``dict`` for cross-validation."""
+        return {
+            "arm_action_type": self.arm_action_type,
+            "chunk_reference": self.chunk_reference,
+            "translation_frame": self.translation_frame,
+            "rotation_representation": self.rotation_representation,
+            "gripper_action_type": self.gripper_action_type,
+        }
+
+
+@dataclass(frozen=True)
 class DeployConfig:
     """Complete ACT deployment configuration.
 
@@ -356,6 +417,9 @@ class DeployConfig:
     topics: TopicsConfig
     safety: SafetyConfig
     command_output: CommandOutputConfig = field(default_factory=CommandOutputConfig)
+    action_representation: ActionRepresentationConfig = field(
+        default_factory=ActionRepresentationConfig
+    )
     raw: Mapping[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
@@ -398,6 +462,9 @@ def _deploy_from_mapping(
     topics_raw = _mapping(root.get("topics", {}), "topics")
     safety_raw = _mapping(root.get("safety", {}), "safety")
     command_output_raw = _mapping(root.get("command_output", {}), "command_output")
+    action_repr_raw = _mapping(
+        root.get("action_representation", {}), "action_representation"
+    )
 
     obs_raw = _mapping(topics_raw.get("observation", {}), "topics.observation")
     cmd_raw = _mapping(topics_raw.get("command", {}), "topics.command")
@@ -466,6 +533,7 @@ def _deploy_from_mapping(
         command_output=_command_output_from_mapping(
             command_output_raw, command_output_enabled=command_output_enabled
         ),
+        action_representation=_action_representation_from_mapping(action_repr_raw),
         raw=dict(root),
     )
 
@@ -546,6 +614,46 @@ def _command_output_from_mapping(
             command_output_raw, "gripper_min_publish_interval_s", default=0.05
         ),
         qos_depth=_positive_int(command_output_raw, "qos_depth", default=10),
+    )
+
+
+def _action_representation_from_mapping(
+    action_repr_raw: Mapping[str, Any],
+) -> ActionRepresentationConfig:
+    """Parse the ``action_representation:`` section into an immutable config.
+
+    The first-version ACT deployment defaults to the relative-action contract,
+    so every field has a default and the whole section may be omitted from
+    ``deploy.yaml``.  Provided values are validated as non-empty strings; the
+    field-by-field match against the bundle manifest happens later in the
+    runtime-resource loader.
+    """
+    return ActionRepresentationConfig(
+        arm_action_type=_str(
+            action_repr_raw,
+            "arm_action_type",
+            default=EXPECTED_ARM_ACTION_TYPE,
+        ),
+        chunk_reference=_str(
+            action_repr_raw,
+            "chunk_reference",
+            default=EXPECTED_CHUNK_REFERENCE,
+        ),
+        translation_frame=_str(
+            action_repr_raw,
+            "translation_frame",
+            default=EXPECTED_TRANSLATION_FRAME,
+        ),
+        rotation_representation=_str(
+            action_repr_raw,
+            "rotation_representation",
+            default=EXPECTED_ROTATION_REPRESENTATION,
+        ),
+        gripper_action_type=_str(
+            action_repr_raw,
+            "gripper_action_type",
+            default=EXPECTED_GRIPPER_ACTION_TYPE,
+        ),
     )
 
 
@@ -889,20 +997,39 @@ def load_deploy_config(
         raw, base_dir=config_path.parent, command_output_enabled=command_output_enabled
     )
 
-    # Contract cross-validation (only when a concrete bundle_dir exists)
+    # Contract cross-validation (only when a concrete bundle_dir exists).
+    # Two source layouts are auto-detected: a packaged bundle (manifest.json)
+    # runs the full bundle + normalizer contract; a raw checkpoint
+    # (pretrained_model/config.json) skips the bundle-only checks (the repo
+    # layer re-derives dimensions from config.json and synthesizes the
+    # identity normalizer at load time).
     bundle_dir = config.bundle.resolved_bundle_dir
     if bundle_dir is not None and bundle_dir.exists():
-        manifest = load_bundle_manifest(bundle_dir)
+        if is_bundle_dir(bundle_dir):
+            manifest = load_bundle_manifest(bundle_dir)
 
-        # Bundle file contract
-        bundle_result = check_bundle_contract(bundle_dir, manifest)
-        if not bundle_result.is_pass:
-            raise DeployConfigError(bundle_result.reason)
+            # Bundle file contract
+            bundle_result = check_bundle_contract(bundle_dir, manifest)
+            if not bundle_result.is_pass:
+                raise DeployConfigError(bundle_result.reason)
 
-        # Normalizer dimension contract
-        state_norm, action_norm = load_bundle_normalizers(bundle_dir)
-        norm_result = check_normalizer_contract(state_norm, action_norm, expected_dim=16)
-        if not norm_result.is_pass:
-            raise DeployConfigError(norm_result.reason)
+            # Normalizer dimension contract
+            state_norm, action_norm = load_bundle_normalizers(bundle_dir)
+            norm_result = check_normalizer_contract(
+                state_norm, action_norm, expected_dim=16
+            )
+            if not norm_result.is_pass:
+                raise DeployConfigError(norm_result.reason)
+        elif is_checkpoint_dir(bundle_dir):
+            # Raw checkpoint: dimensions + identity normalizer are derived
+            # at runtime-resource load time, so no extra config-layer check
+            # is needed here.
+            pass
+        else:
+            raise DeployConfigError(
+                f"bundle_dir {bundle_dir} is neither a packaged bundle "
+                f"(missing manifest.json) nor a raw checkpoint (missing "
+                f"pretrained_model/config.json)."
+            )
 
     return config

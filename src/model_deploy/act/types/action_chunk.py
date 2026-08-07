@@ -1,7 +1,8 @@
 """ActionChunk frozen value object for ACT model deployment.
 
-Represents a chunk of physical actions output by the ACT inference pipeline.
-Pure data type -- no runtime metadata, no lifecycle management.
+Represents a chunk of **absolute** physical actions output by the ACT inference
+pipeline (after relative→absolute decoding inside L2-03).  Pure data type — no
+runtime metadata, no lifecycle management.
 """
 
 from __future__ import annotations
@@ -15,14 +16,21 @@ from model_deploy.act.types.action_spec import ACTION_DIM
 
 @dataclass(frozen=True)
 class ActionChunk:
-    """Immutable chunk of physical actions from ACT inference.
+    """Immutable chunk of **absolute** physical actions from ACT inference.
 
-    This is the only cross-module output type from L2-03 to L2-06.  It carries
-    only the raw action array; runtime metadata belongs in L2-06.
+    This is the only cross-module output type from L2-03 to L2-06.  Every row
+    is an *absolute base-frame* action: the two ``tcp7`` segments are absolute
+    TCP target poses in the base frame and the two gripper fields are absolute
+    gripper targets.  The model-internal relative action never escapes L2-03 —
+    ``RelativeTcpActionDecoder`` converts it to this absolute chunk before it
+    crosses the module boundary.
+
+    This chunk carries only the raw action array; runtime metadata belongs in
+    L2-06.
 
     Attributes:
         actions: float32 ndarray of shape ``(chunk_size, ACTION_DIM)``.
-            Each row is a complete 16D physical action.
+            Each row is a complete 16D absolute physical action.
     """
 
     actions: np.ndarray

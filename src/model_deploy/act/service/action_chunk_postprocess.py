@@ -1,8 +1,13 @@
-"""ActionChunk post-processing: raw normalized tensor → physical ActionChunk.
+"""ActionChunk post-processing: raw normalized tensor → physical action chunk.
 
 Implements L2-03 primary stage three: six ordered computation micro-functions
-that transform a raw policy output tensor into an ActionChunk carrying
-only physical actions.
+that transform a raw policy output tensor into an action chunk carrying
+only physical actions.  Two orchestration entry points share the same six
+micro-functions:
+
+- ``postprocess_action_chunk`` → absolute ``ActionChunk`` (cross-module output).
+- ``postprocess_relative_action_chunk`` → ``RelativeActionChunk`` (L2-03-internal,
+  decoded into absolute by ``RelativeTcpActionDecoder``).
 
 No clamping, cropping, padding, reordering, quaternion or gripper correction
 is applied at any step. Unnormalized-action fallback is prohibited.
@@ -15,6 +20,7 @@ import torch
 
 from model_deploy.act.repo.normalization import ActionStateNormalizer
 from model_deploy.act.types.action_chunk import ActionChunk
+from model_deploy.act.types.relative_action_chunk import RelativeActionChunk
 from model_deploy.act.types.action_spec import ACTION_DIM
 
 
@@ -242,3 +248,55 @@ def postprocess_action_chunk(
 
     # ⑥ ActionChunk construction
     return ActionChunk(actions=arr)
+
+
+def postprocess_relative_action_chunk(
+    raw_chunk: torch.Tensor,
+    action_normalizer: ActionStateNormalizer,
+    expected_chunk_size: int,
+) -> RelativeActionChunk:
+    """Primary stage three variant: raw normalized tensor → RelativeActionChunk.
+
+    Executes the same six ordered micro-functions as
+    ``postprocess_action_chunk`` (check → remove batch → unnormalize → to
+    float32 → final contract check → wrap), differing only in the wrapper
+    type.  The wrapped array is the physical *relative* TCP arm action +
+    absolute gripper targets produced by the ACT model; it is an
+    L2-03-internal value and never crosses into the control loop.
+
+    This module cannot perform the relative → absolute conversion because it
+    does not have the inference-moment ``ObservationState``; that is the job
+    of ``RelativeTcpActionDecoder`` inside ``ActInferenceService``.
+
+    Any step failure propagates immediately; no partial
+    ``RelativeActionChunk`` is ever returned.
+
+    Args:
+        raw_chunk:          Raw normalized tensor from policy, shape ``(1, N, 16)``.
+        action_normalizer:  ``ActionStateNormalizer`` for unnormalization.
+        expected_chunk_size: Required chunk size ``N``.
+
+    Returns:
+        ``RelativeActionChunk(actions=…)`` carrying only the physical relative
+        action array.
+
+    Raises:
+        TypeError / ValueError:  Propagated from any failing micro-function.
+    """
+    # ① Raw output structure check
+    validated = check_raw_output_structure(raw_chunk, expected_chunk_size)
+
+    # ② Batch dimension removal
+    unbatch = remove_batch_dim(validated)
+
+    # ③ Action unnormalization
+    physical = unnormalize_actions(unbatch, action_normalizer)
+
+    # ④ CPU float32 array conversion
+    arr = to_cpu_float32_array(physical)
+
+    # ⑤ Final output contract check
+    check_final_output_contract(arr, expected_chunk_size)
+
+    # ⑥ RelativeActionChunk construction
+    return RelativeActionChunk(actions=arr)

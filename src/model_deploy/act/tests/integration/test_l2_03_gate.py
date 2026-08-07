@@ -27,7 +27,11 @@ from model_deploy.act.config.schema import DeployConfig
 from model_deploy.act.repo.act_runtime_resources import PolicyInputSpec
 from model_deploy.act.repo.normalization import ActionStateNormalizer
 from model_deploy.act.service.act_inference import ActInferenceService
+from model_deploy.act.service.relative_tcp_action_decoder import (
+    RelativeTcpActionDecoder,
+)
 from model_deploy.act.types.action_chunk import ActionChunk
+from model_deploy.act.types.action_representation import ActionRepresentationSpec
 from model_deploy.act.types.observation import (
     ObservationSnapshot,
     ObservationState,
@@ -147,11 +151,23 @@ class StubPolicy:
     def predict_action_chunk(self, batch: object) -> torch.Tensor:
         if self._raise_on_predict:
             raise RuntimeError("forced predict_action_chunk failure")
-        return torch.full(
+        # Broadcast the sentinel, then plant valid identity quaternions
+        # (xyzw = 0,0,0,1) in the arm orientation slots so the output is a
+        # decodable relative action.  Position + gripper slots keep the
+        # sentinel value, which lets the sentinel-preservation test still
+        # verify those fields flow through unchanged.
+        out = torch.full(
             (1, self._chunk_size, self._action_dim),
             self._sentinel_value,
             dtype=torch.float32,
         )
+        out[..., 3:7] = torch.tensor(
+            (0.0, 0.0, 0.0, 1.0), dtype=torch.float32
+        )
+        out[..., 10:14] = torch.tensor(
+            (0.0, 0.0, 0.0, 1.0), dtype=torch.float32
+        )
+        return out
 
     def parameters(self) -> Any:
         return iter([self._param])
@@ -201,6 +217,22 @@ def _make_input_spec(
         action_dim=_ACTION_DIM,
         chunk_size=chunk_size,
     )
+
+
+def _make_repr_spec() -> ActionRepresentationSpec:
+    """The canonical first-version relative-action representation contract."""
+    return ActionRepresentationSpec(
+        arm_action_type="relative_tcp_pose",
+        chunk_reference="inference_observation",
+        translation_frame="tcp_local",
+        rotation_representation="quaternion_xyzw",
+        gripper_action_type="absolute",
+    )
+
+
+def _make_decoder() -> RelativeTcpActionDecoder:
+    """Build a RelativeTcpActionDecoder from the canonical relative spec."""
+    return RelativeTcpActionDecoder(_make_repr_spec())
 
 
 # ===================================================================
@@ -265,6 +297,14 @@ def _make_snapshot(
     else:
         encoded_state = sentinel_value.astype(np.float32).copy()
 
+    # The reference orientation slots must hold valid unit quaternions so the
+    # relative-action decoder can use them as the chunk reference.  Plant
+    # identity quaternions (xyzw = 0,0,0,1) when the caller did not supply a
+    # full custom state.
+    identity_quat = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)
+    encoded_state[3:7] = identity_quat
+    encoded_state[10:14] = identity_quat
+
     obs_state = ObservationState(
         left_tcp_position=encoded_state[0:3].copy(),
         left_tcp_orientation=encoded_state[3:7].copy(),
@@ -319,7 +359,7 @@ class TestFullChain:
             rec_sn,
             rec_an,
             policy,
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
 
         snapshot = _make_snapshot(camera_keys=["top"])
         result = svc.predict_action_chunk(snapshot)
@@ -331,19 +371,36 @@ class TestFullChain:
         assert np.isfinite(result.actions).all()
 
     def test_sentinel_value_preserved(self) -> None:
-        """Sentinel value flows through the pipeline unmodified with identity
-        normalizer (min=-1, max=1)."""
+        """Position and gripper sentinel values flow through the pipeline
+        unmodified (identity normalizer + identity reference pose); the arm
+        orientation slots are decoded from the unit relative quaternion and
+        therefore land at the identity orientation ``(0,0,0,1)``."""
         svc = ActInferenceService(
             _make_deploy_config(chunk_size=_CHUNK_SIZE),
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(sentinel_value=self.SENTINEL),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         snapshot = _make_snapshot(camera_keys=["top"])
         result = svc.predict_action_chunk(snapshot)
 
-        expected = np.full((_CHUNK_SIZE, _ACTION_DIM), self.SENTINEL, dtype=np.float32)
-        np.testing.assert_array_almost_equal(result.actions, expected, decimal=5)
+        # Position slots [0:3], [7:10] and gripper slots [14:16] preserve the
+        # sentinel (identity reference pose, identity normalizer).
+        for slots in (slice(0, 3), slice(7, 10), slice(14, 16)):
+            np.testing.assert_array_almost_equal(
+                result.actions[:, slots],
+                np.full((_CHUNK_SIZE, slots.stop - slots.start), self.SENTINEL, dtype=np.float32),
+                decimal=5,
+            )
+        # Orientation slots decode from the unit relative quaternion composed
+        # with the identity reference -> identity orientation.
+        identity_quat = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)
+        for slots in (slice(3, 7), slice(10, 14)):
+            np.testing.assert_array_almost_equal(
+                result.actions[:, slots],
+                np.tile(identity_quat, (_CHUNK_SIZE, 1)),
+                decimal=5,
+            )
 
     def test_normalizer_call_direction_and_count(self) -> None:
         """State normalizer only calls normalize, action normalizer only
@@ -358,7 +415,7 @@ class TestFullChain:
             rec_sn,
             rec_an,
             StubPolicy(sentinel_value=self.SENTINEL),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
         assert rec_sn.normalize_calls == 1, (
@@ -384,7 +441,7 @@ class TestFullChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicyWithRaisingSelectAction(sentinel_value=self.SENTINEL),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         result = svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
         assert isinstance(result, ActionChunk)
 
@@ -395,7 +452,7 @@ class TestFullChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(sentinel_value=self.SENTINEL),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         result = svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
         forbidden = [
@@ -407,6 +464,28 @@ class TestFullChain:
             assert not hasattr(result, attr), (
                 f"ActionChunk must not have runtime metadata field '{attr}'"
             )
+
+    def test_output_is_absolute_not_relative(self) -> None:
+        """The cross-module output must be an absolute ActionChunk, never a
+        RelativeActionChunk — the relative action is decoded away inside
+        ActInferenceService and never escapes the L2-03 boundary."""
+        from model_deploy.act.types.relative_action_chunk import RelativeActionChunk
+
+        svc = ActInferenceService(
+            _make_deploy_config(chunk_size=_CHUNK_SIZE),
+            _make_state_normalizer(),
+            _make_action_normalizer(),
+            StubPolicy(sentinel_value=self.SENTINEL),
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
+        result = svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
+
+        assert isinstance(result, ActionChunk), (
+            "ActInferenceService must return an absolute ActionChunk"
+        )
+        assert not isinstance(result, RelativeActionChunk), (
+            "RelativeActionChunk must never cross the L2-03 module boundary; "
+            "it is decoded into an absolute ActionChunk before return"
+        )
 
 
 # ===================================================================
@@ -425,7 +504,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(sentinel_value=0.0),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         snapshot = _make_snapshot(camera_keys=["top"])
         bad_snapshot = _replace_encoded_state(snapshot, np.zeros(14, dtype=np.float32))
 
@@ -439,7 +518,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             StubPolicy(raise_on_predict=True),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         snapshot = _make_snapshot(camera_keys=["top"])
 
         with pytest.raises(RuntimeError, match="forced"):
@@ -452,7 +531,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             WrongShapePolicy(),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         snapshot = _make_snapshot(camera_keys=["top"])
 
         with pytest.raises(ValueError, match="chunk dim"):
@@ -465,7 +544,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             WrongDimPolicy(),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         snapshot = _make_snapshot(camera_keys=["top"])
 
         with pytest.raises(ValueError, match="action dim"):
@@ -482,7 +561,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             LongerPolicy(chunk_size=_CHUNK_SIZE),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         with pytest.raises(ValueError, match="chunk dim"):
             svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
@@ -497,7 +576,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             ShorterPolicy(chunk_size=_CHUNK_SIZE),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         with pytest.raises(ValueError, match="chunk dim"):
             svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
@@ -512,7 +591,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             FlatPolicy(chunk_size=_CHUNK_SIZE),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         with pytest.raises(ValueError, match="rank 3"):
             svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
@@ -529,7 +608,7 @@ class TestErrorStopsChain:
             _make_state_normalizer(),
             _make_action_normalizer(),
             NaNPolicy(chunk_size=_CHUNK_SIZE),
-            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)))
+            input_spec=_make_input_spec(chunk_size=_CHUNK_SIZE, camera_keys=("top",)), relative_action_decoder=_make_decoder())
         with pytest.raises(ValueError, match="NaN or Inf"):
             svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
@@ -542,8 +621,10 @@ class TestErrorStopsChain:
 # L2-03 specific source files (relative to _ACT_SRC)
 _L2_03_SOURCE_FILES: frozenset[str] = frozenset({
     "types/action_chunk.py",
+    "types/relative_action_chunk.py",
     "service/observation_batch.py",
     "service/action_chunk_postprocess.py",
+    "service/relative_tcp_action_decoder.py",
     "service/act_inference.py",
 })
 
@@ -796,11 +877,13 @@ class TestBoundary:
         )
 
     def test_l2_03_source_files_exist(self, _src_files: List[Path]) -> None:
-        """Verify the four L2-03 source modules exist on disk."""
+        """Verify the L2-03 source modules exist on disk."""
         expected = [
             _ACT_SRC / "types" / "action_chunk.py",
+            _ACT_SRC / "types" / "relative_action_chunk.py",
             _ACT_SRC / "service" / "observation_batch.py",
             _ACT_SRC / "service" / "action_chunk_postprocess.py",
+            _ACT_SRC / "service" / "relative_tcp_action_decoder.py",
             _ACT_SRC / "service" / "act_inference.py",
         ]
         for fpath in expected:

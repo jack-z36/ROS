@@ -1,6 +1,17 @@
 from .contract_result import BundleContractResult, NormalizerContractResult
 from .state_spec import StateSpec, STATE_DIM, ensure_state_vector, encode_state
 from .action_spec import ActionSpec, ACTION_DIM, ensure_action_vector, split_action
+from .action_chunk import ActionChunk
+from .relative_action_chunk import RelativeActionChunk
+from .action_representation import (
+    ActionRepresentationSpec,
+    ArmActionType,
+    ChunkReference,
+    TranslationFrame,
+    RotationRepresentation,
+    GripperActionType,
+    is_expected_relative_spec,
+)
 from .observation import (
     EXPECTED_STATE_DIM as OBSERVATION_STATE_DIM,
     ObservationState,
@@ -34,6 +45,15 @@ __all__ = [
     "ACTION_DIM",
     "ensure_action_vector",
     "split_action",
+    "ActionChunk",
+    "RelativeActionChunk",
+    "ActionRepresentationSpec",
+    "ArmActionType",
+    "ChunkReference",
+    "TranslationFrame",
+    "RotationRepresentation",
+    "GripperActionType",
+    "is_expected_relative_spec",
     "ObservationState",
     "ObservationSnapshot",
     "ObservationFreshnessResult",

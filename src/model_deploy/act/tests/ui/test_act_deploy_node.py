@@ -161,9 +161,24 @@ def _config():
     return DeployConfig.from_mapping(raw, base_dir="/tmp", command_output_enabled=False)
 
 
-def _inference_service(spec):
+def _repr_spec():
+    from model_deploy.act.types.action_representation import (
+        ActionRepresentationSpec,
+    )
+
+    return ActionRepresentationSpec(
+        arm_action_type="relative_tcp_pose",
+        chunk_reference="inference_observation",
+        translation_frame="tcp_local",
+        rotation_representation="quaternion_xyzw",
+        gripper_action_type="absolute",
+    )
+
+
+def _inference_service(spec, repr_spec):
     class _FakeService:
         input_spec = spec
+        action_representation_spec = repr_spec
 
         def predict_action_chunk(self, observation):
             # Not exercised by these tests (no observation submitted), but the
@@ -173,8 +188,10 @@ def _inference_service(spec):
     return _FakeService()
 
 
-def _resources(spec):
-    return SimpleNamespace(policy_input_spec=spec)
+def _resources(spec, repr_spec):
+    return SimpleNamespace(
+        policy_input_spec=spec, action_representation_spec=repr_spec
+    )
 
 
 @pytest.fixture
@@ -182,8 +199,9 @@ def node():
     """A fully-started fake node; always torn down via bounded shutdown."""
     spec = _spec()
     config = _config()
-    resources = _resources(spec)
-    service = _inference_service(spec)
+    repr_spec = _repr_spec()
+    resources = _resources(spec, repr_spec)
+    service = _inference_service(spec, repr_spec)
     n = FakeActDeployNode(
         config=config, resources=resources, inference_service=service, permit_source=None
     )
@@ -375,10 +393,11 @@ def test_shutdown_is_idempotent(node):
 def test_shutdown_timeout_returns_false(monkeypatch):
     spec = _spec()
     config = _config()
+    repr_spec = _repr_spec()
     n = FakeActDeployNode(
         config=config,
-        resources=_resources(spec),
-        inference_service=_inference_service(spec),
+        resources=_resources(spec, repr_spec),
+        inference_service=_inference_service(spec, repr_spec),
         permit_source=None,
     )
     # Simulate a worker that refuses to exit (daemon still blocked) so the
@@ -413,14 +432,15 @@ def test_atomic_recovery_on_pipeline_build_failure(monkeypatch):
 
     spec = _spec()
     config = _config()
+    repr_spec = _repr_spec()
     n = FakeActDeployNode.__new__(FakeActDeployNode)
     FakeNode.__init__(n)
     n._destroyed = False
     with pytest.raises(RuntimeError):
         n._act_init(
             config=config,
-            resources=_resources(spec),
-            inference_service=_inference_service(spec),
+            resources=_resources(spec, repr_spec),
+            inference_service=_inference_service(spec, repr_spec),
             permit_source=None,
             monotonic_clock=FakeClock(),
         )

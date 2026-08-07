@@ -59,6 +59,16 @@ def _make_bundle(
         manifest["model"]["action_dim"] = action_dim
     if "chunk_size" not in missing:
         manifest["model"]["chunk_size"] = chunk_size
+    # Self-describing action representation (relative-action contract).
+    # Default to the expected relative block unless explicitly omitted.
+    if "action_representation" not in missing:
+        manifest["action_representation"] = {
+            "arm_action_type": "relative_tcp_pose",
+            "chunk_reference": "inference_observation",
+            "translation_frame": "tcp_local",
+            "rotation_representation": "quaternion_xyzw",
+            "gripper_action_type": "absolute",
+        }
     (bundle / "manifest.json").write_text(json.dumps(manifest))
 
     normalizers = {

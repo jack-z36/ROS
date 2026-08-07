@@ -91,24 +91,43 @@ def _loose_spec(
     )
 
 
-def _inference_service(spec):
-    return SimpleNamespace(input_spec=spec)
+def _repr_spec():
+    from model_deploy.act.types.action_representation import (
+        ActionRepresentationSpec,
+    )
+
+    return ActionRepresentationSpec(
+        arm_action_type="relative_tcp_pose",
+        chunk_reference="inference_observation",
+        translation_frame="tcp_local",
+        rotation_representation="quaternion_xyzw",
+        gripper_action_type="absolute",
+    )
+
+
+def _inference_service(spec, repr_spec):
+    return SimpleNamespace(
+        input_spec=spec, action_representation_spec=repr_spec
+    )
 
 
 def _pipeline(spec, clock):
     return SimpleNamespace(input_spec=spec, monotonic_clock=clock)
 
 
-def _resources(spec):
-    return SimpleNamespace(policy_input_spec=spec)
+def _resources(spec, repr_spec):
+    return SimpleNamespace(
+        policy_input_spec=spec, action_representation_spec=repr_spec
+    )
 
 
 def _preflight_ok(*, spec, config, clock, command_output_enabled=False, permit_source=None):
     """Run preflight with a fully-canonical, consistent set; assert it passes."""
+    repr_spec = _repr_spec()
     run_startup_preflight(
         config=config,
-        resources=_resources(spec),
-        inference_service=_inference_service(spec),
+        resources=_resources(spec, repr_spec),
+        inference_service=_inference_service(spec, repr_spec),
         pipeline=_pipeline(spec, clock),
         request_queue=LatestQueue(),
         result_queue=LatestQueue(),
@@ -134,6 +153,7 @@ def test_startup_contract_codes_are_stable():
         "QUEUE_CAPACITY_MISMATCH",
         "CLOCK_DOMAIN_MISMATCH",
         "PERMIT_SOURCE_MISSING",
+        "ACTION_REPRESENTATION_MISMATCH",
     )
 
 
@@ -159,12 +179,13 @@ def test_spec_identity_mismatch_inference_service():
     clock = lambda: 1000.0
     spec = _spec()
     other_spec = _loose_spec(image_layout="HWC")  # distinct object
+    repr_spec = _repr_spec()
     config = _config()
     with pytest.raises(StartupContractError) as exc:
         run_startup_preflight(
             config=config,
-            resources=_resources(spec),
-            inference_service=_inference_service(other_spec),
+            resources=_resources(spec, repr_spec),
+            inference_service=_inference_service(other_spec, repr_spec),
             pipeline=_pipeline(spec, clock),
             request_queue=LatestQueue(),
             result_queue=LatestQueue(),
@@ -179,12 +200,13 @@ def test_spec_identity_mismatch_pipeline():
     clock = lambda: 1000.0
     spec = _spec()
     other_spec = _loose_spec(image_layout="HWC")
+    repr_spec = _repr_spec()
     config = _config()
     with pytest.raises(StartupContractError) as exc:
         run_startup_preflight(
             config=config,
-            resources=_resources(spec),
-            inference_service=_inference_service(spec),
+            resources=_resources(spec, repr_spec),
+            inference_service=_inference_service(spec, repr_spec),
             pipeline=_pipeline(other_spec, clock),
             request_queue=LatestQueue(),
             result_queue=LatestQueue(),
@@ -271,12 +293,13 @@ def test_clock_domain_mismatch():
     clock = lambda: 1000.0
     other_clock = lambda: 2000.0
     spec = _spec()
+    repr_spec = _repr_spec()
     config = _config()
     with pytest.raises(StartupContractError) as exc:
         run_startup_preflight(
             config=config,
-            resources=_resources(spec),
-            inference_service=_inference_service(spec),
+            resources=_resources(spec, repr_spec),
+            inference_service=_inference_service(spec, repr_spec),
             pipeline=_pipeline(spec, other_clock),
             request_queue=LatestQueue(),
             result_queue=LatestQueue(),

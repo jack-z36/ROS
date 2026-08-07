@@ -27,7 +27,11 @@ from model_deploy.act.service.act_inference import (
     ActInferenceService,
     run_act_inference,
 )
+from model_deploy.act.service.relative_tcp_action_decoder import (
+    RelativeTcpActionDecoder,
+)
 from model_deploy.act.types.action_chunk import ActionChunk
+from model_deploy.act.types.action_representation import ActionRepresentationSpec
 from model_deploy.act.types.observation import (
     ObservationSnapshot,
     ObservationState,
@@ -121,6 +125,27 @@ def _make_input_spec(
 
 
 # ---------------------------------------------------------------------------
+# Helpers: action representation + decoder
+# ---------------------------------------------------------------------------
+
+
+def _make_repr_spec() -> ActionRepresentationSpec:
+    """The canonical first-version relative-action representation contract."""
+    return ActionRepresentationSpec(
+        arm_action_type="relative_tcp_pose",
+        chunk_reference="inference_observation",
+        translation_frame="tcp_local",
+        rotation_representation="quaternion_xyzw",
+        gripper_action_type="absolute",
+    )
+
+
+def _make_decoder() -> RelativeTcpActionDecoder:
+    """Build a RelativeTcpActionDecoder from the canonical relative spec."""
+    return RelativeTcpActionDecoder(_make_repr_spec())
+
+
+# ---------------------------------------------------------------------------
 # Helpers: stub policy
 # ---------------------------------------------------------------------------
 
@@ -171,7 +196,13 @@ class StubPolicy:
     def predict_action_chunk(self, batch: object) -> torch.Tensor:
         if self._raise_on_predict:
             raise RuntimeError("forced predict_action_chunk failure")
-        return torch.zeros(1, self._chunk_size, self._action_dim)
+        # Output a valid relative action: identity quaternions (xyzw = 0,0,0,1)
+        # in slots [3:7] and [10:14], zero relative translation, so the decoder
+        # produces a finite absolute chunk.
+        out = torch.zeros(1, self._chunk_size, self._action_dim)
+        out[..., 6] = 1.0   # left arm w component
+        out[..., 13] = 1.0  # right arm w component
+        return out
 
     def parameters(self) -> Any:
         return iter([self._param])
@@ -265,6 +296,7 @@ class TestConstruction:
             _make_action_normalizer(),
             StubPolicy(),
             input_spec=_make_input_spec(),
+            relative_action_decoder=_make_decoder(),
         )
         assert svc is not None
 
@@ -279,6 +311,7 @@ class TestConstruction:
             _make_action_normalizer(),
             StubPolicy(chunk_size=10, action_dim=16),
             input_spec=injected,
+            relative_action_decoder=_make_decoder(),
         )
 
         # Public read-only property returns the identical object.
@@ -316,6 +349,7 @@ class TestConstruction:
             _make_action_normalizer(),
             BarePolicy(),
             input_spec=injected,
+            relative_action_decoder=_make_decoder(),
         )
         assert svc.input_spec is injected
         assert svc.input_spec.chunk_size == 30
@@ -354,6 +388,7 @@ class TestContractValidation:
                 _make_action_normalizer(),
                 BadPolicy(),
                 input_spec=_make_input_spec(),
+                relative_action_decoder=_make_decoder(),
             )
 
     def test_raises_on_state_normalizer_dimension_mismatch(self) -> None:
@@ -364,6 +399,7 @@ class TestContractValidation:
                 _make_action_normalizer(),
                 StubPolicy(),
                 input_spec=_make_input_spec(),
+                relative_action_decoder=_make_decoder(),
             )
 
     def test_raises_on_action_normalizer_dimension_mismatch(self) -> None:
@@ -374,6 +410,7 @@ class TestContractValidation:
                 _make_action_normalizer(dim=8),  # policy expects 16
                 StubPolicy(),
                 input_spec=_make_input_spec(),
+                relative_action_decoder=_make_decoder(),
             )
 
 
@@ -392,6 +429,7 @@ class TestInstanceFields:
             _make_action_normalizer(),
             StubPolicy(),
             input_spec=_make_input_spec(),
+            relative_action_decoder=_make_decoder(),
         )
 
         allowed = {
@@ -400,6 +438,7 @@ class TestInstanceFields:
             "_action_normalizer",
             "_policy",
             "_input_spec",
+            "_decoder",
             "_device",
         }
         actual = set(vars(svc).keys())
@@ -415,6 +454,7 @@ class TestInstanceFields:
             _make_action_normalizer(),
             StubPolicy(),
             input_spec=_make_input_spec(),
+            relative_action_decoder=_make_decoder(),
         )
 
         forbidden = {
@@ -443,6 +483,7 @@ class TestEndToEnd:
             _make_action_normalizer(),
             StubPolicy(chunk_size=10),
             input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
+            relative_action_decoder=_make_decoder(),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
         result = svc.predict_action_chunk(snapshot)
@@ -461,6 +502,7 @@ class TestEndToEnd:
             _make_action_normalizer(),
             StubPolicyWithRaisingSelectAction(chunk_size=10),
             input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
+            relative_action_decoder=_make_decoder(),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
         # Must succeed — select_action is never called
@@ -486,6 +528,7 @@ class TestFailurePropagation:
             input_spec=_make_input_spec(
                 chunk_size=10, camera_keys=("left_wrist", "top")
             ),
+            relative_action_decoder=_make_decoder(),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
 
@@ -499,6 +542,7 @@ class TestFailurePropagation:
             _make_action_normalizer(),
             StubPolicy(chunk_size=10, raise_on_predict=True),
             input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
+            relative_action_decoder=_make_decoder(),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
 
@@ -518,6 +562,7 @@ class TestFailurePropagation:
             _make_action_normalizer(),
             WrongShapePolicy(chunk_size=10),
             input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
+            relative_action_decoder=_make_decoder(),
         )
         snapshot = _make_snapshot(camera_keys=["top"])
 
@@ -573,6 +618,7 @@ class TestNormalizerDirectionAndCount:
             _make_action_normalizer(),
             StubPolicy(chunk_size=10),
             input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
+            relative_action_decoder=_make_decoder(),
         )
         svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 
@@ -590,6 +636,7 @@ class TestNormalizerDirectionAndCount:
             an_mock,
             StubPolicy(chunk_size=10),
             input_spec=_make_input_spec(chunk_size=10, camera_keys=("top",)),
+            relative_action_decoder=_make_decoder(),
         )
         svc.predict_action_chunk(_make_snapshot(camera_keys=["top"]))
 

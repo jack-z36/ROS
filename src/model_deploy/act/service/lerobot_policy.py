@@ -25,10 +25,21 @@ while the rest of the pipeline keeps its frozen 16D physical contract:
                    reorders every chunk (verified against the exported
                    normalization statistics: gripper 0..1 range sits at
                    indices 7 and 15 in the training order).
-5. Quaternion norm ACT predicts quaternion components independently.  After
+5. Action semantic the ACT model is a *relative-action* checkpoint: the arm
+                   TCP segments of each row are **relative** TCP poses with
+                   respect to the inference-moment observation, while the two
+                   gripper fields are **absolute** targets.  The wrapper does
+                   not perform the relative→absolute conversion (that needs
+                   the physical observation, owned by ``ActInferenceService``);
+                   it only produces physical relative action + absolute
+                   gripper in deploy order.  ``action.mean`` / ``action.std``
+                   must come from a relative-action checkpoint's exported
+                   preprocessor statistics.
+6. Quaternion norm ACT predicts quaternion components independently.  After
                    action unnormalization and reordering, each left/right
-                   ``xyzw`` quaternion is validated and normalized to unit
-                   length before it enters the strict deployment contract.
+                   ``xyzw`` **relative** quaternion is validated and
+                   normalized to unit length before it enters the strict
+                   deployment contract.
 
 Additionally the wrapper resizes incoming square images (deploy image_size)
 to the model's expected (H, W) (e.g. 480x640) with bilinear interpolation
@@ -95,15 +106,19 @@ def reorder_train_action_to_deploy(actions: torch.Tensor) -> torch.Tensor:
     return actions.index_select(-1, index)
 
 
-def normalize_deploy_action_quaternions(
+def normalize_relative_action_quaternions(
     actions: torch.Tensor,
 ) -> torch.Tensor:
-    """Normalize each arm quaternion in a deploy-order action tensor.
+    """Normalize each arm **relative** quaternion in a deploy-order action tensor.
 
     The input may contain any number of leading batch/chunk dimensions, but
     its last dimension must follow the deployment 16D layout.  Left and right
     ``xyzw`` quaternions are normalized independently for every action row.
     Position and gripper fields are preserved exactly.
+
+    For a relative-action checkpoint the two arm ``xyzw`` segments are
+    **relative** orientation quaternions; this check validates that they encode
+    a recoverable orientation before the relative→absolute decode.
 
     Invalid model output is not repaired: non-finite values and quaternions
     with near-zero norm raise ``ValueError`` because they do not encode a
@@ -131,6 +146,12 @@ def normalize_deploy_action_quaternions(
                 f"{QUATERNION_NORM_EPS}")
         normalized[..., quat_slice] = quaternion / norm
     return normalized
+
+
+#: Backward-compatible alias retained during the relative-action migration so
+#: existing scripts/tests keep importing the old name. Prefer
+#: ``normalize_relative_action_quaternions`` in new code.
+normalize_deploy_action_quaternions = normalize_relative_action_quaternions
 
 
 def expand_state_to_model_dim(
@@ -237,12 +258,19 @@ class LerobotActPolicyWrapper:
         return self._policy.parameters()
 
     def predict_action_chunk(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
-        """Deploy batch -> physical action chunk in deploy order.
+        """Deploy batch -> physical **relative** action chunk in deploy order.
 
         Steps: key translation, optional legacy 16->32 state expansion,
         MEAN_STD normalize, image resize + MEAN_STD, model forward,
-        action unnormalize, train->deploy action reorder, per-arm quaternion
-        normalization.
+        action unnormalize, train->deploy action reorder, per-arm
+        **relative** quaternion normalization.
+
+        The returned arm TCP segments are **relative** TCP poses (translation +
+        xyzw quaternion) with respect to the inference-moment observation; the
+        two gripper fields are **absolute** targets.  The relative→absolute
+        conversion is performed later by ``RelativeTcpActionDecoder`` inside
+        ``ActInferenceService`` (it needs the physical observation, which this
+        wrapper does not see — only the normalized batch).
 
         Args:
             batch: ``{state_key: (1, 16) physical, <image_prefix><cam>:
@@ -250,6 +278,7 @@ class LerobotActPolicyWrapper:
 
         Returns:
             ``(1, chunk_size, 16)`` float32 physical actions, deploy order.
+            Arm segments are relative TCP; gripper segments are absolute.
         """
         state16 = batch[self._state_key]
         if state16.ndim != 2 or state16.shape[1] != DEPLOY_STATE_DIM:
@@ -279,7 +308,7 @@ class LerobotActPolicyWrapper:
 
         physical = normalized_actions * self._action_std + self._action_mean
         deploy_actions = reorder_train_action_to_deploy(physical).to(torch.float32)
-        return normalize_deploy_action_quaternions(deploy_actions)
+        return normalize_relative_action_quaternions(deploy_actions)
 
 
 def _load_normalization_stats(pretrained_dir: Path) -> Dict[str, torch.Tensor]:
@@ -305,12 +334,17 @@ def make_lerobot_policy_loader(config: "DeployConfig") -> Callable[[Path], Any]:
     statistics load, contract checks) only when invoked, so building the
     factory itself is side-effect free.
 
+    The closure receives either a bundle dir (packaged ``deploy_bundle``) or a
+    resolved ``pretrained_model`` dir (raw checkpoint); in both cases it
+    resolves the ``pretrained_model`` directory via
+    :func:`resolve_pretrained_dir` before loading the policy.
+
     Args:
         config: Validated ``DeployConfig`` (provides batch key names, camera
             keys, and the runtime device / chunk size to cross-check).
 
     Returns:
-        ``loader(bundle_dir) -> LerobotActPolicyWrapper``.
+        ``loader(source_dir) -> LerobotActPolicyWrapper``.
     """
     state_key = config.topics.observation.arm_state
     image_prefix = f"{config.topics.namespace}/observation/image/"
@@ -318,13 +352,12 @@ def make_lerobot_policy_loader(config: "DeployConfig") -> Callable[[Path], Any]:
     device = config.runtime.device
     expected_chunk_size = config.runtime.chunk_size
 
-    def _load(bundle_dir: Path) -> LerobotActPolicyWrapper:
+    def _load(source_dir: Path) -> LerobotActPolicyWrapper:
         from lerobot.policies.act.modeling_act import ACTPolicy
 
-        from model_deploy.act.repo.bundle_reader import resolve_checkpoint_path
+        from model_deploy.act.repo.bundle_reader import resolve_pretrained_dir
 
-        checkpoint = resolve_checkpoint_path(bundle_dir)
-        pretrained_dir = checkpoint if checkpoint.is_dir() else checkpoint.parent
+        pretrained_dir = resolve_pretrained_dir(source_dir)
 
         policy = ACTPolicy.from_pretrained(str(pretrained_dir))
         policy.to(device)

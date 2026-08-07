@@ -56,7 +56,11 @@ from model_deploy.act.runtime.inference_channel import (
 from model_deploy.act.runtime.inference_worker import InferenceWorker
 from model_deploy.act.runtime.runtime_metrics import RuntimeMetrics
 from model_deploy.act.service.act_inference import ActInferenceService
+from model_deploy.act.service.relative_tcp_action_decoder import (
+    RelativeTcpActionDecoder,
+)
 from model_deploy.act.types.action_chunk import ActionChunk
+from model_deploy.act.types.action_representation import ActionRepresentationSpec
 from model_deploy.act.types.action_publish import (
     ActionPublishRequest,
     ActionPublishResult,
@@ -281,11 +285,19 @@ def _build_resources(cfg: DeployConfig, spec: PolicyInputSpec) -> ActRuntimeReso
         max_vals=np.ones(cfg.runtime.action_dim),
     )
     policy = FakePolicy(chunk_size=cfg.runtime.chunk_size)
+    repr_spec = ActionRepresentationSpec(
+        arm_action_type="relative_tcp_pose",
+        chunk_reference="inference_observation",
+        translation_frame="tcp_local",
+        rotation_representation="quaternion_xyzw",
+        gripper_action_type="absolute",
+    )
     return ActRuntimeResources(
         policy=policy,
         state_normalizer=state_norm,
         action_normalizer=action_norm,
         policy_input_spec=spec,
+        action_representation_spec=repr_spec,
         bundle_dir=_FIXTURE.parent,
         cross_check=RuntimeResourceCrossCheck(passed=True, issues=()),
     )
@@ -323,12 +335,16 @@ def build_composition(
     cfg = _load_config(command_output_enabled=command_output_enabled)
     spec = _build_spec(cfg)
     resources = _build_resources(cfg, spec)
+    relative_action_decoder = RelativeTcpActionDecoder(
+        resources.action_representation_spec
+    )
     inference_service = ActInferenceService(
         cfg,
         resources.state_normalizer,
         resources.action_normalizer,
         resources.policy,
         spec,
+        relative_action_decoder,
     )
     clock = FakeClock()
     node = FakeNode()
@@ -529,11 +545,13 @@ class TestG02Config:
         assert resources.cross_check.passed is True
         assert resources.policy_input_spec is spec
         # 注入的 ActRuntimeResources 不调用生产 loader（空 bundle 下 fail-fast）
+        decoder = RelativeTcpActionDecoder(resources.action_representation_spec)
         service = ActInferenceService(
             cfg, resources.state_normalizer, resources.action_normalizer,
-            resources.policy, spec,
+            resources.policy, spec, decoder,
         )
         assert service.input_spec is spec
+        assert service.action_representation_spec is resources.action_representation_spec
 
     def test_loader_fails_fast_on_empty_bundle(self) -> None:
         # 真实 production loader 在空 bundle_dir 下必须 fail-fast（绝不猜路径）
@@ -1025,6 +1043,7 @@ class TestG08Lifecycle:
             state_normalizer=comp.resources.state_normalizer,
             action_normalizer=comp.resources.action_normalizer,
             policy_input_spec=wrong_spec,  # 与 pipeline/service 持有的 spec 不同身份
+            action_representation_spec=comp.resources.action_representation_spec,
             bundle_dir=comp.resources.bundle_dir,
             cross_check=comp.resources.cross_check,
         )

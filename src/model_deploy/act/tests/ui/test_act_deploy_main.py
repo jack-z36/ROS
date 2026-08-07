@@ -92,18 +92,34 @@ def _config(command_output_enabled=False):
     )
 
 
+def _repr_spec():
+    from model_deploy.act.types.action_representation import (
+        ActionRepresentationSpec,
+    )
+
+    return ActionRepresentationSpec(
+        arm_action_type="relative_tcp_pose",
+        chunk_reference="inference_observation",
+        translation_frame="tcp_local",
+        rotation_representation="quaternion_xyzw",
+        gripper_action_type="absolute",
+    )
+
+
 def _resources(spec):
     return SimpleNamespace(
         policy=None,
         state_normalizer=None,
         action_normalizer=None,
         policy_input_spec=spec,
+        action_representation_spec=_repr_spec(),
     )
 
 
 def _inference_service(spec):
     class _FakeService:
         input_spec = spec
+        action_representation_spec = _repr_spec()
 
         def predict_action_chunk(self, observation):
             return SimpleNamespace(actions=None)
@@ -160,7 +176,7 @@ def patched_main(monkeypatch):
     monkeypatch.setattr(
         svc_mod,
         "ActInferenceService",
-        lambda config, sn, an, policy, spec_arg: _inference_service(spec_arg),
+        lambda config, sn, an, policy, spec_arg, relative_action_decoder: _inference_service(spec_arg),
     )
     return fake_rclpy
 

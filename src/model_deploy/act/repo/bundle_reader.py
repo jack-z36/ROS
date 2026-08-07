@@ -1,8 +1,19 @@
-"""Bundle directory reader for ACT deployment.
+"""Bundle / checkpoint directory reader for ACT deployment.
 
 Checks bundle directory structural integrity (file existence) and resolves
 the checkpoint path.  Does NOT load model weights, parse manifest content,
 or do dimension business validation.
+
+Two source layouts are recognised (auto-detected by file existence):
+
+1. **bundle** — a packaged ``deploy_bundle/`` carrying ``manifest.json``,
+   ``normalizers.json``, ``experiment_config.yaml`` and an ``adapter/``
+   directory that mirrors the trained ``pretrained_model/``.
+2. **checkpoint** — a raw training checkpoint directory such as
+   ``.../checkpoints/100000/`` (or its inner ``pretrained_model/``).  It
+   carries ``pretrained_model/config.json`` + ``model.safetensors`` and the
+   exported preprocessor safetensors; no manifest / sidecar files are
+   required.
 """
 
 from __future__ import annotations
@@ -18,6 +29,12 @@ BUNDLE_REQUIRED_FILES: tuple[str, ...] = (
     "experiment_config.yaml",
     "adapter",
 )
+
+#: The lerobot ACT ``pretrained_model`` directory name inside a checkpoint.
+CHECKPOINT_PRETRAINED_SUBDIR: str = "pretrained_model"
+
+#: The policy hyperparameter file that lives inside ``pretrained_model/``.
+CHECKPOINT_CONFIG_NAME: str = "config.json"
 
 
 class BundleStructureError(ValueError):
@@ -128,4 +145,78 @@ def resolve_checkpoint_path(bundle_dir: str | Path) -> Path:
 
     raise BundleStructureError(
         f"Cannot resolve checkpoint path in bundle: {bundle_dir}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Source-layout detection (bundle vs raw checkpoint)
+# ---------------------------------------------------------------------------
+
+
+def is_bundle_dir(path: str | Path) -> bool:
+    """Return ``True`` if *path* looks like a packaged deploy bundle.
+
+    A bundle is identified by the presence of ``manifest.json`` at the top
+    level.  The remaining required files (``normalizers.json`` etc.) are
+    verified separately by :func:`check_bundle_files`.
+    """
+    return (Path(path).expanduser().resolve() / "manifest.json").is_file()
+
+
+def is_checkpoint_dir(path: str | Path) -> bool:
+    """Return ``True`` if *path* is a raw training checkpoint directory.
+
+    Two shapes are accepted:
+
+    - ``<checkpoint>/pretrained_model/config.json`` (e.g.
+      ``.../checkpoints/100000/``), or
+    - ``<pretrained_model>/config.json`` (when the caller points directly at
+      the inner ``pretrained_model/`` directory).
+    """
+    root = Path(path).expanduser().resolve()
+    if (root / CHECKPOINT_PRETRAINED_SUBDIR / CHECKPOINT_CONFIG_NAME).is_file():
+        return True
+    if (root / CHECKPOINT_CONFIG_NAME).is_file():
+        return True
+    return False
+
+
+def resolve_pretrained_dir(source_dir: str | Path) -> Path:
+    """Resolve the ``pretrained_model`` directory from a bundle or checkpoint.
+
+    Accepts either source layout and always returns the directory that
+    contains ``config.json`` + ``model.safetensors`` — the single entry point
+    the policy loader and the statistics loader consume.
+
+    Args:
+        source_dir: A bundle root, a checkpoint root
+            (``.../checkpoints/100000``), or an inner ``pretrained_model``
+            directory.
+
+    Returns:
+        The resolved ``pretrained_model`` directory.
+
+    Raises:
+        BundleStructureError: If the pretrained directory cannot be located.
+    """
+    root = Path(source_dir).expanduser().resolve()
+
+    # Strategy 1: packaged bundle — delegate to the manifest-aware resolver.
+    if (root / "manifest.json").is_file():
+        checkpoint = resolve_checkpoint_path(root)
+        return checkpoint if checkpoint.is_dir() else checkpoint.parent
+
+    # Strategy 2: checkpoint root with an inner pretrained_model/.
+    inner = root / CHECKPOINT_PRETRAINED_SUBDIR
+    if (inner / CHECKPOINT_CONFIG_NAME).is_file():
+        return inner
+
+    # Strategy 3: the caller already pointed at pretrained_model/ itself.
+    if (root / CHECKPOINT_CONFIG_NAME).is_file():
+        return root
+
+    raise BundleStructureError(
+        f"Cannot resolve a pretrained_model directory from {root}: expected a "
+        f"bundle (manifest.json), a checkpoint (pretrained_model/config.json), "
+        f"or a pretrained_model directory (config.json)."
     )

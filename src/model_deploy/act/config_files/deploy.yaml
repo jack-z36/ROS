@@ -1,10 +1,16 @@
 # ACT default deployment configuration (dry-run mode)
 #
 # This file is the default config instance for local development and testing.
-# Set bundle.bundle_dir to a real bundle path before running.
+# Set bundle.bundle_dir to a real path before running.
 # Action-smoothing fields and legacy bridge/mux sections are intentionally absent.
 
 bundle:
+  # Accepts either of two source layouts (auto-detected by file existence):
+  #   1. a packaged deploy_bundle directory (carries manifest.json,
+  #      normalizers.json, experiment_config.yaml, adapter/);
+  #   2. a raw training checkpoint directory such as
+  #      .../checkpoints/100000 (carries pretrained_model/config.json), or the
+  #      inner pretrained_model/ directory itself.
   bundle_dir: null  # must be set at runtime
 
 runtime:
@@ -81,3 +87,18 @@ command_output:
   gripper_deadband: 1.0
   gripper_min_publish_interval_s: 0.05
   qos_depth: 10
+
+# Action representation contract (deploy-side *expected* semantics).
+# For a packaged bundle: the bundle manifest carries its own
+# action_representation; the startup preflight cross-validates these
+# field-by-field and fails fast on mismatch (e.g. an old absolute-action
+# checkpoint). For a raw checkpoint (no manifest): this block is the SINGLE
+# source of truth — pointing bundle_dir at a trained checkpoint is the
+# operator's declaration that it matches this relative-action contract.
+# The first version only supports relative TCP.
+action_representation:
+  arm_action_type: relative_tcp_pose        # arm rows are relative TCP pose
+  chunk_reference: inference_observation    # whole chunk vs the same inference-moment TCP
+  translation_frame: tcp_local              # relative translation in the reference TCP local frame
+  rotation_representation: quaternion_xyzw  # relative orientation as xyzw quaternion
+  gripper_action_type: absolute             # gripper fields stay absolute targets

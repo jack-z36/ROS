@@ -29,11 +29,20 @@ NOTE: ``config.schema`` is imported lazily inside the functions that raise
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Tuple
 
-from model_deploy.act.repo.bundle_reader import check_bundle_files, resolve_checkpoint_path
+import numpy as np
+
+from model_deploy.act.repo.bundle_reader import (
+    check_bundle_files,
+    is_bundle_dir,
+    is_checkpoint_dir,
+    resolve_checkpoint_path,
+    resolve_pretrained_dir,
+)
 from model_deploy.act.repo.experiment_config_loader import (
     ExperimentConfigLoadError,
     load_experiment_config,
@@ -41,6 +50,14 @@ from model_deploy.act.repo.experiment_config_loader import (
 from model_deploy.act.repo.manifest_parser import load_bundle_manifest
 from model_deploy.act.repo.normalization import ActionStateNormalizer
 from model_deploy.act.repo.normalizer_loader import load_bundle_normalizers
+from model_deploy.act.types.action_representation import (
+    ActionRepresentationSpec,
+    EXPECTED_ARM_ACTION_TYPE,
+    EXPECTED_CHUNK_REFERENCE,
+    EXPECTED_TRANSLATION_FRAME,
+    EXPECTED_ROTATION_REPRESENTATION,
+    EXPECTED_GRIPPER_ACTION_TYPE,
+)
 
 if TYPE_CHECKING:  # pragma: no cover - typing only, avoids import cycle
     from model_deploy.act.config.schema import DeployConfig
@@ -169,14 +186,16 @@ class ActRuntimeResources:
     """Frozen aggregate of the loaded startup resources for L2-02 / L2-03 / L2-06.
 
     Holds the already-loaded policy, the state / action normalizers, the single
-    ``PolicyInputSpec``, and the cross-validation result.  Created once at
-    startup; read-only thereafter.
+    ``PolicyInputSpec``, the frozen ``ActionRepresentationSpec`` read from the
+    bundle manifest, and the cross-validation result.  Created once at startup;
+    read-only thereafter.
     """
 
     policy: Any
     state_normalizer: ActionStateNormalizer
     action_normalizer: ActionStateNormalizer
     policy_input_spec: PolicyInputSpec
+    action_representation_spec: ActionRepresentationSpec
     bundle_dir: Path
     cross_check: RuntimeResourceCrossCheck
 
@@ -211,22 +230,27 @@ def load_act_runtime_resources(
 ) -> ActRuntimeResources:
     """Aggregate the frozen startup resources for L2-02 / L2-03 / L2-06.
 
-    Steps:
-    1. Resolve the bundle dir; empty / null -> stable FAIL (never guess a path).
-    2. Verify the bundle structure and resolvable checkpoint.
-    3. Read bundle metadata (manifest + experiment_config) and derive the
-       ``PolicyInputSpec`` dimensions; missing / conflicting metadata -> FAIL.
-    4. Cross-validate the spec against the config (state/action dim, chunk size).
-    5. Load normalizers; verify 16D and match the spec.
-    6. Load the policy via the injected / registered ``load_policy`` callback and
-       return the frozen ``ActRuntimeResources`` aggregate.
+    Two source layouts are auto-detected from ``config.bundle.bundle_dir``:
+
+    - **bundle** — a packaged ``deploy_bundle/`` (``manifest.json`` present).
+      The manifest self-describes the dimensions and the action representation;
+      ``normalizers.json`` + ``experiment_config.yaml`` are read for structural
+      gating; the manifest's ``action_representation`` is cross-validated
+      field-by-field against ``deploy.yaml``.
+    - **checkpoint** — a raw training checkpoint (``pretrained_model/config.json``
+      present, e.g. ``.../checkpoints/100000``).  Dimensions are derived from
+      ``config.json``; the action representation is taken from ``deploy.yaml``
+      (the operator declares the checkpoint matches the relative-action contract
+      by pointing the loader at it); the normalizer is a synthetic identity
+      passthrough (the real MEAN_STD statistics live inside the policy wrapper).
 
     Args:
         config: A validated ``DeployConfig`` from ``load_deploy_config``.
-        load_policy: Callback ``(bundle_dir) -> policy``.  Required to aggregate
-            the loaded policy.  If ``None``, the module-level registered loader
-            (``register_policy_loader``) is used; if still unavailable, a clear
-            ``DeployConfigError`` is raised.
+        load_policy: Callback ``(source_dir) -> policy``.  For a bundle it
+            receives the bundle dir; for a checkpoint it receives the resolved
+            ``pretrained_model`` dir.  If ``None``, the module-level registered
+            loader (``register_policy_loader``) is used; if still unavailable, a
+            clear ``DeployConfigError`` is raised.
     """
     if config.bundle.resolved_bundle_dir is None:
         raise _cfg_error(
@@ -234,8 +258,33 @@ def load_act_runtime_resources(
             "bundle_dir is empty. Set bundle.bundle_dir before loading runtime "
             "resources (the loader never guesses a path)."
         )
-    bundle_dir = config.bundle.resolved_bundle_dir.resolve()
+    source_dir = config.bundle.resolved_bundle_dir.resolve()
 
+    loader = load_policy or _POLICY_LOADER
+    if loader is None:
+        raise _cfg_error(
+            "No policy loader available. Production must pass load_policy= or call "
+            "register_policy_loader(...) before load_act_runtime_resources."
+        )
+
+    if is_bundle_dir(source_dir):
+        return _load_bundle_resources(source_dir, config, loader)
+    if is_checkpoint_dir(source_dir):
+        return _load_checkpoint_resources(source_dir, config, loader)
+    raise _cfg_error(
+        f"bundle_dir {source_dir} is neither a packaged bundle (missing "
+        f"manifest.json) nor a raw checkpoint (missing "
+        f"pretrained_model/config.json). Set bundle.bundle_dir to a deploy_bundle "
+        f"directory or a checkpoints/<step> directory."
+    )
+
+
+def _load_bundle_resources(
+    bundle_dir: Path,
+    config: "DeployConfig",
+    loader: PolicyLoader,
+) -> ActRuntimeResources:
+    """Load runtime resources from a packaged bundle (manifest present)."""
     # 1. bundle structure + checkpoint
     missing = check_bundle_files(bundle_dir)
     if missing:
@@ -254,43 +303,17 @@ def load_act_runtime_resources(
     state_dim = _metadata_int(manifest, exp, "state_dim")
     action_dim = _metadata_int(manifest, exp, "action_dim")
     chunk_size = _metadata_int(manifest, exp, "chunk_size")
+    _check_dim_conflict(state_dim, action_dim, chunk_size, config)
 
-    conflict: list[str] = []
-    if state_dim != config.runtime.state_dim:
-        conflict.append(
-            f"metadata state_dim {state_dim} != config runtime.state_dim "
-            f"{config.runtime.state_dim}"
-        )
-    if action_dim != config.runtime.action_dim:
-        conflict.append(
-            f"metadata action_dim {action_dim} != config runtime.action_dim "
-            f"{config.runtime.action_dim}"
-        )
-    if chunk_size != config.runtime.chunk_size:
-        conflict.append(
-            f"metadata chunk_size {chunk_size} != config runtime.chunk_size "
-            f"{config.runtime.chunk_size}"
-        )
-    if conflict:
-        raise _cfg_error("PolicyInputSpec/Config dimension conflict: " + "; ".join(conflict))
+    spec = _build_policy_input_spec(config, state_dim, action_dim, chunk_size)
 
-    # 3. derive spec (camera / image info from config topics + image size)
-    images = config.topics.observation.image_topics
-    camera_keys = tuple(sorted(images.keys()))
-    image_size = config.image.image_size
-    image_shapes = tuple((3, image_size, image_size) for _ in camera_keys)
-    spec = PolicyInputSpec(
-        state_key=config.topics.observation.arm_state,
-        state_dim=state_dim,
-        image_prefix=f"{config.topics.namespace}/observation/image/",
-        camera_keys=camera_keys,
-        image_shapes=image_shapes,
-        image_layout=IMAGE_LAYOUT,
-        image_dtype=IMAGE_DTYPE,
-        image_value_range=IMAGE_VALUE_RANGE,
-        action_dim=action_dim,
-        chunk_size=chunk_size,
-    )
+    # 3. action representation from the bundle manifest, cross-validated
+    #    field-by-field against the deploy config expectation.  The bundle
+    #    must be self-describing: a missing ``action_representation`` block or
+    #    any field mismatch (e.g. an old absolute-action checkpoint) fails
+    #    fast.  Never guessed from action_dim, stats or the filename.
+    action_repr_spec = _load_action_representation(manifest)
+    _cross_check_action_representation(action_repr_spec, config)
 
     # 4. normalizers
     state_norm, action_norm = load_bundle_normalizers(bundle_dir)
@@ -306,13 +329,8 @@ def load_act_runtime_resources(
     if norm_conflict:
         raise _cfg_error("Normalizer/spec dimension conflict: " + "; ".join(norm_conflict))
 
-    # 5. policy (injected / registered loader)
-    loader = load_policy or _POLICY_LOADER
-    if loader is None:
-        raise _cfg_error(
-            "No policy loader available. Production must pass load_policy= or call "
-            "register_policy_loader(...) before load_act_runtime_resources."
-        )
+    # 5. policy (loader receives the bundle dir; the closure resolves the
+    #    pretrained dir from the manifest via resolve_pretrained_dir.)
     policy = loader(bundle_dir)
 
     return ActRuntimeResources(
@@ -320,7 +338,45 @@ def load_act_runtime_resources(
         state_normalizer=state_norm,
         action_normalizer=action_norm,
         policy_input_spec=spec,
+        action_representation_spec=action_repr_spec,
         bundle_dir=bundle_dir,
+        cross_check=RuntimeResourceCrossCheck(passed=True, issues=()),
+    )
+
+
+def _load_checkpoint_resources(
+    source_dir: Path,
+    config: "DeployConfig",
+    loader: PolicyLoader,
+) -> ActRuntimeResources:
+    """Load runtime resources from a raw training checkpoint (no manifest).
+
+    ``source_dir`` may be a checkpoint root (``.../checkpoints/100000``) or the
+    inner ``pretrained_model`` directory itself.  Dimensions are derived from
+    ``pretrained_model/config.json``; the action representation is taken from
+    ``deploy.yaml``; the normalizer is a synthetic identity passthrough.
+    """
+    pretrained_dir = resolve_pretrained_dir(source_dir)
+
+    state_dim, action_dim, chunk_size = _load_checkpoint_config(pretrained_dir)
+    _check_dim_conflict(state_dim, action_dim, chunk_size, config)
+
+    spec = _build_policy_input_spec(config, state_dim, action_dim, chunk_size)
+    action_repr_spec = _action_representation_spec_from_config(config)
+    identity_state_norm = _build_identity_normalizer(state_dim)
+    identity_action_norm = _build_identity_normalizer(action_dim)
+
+    # The loader receives the resolved pretrained dir directly — it contains
+    # config.json, model.safetensors and the exported preprocessor statistics.
+    policy = loader(pretrained_dir)
+
+    return ActRuntimeResources(
+        policy=policy,
+        state_normalizer=identity_state_norm,
+        action_normalizer=identity_action_norm,
+        policy_input_spec=spec,
+        action_representation_spec=action_repr_spec,
+        bundle_dir=source_dir,
         cross_check=RuntimeResourceCrossCheck(passed=True, issues=()),
     )
 
@@ -364,3 +420,252 @@ def _metadata_int(
         raise _cfg_error(
             f"Bundle metadata field '{key}' must be an int, got {value!r}"
         ) from exc
+
+
+# The five action-representation tokens read from manifest.json and
+# cross-validated field-by-field against the deploy config expectation.
+_ACTION_REPR_FIELDS: Tuple[str, ...] = (
+    "arm_action_type",
+    "chunk_reference",
+    "translation_frame",
+    "rotation_representation",
+    "gripper_action_type",
+)
+
+
+def _load_action_representation(manifest: Mapping[str, Any]) -> ActionRepresentationSpec:
+    """Read the self-describing action representation from the bundle manifest.
+
+    The bundle must declare ``action_representation`` at the manifest top level.
+    A missing block or a missing/empty field fails fast — the loader never
+    guesses the representation from action_dim, stats, or the checkpoint
+    filename.
+
+    Args:
+        manifest: The parsed ``manifest.json`` mapping.
+
+    Returns:
+        A frozen ``ActionRepresentationSpec`` carrying the five tokens.
+
+    Raises:
+        DeployConfigError: The manifest is missing ``action_representation``,
+            a field, or a field value is not a non-empty string.
+    """
+    if not isinstance(manifest, Mapping) or "action_representation" not in manifest:
+        raise _cfg_error(
+            "Bundle manifest missing required 'action_representation' block; "
+            "the bundle must self-describe its action semantics. Old "
+            "absolute-action checkpoints cannot be loaded as relative action."
+        )
+    block = manifest["action_representation"]
+    if not isinstance(block, Mapping):
+        raise _cfg_error(
+            "manifest.action_representation must be a mapping, got "
+            f"{type(block).__name__}"
+        )
+    tokens: dict[str, str] = {}
+    for field in _ACTION_REPR_FIELDS:
+        if field not in block:
+            raise _cfg_error(
+                f"manifest.action_representation missing required field "
+                f"'{field}'. The bundle must self-describe its action semantics."
+            )
+        value = block[field]
+        if not isinstance(value, str) or not value.strip():
+            raise _cfg_error(
+                f"manifest.action_representation.{field} must be a non-empty "
+                f"string, got {value!r}"
+            )
+        tokens[field] = value
+    return ActionRepresentationSpec(**tokens)
+
+
+def _cross_check_action_representation(
+    spec: ActionRepresentationSpec,
+    config: "DeployConfig",
+) -> None:
+    """Cross-validate the bundle representation spec against the deploy config.
+
+    The deploy config holds the *expected* representation declared in
+    ``deploy.yaml``; the bundle manifest carries the checkpoint's *actual*
+    representation.  They must match field-by-field — any mismatch (e.g. an
+    old absolute-action bundle, or a different translation frame / quaternion
+    order) fails fast with a stable, field-named error.
+
+    Args:
+        spec:   ``ActionRepresentationSpec`` read from the bundle manifest.
+        config: ``DeployConfig`` carrying the deploy-side expectation.
+
+    Raises:
+        DeployConfigError: Any of the five representation fields mismatch.
+    """
+    expected = config.action_representation.as_mapping()
+    actual = spec.as_mapping()
+    mismatch: list[str] = []
+    for field in _ACTION_REPR_FIELDS:
+        if actual[field] != expected[field]:
+            mismatch.append(
+                f"action_representation.{field}: bundle declares "
+                f"{actual[field]!r} but deploy.yaml expects {expected[field]!r}"
+            )
+    if mismatch:
+        raise _cfg_error(
+            "Action representation contract conflict: " + "; ".join(mismatch)
+        )
+
+
+# ---------------------------------------------------------------------------
+# Raw-checkpoint helpers (no manifest / normalizers.json / experiment_config)
+# ---------------------------------------------------------------------------
+
+
+def _load_checkpoint_config(pretrained_dir: Path) -> Tuple[int, int, int]:
+    """Read ``(state_dim, action_dim, chunk_size)`` from a checkpoint config.json.
+
+    The lerobot ACT ``pretrained_model/config.json`` carries the canonical
+    dimensions: ``input_features["observation.state"].shape[0]`` for the
+    state dimension, ``output_features["action"].shape[0]`` for the action
+    dimension, and the top-level ``chunk_size``.  A missing field or a
+    non-integer value fails fast — config defaults never plug the hole.
+    """
+    config_path = pretrained_dir / "config.json"
+    if not config_path.is_file():
+        raise _cfg_error(
+            f"Checkpoint config.json not found: {config_path}. A raw checkpoint "
+            f"must contain pretrained_model/config.json."
+        )
+    try:
+        with config_path.open("r", encoding="utf-8") as fh:
+            cfg = json.load(fh)
+    except (json.JSONDecodeError, OSError) as exc:
+        raise _cfg_error(
+            f"Failed to read checkpoint config.json {config_path}: {exc}"
+        ) from exc
+
+    def _shape0(features: Any, key: str, label: str) -> int:
+        if not isinstance(features, Mapping) or key not in features:
+            raise _cfg_error(
+                f"Checkpoint config.json missing {label} feature '{key}'."
+            )
+        shape = features[key].get("shape") if isinstance(features[key], Mapping) else None
+        if not isinstance(shape, list) or len(shape) < 1:
+            raise _cfg_error(
+                f"Checkpoint config.json {label} feature '{key}' has no shape list."
+            )
+        try:
+            return int(shape[0])
+        except (TypeError, ValueError) as exc:
+            raise _cfg_error(
+                f"Checkpoint config.json {label} feature '{key}' shape[0] must be "
+                f"an int, got {shape[0]!r}"
+            ) from exc
+
+    state_dim = _shape0(cfg.get("input_features"), "observation.state", "input")
+    action_dim = _shape0(cfg.get("output_features"), "action", "output")
+    chunk_raw = cfg.get("chunk_size")
+    if chunk_raw is None:
+        raise _cfg_error(
+            "Checkpoint config.json missing required field 'chunk_size'."
+        )
+    try:
+        chunk_size = int(chunk_raw)
+    except (TypeError, ValueError) as exc:
+        raise _cfg_error(
+            f"Checkpoint config.json 'chunk_size' must be an int, got {chunk_raw!r}"
+        ) from exc
+    return state_dim, action_dim, chunk_size
+
+
+def _build_identity_normalizer(dim: int) -> ActionStateNormalizer:
+    """Build an identity-passthrough min-max normalizer of *dim*.
+
+    This mirrors the ``normalizers.json`` shipped with a packaged bundle:
+    ``min=0``, ``max=1`` and every index marked identity.  The real MEAN_STD
+    statistics are applied inside ``LerobotActPolicyWrapper`` (read from the
+    exported preprocessor safetensors), so the repo-layer normalizer is a
+    structural no-op used only for dimensional gating.
+    """
+    return ActionStateNormalizer(
+        min_vals=np.zeros(dim, dtype=np.float32),
+        max_vals=np.ones(dim, dtype=np.float32),
+        identity_indices=list(range(dim)),
+    )
+
+
+def _action_representation_spec_from_config(
+    config: "DeployConfig",
+) -> ActionRepresentationSpec:
+    """Build the action representation spec from the deploy config alone.
+
+    For a raw checkpoint there is no ``manifest.json`` to self-describe the
+    action semantics.  The deploy config (``deploy.yaml``) is the single
+    source of truth: pointing the loader at a trained checkpoint is the
+    operator's declaration that the checkpoint matches the configured
+    relative-action contract.
+    """
+    mapping = config.action_representation.as_mapping()
+    return ActionRepresentationSpec(
+        arm_action_type=mapping["arm_action_type"],
+        chunk_reference=mapping["chunk_reference"],
+        translation_frame=mapping["translation_frame"],
+        rotation_representation=mapping["rotation_representation"],
+        gripper_action_type=mapping["gripper_action_type"],
+    )
+
+
+def _check_dim_conflict(
+    state_dim: int,
+    action_dim: int,
+    chunk_size: int,
+    config: "DeployConfig",
+) -> None:
+    """Cross-check derived dimensions against ``config.runtime`` (shared by both
+    bundle and checkpoint paths)."""
+    conflict: list[str] = []
+    if state_dim != config.runtime.state_dim:
+        conflict.append(
+            f"metadata state_dim {state_dim} != config runtime.state_dim "
+            f"{config.runtime.state_dim}"
+        )
+    if action_dim != config.runtime.action_dim:
+        conflict.append(
+            f"metadata action_dim {action_dim} != config runtime.action_dim "
+            f"{config.runtime.action_dim}"
+        )
+    if chunk_size != config.runtime.chunk_size:
+        conflict.append(
+            f"metadata chunk_size {chunk_size} != config runtime.chunk_size "
+            f"{config.runtime.chunk_size}"
+        )
+    if conflict:
+        raise _cfg_error(
+            "PolicyInputSpec/Config dimension conflict: " + "; ".join(conflict)
+        )
+
+
+def _build_policy_input_spec(
+    config: "DeployConfig",
+    state_dim: int,
+    action_dim: int,
+    chunk_size: int,
+) -> PolicyInputSpec:
+    """Derive the ``PolicyInputSpec`` from config topics + image size + dims.
+
+    Shared by the bundle and checkpoint loading paths.
+    """
+    images = config.topics.observation.image_topics
+    camera_keys = tuple(sorted(images.keys()))
+    image_size = config.image.image_size
+    image_shapes = tuple((3, image_size, image_size) for _ in camera_keys)
+    return PolicyInputSpec(
+        state_key=config.topics.observation.arm_state,
+        state_dim=state_dim,
+        image_prefix=f"{config.topics.namespace}/observation/image/",
+        camera_keys=camera_keys,
+        image_shapes=image_shapes,
+        image_layout=IMAGE_LAYOUT,
+        image_dtype=IMAGE_DTYPE,
+        image_value_range=IMAGE_VALUE_RANGE,
+        action_dim=action_dim,
+        chunk_size=chunk_size,
+    )

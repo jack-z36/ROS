@@ -61,6 +61,9 @@ from model_deploy.act.runtime.control_loop import ControlLoop, ControlLoopConfig
 from model_deploy.act.runtime.inference_channel import LatestQueue
 from model_deploy.act.runtime.inference_worker import InferenceWorker
 from model_deploy.act.runtime.runtime_metrics import RuntimeMetrics
+from model_deploy.act.service.relative_tcp_action_decoder import (
+    RelativeTcpActionDecoder,
+)
 from model_deploy.act.service.safety_guard import SafetyGuard
 from model_deploy.act.types.action_publish import CommandPermit
 
@@ -83,6 +86,7 @@ STARTUP_CONTRACT_CODES = (
     "QUEUE_CAPACITY_MISMATCH",
     "CLOCK_DOMAIN_MISMATCH",
     "PERMIT_SOURCE_MISSING",
+    "ACTION_REPRESENTATION_MISMATCH",
 )
 
 #: Name of the rclpy publisher factory, resolved dynamically so the literal
@@ -156,6 +160,20 @@ def run_startup_preflight(
             "SPEC_IDENTITY_MISMATCH",
             "ActInferenceService.input_spec is not the canonical "
             "PolicyInputSpec held by the runtime resources",
+        )
+
+    # --- action representation identity ---
+    # The decoder carried by ActInferenceService must hold the exact same
+    # ActionRepresentationSpec object read from the bundle manifest and held by
+    # the runtime resources.  The field-by-field manifest↔deploy.yaml cross
+    # check already happened inside load_act_runtime_resources; here we assert
+    # the wired object identity so a stale/derived decoder cannot slip in.
+    repr_spec = resources.action_representation_spec
+    if getattr(inference_service, "action_representation_spec", None) is not repr_spec:
+        raise StartupContractError(
+            "ACTION_REPRESENTATION_MISMATCH",
+            "ActInferenceService.action_representation_spec is not the canonical "
+            "ActionRepresentationSpec held by the runtime resources",
         )
 
     # --- clock domain ---
@@ -750,12 +768,16 @@ def main(argv: Optional[list] = None) -> int:
             args.config, command_output_enabled=args.enable_command_output
         )
         resources = load_act_runtime_resources(config)
+        relative_action_decoder = RelativeTcpActionDecoder(
+            resources.action_representation_spec
+        )
         inference_service = ActInferenceService(
             config,
             resources.state_normalizer,
             resources.action_normalizer,
             resources.policy,
             resources.policy_input_spec,
+            relative_action_decoder,
         )
 
         # Fail-closed permit source.  A verified permit topology is supplied by
