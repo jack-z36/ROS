@@ -679,6 +679,34 @@ def _build_button_bar(app, parent):
     for column in range(4):
         bar.grid_columnconfigure(column, weight=1, uniform="actions")
 
+    mode_row = ctk.CTkFrame(bar, fg_color="transparent")
+    mode_row.grid(row=0, column=0, columnspan=101, sticky="ew", padx=7, pady=(10, 2))
+    ctk.CTkLabel(
+        mode_row,
+        text="启动模式",
+        font=app._font(12, "bold"),
+        text_color="#AEB6C6",
+    ).pack(side="left", padx=(4, 10))
+    mode_selector = ctk.CTkSegmentedButton(
+        mode_row,
+        values=list(app.STARTUP_MODE_LABELS.values()),
+        command=lambda label: app._set_startup_mode(
+            next(
+                mode
+                for mode, mode_label in app.STARTUP_MODE_LABELS.items()
+                if mode_label == label
+            )
+        ),
+        font=app._font(12, "bold"),
+        selected_color="#4B2DD0",
+        selected_hover_color="#5B3CDF",
+        unselected_color="#1A202B",
+        unselected_hover_color="#252D3A",
+    )
+    mode_selector.set(app.STARTUP_MODE_LABELS[app.STARTUP_MODE_ALL])
+    mode_selector.pack(side="right")
+    app._startup_mode_selector = mode_selector
+
     app._btn_start = _button(
         bar,
         text="▶  启动系统\nStart System",
@@ -715,7 +743,7 @@ def _build_button_bar(app, parent):
     for column, button in enumerate(
         (app._btn_start, app._btn_smoke, app._btn_stop, app._btn_exit)
     ):
-        button.grid(row=0, column=column, sticky="ew", padx=7, pady=9)
+        button.grid(row=1, column=column, sticky="ew", padx=7, pady=9)
     return bar
 
 

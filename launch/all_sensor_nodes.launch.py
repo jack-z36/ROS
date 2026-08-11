@@ -213,7 +213,10 @@ def _load_nodes(context):
             actions.append(_gopro_include(side, cfg, gopro_launch))
 
     pressure_cfg = config.get("pressure") or {}
-    if _as_bool(pressure_cfg.get("enabled", False)):
+    enable_pressure = _as_bool(
+        LaunchConfiguration("enable_pressure").perform(context)
+    )
+    if enable_pressure and _as_bool(pressure_cfg.get("enabled", False)):
         actions.append(LogInfo(msg="Starting HWK pressure driver"))
         actions.append(_pressure_include(pressure_cfg, pressure_launch))
 
@@ -233,6 +236,11 @@ def generate_launch_description():
                 "identity_resolved_file",
                 default_value="",
                 description="Resolved hardware identity YAML generated before launch.",
+            ),
+            DeclareLaunchArgument(
+                "enable_pressure",
+                default_value="true",
+                description="Whether to start the configured HWK pressure driver.",
             ),
             OpaqueFunction(function=_load_nodes),
         ]

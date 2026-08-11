@@ -13,7 +13,7 @@ BUILD_PACKAGES="${BUILD_PACKAGES:-}"
 STARTUP_WAIT="${STARTUP_WAIT:-20}"
 ALL_SENSOR_LOCAL_ONLY="${ALL_SENSOR_LOCAL_ONLY:-1}"
 STOP_ON_FAILURE="${STOP_ON_FAILURE:-1}"
-LOG_DIR="${WORKSPACE_DIR}/log/start_all_sensor"
+LOG_DIR="${LOG_DIR:-${WORKSPACE_DIR}/log/start_all_sensor}"
 HARDWARE_IDENTITY_MAP="${HARDWARE_IDENTITY_MAP:-${WORKSPACE_DIR}/config/hardware_identity_map.yaml}"
 HARDWARE_IDENTITY_RESOLVED_FILE="${HARDWARE_IDENTITY_RESOLVED_FILE:-${LOG_DIR}/hardware_identity_resolved.yaml}"
 OCTOPUS_QT_ROOT="${OCTOPUS_QT_ROOT:-${HOME}/Qt/6.11.0/gcc_64}"
@@ -23,11 +23,18 @@ CLEANING_UP=0
 
 # 解析命令行参数
 SMOKE_TEST=0
+PRESSURE_ENABLED=1
+VALIDATE_HARDWARE_IDENTITY=1
 POSITIONAL_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --smoke-test)
       SMOKE_TEST=1
+      shift
+      ;;
+    --no-tactile)
+      PRESSURE_ENABLED=0
+      VALIDATE_HARDWARE_IDENTITY=0
       shift
       ;;
     *)
@@ -44,6 +51,12 @@ if [[ "${SMOKE_TEST}" == "1" ]]; then
   echo
 else
   CONFIG_FILE="${POSITIONAL_ARGS[0]:-${ALL_SENSOR_CONFIG:-${WORKSPACE_DIR}/config/all_sensor_nodes.yaml}}"
+fi
+
+if [[ "${PRESSURE_ENABLED}" == "1" ]]; then
+  STARTUP_PROFILE="全部传感器节点"
+else
+  STARTUP_PROFILE="Baton Mini + GoPro（不含触觉）"
 fi
 
 source_setup_file() {
@@ -161,25 +174,35 @@ IDENTITY_ARGS=()
 if [[ "${SMOKE_TEST}" == "1" ]]; then
   echo "冒烟测试模式：跳过硬件身份映射校验"
   echo
-elif [[ -f "${HARDWARE_IDENTITY_MAP}" ]]; then
+elif [[ "${VALIDATE_HARDWARE_IDENTITY}" == "1" && -f "${HARDWARE_IDENTITY_MAP}" ]]; then
   IDENTITY_ARGS=(
     --identity-map "${HARDWARE_IDENTITY_MAP}"
     --write-identity-resolved "${HARDWARE_IDENTITY_RESOLVED_FILE}"
   )
+else
+  echo "当前启动模式：跳过硬件身份映射校验"
+  echo
+fi
+
+STATUS_MODE_ARGS=()
+if [[ "${PRESSURE_ENABLED}" == "0" ]]; then
+  STATUS_MODE_ARGS+=(--no-pressure --skip-hardware-identity)
 fi
 
 "${ROS_PYTHON_EXECUTABLE}" "${STATUS_SCRIPT}" preflight \
   --config "${CONFIG_FILE}" \
+  "${STATUS_MODE_ARGS[@]}" \
   "${IDENTITY_ARGS[@]}"
 
 LOG_FILE="${LOG_DIR}/$(date +%Y%m%d_%H%M%S).log"
 echo
-echo "启动总 launch，日志文件: ${LOG_FILE}"
+echo "启动总 launch（${STARTUP_PROFILE}），日志文件: ${LOG_FILE}"
 echo "等待 ${STARTUP_WAIT}s 后检查节点和 topic..."
 
 setsid ros2 launch "${WORKSPACE_DIR}/launch/all_sensor_nodes.launch.py" \
   config_file:="${CONFIG_FILE}" \
   identity_resolved_file:="${HARDWARE_IDENTITY_RESOLVED_FILE}" \
+  enable_pressure:="${PRESSURE_ENABLED}" \
   > >(tee -a "${LOG_FILE}") 2>&1 &
 LAUNCH_PID=$!
 
@@ -236,6 +259,7 @@ fi
 set +e
 "${ROS_PYTHON_EXECUTABLE}" "${STATUS_SCRIPT}" postlaunch \
   --config "${CONFIG_FILE}" \
+  "${STATUS_MODE_ARGS[@]}" \
   --identity-resolved "${HARDWARE_IDENTITY_RESOLVED_FILE}"
 STATUS=$?
 set -e

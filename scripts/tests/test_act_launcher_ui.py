@@ -88,6 +88,12 @@ class ActLauncherUiTest(unittest.TestCase):
         self.assertIn("page = _FillHeightScrollableFrame(", source)
         self.assertIn("height=292", source)
 
+    def test_startup_mode_selector_exposes_both_profiles(self):
+        source = UI_SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("CTkSegmentedButton", source)
+        self.assertIn('"全部节点"', source)
+        self.assertIn('"Baton Mini + GoPro（不含触觉）"', source)
+
 
 if __name__ == "__main__":
     unittest.main()

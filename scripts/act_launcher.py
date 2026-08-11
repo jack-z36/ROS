@@ -38,6 +38,13 @@ APP_ICON_PATH = os.path.join(
 class ActLauncher(ctk.CTk):
     """HIT · UMI 无本体数据采集系统 GUI 启动器主窗口。"""
 
+    STARTUP_MODE_ALL = "all"
+    STARTUP_MODE_NO_TACTILE = "no_tactile"
+    STARTUP_MODE_LABELS = {
+        STARTUP_MODE_ALL: "全部节点",
+        STARTUP_MODE_NO_TACTILE: "Baton Mini + GoPro（不含触觉）",
+    }
+
     # --- 传感器定义：(id, 显示名称) ---
     SENSOR_DEFS = [
         ("baton_mini.left", "Baton Mini（左）"),
@@ -76,6 +83,7 @@ class ActLauncher(ctk.CTk):
         "ok": "正常",
         "error": "异常",
         "starting": "启动中",
+        "skipped": "未启动",
     }
 
     # 强调色：更鲜艳的青蓝→紫渐变主调（单一 primary 用青蓝）
@@ -111,6 +119,8 @@ class ActLauncher(ctk.CTk):
         # 进程变量
         self._sensor_proc = None
         self._octopus_proc = None
+        self._startup_mode = self.STARTUP_MODE_ALL
+        self._active_startup_mode = self.STARTUP_MODE_ALL
         self._running = False
         self._closing = False
         self._polling_after_id = None
@@ -472,16 +482,50 @@ class ActLauncher(ctk.CTk):
 
     def _start_system(self):
         """启动系统（正常模式）。"""
-        threading.Thread(target=self._run_start_sequence, args=(False,), daemon=True).start()
+        threading.Thread(
+            target=self._run_start_sequence,
+            args=(False, self._startup_mode),
+            daemon=True,
+        ).start()
 
     def _start_smoke_test(self):
         """启动系统（冒烟测试模式）。"""
-        threading.Thread(target=self._run_start_sequence, args=(True,), daemon=True).start()
+        threading.Thread(
+            target=self._run_start_sequence,
+            args=(True, self._startup_mode),
+            daemon=True,
+        ).start()
 
-    def _run_start_sequence(self, smoke_test=False):
+    def _set_startup_mode(self, mode):
+        """更新待启动模式；运行中由按钮状态阻止切换。"""
+        if mode not in self.STARTUP_MODE_LABELS:
+            return
+        self._startup_mode = mode
+        if self._running:
+            return
+        pressure_status = (
+            "skipped"
+            if mode == self.STARTUP_MODE_NO_TACTILE
+            else "unknown"
+        )
+        pressure_desc = (
+            "当前模式跳过"
+            if pressure_status == "skipped"
+            else "等待启动"
+        )
+        self._update_sensor_status("pressure", pressure_status, pressure_desc)
+
+    def _run_start_sequence(self, smoke_test=False, startup_mode=None):
         """执行完整启动序列，在后台线程中运行。"""
         if self._running:
             return
+        startup_mode = startup_mode or getattr(
+            self, "_startup_mode", self.STARTUP_MODE_ALL
+        )
+        if startup_mode not in self.STARTUP_MODE_LABELS:
+            startup_mode = self.STARTUP_MODE_ALL
+        self._active_startup_mode = startup_mode
+        no_tactile = startup_mode == self.STARTUP_MODE_NO_TACTILE
         self._running = True
         self._cancel_start.clear()
 
@@ -490,11 +534,21 @@ class ActLauncher(ctk.CTk):
         self.after(0, self._set_system_state, "starting")
 
         mode_text = "冒烟测试" if smoke_test else "启动系统"
+        profile_text = self.STARTUP_MODE_LABELS[startup_mode]
         self.after(0, self._append_log, f"\n=== {mode_text} ===\n")
+        self.after(0, self._append_log, f"启动模式：{profile_text}\n")
 
         # 正常模式下传感器与 Octopus 同时进入启动中状态。
         for sensor_id in self._sensor_labels:
-            if sensor_id == "octopus":
+            if sensor_id == "pressure" and no_tactile:
+                self.after(
+                    0,
+                    self._update_sensor_status,
+                    sensor_id,
+                    "skipped",
+                    "当前模式跳过",
+                )
+            elif sensor_id == "octopus":
                 self.after(
                     0,
                     self._update_sensor_status,
@@ -512,7 +566,10 @@ class ActLauncher(ctk.CTk):
                 )
 
         # Phase 1：启动传感器
-        sensor_script = os.path.join(self._workspace_dir, "start_all_sensor.sh")
+        sensor_script_name = (
+            "start_baton_gopro.sh" if no_tactile else "start_all_sensor.sh"
+        )
+        sensor_script = os.path.join(self._workspace_dir, sensor_script_name)
         cmd = [sensor_script]
         if smoke_test:
             cmd.append("--smoke-test")
@@ -708,7 +765,13 @@ class ActLauncher(ctk.CTk):
         self._btn_smoke.configure(state="normal")
         self._btn_stop.configure(state="disabled")
         for sensor_id in self._sensor_labels:
-            self._update_sensor_status(sensor_id, "unknown", "已停止")
+            if (
+                sensor_id == "pressure"
+                and self._startup_mode == self.STARTUP_MODE_NO_TACTILE
+            ):
+                self._update_sensor_status(sensor_id, "skipped", "当前模式跳过")
+            else:
+                self._update_sensor_status(sensor_id, "unknown", "已停止")
         self._set_system_state("ready")
 
     def _set_buttons_running(self, running):
@@ -717,10 +780,14 @@ class ActLauncher(ctk.CTk):
             self._btn_start.configure(state="disabled")
             self._btn_smoke.configure(state="disabled")
             self._btn_stop.configure(state="normal")
+            if hasattr(self, "_startup_mode_selector"):
+                self._startup_mode_selector.configure(state="disabled")
         else:
             self._btn_start.configure(state="normal")
             self._btn_smoke.configure(state="normal")
             self._btn_stop.configure(state="disabled")
+            if hasattr(self, "_startup_mode_selector"):
+                self._startup_mode_selector.configure(state="normal")
 
     def _stop_system(self):
         """停止全部系统进程。"""
@@ -789,7 +856,25 @@ class ActLauncher(ctk.CTk):
 
             # 重置传感器状态
             for sensor_id in self._sensor_labels:
-                self.after(0, self._update_sensor_status, sensor_id, "unknown", "已停止")
+                if (
+                    sensor_id == "pressure"
+                    and self._startup_mode == self.STARTUP_MODE_NO_TACTILE
+                ):
+                    self.after(
+                        0,
+                        self._update_sensor_status,
+                        sensor_id,
+                        "skipped",
+                        "当前模式跳过",
+                    )
+                else:
+                    self.after(
+                        0,
+                        self._update_sensor_status,
+                        sensor_id,
+                        "unknown",
+                        "已停止",
+                    )
 
             self.after(0, self._append_log, "=== 系统已停止 ===\n")
             self.after(0, self._set_system_state, "ready", "系统已安全停止")
@@ -840,6 +925,7 @@ class ActLauncher(ctk.CTk):
             "ok": ("#3AD99F", "#12362E"),
             "error": ("#FF647C", "#3A1822"),
             "starting": ("#F2B84B", "#3B3018"),
+            "skipped": ("#8EA0B8", "#202A38"),
         }
         color, background = styles.get(status, styles["unknown"])
         status_label.configure(
@@ -876,12 +962,15 @@ class ActLauncher(ctk.CTk):
         config_file = os.path.join(
             self._workspace_dir, "config", "all_sensor_nodes.yaml"
         )
+        status_mode_args = []
+        if self._active_startup_mode == self.STARTUP_MODE_NO_TACTILE:
+            status_mode_args = ["--no-pressure", "--skip-hardware-identity"]
 
         def _do_poll():
             try:
                 result = subprocess.run(
                     [sys.executable, status_script, "postlaunch",
-                     "--config", config_file],
+                     "--config", config_file, *status_mode_args],
                     capture_output=True, text=True, env=os.environ, timeout=30,
                 )
                 output = result.stdout
@@ -918,7 +1007,11 @@ class ActLauncher(ctk.CTk):
             elif line.startswith("WARN"):
                 self._match_and_update(line, "starting")
         if self._running:
-            values = list(getattr(self, "_card_status", {}).values())
+            values = [
+                value
+                for value in getattr(self, "_card_status", {}).values()
+                if value != "skipped"
+            ]
             if "error" in values:
                 self._set_system_state("error", "检测到设备或节点异常")
             elif "starting" in values:

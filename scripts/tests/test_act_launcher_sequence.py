@@ -139,6 +139,86 @@ class ActLauncherSequenceTest(unittest.TestCase):
         )
         self.assertIn(("octopus", "ok", "界面运行中"), statuses)
 
+    def test_no_tactile_mode_uses_baton_gopro_entrypoint(self):
+        launcher = object.__new__(self.launcher_module.ActLauncher)
+        launcher._workspace_dir = str(WORKSPACE_DIR)
+        launcher._running = False
+        launcher._cancel_start = threading.Event()
+        launcher._sensor_proc = None
+        launcher._octopus_proc = None
+        launcher._startup_mode = (
+            self.launcher_module.ActLauncher.STARTUP_MODE_NO_TACTILE
+        )
+        launcher._sensor_labels = {
+            sensor_id: None
+            for sensor_id, _label in self.launcher_module.ActLauncher.SENSOR_DEFS
+        }
+
+        logs = []
+        statuses = []
+        launcher.after = lambda _delay, callback, *args: callback(*args)
+        launcher._append_log = logs.append
+        launcher._set_system_state = lambda *_args, **_kwargs: None
+        launcher._update_sensor_status = (
+            lambda sensor_id, status, desc="": statuses.append(
+                (sensor_id, status, desc)
+            )
+        )
+        launcher._set_buttons_running = lambda _running: None
+        launcher._start_polling = lambda: None
+
+        octopus_started = {"value": False}
+        sensor = FakeProcess([])
+        sensor.stdout = SensorOutput(octopus_started)
+        octopus = FakeProcess(["Octopus started\n"])
+        processes = iter([sensor, octopus])
+
+        def start_process(*_args, **_kwargs):
+            process = next(processes)
+            if process is octopus:
+                octopus_started["value"] = True
+            return process
+
+        with (
+            mock.patch.object(
+                self.launcher_module.subprocess,
+                "Popen",
+                side_effect=start_process,
+            ) as popen,
+            mock.patch.object(
+                self.launcher_module.threading, "Thread", FakeThread
+            ),
+            mock.patch.object(self.launcher_module.time, "sleep"),
+        ):
+            launcher._run_start_sequence(
+                smoke_test=False,
+                startup_mode=self.launcher_module.ActLauncher.STARTUP_MODE_NO_TACTILE,
+            )
+
+        self.assertEqual(popen.call_count, 2)
+        self.assertEqual(
+            popen.call_args_list[0].args[0][0],
+            str(WORKSPACE_DIR / "start_baton_gopro.sh"),
+        )
+        self.assertIn(("pressure", "skipped", "当前模式跳过"), statuses)
+        self.assertTrue(any("不含触觉" in line for line in logs))
+
+    def test_skipped_pressure_does_not_make_running_profile_unhealthy(self):
+        launcher = object.__new__(self.launcher_module.ActLauncher)
+        launcher._running = True
+        launcher._card_status = {
+            "baton_mini.left": "ok",
+            "baton_mini.right": "ok",
+            "gopro": "ok",
+            "pressure": "skipped",
+        }
+        states = []
+        launcher._set_system_state = lambda *args: states.append(args)
+
+        launcher._parse_sensor_status("")
+
+        self.assertEqual(states[-1], ("running",))
+
     def test_gopro_card_keeps_failure_from_either_side(self):
         launcher = object.__new__(self.launcher_module.ActLauncher)
         launcher._subdevice_status = {}

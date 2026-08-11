@@ -81,10 +81,10 @@ gopro:
     match:
       ID_VENDOR_ID: "0bda"
       ID_MODEL_ID: "5858"
-      ID_PATH: "pci-0000:00:14.0-usb-0:1:1.0"
+      ID_PATH: "pci-0000:00:14.0-usb-0:11:1.0"
       ID_V4L_CAPABILITIES: ":capture:"
     target:
-      video_device: /dev/v4l/by-path/pci-0000:00:14.0-usb-0:1:1.0-video-index0
+      video_device: /dev/v4l/by-path/pci-0000:00:14.0-usb-0:11:1.0-video-index0
       topic: /gopro_right/image_raw
       side: right
 
@@ -95,9 +95,9 @@ gopro:
     match:
       ID_VENDOR_ID: "0bda"
       ID_MODEL_ID: "5858"
-      ID_PATH: "pci-0000:00:14.0-usb-0:5:1.0"
+      ID_PATH: "pci-0000:00:14.0-usb-0:12:1.0"
       ID_V4L_CAPABILITIES: ":capture:"
     target:
-      video_device: /dev/v4l/by-path/pci-0000:00:14.0-usb-0:5:1.0-video-index0
+      video_device: /dev/v4l/by-path/pci-0000:00:14.0-usb-0:12:1.0-video-index0
       topic: /gopro_left/image_raw
       side: left

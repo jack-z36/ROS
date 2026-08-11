@@ -288,6 +288,18 @@ def expected_sensors(config, config_base=None, identity_resolved=None):
     return sensors
 
 
+def apply_startup_filters(config, *, include_pressure=True, validate_identity=True):
+    """Return the status view for a selected sensor startup profile."""
+    filtered = copy.deepcopy(config)
+    if not include_pressure:
+        pressure = filtered.setdefault("pressure", {})
+        pressure["enabled"] = False
+    if not validate_identity:
+        identity = filtered.setdefault("hardware_identity", {})
+        identity["enabled"] = False
+    return filtered
+
+
 def print_header(title):
     print(f"\n=== {title} ===")
 
@@ -676,10 +688,26 @@ def main():
         "--identity-resolved",
         help="resolved hardware identity YAML used to override runtime device paths",
     )
+    parser.add_argument(
+        "--no-pressure",
+        action="store_true",
+        help="exclude the pressure sensor from expected checks",
+    )
+    parser.add_argument(
+        "--skip-hardware-identity",
+        action="store_true",
+        help="skip hardware identity map validation for this startup profile",
+    )
     args = parser.parse_args()
 
     config, config_path = load_config(args.config)
     print(f"配置文件: {config_path}")
+
+    config = apply_startup_filters(
+        config,
+        include_pressure=not args.no_pressure,
+        validate_identity=not args.skip_hardware_identity,
+    )
 
     identity_resolved = load_identity_resolved(args.identity_resolved)
     if args.mode == "preflight":
